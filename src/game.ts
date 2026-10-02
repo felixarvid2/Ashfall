@@ -50,6 +50,7 @@ import { isAlive, kill } from './systems/combat';
 import { deathSystem } from './systems/death';
 import { encounterSystem, startNextWave } from './systems/encounter';
 import { enemyAISystem } from './systems/enemyAI';
+import { minionSystem, tetherSystem, turretSystem } from './systems/minions';
 import { movementSystem } from './systems/movement';
 import { playerControlSystem } from './systems/playerControl';
 import { hazardSystem, projectileSystem, summonSystem, trapSystem } from './systems/projectiles';
@@ -148,6 +149,7 @@ export class Game {
       .add('playerControl', playerControlSystem)
       .add('skills', skillSystem)
       .add('enemyAI', enemyAISystem)
+      .add('minions', minionSystem)
       .add('status', statusSystem)
       .add('movement', movementSystem)
       .add('forcedMove', forcedMoveSystem)
@@ -156,6 +158,8 @@ export class Game {
       .add('projectiles', projectileSystem)
       .add('traps', trapSystem)
       .add('summons', summonSystem)
+      .add('tethers', tetherSystem)
+      .add('turrets', turretSystem)
       .add('hazards', hazardSystem)
       .add('resource', resourceSystem)
       .add('death', deathSystem)

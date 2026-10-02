@@ -2,7 +2,7 @@
  * Headless balance simulator: a build fights a stationary training dummy with the real
  * combat systems for a fixed time, using a simple priority rotation. Reports DPS.
  */
-import { Collider, ForcedMove, Health, Inventory, Progression, Resource, SkillUser, Transform } from '../../src/core/components';
+import { Collider, CombatStats, ForcedMove, Health, Inventory, Progression, Resource, SkillUser, Transform } from '../../src/core/components';
 import type { GameContext } from '../../src/core/context';
 import { World } from '../../src/core/ecs';
 import { EventQueue } from '../../src/core/events';
@@ -16,6 +16,9 @@ import { generateItem, generateUnique } from '../../src/systems/loot/generate';
 import { movementSystem } from '../../src/systems/movement';
 import { resourceSystem } from '../../src/systems/resource';
 import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from '../../src/systems/skills';
+import { minionSystem, minionsOf, tetherSystem, turretSystem } from '../../src/systems/minions';
+import { deathSystem } from '../../src/systems/death';
+import { kill } from '../../src/systems/combat';
 import { hazardSystem, projectileSystem, summonSystem, trapSystem } from '../../src/systems/projectiles';
 import { recomputePlayer } from '../../src/systems/stats';
 import { statusSystem } from '../../src/systems/status';
@@ -27,6 +30,8 @@ export interface RotationEntry {
   minHeat?: number;
   /** Only use when Heat is at most this (coolant). */
   maxHeat?: number;
+  /** Only use while the caster has fewer minions than this (Raise Corpse). */
+  minionsBelow?: number;
 }
 
 export interface Build {
@@ -44,6 +49,8 @@ export interface Build {
   uniques?: string[];
   /** Legendary aspects as [item slot, aspect id, value]. */
   aspects?: [Slot, string, number][];
+  /** Emulate a pack fight for corpse builds: a colonist dies next to the dummy this often. */
+  corpsesPerMinute?: number;
 }
 
 export interface SimResult {
@@ -58,6 +65,7 @@ export interface SimResult {
 const SYSTEMS = [
   spatialSystem,
   skillSystem,
+  minionSystem,
   statusSystem,
   movementSystem,
   forcedMoveSystem,
@@ -66,8 +74,11 @@ const SYSTEMS = [
   projectileSystem,
   trapSystem,
   summonSystem,
+  tetherSystem,
+  turretSystem,
   hazardSystem,
   resourceSystem,
+  deathSystem,
 ];
 
 function makeContext(seed: string): GameContext {
@@ -127,13 +138,22 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
   const life = world.req(dummy, Health);
   life.max = life.current = 1e12;
   world.req(dummy, Collider).mass = 1e9;
+  // A neutral target: plain armor, no elemental resistances, so classes compare fairly.
+  Object.assign(world.req(dummy, CombatStats), { armor: 30, resist: {} });
 
   const casts: Record<string, number> = {};
   const resource = world.req(player, Resource);
   let overheatedTicks = 0;
   let heatSum = 0;
   const ticks = Math.round(seconds * 60);
+  const corpseEvery = build.corpsesPerMinute ? Math.round(3600 / build.corpsesPerMinute) : 0;
+  const corpseRng = new Rng(`${seed}-corpses`);
   for (let i = 0; i < ticks; i++) {
+    if (corpseEvery > 0 && i % corpseEvery === 0) {
+      const a = corpseRng.range(0, Math.PI * 2);
+      const c = spawnEnemy(world, 'infected_colonist', Math.sin(a) * 2, dist + Math.cos(a) * 2, { level: build.level });
+      kill(world, ctx, c, 0);
+    }
     // Stay next to the dummy (leaps and knockback would otherwise drift us apart).
     const tr = world.req(player, Transform);
     if (!world.has(player, ForcedMove) && !user.cast) {
@@ -151,6 +171,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
         if (resource.current < c.def.resourceCost) return false;
         if (r.minHeat !== undefined && resource.current < r.minHeat) return false;
         if (r.maxHeat !== undefined && resource.current > r.maxHeat) return false;
+        if (r.minionsBelow !== undefined && minionsOf(world, player).length >= r.minionsBelow) return false;
         return true;
       });
       if (pick) {

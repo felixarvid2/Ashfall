@@ -19,8 +19,8 @@ export interface CharacterSelectActions {
   portraitUrl(classId: string): string | null;
 }
 
-/** Classes that can be picked right now (Xenomant arrives in Phase 4b). */
-export const PLAYABLE_CLASSES = ['bastion', 'spectre'];
+/** Classes that can be picked. */
+export const PLAYABLE_CLASSES = ['bastion', 'spectre', 'xenomant'];
 const ALL_CLASSES = ['bastion', 'spectre', 'xenomant'];
 
 export class CharacterSelect {

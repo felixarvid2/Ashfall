@@ -74,7 +74,8 @@
   },
   "combat": {
     "notEnoughResource": "Not enough Heat",
-    "overheat": "Overheating! Spend Heat to cool down"
+    "overheat": "Overheating! Spend Heat to cool down",
+    "noCorpses": "No corpses nearby"
   },
   "skills": {
     "bastion": {
@@ -160,6 +161,48 @@
         "name": "Death Mark",
         "desc": "Mark every enemy in a wide area for 10 seconds. Marked enemies take 25% more damage and refund 15 Focus when they die."
       }
+    },
+    "xenomant": {
+      "spore_dart": {
+        "name": "Spore Dart",
+        "desc": "Fire a poisoned spore dart. Generates Biomass."
+      },
+      "scalpel_slash": {
+        "name": "Scalpel Slash",
+        "desc": "A quick scalpel slash that heals you for 8% of the damage dealt. Generates Biomass."
+      },
+      "spore_burst": {
+        "name": "Spore Burst",
+        "desc": "Release a cloud of spores at the cursor that poisons enemies inside it for 5 seconds."
+      },
+      "parasite_link": {
+        "name": "Parasite Link",
+        "desc": "Latch onto the enemy nearest the cursor for 3 seconds, draining its life and healing you for 25% of the damage."
+      },
+      "chitin_armor": {
+        "name": "Chitin Armor",
+        "desc": "Harden your skin for 6 seconds: take 30% less damage, and melee attackers are hurt."
+      },
+      "spore_cocoon": {
+        "name": "Spore Cocoon",
+        "desc": "Wrap yourself in a fungal cocoon: a barrier of 25% of your life, heal 10% and remove stuns and slows."
+      },
+      "raise_corpse": {
+        "name": "Raise Corpse",
+        "desc": "Raise up to 2 corpses near the cursor as minions that fight for you (up to 6). Needs corpses."
+      },
+      "grasping_tendrils": {
+        "name": "Grasping Tendrils",
+        "desc": "Tendrils burst from the ground at the cursor, holding enemies in place for 2 seconds and poisoning them."
+      },
+      "corpse_explosion": {
+        "name": "Corpse Explosion",
+        "desc": "Detonate up to 3 corpses near the cursor in toxic blasts. Needs corpses."
+      },
+      "wrath_of_lumen": {
+        "name": "Wrath of Lumen",
+        "desc": "A colossal Lumen creature erupts at the cursor for 12 seconds. It draws enemies to itself and slams everything around it."
+      }
     }
   },
   "enemies": {
@@ -182,7 +225,9 @@
     "barrier": "Barrier",
     "marked": "Marked",
     "stealth": "Stealthed",
-    "evasive": "Evasive"
+    "evasive": "Evasive",
+    "chitin": "Chitin",
+    "rooted": "Rooted"
   },
   "items": {
     "bases": {
@@ -202,7 +247,8 @@
       "signal_pendant": "Signal Pendant",
       "conduit_ring": "Conduit Ring",
       "crystal": "Crystal",
-      "twin_pistols": "Twin Pistols"
+      "twin_pistols": "Twin Pistols",
+      "scalpel_blade": "Scalpel Blade"
     },
     "types": {
       "helm": "Helm",
@@ -443,6 +489,46 @@
       "death_mark": {
         "name": "Enhanced Mark",
         "desc": "Death Mark cooldown −20%."
+      },
+      "spore_dart": {
+        "name": "Enhanced Dart",
+        "desc": "Spore Dart generates 2 more Biomass."
+      },
+      "scalpel_slash": {
+        "name": "Enhanced Scalpel",
+        "desc": "Scalpel Slash heals for 4% more of its damage."
+      },
+      "spore_burst": {
+        "name": "Enhanced Burst",
+        "desc": "Spore Burst radius +20%."
+      },
+      "parasite_link": {
+        "name": "Enhanced Link",
+        "desc": "Parasite Link costs 5 less Biomass."
+      },
+      "chitin_armor": {
+        "name": "Enhanced Chitin",
+        "desc": "Chitin Armor cooldown −20%."
+      },
+      "spore_cocoon": {
+        "name": "Enhanced Cocoon",
+        "desc": "Spore Cocoon barrier +20%."
+      },
+      "raise_corpse": {
+        "name": "Enhanced Raising",
+        "desc": "You can have one more minion."
+      },
+      "grasping_tendrils": {
+        "name": "Enhanced Tendrils",
+        "desc": "Grasping Tendrils radius +20%."
+      },
+      "corpse_explosion": {
+        "name": "Enhanced Explosion",
+        "desc": "Corpse Explosion radius +20%."
+      },
+      "wrath_of_lumen": {
+        "name": "Enhanced Wrath",
+        "desc": "Wrath of Lumen cooldown −20%."
       }
     },
     "m": {
@@ -645,6 +731,106 @@
           "name": "Kill Order",
           "desc": "Death Mark deals triple damage, and you deal x10% damage to Marked enemies."
         }
+      },
+      "spore_dart": {
+        "virulent": {
+          "name": "Virulent Dart",
+          "desc": "Spore Dart applies a second poison stack."
+        },
+        "splitting": {
+          "name": "Splitting Dart",
+          "desc": "Spore Dart fires three darts in a spread, each dealing 35% less damage."
+        }
+      },
+      "scalpel_slash": {
+        "butcher": {
+          "name": "Butcher",
+          "desc": "Scalpel Slash deals +40% damage to Poisoned enemies."
+        },
+        "harvester": {
+          "name": "Harvester",
+          "desc": "Scalpel Slash generates 4 more Biomass."
+        }
+      },
+      "spore_burst": {
+        "lingering": {
+          "name": "Lingering Spores",
+          "desc": "Spore Burst lasts 60% longer."
+        },
+        "caustic": {
+          "name": "Caustic Spores",
+          "desc": "Spore Burst poisons 30% harder and makes enemies Vulnerable on impact."
+        }
+      },
+      "parasite_link": {
+        "hydra": {
+          "name": "Hydra",
+          "desc": "Parasite Link latches onto 2 more enemies."
+        },
+        "leech": {
+          "name": "Leech",
+          "desc": "Parasite Link heals for twice as much."
+        }
+      },
+      "chitin_armor": {
+        "carapace": {
+          "name": "Carapace",
+          "desc": "Chitin Armor also grants a barrier of 15% of your life."
+        },
+        "regenerative": {
+          "name": "Regenerative Chitin",
+          "desc": "Chitin Armor heals 15% of your life."
+        }
+      },
+      "spore_cocoon": {
+        "nourishing": {
+          "name": "Nourishing Cocoon",
+          "desc": "Spore Cocoon heals 10% more."
+        },
+        "spore_shell": {
+          "name": "Spore Shell",
+          "desc": "Spore Cocoon releases a poison cloud around you."
+        }
+      },
+      "raise_corpse": {
+        "horde": {
+          "name": "Horde",
+          "desc": "Two more minions, and each cast raises one more corpse."
+        },
+        "ravenous": {
+          "name": "Ravenous Dead",
+          "desc": "Minions deal 40% more damage and have 40% more life."
+        }
+      },
+      "grasping_tendrils": {
+        "strangling": {
+          "name": "Strangling Grip",
+          "desc": "Grasping Tendrils deals 150% more damage."
+        },
+        "withering": {
+          "name": "Withering Grip",
+          "desc": "Grasping Tendrils makes enemies Vulnerable for 4 seconds."
+        }
+      },
+      "corpse_explosion": {
+        "chain": {
+          "name": "Chain Reaction",
+          "desc": "Corpse Explosion detonates 2 more corpses."
+        },
+        "plague_bomb": {
+          "name": "Plague Bomb",
+          "desc": "Each detonated corpse leaves a poison cloud."
+        }
+      },
+      "wrath_of_lumen": {
+        "colossus": {
+          "name": "Colossus",
+          "desc": "Wrath of Lumen has twice the life and taunts from 50% farther away."
+        },
+        "frenzy": {
+          "name": "Frenzy",
+          "desc": "Wrath of Lumen slams 35% more often."
+        }
       }
     },
     "p": {
@@ -735,6 +921,50 @@
       "hunters_focus": {
         "name": "Hunter's Focus",
         "desc": "+2% critical strike chance per rank."
+      },
+      "lumen_affinity": {
+        "name": "Lumen Affinity",
+        "desc": "+4% damage per rank."
+      },
+      "cell_division": {
+        "name": "Cell Division",
+        "desc": "+12 maximum life per rank."
+      },
+      "toxicology": {
+        "name": "Toxicology",
+        "desc": "+6% damage to Poisoned enemies per rank."
+      },
+      "symbiosis": {
+        "name": "Symbiosis",
+        "desc": "+5% resource generation per rank."
+      },
+      "thick_hide": {
+        "name": "Thick Hide",
+        "desc": "+15 armor per rank."
+      },
+      "vital_spores": {
+        "name": "Vital Spores",
+        "desc": "+10% stim pack healing per rank."
+      },
+      "hive_link": {
+        "name": "Hive Link",
+        "desc": "Your minions deal +5% damage per rank."
+      },
+      "rapid_mutation": {
+        "name": "Rapid Mutation",
+        "desc": "+3% cooldown reduction per rank."
+      },
+      "necrotic_mastery": {
+        "name": "Necrotic Mastery",
+        "desc": "+8% damage to Elites per rank."
+      },
+      "adaptive_tissue": {
+        "name": "Adaptive Tissue",
+        "desc": "+2% damage reduction per rank."
+      },
+      "overgrowth": {
+        "name": "Overgrowth",
+        "desc": "+4% damage per rank."
       }
     },
     "k": {
@@ -761,6 +991,18 @@
       "ghost": {
         "name": "Ghost",
         "desc": "For 2.5 seconds after a dodge or Phase Shift you deal x35% damage. +8% movement speed."
+      },
+      "hive_mind": {
+        "name": "Hive Mind",
+        "desc": "Your minions deal x40% damage, and you can have 2 more."
+      },
+      "pandemic": {
+        "name": "Pandemic",
+        "desc": "Deal x30% damage to Poisoned enemies. Spore Burst lasts 50% longer."
+      },
+      "symbiote": {
+        "name": "Symbiote",
+        "desc": "Your melee attacks deal x25% damage, Scalpel Slash heals for 6% more, and you take 10% less damage."
       }
     }
   },
@@ -864,6 +1106,42 @@
     "blade_dancer": {
       "name": "Dancing",
       "desc": "Vibro Slash deals {value} more damage and has a {value} wider arc."
+    },
+    "plague": {
+      "name": "Plaguebearer's",
+      "desc": "Spore Burst poisons {value} harder."
+    },
+    "swarm": {
+      "name": "Swarming",
+      "desc": "You can have {value} more minions."
+    },
+    "leech": {
+      "name": "Leeching",
+      "desc": "Scalpel Slash heals for {value} more of its damage."
+    },
+    "parasitic": {
+      "name": "Parasitic",
+      "desc": "Parasite Link latches onto {value} more enemies."
+    },
+    "detonation": {
+      "name": "Detonating",
+      "desc": "Corpse Explosion has {value} larger radius and deals {value} more damage."
+    },
+    "carapace": {
+      "name": "Carapaced",
+      "desc": "Chitin Armor cooldown is {value} shorter."
+    },
+    "hive": {
+      "name": "Hivemother's",
+      "desc": "Your minions deal x{value} damage."
+    },
+    "virulent": {
+      "name": "Virulent",
+      "desc": "Deal x{value} damage to Poisoned enemies."
+    },
+    "ancient_wrath": {
+      "name": "Ancient",
+      "desc": "Wrath of Lumen lasts {value} seconds longer."
     }
   },
   "uniques": {
@@ -896,6 +1174,16 @@
       "name": "Echo Holsters",
       "effect": "Quick Shot fires three rounds in a spread, each dealing 40% less damage.",
       "flavor": "Draw once. Hit thrice."
+    },
+    "mother_of_spores": {
+      "name": "Mother of Spores",
+      "effect": "Spore Dart bursts on impact, poisoning everything nearby and leaving a small spore cloud, but deals 20% less damage.",
+      "flavor": "She whispers. The spores listen."
+    },
+    "crown_of_the_hive": {
+      "name": "Crown of the Hive",
+      "effect": "You can have 3 more minions and Raise Corpse raises one more, but minions have 30% less life.",
+      "flavor": "Every crown needs subjects."
     }
   },
   "select": {

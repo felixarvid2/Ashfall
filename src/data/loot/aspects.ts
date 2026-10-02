@@ -10,6 +10,8 @@ const B = ['bastion'];
 const S = (skill: string) => `bastion.${skill}`;
 const SP = ['spectre'];
 const X = (skill: string) => `spectre.${skill}`;
+const XE = ['xenomant'];
+const Z = (skill: string) => `xenomant.${skill}`;
 
 export const ASPECTS: Aspect[] = [
   { id: 'fissure', classes: B, types: ['weapon', 'gloves', 'amulet', 'ring'], min: 0.25, max: 0.45, scaling: 'sqrt',
@@ -62,6 +64,25 @@ export const ASPECTS: Aspect[] = [
     effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'marked' }] },
   { id: 'blade_dancer', classes: SP, types: ['weapon', 'offHand', 'gloves'], min: 0.2, max: 0.4, scaling: 'none',
     effects: [{ kind: 'skillMod', skill: X('vibro_slash'), mods: [{ op: 'mul', field: 'coefficient', value: '$' }, { op: 'mul', field: 'arcDeg', value: '$' }] }] },
+  // ---- Xenomant
+  { id: 'plague', classes: XE, types: ['weapon', 'amulet', 'gloves'], min: 0.2, max: 0.4, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Z('spore_burst'), mods: [{ op: 'mul', field: 'dpsCoefficient', value: '$' }] }] },
+  { id: 'swarm', classes: XE, types: ['helm', 'amulet', 'offHand'], min: 1, max: 2, scaling: 'none', display: 'flat',
+    effects: [{ kind: 'skillMod', skill: Z('raise_corpse'), mods: [{ op: 'add', field: 'maxMinions', value: '$' }] }] },
+  { id: 'leech', classes: XE, types: ['weapon', 'gloves', 'ring'], min: 0.03, max: 0.06, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Z('scalpel_slash'), mods: [{ op: 'add', field: 'lifeSteal', value: '$' }] }] },
+  { id: 'parasitic', classes: XE, types: ['weapon', 'amulet', 'offHand'], min: 1, max: 2, scaling: 'none', display: 'flat',
+    effects: [{ kind: 'skillMod', skill: Z('parasite_link'), mods: [{ op: 'add', field: 'count', value: '$' }] }] },
+  { id: 'detonation', classes: XE, types: ['gloves', 'amulet', 'ring'], min: 0.15, max: 0.3, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Z('corpse_explosion'), mods: [{ op: 'mul', field: 'radius', value: '$' }, { op: 'mul', field: 'coefficient', value: '$' }] }] },
+  { id: 'carapace', classes: XE, types: ['chest', 'helm', 'pants'], min: 0.2, max: 0.35, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Z('chitin_armor'), mods: [{ op: 'mul', field: 'cooldown', value: '-$' }] }] },
+  { id: 'hive', classes: XE, types: ['weapon', 'offHand', 'ring', 'amulet'], min: 0.12, max: 0.25, scaling: 'sqrt',
+    effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'minion' }] },
+  { id: 'virulent', classes: XE, types: ['weapon', 'ring', 'amulet', 'gloves'], min: 0.1, max: 0.2, scaling: 'sqrt',
+    effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'poisoned' }] },
+  { id: 'ancient_wrath', classes: XE, types: ['helm', 'amulet'], min: 3, max: 5, scaling: 'none', display: 'flat',
+    effects: [{ kind: 'skillMod', skill: Z('wrath_of_lumen'), mods: [{ op: 'add', field: 'duration', value: '$' }] }] },
   // Generic aspects (any class)
   { id: 'lifeblood', types: ['ring', 'amulet', 'gloves'], min: 6, max: 12, scaling: 'linear', display: 'flat',
     effects: [{ kind: 'stat', stat: 'lifeOnKill', value: '$' }] },

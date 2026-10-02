@@ -1390,6 +1390,306 @@
         "triangles": 0,
         "bytes": 3090
       }
+    },
+    {
+      "id": "char.xenomant",
+      "category": "character",
+      "prompt": "gaunt rogue biologist in a torn stained lab coat over light armor, bioluminescent sickly green fungal-crystal growth spreading over one shoulder and arm, injector vials on a belt, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "gaunt sci-fi rogue biologist in a torn and stained long lab coat over light armor plates, bioluminescent sickly green fungal-crystal growth spreading over the left shoulder, arm and side of the face, glowing green veins, belt with injector vials and a scalpel blade, worn boots, standing in a T-pose with arms straight out to the sides",
+      "targetPolycount": 7000,
+      "heightMeters": 1.82,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.82,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "run",
+            "actionId": 673
+          },
+          {
+            "state": "attack",
+            "actionId": 129
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "cast",
+            "actionId": 125
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd5-71ee-77d4-a594-6c910433ec59",
+        "refineTaskId": "01a0fdda-37f4-70bf-87e8-0dfb19480649",
+        "rigTaskId": "01a0fddd-d851-7119-90c1-8903d87b934b",
+        "animationTaskId": "01a0fdde-282a-73bc-8e78-bf52272c1b3b",
+        "previewApproved": true,
+        "creditsSpent": 62,
+        "clips": {
+          "idle": "idle",
+          "run": "run",
+          "attack": "attack",
+          "attack2": "attack2",
+          "cast": "cast",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "characters/xenomant.glb",
+      "stats": {
+        "triangles": 7038,
+        "bytes": 557068,
+        "textures": 1
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4f5a48",
+        "size": [
+          0.7,
+          1.8,
+          0.7
+        ],
+        "showFacing": true,
+        "facingColor": "#6bff7a"
+      }
+    },
+    {
+      "id": "prop.lumen_wrath",
+      "category": "prop",
+      "prompt": "colossal alien tentacle creature erupting from cracked ground, a cluster of thick writhing tentacles with a central maw, covered in bioluminescent sickly green fungal-crystal growth, glowing green tips, no legs",
+      "source": "text",
+      "targetPolycount": 6000,
+      "heightMeters": 4.5,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd5-73c9-7360-bec1-658fa9ef50ac",
+        "refineTaskId": "01a0fdda-39f2-772d-bd82-44ea99f6a4f2",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/lumen_wrath.glb",
+      "lods": [
+        "props/lumen_wrath_lod1.glb",
+        "props/lumen_wrath_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 6214,
+        "bytes": 306280,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#3a6a2a",
+        "size": [
+          1.6,
+          4.5,
+          1.6
+        ]
+      }
+    },
+    {
+      "id": "icon.skill_spore_dart",
+      "category": "icon",
+      "prompt": "a glowing green spore dart flying with a toxic trail",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd6-b10f-7541-86b2-bb7abecb19fc",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_spore_dart.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3640
+      }
+    },
+    {
+      "id": "icon.skill_scalpel_slash",
+      "category": "icon",
+      "prompt": "a surgical scalpel blade slashing with a red and green arc of light",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd6-b309-76ab-b7b5-72e0eba237ed",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_scalpel_slash.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4062
+      }
+    },
+    {
+      "id": "icon.skill_spore_burst",
+      "category": "icon",
+      "prompt": "a bursting cloud of toxic green spores",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd6-b2ca-71f1-a80e-95018fdc5b58",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_spore_burst.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5924
+      }
+    },
+    {
+      "id": "icon.skill_parasite_link",
+      "category": "icon",
+      "prompt": "a glowing green parasitic tendril draining red life from a victim",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd6-b333-746d-bdad-efa1136e0ce4",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_parasite_link.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4224
+      }
+    },
+    {
+      "id": "icon.skill_chitin_armor",
+      "category": "icon",
+      "prompt": "an arm covered in hard glowing chitin plates and spikes",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd6-b2d8-744c-a51c-f1a2567b07d6",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_chitin_armor.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4328
+      }
+    },
+    {
+      "id": "icon.skill_spore_cocoon",
+      "category": "icon",
+      "prompt": "a figure wrapped in a protective glowing green fungal cocoon",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd6-b2dd-7710-b638-da4411556a29",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_spore_cocoon.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4062
+      }
+    },
+    {
+      "id": "icon.skill_raise_corpse",
+      "category": "icon",
+      "prompt": "a corpse rising from the ground wrapped in glowing green fungal tendrils",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd7-0852-737c-be47-56b502ec789d",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_raise_corpse.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4222
+      }
+    },
+    {
+      "id": "icon.skill_grasping_tendrils",
+      "category": "icon",
+      "prompt": "glowing green tendrils bursting from the ground grabbing legs",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd7-714c-7195-bef0-0d73d2b3aa54",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_grasping_tendrils.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3944
+      }
+    },
+    {
+      "id": "icon.skill_corpse_explosion",
+      "category": "icon",
+      "prompt": "a withered husk bursting into a cloud of glowing green toxic spores and crystal shards",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdde-72d5-7368-b5a2-864e265a3e94",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_corpse_explosion.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4670
+      }
+    },
+    {
+      "id": "icon.skill_wrath_of_lumen",
+      "category": "icon",
+      "prompt": "a colossal glowing green tentacle monster erupting from the ground",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd7-b22c-76c8-a132-1b944ef226d0",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_wrath_of_lumen.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4488
+      }
+    },
+    {
+      "id": "icon.scalpel_blade",
+      "category": "icon",
+      "prompt": "long curved sci-fi surgical scalpel blade with a worn grip and green glowing edge",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdd7-f19a-76c9-9bcb-31280097e8d9",
+        "creditsSpent": 3
+      },
+      "file": "icons/scalpel_blade.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5852
+      }
     }
   ]
 }

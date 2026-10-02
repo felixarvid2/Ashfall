@@ -61,6 +61,7 @@ export function attackerConditions(world: World, e: Entity): Condition[] {
   if (hasStatus(world, e, 'barrier')) out.push('hasBarrier');
   if (hasStatus(world, e, 'evasive')) out.push('evasive');
   if (hasStatus(world, e, 'stealth')) out.push('stealthed');
+  if (world.get(e, Summon)?.kind === 'minion') out.push('minion');
   return out;
 }
 
@@ -69,13 +70,15 @@ export function targetState(world: World, e: Entity, attackRange: 'melee' | 'ran
   const vulnDef = STATUS_DEFS.vulnerable;
   const markDef = STATUS_DEFS.marked;
   const marked = markDef.kind === 'mark' && hasStatus(world, e, 'marked') ? markDef.damageTakenMultiplier : 1;
+  const wardDef = STATUS_DEFS.chitin;
+  const ward = wardDef.kind === 'ward' && hasStatus(world, e, 'chitin') ? 1 - wardDef.damageReduction : 1;
   return {
     armor: stats?.armor ?? 0,
     resist: stats?.resist ?? {},
     vulnerable: hasStatus(world, e, 'vulnerable'),
     vulnerableMultiplier: vulnDef.kind === 'vulnerable' ? vulnDef.damageTakenMultiplier : 1.2,
     conditions: conditionsOf(world, e, attackRange),
-    damageTakenMultiplier: (1 - (stats?.damageReduction ?? 0)) * marked,
+    damageTakenMultiplier: (1 - (stats?.damageReduction ?? 0)) * marked * ward,
   };
 }
 
@@ -119,6 +122,12 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   });
   if (dealt === null) return null;
   if (stealthed) removeStatuses(world, attacker, (st) => st.id === 'stealth');
+  // Chitin thorns: melee attackers take damage back.
+  const wardDef = STATUS_DEFS.chitin;
+  if (hit.range === 'melee' && wardDef.kind === 'ward' && hasStatus(world, target, 'chitin') && isAlive(world, attacker)) {
+    const thorns = (world.get(target, CombatStats)?.weaponDamage ?? 0) * wardDef.thornsCoefficient;
+    if (thorns > 0) applyDamage(world, ctx, attacker, thorns, { crit: false, damageType: 'physical', dot: true, sourceTeam: world.get(target, Faction)?.team ?? 'player' });
+  }
   markInCombat(world, attacker);
   const attackerResource = world.get(attacker, Resource);
   if (result.crit && attackerResource && attackerResource.config.onCrit > 0) gainResource(attackerResource, attackerResource.config.onCrit);
@@ -216,6 +225,9 @@ export function markInCombat(world: World, e: Entity): void {
   if (resource) resource.sinceCombat = 0;
 }
 
+/** Seconds an enemy corpse lingers (and can be raised or detonated). */
+export const CORPSE_TIME = 20;
+
 const KNOCKBACK_TIME = 0.18;
 const PULL_STOP_DISTANCE = 1.2;
 
@@ -290,9 +302,10 @@ export function applyStatus(world: World, ctx: GameContext, target: Entity, appl
     } else {
       const stacks = effects.list.filter((s) => s.id === apply.status);
       if (stacks.length >= def.maxStacks) {
-        // Replace the stack closest to expiring.
-        const oldest = stacks.reduce((a, b) => (a.remaining <= b.remaining ? a : b));
-        effects.list.splice(effects.list.indexOf(oldest), 1);
+        // Replace the stack with the least damage left (weak or nearly expired).
+        const weakest = stacks.reduce((a, b) => (a.dps * a.remaining <= b.dps * b.remaining ? a : b));
+        if (weakest.dps * weakest.remaining > instance.dps * instance.remaining) return;
+        effects.list.splice(effects.list.indexOf(weakest), 1);
       }
     }
   } else if (def.kind === 'barrier') {
@@ -335,7 +348,14 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
   const tr = world.get(target, Transform);
   const wasMarked = hasStatus(world, target, 'marked');
   const isSummon = world.has(target, Summon);
-  world.add(target, Dead, { elapsed: 0, removeAfter: isPlayer ? Infinity : isSummon ? 0.6 : 2.4, fallDir });
+  // Enemy bodies linger as corpses for Xenomant skills.
+  const isEnemy = world.has(target, EnemyAI);
+  world.add(target, Dead, {
+    elapsed: 0,
+    removeAfter: isPlayer ? Infinity : isSummon ? 0.6 : isEnemy ? CORPSE_TIME : 2.4,
+    fallDir,
+    corpse: isEnemy,
+  });
   const mover = world.get(target, Mover);
   if (mover) {
     mover.vx = 0;

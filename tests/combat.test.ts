@@ -10,7 +10,7 @@ import {
   StatusEffects,
 } from '../src/core/components';
 import { World } from '../src/core/ecs';
-import { applyDamage, applyStatus, dealHit, hasStatus } from '../src/systems/combat';
+import { CORPSE_TIME, applyDamage, applyStatus, dealHit, hasStatus } from '../src/systems/combat';
 import { deathSystem } from '../src/systems/death';
 import { hazardSystem } from '../src/systems/projectiles';
 import { resourceSystem } from '../src/systems/resource';
@@ -64,13 +64,16 @@ describe('applyDamage', () => {
     expect(world.has(player, Dead)).toBe(false);
   });
 
-  it('kills at zero life, counts the kill and removes the corpse later', () => {
+  it('kills at zero life, counts the kill and leaves a corpse that is removed later', () => {
     const { world, ctx, enemy } = setup();
     applyDamage(world, ctx, enemy, 100, opts);
     expect(world.has(enemy, Dead)).toBe(true);
+    expect(world.req(enemy, Dead).corpse).toBe(true);
     expect(ctx.stats.kills).toBe(1);
     expect(ctx.events.peek().some((e) => e.type === 'death' && e.target === enemy)).toBe(true);
     run(world, ctx, [deathSystem], 60 * 3);
+    expect(world.isAlive(enemy)).toBe(true);
+    run(world, ctx, [deathSystem], 60 * CORPSE_TIME);
     expect(world.isAlive(enemy)).toBe(false);
   });
 
@@ -121,10 +124,23 @@ describe('statuses', () => {
     const { world, ctx, enemy } = setup();
     const src = { team: 'player' as const, level: 1 };
     for (let i = 0; i < 3; i++) applyStatus(world, ctx, enemy, { status: 'burning', duration: 3, dps: 5 }, src);
-    for (let i = 0; i < 8; i++) applyStatus(world, ctx, enemy, { status: 'poisoned', duration: 3, dps: 2 }, src);
+    for (let i = 0; i < 14; i++) applyStatus(world, ctx, enemy, { status: 'poisoned', duration: 3, dps: 2 }, src);
     const list = world.req(enemy, StatusEffects).list;
     expect(list.filter((s) => s.id === 'burning')).toHaveLength(1);
-    expect(list.filter((s) => s.id === 'poisoned')).toHaveLength(5);
+    expect(list.filter((s) => s.id === 'poisoned')).toHaveLength(10);
+  });
+
+  it('a full poison stack replaces its weakest instance, never a stronger one', () => {
+    const { world, ctx, enemy } = setup();
+    const src = { team: 'player' as const, level: 1 };
+    for (let i = 0; i < 10; i++) applyStatus(world, ctx, enemy, { status: 'poisoned', duration: 3, dps: 2 + i }, src);
+    applyStatus(world, ctx, enemy, { status: 'poisoned', duration: 3, dps: 1 }, src); // weaker than all: ignored
+    applyStatus(world, ctx, enemy, { status: 'poisoned', duration: 3, dps: 50 }, src); // replaces the dps-2 stack
+    const dps = world.req(enemy, StatusEffects).list.filter((s) => s.id === 'poisoned').map((s) => s.dps);
+    expect(dps).toHaveLength(10);
+    expect(dps).not.toContain(1);
+    expect(dps).not.toContain(2);
+    expect(dps).toContain(50);
   });
 
   it('DoT deals its damage over the duration and then expires', () => {

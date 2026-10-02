@@ -7,7 +7,7 @@ The tree rules, effects vocabulary, aspects and uniques are described in [skill-
 |---|---|---|---|---|---|---|
 | Bastion | Strength | Heat: built by hitting and being hit, decays out of combat, overheats at max | 220 (+14/lvl) | 60 | 5.5 | heavy melee |
 | Spectre | Dexterity | Focus: +4/s always, +4 per crit, +10 per dodged hit | 170 (+11/lvl) | 30 | 6.2 | ranged, traps, blades |
-| Xenomant | Intelligence | Biomass (Phase 4b) | – | – | – | minions, disease |
+| Xenomant | Intelligence | Biomass: +8 when an enemy dies within 14 m, basics +5/+6, rots slowly out of combat | 180 (+12/lvl) | 35 | 5.8 | minions, disease, melee leech |
 
 ## Spectre skills
 | Skill | Branch | Cost / CD | What it does |
@@ -42,3 +42,41 @@ Dancing. Uniques: **Widowmaker** (rifle: Piercing Shot explodes on every enemy i
 - **Statuses**: Marked (mark kind), Stealth and Evasive (buff kind; read by AI and the damage code).
 - **Conditions**: `marked` (target), `evasive`, `stealthed` (attacker).
 - **Enemy targeting**: decoys inside their taunt radius first, otherwise the nearest visible target.
+
+## Xenomant skills
+| Skill | Branch | Cost / CD | What it does |
+|---|---|---|---|
+| Spore Dart | Basic | +5 Biomass | poison dart, 0.55× + poison |
+| Scalpel Slash | Basic | +6 Biomass | 100° melee slash, 0.75×, heals 8 % of damage |
+| Spore Burst | Core | 25 Biomass | cloud at the cursor: 0.6× hit, then poisons for 0.8× weapon damage per second for 5 s |
+| Parasite Link | Core | 25 Biomass | links the enemy nearest the cursor for 3 s: 6 × 0.5×, heals 25 % of it |
+| Chitin Armor | Defensive | CD 16 | 6 s: 30 % less damage taken, melee attackers take 0.6× your weapon damage |
+| Spore Cocoon | Defensive | CD 20 | barrier 25 % life, heal 10 %, cleanse |
+| Raise Corpse | Tactical | 15 Biomass | raises up to 2 corpses near the cursor as minions (max 6; oldest replaced) |
+| Grasping Tendrils | Tactical | CD 10 | 4 m area: Rooted 2 s + poison |
+| Corpse Explosion | Mastery | CD 3, 10 Biomass | detonates up to 3 corpses: 3.2 m, 2.2× + poison each |
+| Wrath of Lumen | Ultimate | CD 60 | a Lumen colossus for 12 s: taunts within 8 m, slams 3.8 m every 1.2 s (2.2× + poison) |
+
+Key passives: **Hive Mind** (minions ×40 % damage, +2 minions), **Pandemic** (×30 % damage to Poisoned,
+Spore Burst lasts 50 % longer), **Symbiote** (×25 % melee damage, Scalpel heals 6 % more, 10 % damage reduction).
+
+Three intended builds: **minions** (Raise Corpse, Corpse Explosion, Hive Mind), **disease** (Spore Burst,
+Grasping Tendrils, Pandemic), **melee** (Scalpel Slash, Parasite Link, Chitin Armor, Symbiote).
+
+Aspects: Plaguebearer's, Swarming, Leeching, Parasitic, Detonating, Carapaced, Hivemother's, Virulent,
+Ancient. Uniques: **Mother of Spores** (bio-focus: Spore Dart bursts into a spore cloud),
+**Crown of the Hive** (helm: +3 minions, +1 raised per cast, minions 30 % frailer). New base: Scalpel Blade.
+
+## Mechanics added for Xenomant
+- **Corpses**: enemy bodies linger for 20 s (`Dead.corpse`) and sink during their last second.
+  Raise Corpse and Corpse Explosion use them up.
+- **Minions** reuse the dead enemy's own entity and model: re-teamed, healed, glowing Lumen green, with
+  `MinionAI` (guard the owner: attack enemies within 10 m of them, follow otherwise, teleport back
+  beyond 18 m). Drones become ranged minions. Minion hits use the owner's offence (gear, level, passives)
+  and count as the `minion` condition. Enemies target minions like any other player-side entity.
+- **Tether** (Parasite Link), **cloud** (Spore Burst), **corpseBurst**, **turret** (Wrath of Lumen).
+- **Life steal** on any impact (`lifeSteal`), **Chitin** (ward status: damage reduction + thorns),
+  **Rooted** (disable).
+- Poison now stacks to 10; a full stack replaces its weakest instance.
+- Enemy toxic resistance lowered (colonist 30 → 10 %, spore carrier 50 → 25 %) so Xenomant isn't
+  crippled in the first zone. The balance simulator uses a neutral dummy (armor 30, no resistances).

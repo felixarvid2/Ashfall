@@ -57,12 +57,23 @@ export function fieldAccess(def: SkillDef, field: SkillField): Getter | null {
     case 'triggerRadius':
     case 'tauntRadius':
     case 'lifeFraction':
+    case 'lifeSteal':
+    case 'dpsCoefficient':
+    case 'searchRadius':
+    case 'interval':
+    case 'attackCooldown':
       return onEffect(field);
+    case 'slamCoefficient':
+      return e.kind === 'turret' ? onEffect('coefficient', e.slam as Record<string, unknown>) : null;
+    case 'slamRadius':
+      return e.kind === 'turret' ? onEffect('radius', e.slam as Record<string, unknown>) : null;
     case 'count':
+    case 'ticks':
+    case 'maxMinions':
     case 'pierce': {
       // Counts stay whole numbers (bullets, mines, enemies pierced).
       const acc = onEffect(field);
-      const min = field === 'count' ? 1 : 0;
+      const min = field === 'pierce' ? 0 : 1;
       return acc ? { get: acc.get, set: (v) => acc.set(Math.max(min, Math.round(v))) } : null;
     }
     case 'landingRadius':
@@ -154,7 +165,7 @@ export function compileSkill(id: string, rank: number, mods: SkillMod[]): Compil
   // Ranks: damage and support values grow with rank.
   const extra = Math.max(0, rank - 1);
   if (extra > 0) {
-    for (const f of ['coefficient', 'landingCoefficient'] as const) {
+    for (const f of ['coefficient', 'landingCoefficient', 'dpsCoefficient', 'slamCoefficient', 'burstCoefficient'] as const) {
       const acc = fieldAccess(def, f);
       if (acc) acc.set(acc.get() * (1 + RANK_DAMAGE * extra));
     }

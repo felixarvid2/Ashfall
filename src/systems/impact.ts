@@ -5,7 +5,7 @@ import { CombatStats, Faction, Hazard, Transform, makeTransform } from '../core/
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { Impact, StatusApply } from '../data/schemas';
-import { dealHit } from './combat';
+import { dealHit, heal } from './combat';
 import { angleDelta } from './movement';
 import type { CompiledSkill } from './skillCompile';
 import { livingInCircle, opposingTeam } from './targeting';
@@ -58,7 +58,7 @@ export function hitOne(
   extraApplies: readonly StatusApply[] = [],
   bonuses?: CompiledSkill['bonuses'],
 ): number | null {
-  return dealHit(world, ctx, caster, target, {
+  const dealt = dealHit(world, ctx, caster, target, {
     coefficient: impact.coefficient,
     damageType: impact.damageType,
     knockback: impact.knockback,
@@ -68,6 +68,8 @@ export function hitOne(
     range: impact.delivery,
     ...(bonuses ? { bonuses } : {}),
   });
+  if (dealt !== null && impact.lifeSteal > 0) heal(world, ctx, caster, dealt * impact.lifeSteal);
+  return dealt;
 }
 
 /** Burning/poison areas left by skill modifiers (Rupture, Crater, Fissure aspect…). */

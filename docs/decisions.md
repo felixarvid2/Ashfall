@@ -156,3 +156,26 @@ Focus and Biomass are not separate systems: the class resource config gained `on
 ### 2026-10-02 — Character select shown before the game loop starts
 The world is built behind the menu; choosing or creating a character replaces the placeholder player
 entity and starts the loop. "Character select" in the debug panel saves and reloads the page.
+
+### 2026-10-02 — Minions are the enemies' own bodies
+Raise Corpse re-teams the dead enemy entity (removes EnemyAI/WaveMember, adds MinionAI and Summon,
+heals it, adds a Lumen glow) instead of spawning a new model — no extra Meshy credits, and the
+renderer, animations and collider are reused. Minion hits copy the owner's offence every tick.
+
+### 2026-10-02 — Corpses linger 20 s
+Enemy `Dead` entities carry `corpse: true` and stay 20 s (sinking in the last second) so corpse skills
+have material; skills mark a corpse used and it sinks away at once.
+
+### 2026-10-02 — Poison stacks to 10 and keeps the strongest stacks
+With a cap of 5, rapid weak stacks (Spore Dart) pushed out stronger short ones (Spore Burst clouds), so
+cloud damage was mostly lost. A full stack now replaces its weakest instance (damage left), never a
+stronger one.
+
+### 2026-10-02 — Lower toxic resistance on Cinder Flats enemies
+Every act-1 enemy is Lumen-infected; 30–50 % toxic resistance made Xenomant (mostly toxic) far weaker in
+the first zone. Colonist 30 → 10 %, Spore Carrier 50 → 25 %. The simulator dummy is now neutral
+(armor 30, no resistances) so class comparisons are fair.
+
+### 2026-10-02 — One Meshy CLI run at a time
+A background icon job saved its stale copy of the manifest after models were approved, reverting them.
+The CLI now takes `assets/.manifest.lock` (pid; stale locks from crashed runs are taken over).

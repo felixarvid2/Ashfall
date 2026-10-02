@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  Dead,
   EncounterState,
   EnemyAI,
   Health,
@@ -212,7 +213,7 @@ describe('wave encounter', () => {
     expect(ctx.events.peek().some((e) => e.type === 'waveCleared')).toBe(true);
     run(world, ctx, [encounterSystem, deathSystem], 60 * 4);
     expect(state.wave).toBe(2);
-    expect(world.query(WaveMember).filter((e) => world.req(e, Health).current > 0)).toHaveLength(9);
+    expect(world.query(WaveMember).filter((e) => !world.has(e, Dead))).toHaveLength(9);
   });
 
   it('spawns inside the arena', () => {

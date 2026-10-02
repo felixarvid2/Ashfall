@@ -33,7 +33,11 @@ export type VfxKind =
   | 'trapPlace'
   | 'blink'
   | 'smoke'
-  | 'mark';
+  | 'mark'
+  | 'raise'
+  | 'minionSlash'
+  | 'slam'
+  | 'corpseBurst';
 
 export type GameEvent =
   | {

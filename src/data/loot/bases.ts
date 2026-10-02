@@ -77,7 +77,18 @@ export const BASES: Base[] = [
     implicits: [{ stat: 'critChance', min: 0.05, max: 0.05, scaling: 'none' }],
     maxSockets: 1,
   },
-  // ---- Xenomant (future class)
+  // ---- Xenomant
+  {
+    id: 'scalpel_blade',
+    type: 'weapon',
+    classes: ['xenomant'],
+    icon: 'icon.scalpel_blade',
+    implicits: [
+      { stat: 'weaponDamage', min: 22, max: 27, scaling: 'linear' },
+      { stat: 'lifeOnKill', min: 3, max: 5, scaling: 'linear' },
+    ],
+    maxSockets: 2,
+  },
   {
     id: 'bio_focus',
     type: 'weapon',

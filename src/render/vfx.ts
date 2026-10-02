@@ -12,6 +12,7 @@ import {
   Hazard,
   Projectile,
   StatusEffects,
+  Tether,
   Transform,
   Trap,
 } from '../core/components';
@@ -65,6 +66,10 @@ export class VfxSystem {
   private readonly grenadePool: THREE.Mesh[] = [];
   private readonly grenadeGeo = new THREE.SphereGeometry(0.16, 10, 8);
   private readonly grenadeMat = new THREE.MeshBasicMaterial({ color: '#ffd27a', fog: false });
+
+  private readonly tethers = new Map<Entity, THREE.Mesh>();
+  private readonly tetherPool: THREE.Mesh[] = [];
+  private readonly tetherGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 6, 1, true).rotateX(Math.PI / 2).translate(0, 0, 0.5);
 
   private readonly traps = new Map<Entity, THREE.Group>();
   private readonly trapPool: THREE.Group[] = [];
@@ -135,6 +140,7 @@ export class VfxSystem {
     this.syncProjectiles(world, alpha);
     this.syncGrenades(world);
     this.syncTraps(world);
+    this.syncTethers(world, alpha);
     this.syncHazards(world);
     this.syncStatuses(world, alpha);
     this.sparks.update(dt);
@@ -330,6 +336,24 @@ export class VfxSystem {
         this.spawnRing('ring:smoke2', '#5a6678', x, z, 2.2, 1.2, 0.3, 0.8);
         this.sparks.emit(x, 1, z, 30, '#6a7688', 2);
         break;
+      case 'raise':
+        this.spawnRing('ring:raise', '#6bff7a', x, z, radius * 1.4, 0.6, 0.2);
+        this.sparks.emit(x, 0.6, z, 26, '#8aff6a', 3.5);
+        break;
+      case 'minionSlash':
+        this.sparks.emit(x + Math.sin(facing) * 1, 1, z + Math.cos(facing) * 1, 6, '#8aff6a', 3);
+        break;
+      case 'slam':
+        this.spawnRing('ring:slam', '#6bff7a', x, z, radius, 0.45, 0.2);
+        this.spawnRing('ring:slam2', '#d4ffb0', x, z, radius * 0.6, 0.3, 0.1);
+        this.sparks.emit(x, 0.3, z, 40, '#6bff7a', 9);
+        break;
+      case 'corpseBurst':
+        this.spawnRing('ring:corpse', '#9aff5a', x, z, radius, 0.4, 0.15);
+        this.spawnRing('ring:corpse2', '#c83a2a', x, z, radius * 0.5, 0.3, 0.1);
+        this.sparks.emit(x, 0.5, z, 40, '#9aff5a', 8);
+        this.sparks.emit(x, 0.5, z, 20, '#a82a1a', 6);
+        break;
       case 'mark':
         this.spawnRing('ring:mark', '#ff4a6a', x, z, radius, 0.5, 1, 0.08);
         this.spawnRing('ring:mark2', '#ff4a6a', x, z, radius * 0.5, 0.5, 0.2);
@@ -446,6 +470,34 @@ export class VfxSystem {
     this.release(this.grenades, seen, this.grenadePool);
   }
 
+  /** Parasite Link: a pulsing green beam from the owner to each tethered enemy. */
+  private syncTethers(world: World, alpha: number): void {
+    const seen = new Set<Entity>();
+    const pos = (e: Entity) => {
+      const t = world.req(e, Transform);
+      return new THREE.Vector3(t.prevX + (t.x - t.prevX) * alpha, 1.1, t.prevZ + (t.z - t.prevZ) * alpha);
+    };
+    for (const e of world.query(Tether)) {
+      const t = world.req(e, Tether);
+      if (!world.has(t.owner, Transform) || !world.has(t.target, Transform)) continue;
+      seen.add(e);
+      let mesh = this.tethers.get(e);
+      if (!mesh) {
+        mesh = this.tetherPool.pop() ?? new THREE.Mesh(this.tetherGeo, additive('#7dff5a', 0.8));
+        mesh.visible = true;
+        this.root.add(mesh);
+        this.tethers.set(e, mesh);
+      }
+      const a = pos(t.owner);
+      const b = pos(t.target);
+      mesh.position.copy(a);
+      mesh.lookAt(b);
+      const width = 1 + 0.6 * Math.sin(this.time * 14 + e);
+      mesh.scale.set(width, width, a.distanceTo(b));
+    }
+    this.release(this.tethers, seen, this.tetherPool);
+  }
+
   /** Mines: a small puck with a light that blinks while arming and glows red when armed. */
   private syncTraps(world: World): void {
     const seen = new Set<Entity>();
@@ -486,10 +538,12 @@ export class VfxSystem {
       seen.add(e);
       const hz = world.req(e, Hazard);
       let fx = this.hazards.get(e);
+      const mine = hz.team === 'player';
       if (!fx) {
-        fx = this.acquire('hazard', () => {
-          const mat = additive('#5dff6a', 0.3);
-          const ringMat = additive('#9dff7a', 0.5);
+        // Enemy clouds are bright green (danger); the player's own are a paler yellow-green.
+        fx = this.acquire(mine ? 'hazard:player' : 'hazard', () => {
+          const mat = additive(mine ? '#c8ff6a' : '#5dff6a', 0.3);
+          const ringMat = additive(mine ? '#e8ffb0' : '#9dff7a', 0.5);
           const group = new THREE.Group();
           group.add(new THREE.Mesh(this.discGeo, mat), new THREE.Mesh(this.ringGeo, ringMat));
           return { group, materials: [mat, ringMat] };
@@ -503,8 +557,8 @@ export class VfxSystem {
       const pulse = 1 + Math.sin(this.time * 6) * 0.04;
       fx.group.position.set(tr.x, 0.04, tr.z);
       fx.group.scale.set(hz.radius * pulse, 1, hz.radius * pulse);
-      fx.materials[0]!.opacity = 0.22 * fade;
-      fx.materials[1]!.opacity = 0.5 * fade;
+      fx.materials[0]!.opacity = (mine ? 0.1 : 0.22) * fade;
+      fx.materials[1]!.opacity = (mine ? 0.35 : 0.5) * fade;
     }
     for (const [e, fx] of this.hazards) {
       if (seen.has(e)) continue;

@@ -37,6 +37,16 @@ export const SKILL_FIELDS = [
   'tauntRadius',
   'lifeFraction',
   'burstCoefficient',
+  // Xenomant
+  'lifeSteal',
+  'dpsCoefficient',
+  'ticks',
+  'searchRadius',
+  'maxMinions',
+  'interval',
+  'attackCooldown',
+  'slamCoefficient',
+  'slamRadius',
 ] as const;
 export const SkillFieldSchema = z.enum(SKILL_FIELDS);
 export type SkillField = z.infer<typeof SkillFieldSchema>;

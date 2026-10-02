@@ -4,8 +4,8 @@
 
 ## Current phase
 
-**Phase 4 – All classes: 4a ✅ done** (class framework, character select, Spectre). Next: **4b** — Xenomant
-(Biomass, corpses, minions), then **4c** — balance all three classes to level 10.
+**Phase 4 – All classes: 4a ✅ 4b ✅** (character select, Spectre, Xenomant). Next: **4c** — level 1–10
+balance pass for all three classes against real waves.
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 
 ## Done
@@ -126,6 +126,24 @@ Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 - `npm run sim` now covers both classes (Spectre L1 26 DPS ≈ Bastion; L10 builds 118–166 vs Bastion 132).
 - 171 unit tests.
 
+### Phase 4b – Xenomant (see docs/classes.md)
+- **Xenomant** (Intelligence, **Biomass**: +8 when an enemy dies within 14 m, basics generate a little,
+  rots slowly out of combat): 10 skills — Spore Dart, Scalpel Slash, Spore Burst, Parasite Link,
+  Chitin Armor, Spore Cocoon, Raise Corpse, Grasping Tendrils, Corpse Explosion, Wrath of Lumen — full
+  tree with 3 key passives (Hive Mind, Pandemic, Symbiote), 9 aspects, 2 uniques (Mother of Spores,
+  Crown of the Hive), new base Scalpel Blade. Selectable on the class picker.
+- **Corpses** linger 20 s. **Minions** are the dead enemies themselves, raised, re-teamed and glowing
+  green; they guard you, drones shoot, and their hits use your gear and passives. Enemies fight them.
+- New mechanics: draining tethers, poison clouds (paler than enemy clouds), corpse explosions, a
+  stationary summon that taunts and slams, life steal, Chitin (damage reduction + thorns), Rooted.
+- Poison stacks to 10 (a full stack replaces its weakest instance). Enemy toxic resistance lowered.
+- Meshy: rigged + animated Xenomant, the Wrath of Lumen colossus, 10 skill icons and the Scalpel Blade
+  icon. **Credits used: 928 of 3100** (2172 left).
+- `npm run sim` covers all three classes on a neutral dummy (L10: Bastion 132, Spectre 118–166,
+  Xenomant 125–165 DPS; corpse builds get a steady corpse supply).
+- The Meshy CLI now refuses to run twice at once (a parallel run had silently undone an approval).
+- 186 unit tests.
+
 ## How to run
 
 ```bash
@@ -134,7 +152,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests
 npm run build      # typecheck + production build into dist/
-npm run sim        # balance simulator (DPS of sample builds, both classes)
+npm run sim        # balance simulator (DPS of sample builds, all classes)
 ```
 
 Meshy pipeline (needs `MESHY_API_KEY` in `ashfall/.env`): `npm run meshy -- status`.
@@ -146,6 +164,16 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 **F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
+
+## What to test (Phase 4b)
+1. Create a **Xenomant** on the character select. Spore Dart with LMB; watch the green Biomass orb fill
+   when enemies die near you.
+2. Level up (F3 → "+1 level"). Kill a pack, then **Raise Corpse** on the bodies: glowing minions fight
+   for you. Try **Corpse Explosion** on fresh corpses.
+3. **Spore Burst** clouds, **Parasite Link** (green beam heals you), **Chitin Armor** while surrounded,
+   **Grasping Tendrils** to hold a pack, and the ultimate **Wrath of Lumen**.
+4. Three builds: minions (Hive Mind), disease (Pandemic), melee leech (Symbiote).
+5. **Tell me how the three classes compare** — which feels best, weakest, most fun?
 
 ## What to test (Phase 4a)
 1. Reload the page: the character select appears. An old save shows up as a Bastion in slot 1.
@@ -212,7 +240,7 @@ Shift + left-click to attack in place.
 - Textures are WebP, not KTX2 (no `toktx` binary here) — see docs/decisions.md.
 - The drone was asked for "no rotors" but has small ones; acceptable for now.
 - The balance simulator's dummy doesn't fight back, so it only measures damage, not survivability.
-- Xenomant is shown as "Coming soon" on the class picker until Phase 4b.
+- Minions are re-raised enemy bodies, so their look depends on what died (colonists, drones, carriers).
 - Spectre's weapons are not visible in its hands (animations only); shots come from the body.
 - Raw Meshy downloads (`assets/source/**/*.glb`) are not in git; re-download within 3 days or regenerate.
 - Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
@@ -221,6 +249,5 @@ Shift + left-click to attack in place.
 ## Next steps
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
-- Your playtest feedback on Phase 4a (Spectre feel, character select).
-- Phase 4b: Xenomant (Biomass, corpses, minion AI, DoT clouds, life steal, Wrath of Lumen), assets.
+- Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).
 - Phase 4c: level 1–10 balance pass for all three classes, 3 builds each in the simulator.

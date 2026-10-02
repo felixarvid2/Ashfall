@@ -1,5 +1,5 @@
 /** Load/save assets/manifest.json with schema validation and atomic writes. */
-import { readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { closeSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AssetManifestSchema, type AssetEntry, type AssetManifest } from '../../src/data/assetManifest';
 import { ROOT } from './env';
@@ -21,6 +21,40 @@ export function saveManifest(manifest: AssetManifest): void {
   const tmp = `${MANIFEST_PATH}.tmp`;
   writeFileSync(tmp, JSON.stringify(validated, null, 2) + '\n');
   renameSync(tmp, MANIFEST_PATH);
+}
+
+const LOCK_PATH = resolve(ROOT, 'assets/.manifest.lock');
+
+/**
+ * Only one manifest-writing command may run at a time: two processes each hold their own copy
+ * of the manifest and the last one to save would silently undo the other's changes.
+ */
+export function acquireManifestLock(): void {
+  try {
+    const fd = openSync(LOCK_PATH, 'wx');
+    writeFileSync(fd, String(process.pid));
+    closeSync(fd);
+  } catch {
+    const pid = Number(readFileSync(LOCK_PATH, 'utf8'));
+    let alive = false;
+    try {
+      if (pid > 0) {
+        process.kill(pid, 0);
+        alive = true;
+      }
+    } catch {
+      alive = false;
+    }
+    if (alive) throw new Error(`Another meshy command (pid ${pid}) is running; wait for it to finish.`);
+    writeFileSync(LOCK_PATH, String(process.pid)); // stale lock from a crashed run
+  }
+  process.on('exit', () => {
+    try {
+      if (Number(readFileSync(LOCK_PATH, 'utf8')) === process.pid) unlinkSync(LOCK_PATH);
+    } catch {
+      // already gone
+    }
+  });
 }
 
 export function sourcePath(entry: AssetEntry, file: string): string {

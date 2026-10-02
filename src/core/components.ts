@@ -53,6 +53,8 @@ export interface Renderable {
   scale?: number;
   /** Draw as a translucent hologram (decoys). */
   hologram?: boolean;
+  /** Constant emissive glow (raised minions glow Lumen green). */
+  glow?: string;
 }
 export const Renderable = defineComponent<Renderable>('Renderable');
 
@@ -281,6 +283,8 @@ export interface Dead {
   removeAfter: number;
   /** Direction the body falls (radians). */
   fallDir: number;
+  /** A corpse that Xenomant skills can still use. */
+  corpse?: boolean;
 }
 export const Dead = defineComponent<Dead>('Dead');
 
@@ -409,3 +413,46 @@ export interface Taunt {
   radius: number;
 }
 export const Taunt = defineComponent<Taunt>('Taunt');
+
+/** A raised corpse fighting for its owner. */
+export interface MinionAI {
+  owner: Entity;
+  state: 'follow' | 'windup' | 'recover';
+  timer: number;
+  cooldown: number;
+  attackCooldown: number;
+  attackRange: number;
+  windup: number;
+  coefficient: number;
+  damageType: DamageType;
+  ranged: boolean;
+  applies: { status: StatusId; duration: number; coefficient?: number }[];
+  target: Entity | null;
+  /** Increments per attack (restarts the attack clip). */
+  attackSeq: number;
+  /** Tick it was raised (oldest minions are replaced first). */
+  born: number;
+}
+export const MinionAI = defineComponent<MinionAI>('MinionAI');
+
+/** A draining link from the owner to a target (Parasite Link). */
+export interface Tether {
+  owner: Entity;
+  target: Entity;
+  skillId: string;
+  remaining: number;
+  tickTimer: number;
+  interval: number;
+  maxRange: number;
+}
+export const Tether = defineComponent<Tether>('Tether');
+
+/** A stationary summon that slams around itself on an interval (Wrath of Lumen). */
+export interface Turret {
+  owner: Entity;
+  skillId: string;
+  interval: number;
+  timer: number;
+  slamSeq: number;
+}
+export const Turret = defineComponent<Turret>('Turret');

@@ -8,3 +8,4 @@ dist/
 # only thumbnails and the optimized files in public/assets are committed.
 assets/source/**/*.glb
 assets/source/**/*.fbx
+assets/.manifest.lock

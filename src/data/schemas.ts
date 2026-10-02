@@ -23,6 +23,9 @@ export const STATUS_IDS = [
   'stealth',
   // Short window after a dodge or blink (Ghost key passive).
   'evasive',
+  // Xenomant: hardened chitin (less damage taken, thorns) and roots that hold enemies in place.
+  'chitin',
+  'rooted',
 ] as const;
 export const StatusIdSchema = z.enum(STATUS_IDS);
 export type StatusId = z.infer<typeof StatusIdSchema>;
@@ -43,6 +46,8 @@ export const CONDITIONS = [
   'hasBarrier',
   'evasive',
   'stealthed',
+  // The attacker is one of the player's minions.
+  'minion',
 ] as const;
 export const ConditionSchema = z.enum(CONDITIONS);
 export type Condition = z.infer<typeof ConditionSchema>;
@@ -83,6 +88,8 @@ export const StatusDefSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('mark'), damageTakenMultiplier: z.number().min(1), refund: z.number().nonnegative(), color: z.string() }),
   /** Flag-like buff read by game logic (stealth, evasive). */
   z.object({ kind: z.literal('buff'), color: z.string() }),
+  /** Damage reduction plus thorns: melee attackers take `thornsCoefficient` × the wearer's weapon damage. */
+  z.object({ kind: z.literal('ward'), damageReduction: z.number().min(0).max(0.9), thornsCoefficient: z.number().nonnegative(), color: z.string() }),
 ]);
 export type StatusDef = z.infer<typeof StatusDefSchema>;
 
@@ -112,6 +119,8 @@ const ImpactSchema = z.object({
   shake: z.number().min(0).max(1).default(0),
   /** Melee or ranged hit (for "+x% melee damage" style bonuses). */
   delivery: z.enum(['melee', 'ranged']).default('melee'),
+  /** Heal the attacker for this fraction of the damage dealt. */
+  lifeSteal: z.number().min(0).max(1).default(0),
 });
 
 export type Impact = z.infer<typeof ImpactSchema>;
@@ -214,6 +223,59 @@ export const SkillEffectSchema = z.discriminatedUnion('kind', [
     kind: z.literal('cursorBurst'),
     maxRange: z.number().positive(),
     radius: z.number().positive(),
+  }),
+  // A lingering cloud at the cursor (initial hit, then a damage-over-time area).
+  ImpactSchema.extend({
+    kind: z.literal('cloud'),
+    maxRange: z.number().positive(),
+    radius: z.number().positive(),
+    duration: z.number().positive(),
+    /** Damage per second inside the cloud, as a fraction of weapon damage. */
+    dpsCoefficient: z.number().nonnegative(),
+    status: z.enum(['poisoned', 'burning']).default('poisoned'),
+  }),
+  // A draining link to up to `count` enemies near the cursor; hits `ticks` times over `duration`.
+  ImpactSchema.extend({
+    kind: z.literal('tether'),
+    maxRange: z.number().positive(),
+    duration: z.number().positive(),
+    ticks: z.number().int().positive(),
+    count: z.number().int().positive().default(1),
+  }),
+  // Raise corpses near the cursor as minions.
+  z.object({
+    kind: z.literal('raise'),
+    maxRange: z.number().positive(),
+    searchRadius: z.number().positive(),
+    /** Corpses raised per cast. */
+    count: z.number().int().positive(),
+    maxMinions: z.number().int().positive(),
+    /** Minion life as a fraction of the caster's max life. */
+    lifeFraction: z.number().positive(),
+    /** Minion hit, scaled by the caster's damage. */
+    coefficient: z.number().nonnegative(),
+    damageType: DamageTypeSchema,
+    attackCooldown: z.number().positive(),
+    applies: z.array(StatusApplySchema).default([]),
+  }),
+  // Detonate corpses near the cursor.
+  ImpactSchema.extend({
+    kind: z.literal('corpseBurst'),
+    maxRange: z.number().positive(),
+    searchRadius: z.number().positive(),
+    count: z.number().int().positive(),
+    radius: z.number().positive(),
+  }),
+  // A stationary summon that taunts and slams the area around it (Wrath of Lumen).
+  z.object({
+    kind: z.literal('turret'),
+    assetId: z.string(),
+    maxRange: z.number().nonnegative(),
+    duration: z.number().positive(),
+    lifeFraction: z.number().positive(),
+    tauntRadius: z.number().nonnegative(),
+    interval: z.number().positive(),
+    slam: ImpactSchema.extend({ radius: z.number().positive() }),
   }),
 ]);
 export type SkillEffect = z.infer<typeof SkillEffectSchema>;

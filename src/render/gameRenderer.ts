@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import type { Entity, World } from '../core/ecs';
-import { CombatStats, Dead, EnemyAI, ForcedMove, Mover, Renderable, SkillUser, StatusEffects, Transform } from '../core/components';
+import { CombatStats, Dead, EnemyAI, ForcedMove, MinionAI, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CharacterAnimator, type PlayRequest } from './animator';
@@ -190,6 +190,23 @@ export class GameRenderer {
       // Hovering machines bob gently (procedural animation, brief §9.4).
       if (tr.y > 0.5 && world.has(e, EnemyAI)) obj.position.y += Math.sin(this.time * 3 + e) * 0.08;
 
+      const turret = world.get(e, Turret);
+      if (turret) {
+        // Wrath of Lumen: rises out of the ground, sways, and squashes on each slam.
+        const age = (obj.userData.age = ((obj.userData.age as number | undefined) ?? 0) + frameDt);
+        const rise = Math.min(1, age / 0.5);
+        if (obj.userData.slamSeq !== turret.slamSeq) {
+          obj.userData.slamSeq = turret.slamSeq;
+          obj.userData.slamAt = age;
+        }
+        const since = age - ((obj.userData.slamAt as number | undefined) ?? -10);
+        const squash = since < 0.35 ? 1 - 0.25 * Math.sin((since / 0.35) * Math.PI) : 1;
+        const base = world.req(e, Renderable).scale ?? 1;
+        obj.scale.set(base * (2 - squash), base * squash * rise, base * (2 - squash));
+        obj.position.y -= (1 - rise) * 2;
+        obj.rotation.z = Math.sin(this.time * 1.7 + e) * 0.05;
+      }
+
       const animator = this.animators.get(e);
       if (animator) {
         animator.play(this.animationFor(world, e, animator));
@@ -197,15 +214,17 @@ export class GameRenderer {
       }
 
       const dead = world.get(e, Dead);
+      // Bodies sink into the ash during their last second (corpses linger for Xenomant skills).
+      const sinkAt = dead ? Math.max(dead.removeAfter - 1, Math.min(1.6, dead.removeAfter)) : 0;
       if (dead && animator?.has('death')) {
         // The death clip handles the fall; just sink the body afterwards.
-        if (dead.elapsed > 1.6) obj.position.y -= (dead.elapsed - 1.6) * 0.8;
+        if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
       } else if (dead) {
         // Topple over, then sink into the ash.
         const fall = Math.min(1, dead.elapsed / 0.3);
         obj.rotation.set(0, dead.fallDir, 0);
         obj.rotateX((Math.PI / 2) * fall * 0.95);
-        if (dead.elapsed > 1.2) obj.position.y -= (dead.elapsed - 1.2) * 0.8;
+        if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
       } else if (obj.rotation.x !== 0) {
         obj.rotation.x = 0;
         obj.rotation.z = 0;
@@ -237,6 +256,10 @@ export class GameRenderer {
       const state = def.anim ?? (def.category === 'basic' ? 'attack' : 'cast');
       const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0);
       return { state, loop: false, fit: (def.castTime + def.recovery) / speed, token: user.cast };
+    }
+    const minion = world.get(e, MinionAI);
+    if (minion && (minion.state === 'windup' || minion.state === 'recover')) {
+      return { state: 'attack', loop: false, fit: minion.windup + 0.3, token: minion.attackSeq };
     }
     const ai = world.get(e, EnemyAI);
     if (ai && (ai.state === 'windup' || ai.state === 'recover')) {
@@ -278,6 +301,7 @@ export class GameRenderer {
     if (active) this.tint.set(STATUS_DEFS[active].color);
     // Holograms (decoys) and stealthed characters are drawn see-through.
     const hologram = world.get(e, Renderable)?.hologram ?? false;
+    const glow = world.has(e, Dead) ? undefined : world.get(e, Renderable)?.glow;
     const stealth = effects?.list.some((s) => s.id === 'stealth') ?? false;
     const opacity = hologram ? 0.45 + 0.1 * Math.sin(this.time * 12) : stealth ? 0.3 : 1;
     for (const slot of slots) {
@@ -291,6 +315,11 @@ export class GameRenderer {
       if (hologram) {
         slot.material.emissive.set('#3ab8ff');
         slot.material.emissiveIntensity = 0.9;
+        continue;
+      }
+      if (glow && !flash && !active) {
+        slot.material.emissive.set(glow);
+        slot.material.emissiveIntensity = 0.35 + 0.1 * Math.sin(this.time * 4 + e);
         continue;
       }
       if (flash > 0) {

@@ -26,7 +26,7 @@ import { MeshyClient, MeshyError, download, type MeshyTask } from './api';
 import { DEFAULT_AI_MODEL, DEFAULT_BUDGET_CREDITS, FALLBACK_AI_MODEL, MAX_CONCURRENT_TASKS, TEXTURE_RESOLUTION } from './config';
 import { stageCost, type Stage } from './costs';
 import { loadApiKey } from './env';
-import { PUBLIC_ASSETS_DIR, loadManifest, saveManifest, selectAssets, sourcePath } from './manifest';
+import { PUBLIC_ASSETS_DIR, acquireManifestLock, loadManifest, saveManifest, selectAssets, sourcePath } from './manifest';
 import { applyReview } from './actions';
 import { contactSheet } from './contactSheet';
 import { optimizeAssets } from './optimize';
@@ -374,6 +374,7 @@ function printStatus(manifest: AssetManifest): void {
 
 async function main(): Promise<void> {
   const opts = parseArgs(process.argv.slice(2));
+  if (!opts.dryRun && !['status', 'sheet'].includes(opts.command)) acquireManifestLock();
   const manifest = loadManifest();
   const needsApi = ['preview', 'refine', 'rig', 'status', 'icons'].includes(opts.command) && !opts.dryRun;
   const client = needsApi ? new MeshyClient(loadApiKey(), log) : null;

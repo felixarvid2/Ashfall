@@ -17,19 +17,25 @@ import {
   Renderable,
   Resource,
   SkillUser,
+  Hazard,
+  MinionAI,
   StatusEffects,
   Summon,
   Taunt,
+  Tether,
   Transform,
   Trap,
+  Turret,
 } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, classDef, skill } from '../data/db';
 import type { Impact } from '../data/schemas';
 import type { CompiledSkill } from './skillCompile';
-import { applyStatus, gainResource, heal, removeStatuses } from './combat';
+import { applyStatus, gainResource, heal, kill, removeStatuses } from './combat';
 import { impactArea, spawnHazards } from './impact';
+import { consumeCorpse, findCorpses, minionsOf, raiseCorpse } from './minions';
+import { livingInCircle } from './targeting';
 
 /** Seconds of the "evasive" window after a dodge or blink (Ghost key passive). */
 export const EVASIVE_WINDOW = 2.5;
@@ -413,6 +419,114 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
       spawnHazards(world, caster, at.x, at.z, compiled);
       break;
     }
+    case 'cloud': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      if (effect.coefficient > 0) impactArea(world, ctx, caster, at.x, at.z, effect.radius, null, effect, [], bonuses);
+      const stats = world.get(caster, CombatStats);
+      const cloud = world.create();
+      world.add(cloud, Transform, makeTransform(at.x, 0, at.z));
+      world.add(cloud, Hazard, {
+        team: world.get(caster, Faction)?.team ?? 'player',
+        radius: effect.radius,
+        remaining: effect.duration,
+        duration: effect.duration,
+        tickTimer: 0,
+        applies: [
+          {
+            status: effect.status,
+            duration: 1.5,
+            dps: effect.dpsCoefficient * (stats?.weaponDamage ?? 10) * (1 + (stats?.mainStat ?? 0) * 0.001),
+          },
+        ],
+        attackerLevel: stats?.level ?? 1,
+      });
+      ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: at.x, z: at.z, radius: effect.radius, facing: 0 });
+      spawnHazards(world, caster, at.x, at.z, compiled);
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'tether': {
+      // Link the enemies closest to the cursor within range.
+      const team = world.get(caster, Faction)?.team ?? 'player';
+      const enemies = livingInCircle(world, ctx, tr.x, tr.z, effect.maxRange, team === 'player' ? 'enemy' : 'player')
+        .map((e) => {
+          const et = world.req(e, Transform);
+          return { e, d: Math.hypot(et.x - aimX, et.z - aimZ) };
+        })
+        .sort((a, b) => a.d - b.d)
+        .slice(0, effect.count);
+      if (enemies.length === 0) {
+        refund(world, ctx, caster, def.resourceCost);
+        break;
+      }
+      for (const { e } of enemies) {
+        const link = world.create();
+        world.add(link, Tether, {
+          owner: caster,
+          target: e,
+          skillId: def.id,
+          remaining: effect.duration,
+          tickTimer: 0,
+          interval: effect.duration / effect.ticks,
+          maxRange: effect.maxRange,
+        });
+      }
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'raise': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      const corpses = findCorpses(world, at.x, at.z, effect.searchRadius, effect.count);
+      if (corpses.length === 0) {
+        refund(world, ctx, caster, def.resourceCost);
+        ctx.events.push({ type: 'notice', key: 'combat.noCorpses' });
+        break;
+      }
+      // Over the cap: the oldest minions crumble to make room.
+      const existing = minionsOf(world, caster).sort((a, b) => world.req(a, MinionAI).born - world.req(b, MinionAI).born);
+      const excess = existing.length + corpses.length - effect.maxMinions;
+      for (let i = 0; i < excess && i < existing.length; i++) kill(world, ctx, existing[i]!, 0);
+      for (const c of corpses) raiseCorpse(world, ctx, c, caster, def);
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'corpseBurst': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      const corpses = findCorpses(world, at.x, at.z, effect.searchRadius, effect.count);
+      if (corpses.length === 0) {
+        refund(world, ctx, caster, def.resourceCost);
+        ctx.events.push({ type: 'notice', key: 'combat.noCorpses' });
+        break;
+      }
+      for (const c of corpses) {
+        const ct = world.req(c, Transform);
+        impactArea(world, ctx, caster, ct.x, ct.z, effect.radius, null, effect, [], bonuses);
+        ctx.events.push({ type: 'vfx', kind: 'corpseBurst', x: ct.x, z: ct.z, radius: effect.radius, facing: 0 });
+        spawnHazards(world, caster, ct.x, ct.z, compiled);
+        consumeCorpse(world, c);
+      }
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'turret': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      const team = world.get(caster, Faction)?.team ?? 'player';
+      const life = (world.get(caster, Health)?.max ?? 100) * effect.lifeFraction;
+      const w = world.create();
+      world.add(w, Transform, makeTransform(at.x, 0, at.z, tr.facing));
+      world.add(w, Renderable, { assetId: effect.assetId, glow: '#4dff5a' });
+      world.add(w, Faction, { team });
+      world.add(w, Health, { current: life, max: life });
+      world.add(w, Collider, { radius: 1.1, mass: 50, layer: 'ground', isStatic: true });
+      world.add(w, StatusEffects, { list: [], canAct: true, dotTimer: 0 });
+      if (effect.tauntRadius > 0) world.add(w, Taunt, { radius: effect.tauntRadius });
+      world.add(w, Summon, { owner: caster, remaining: effect.duration, skillId: def.id, kind: 'summon' });
+      world.add(w, Turret, { owner: caster, skillId: def.id, interval: effect.interval, timer: 0.5, slamSeq: 0 });
+      ctx.events.push({ type: 'vfx', kind: 'raise', x: at.x, z: at.z, radius: 3, facing: 0 });
+      ctx.events.push({ type: 'shake', trauma: 0.4 });
+      if (resource) gainResource(resource, gain);
+      break;
+    }
     case 'selfBuff': {
       if (effect.cleanse) {
         removeStatuses(world, caster, (s) => {
@@ -429,6 +543,7 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
       if (resource && effect.resourceDelta !== 0) gainResource(resource, effect.resourceDelta);
       const fx = effect.applies.some((a) => a.status === 'stealth') ? 'smoke' : effect.resourceDelta < 0 ? 'coolant' : 'shield';
       ctx.events.push({ type: 'vfx', kind: fx, x: tr.x, z: tr.z, radius: 1.2, facing: 0 });
+      spawnHazards(world, caster, tr.x, tr.z, compiled);
       if (resource) gainResource(resource, gain);
       break;
     }
@@ -486,6 +601,13 @@ function faceToward(tr: Transform, x: number, z: number): void {
   const dx = x - tr.x;
   const dz = z - tr.z;
   if (dx * dx + dz * dz > 1e-6) tr.facing = Math.atan2(dx, dz);
+}
+
+/** Give back a skill's cost when it fizzles (no corpse, no target). */
+function refund(world: World, ctx: GameContext, caster: Entity, cost: number): void {
+  const r = world.get(caster, Resource);
+  if (r && cost > 0) gainResource(r, cost);
+  void ctx;
 }
 
 /** A point toward (x, z) at most `range` metres away, inside the world bounds. */

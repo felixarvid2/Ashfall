@@ -116,4 +116,50 @@ export const UNIQUES: Unique[] = [
       },
     ],
   },
+  {
+    // Spore Dart bursts into a small poison cloud on impact.
+    id: 'mother_of_spores',
+    base: 'bio_focus',
+    rarity: 'unique',
+    classes: ['xenomant'],
+    affixes: [
+      { stat: 'intelligence', min: 10, max: 15, scaling: 'linear' },
+      { stat: 'resourceGen', min: 0.08, max: 0.12, scaling: 'none' },
+      { stat: 'resistToxic', min: 0.1, max: 0.15, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'xenomant.spore_dart',
+        mods: [
+          { op: 'set', field: 'explodeRadius', value: 2 },
+          { op: 'hazard', radius: 2, duration: 3, status: 'poisoned', dpsCoefficient: 0.35 },
+          { op: 'mul', field: 'coefficient', value: -0.2 },
+        ],
+      },
+    ],
+  },
+  {
+    // A bigger horde: three more minions and one more per cast, each a little frailer.
+    id: 'crown_of_the_hive',
+    base: 'combat_helm',
+    rarity: 'unique',
+    classes: ['xenomant'],
+    affixes: [
+      { stat: 'maxLife', min: 25, max: 35, scaling: 'linear' },
+      { stat: 'cooldownReduction', min: 0.06, max: 0.1, scaling: 'none' },
+      { stat: 'resistAll', min: 0.05, max: 0.08, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'xenomant.raise_corpse',
+        mods: [
+          { op: 'add', field: 'maxMinions', value: 3 },
+          { op: 'add', field: 'count', value: 1 },
+          { op: 'mul', field: 'lifeFraction', value: -0.3 },
+        ],
+      },
+    ],
+  },
 ];
