@@ -1,6 +1,6 @@
 /** Item tooltip: rarity-coloured name, stats, sockets and a comparison against equipped gear. */
 import { t } from '../data/i18n';
-import { BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
+import { ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
 import { PERCENT_STATS, type Item, type StatKey } from '../data/loot/schemas';
 import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/generate';
 
@@ -16,7 +16,16 @@ export function itemDisplayName(item: Item): string {
     const prefix = t(`items.crystalTier.${item.crystal.tier}`);
     return `${prefix ? prefix + ' ' : ''}${t(`items.crystals.${item.crystal.id}`)}`;
   }
+  if (item.unique) return t(`uniques.${item.unique}.name`);
+  if (item.aspect) return `${t(`aspects.${item.aspect.id}.name`)} ${t(`items.bases.${item.base}`)}`;
   return item.name;
+}
+
+/** Aspect description with its rolled value filled in. */
+export function aspectText(id: string, value: number): string {
+  const def = ASPECT_DEFS.get(id);
+  const shown = def?.display === 'flat' ? String(Math.round(value)) : `${Math.round(value * 100)}%`;
+  return t(`aspects.${id}.desc`, { value: shown });
 }
 
 export interface Comparison {
@@ -74,6 +83,14 @@ export function renderItemTooltip(item: Item, classId: string, opts: { equipped?
         aff.appendChild(row);
       }
       root.appendChild(aff);
+    }
+    if (item.aspect) {
+      const asp = el('div', 'item-tip-aspect', `✦ ${aspectText(item.aspect.id, item.aspect.value)}`);
+      root.appendChild(asp);
+    }
+    if (item.unique) {
+      root.appendChild(el('div', 'item-tip-aspect unique', `✦ ${t(`uniques.${item.unique}.effect`)}`));
+      root.appendChild(el('div', 'item-tip-flavor', t(`uniques.${item.unique}.flavor`)));
     }
     if (item.sockets.length && base) {
       const group = crystalSlotGroup(base.type);

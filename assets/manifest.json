@@ -903,6 +903,176 @@
         "triangles": 0,
         "bytes": 7334
       }
+    },
+    {
+      "id": "icon.skill_hydraulic_strike",
+      "category": "icon",
+      "prompt": "a massive hydraulic piston fist smashing forward with a burst of steam and sparks",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd75-eaa7-77b2-9576-5b16d647b5e8",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_hydraulic_strike.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4358
+      }
+    },
+    {
+      "id": "icon.skill_piston_jab",
+      "category": "icon",
+      "prompt": "a fast piston-driven metal gauntlet jabbing forward with motion streaks",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd75-ec87-7316-ab1b-c1d5cfef3c7b",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_piston_jab.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3282
+      }
+    },
+    {
+      "id": "icon.skill_seismic_shock",
+      "category": "icon",
+      "prompt": "a heavy armored fist slamming the ground sending a cracking circular shockwave",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd75-ec67-76cd-976d-8d30cbb4c4d9",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_seismic_shock.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4402
+      }
+    },
+    {
+      "id": "icon.skill_furnace_cleave",
+      "category": "icon",
+      "prompt": "a glowing superheated orange blade sweeping in a wide fiery arc",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd75-ec41-74fc-a279-469e515c2eb4",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_furnace_cleave.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3696
+      }
+    },
+    {
+      "id": "icon.skill_energy_shield",
+      "category": "icon",
+      "prompt": "a hexagonal cyan energy barrier dome shimmering around an armored silhouette",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd75-ec77-712c-9ac7-f38a89f3236f",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_energy_shield.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3746
+      }
+    },
+    {
+      "id": "icon.skill_coolant_flush",
+      "category": "icon",
+      "prompt": "icy blue coolant vapor bursting from vents on an armored chest plate",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd75-ecbf-7093-a84f-86e0a0cb14f5",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_coolant_flush.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3320
+      }
+    },
+    {
+      "id": "icon.skill_rocket_leap",
+      "category": "icon",
+      "prompt": "an armored figure launching upward on twin rocket thrusters with flame trails",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd76-564a-70a0-ba5e-569a5380f958",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_rocket_leap.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3362
+      }
+    },
+    {
+      "id": "icon.skill_magnetic_pull",
+      "category": "icon",
+      "prompt": "a glowing electromagnet coil pulling metal debris inward in a spiral",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd77-4923-72d1-894f-a7a9a08c2bc0",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_magnetic_pull.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3614
+      }
+    },
+    {
+      "id": "icon.skill_heat_vent",
+      "category": "icon",
+      "prompt": "an explosion of red-hot heat venting outward from a reactor core in a ring of fire",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd77-4d97-70c0-bf2f-54fe908245b7",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_heat_vent.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4022
+      }
+    },
+    {
+      "id": "icon.skill_orbital_strike",
+      "category": "icon",
+      "prompt": "a blinding cyan orbital laser beam striking down from the sky onto a target reticle",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd77-5d9b-73ca-877a-6fde7b36c607",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_orbital_strike.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 2798
+      }
     }
   ]
 }

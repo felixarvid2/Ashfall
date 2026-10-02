@@ -23,7 +23,7 @@ import { PROGRESSION, dropTable } from '../../data/loot/db';
 import { heal } from '../combat';
 import { recomputePlayer } from '../stats';
 import { addToGrid } from './inventory';
-import { killXp, rollDrops, xpToNext } from './generate';
+import { generateItem, itemPowerFor, killXp, rollDrops, xpToNext } from './generate';
 
 export const GOLD_PICKUP_RADIUS = 1.8;
 export const ITEM_PICKUP_RADIUS = 1.6;
@@ -90,6 +90,10 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
       if (lifeOnKill > 0) heal(world, ctx, player, lifeOnKill);
     }
     const drop = rollDrops(ctx.loot.rng, table, req.level, classId, () => nextItemUid(ctx), nameOf);
+    if (req.rarity) {
+      const itemPower = itemPowerFor(req.level, ctx.loot.rng);
+      drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, nameOf }));
+    }
     const total = drop.items.length + (drop.gold > 0 ? 1 : 0);
     drop.items.forEach((item, i) => {
       const p = spawnGround(world, ctx, req.x, req.z, i, total);

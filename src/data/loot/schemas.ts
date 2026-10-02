@@ -227,7 +227,37 @@ export const ItemSchema = z.object({
   sockets: z.array(z.object({ crystal: z.string(), tier: z.number().int().min(0).max(2) }).nullable()).default([]),
   /** Crystals are items too: which crystal and tier. */
   crystal: z.object({ id: z.string(), tier: z.number().int().min(0).max(2) }).optional(),
-  aspect: z.string().optional(),
+  /** Legendary power and its rolled value. */
+  aspect: z.object({ id: z.string(), value: z.number() }).optional(),
+  /** Unique or mythic item definition id. */
   unique: z.string().optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;
+
+// ---- Aspects and unique items -------------------------------------------------------
+
+export const AspectDefSchema = z.object({
+  id: z.string(),
+  /** Classes that can roll it; omitted = everyone. */
+  classes: z.array(z.string()).optional(),
+  /** Item types it can appear on. */
+  types: z.array(ItemTypeSchema).min(1),
+  min: z.number(),
+  max: z.number(),
+  scaling: ScalingSchema,
+  /** How the value is shown: as a percentage, a number, or seconds. */
+  display: z.enum(['pct', 'flat']).default('pct'),
+  effects: z.array(z.any()),
+});
+export type AspectDef = z.infer<typeof AspectDefSchema>;
+
+export const UniqueDefSchema = z.object({
+  id: z.string(),
+  base: z.string(),
+  rarity: z.enum(['unique', 'mythic']),
+  classes: z.array(z.string()).optional(),
+  /** Fixed affixes, rolled within the range (values at item power 100). */
+  affixes: z.array(z.object({ stat: StatKeySchema, min: z.number(), max: z.number(), scaling: ScalingSchema })),
+  effects: z.array(z.any()),
+});
+export type UniqueDef = z.infer<typeof UniqueDefSchema>;

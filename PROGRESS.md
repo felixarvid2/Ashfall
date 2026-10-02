@@ -4,8 +4,8 @@
 
 ## Current phase
 
-**Phase 3 – Loot and progression: 3a ✅ done** (levels, items, loot, inventory). Next: **3b** — Bastion skill
-tree, legendary aspects, uniques, mythic, balance simulator.
+**Phase 3 – Loot and progression ✅ done** (3a: levels, items, loot, inventory · 3b: skill tree, aspects,
+uniques, mythic, balance simulator). Next: **Phase 4** (plan first, per the brief).
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 
 ## Done
@@ -90,6 +90,24 @@ Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 - 18 item icons generated with Meshy (54 credits). Credits used in total: ~669 of 3100.
 - 135 unit tests.
 
+### Phase 3b – Skill tree, aspects, uniques (see docs/skill-tree.md)
+- **Skill tree (K)** for Bastion: 7 branches unlocking by points spent, 10 active skills with ranks,
+  enhancements, choose-one modifiers, ranked passives, 3 key passives (pick one), respec for gold,
+  action-bar editor. New characters start with only Hydraulic Strike.
+- **6 new skills**: Piston Jab, Furnace Cleave, Coolant Flush, Magnetic Pull (pulls enemies in),
+  Heat Vent (spends all Heat), Orbital Strike (delayed ultimate at the cursor).
+- Shared **effects system** (stat / damage / skillMod / overheat) used by tree nodes, aspects and uniques;
+  skills are recompiled from base + rank + every modifier whenever gear or the tree changes.
+- **Legendary** items with 16 rolled **aspects**; **unique** items (Governor's Crucible, Ashwalker Treads,
+  Fist of Kharos) and the **mythic** Heart of Lumen with build-changing effects. All rarities now drop.
+- Burning ground hazards from modifiers/aspects, attacker conditions (≥ 70 % Heat, has barrier).
+- **Balance simulator**: `npm run sim` (sample builds vs. a training dummy, real combat systems).
+- 10 **skill icons** generated with Meshy (30 credits). Credits used in total: ~699 of 3100.
+- Save format v3 (tree + action bar) with migration from v2/v1. Extended data validation
+  (tree/aspect/unique references, every skill field exists, all language keys).
+- Debug "Drop loot" now also drops 2 legendaries, a unique and a mythic.
+- 158 unit tests.
+
 ## How to run
 
 ```bash
@@ -98,16 +116,31 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests
 npm run build      # typecheck + production build into dist/
+npm run sim        # balance simulator (DPS of sample builds)
 ```
 
 Meshy pipeline (needs `MESHY_API_KEY` in `ashfall/.env`): `npm run meshy -- status`.
 Behind a proxy (cloud sessions) prefix with `NODE_USE_ENV_PROXY=1`.
 
-Controls: **WASD** move · **LMB** Hydraulic Strike · **RMB** Seismic Shock · **1** Rocket Leap ·
-**2** Energy Shield · **Space** dodge · **Q** stim pack · **mouse wheel** zoom · **F3** debug panel ·
+Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them in the skill tree) ·
+**K** skill tree · **I** inventory · **C** character · **E** pick up · **Alt** show loot labels ·
+**Space** dodge · **Q** stim pack · **mouse wheel** zoom · **F3** debug panel ·
 **F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
+
+## What to test (Phase 3b)
+1. Start a new character (F3 → delete save, reload): only Hydraulic Strike is on the bar.
+2. Level up (fight, or F3 → "+1 level" a few times) and open the **skill tree (K)**. Spend points:
+   branches unlock at 2/5/9/14/20/28 points. Learn an enhancement, then pick one of its two modifiers.
+3. Newly learned skills go to free slots. Click a slot in the tree, then a learned skill, to rebind.
+4. Try the new skills: Magnetic Pull then Seismic Shock, Heat Vent at high Heat, Orbital Strike on a pack,
+   Coolant Flush when near overheating.
+5. F3 → "Drop loot": legendaries (orange, with an aspect line), a unique (gold) and the mythic Heart of
+   Lumen (red). Equip them and check that skills change (e.g. Fist of Kharos makes Hydraulic Strike spin).
+6. Reset the tree (costs gold) and check that points come back and the bar empties except the basic skill.
+7. F5 / reload / F9 — tree and action bar should survive.
+8. `npm run sim` — compare build DPS. **Tell me which skills feel weak or too strong.**
 
 ## What to test (Phase 3a)
 1. Fight waves: enemies drop items and gold; clearing a wave drops a reward cache next to you.
@@ -148,14 +181,14 @@ Shift + left-click to attack in place.
   static props keep full PBR.
 - Textures are WebP, not KTX2 (no `toktx` binary here) — see docs/decisions.md.
 - The drone was asked for "no rotors" but has small ones; acceptable for now.
+- The balance simulator's dummy doesn't fight back, so it only measures damage, not survivability.
+- Only Bastion has a tree; Spectre and Xenomant trees come with those classes.
 - Raw Meshy downloads (`assets/source/**/*.glb`) are not in git; re-download within 3 days or regenerate.
 - Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
-- Skill icons are text labels until icons are generated (brief §9.5).
 
 ## Next steps
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
-- Phase 3b: Bastion skill tree (branches, ranks, enhancements, modifiers, passives, key passives, respec),
-  new skills (Heat Vent, Orbital Strike, +1 per branch), ~12 legendary aspects, 3 uniques, 1 mythic,
-  skill icons (Meshy), `npm run sim` balance simulator.
+- Your playtest feedback on Phase 3 (skill feel, loot frequency, item power) → tune data.
+- Phase 4 plan (see docs/design-brief.md) before any code.

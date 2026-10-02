@@ -1,4 +1,4 @@
-# Loot and progression (Phase 3a)
+# Loot and progression (Phase 3a–3b)
 
 All numbers live in `src/data/loot/` (bases, affixes, rarities, crystals, drop tables, progression curves)
 and are validated with Zod in `src/data/loot/db.ts`. Generation is pure and seeded
@@ -7,7 +7,7 @@ and are validated with Zod in `src/data/loot/db.ts`. Generation is pure and seed
 ## Levels and XP
 - XP to go from level *L* to *L+1*: `round(60 × L^1.45)` (level 2 needs 60, level 10 needs ~1 690).
 - Kill XP = drop-table XP × (1 + 0.1 × (enemy level − 1)).
-- Each level: +1 skill point (spent in Phase 3b), attribute growth from the class data, full life.
+- Each level: +1 skill point (spent in the skill tree, K), attribute growth from the class data, full life.
 - Monsters match the player's level, clamped to the zone range (Cinder Flats 1–10).
   Enemy life +18 % and damage +12 % per level above 1.
 
@@ -22,11 +22,13 @@ and are validated with Zod in `src/data/loot/db.ts`. Generation is pure and seed
 | Common (grey) | 0 | – | 12 % per slot | none |
 | Magic (blue) | 1–2 | 1 % | 22 % | small |
 | Rare (yellow) | 3–4 | 3 % | 32 % | medium |
-| Legendary (orange) | 3–4 + aspect | 5 % | 40 % | tall — *Phase 3b* |
-| Unique (gold) | fixed + unique effect | – | – | *Phase 3b* |
-| Mythic (red) | all greater | 100 % | – | *Phase 3b* |
+| Legendary (orange) | 3–4 + aspect | 5 % | 40 % | tall |
+| Unique (gold) | fixed + unique effect | – | – | tall |
+| Mythic (red) | fixed, all greater | 100 % | – | tallest |
 
 Greater affixes roll 1.5× the normal range and are marked ◆ in tooltips.
+Aspects and unique items are described in [skill-tree.md](skill-tree.md). If no aspect fits a legendary's
+item type it drops as a rare; if no unique of the rolled rarity exists it drops as a legendary.
 
 ## Bases and affixes
 - 10 equipment slots: helm, chest, gloves, pants, boots, amulet, 2 rings, weapon, off-hand.
@@ -62,5 +64,6 @@ Like Diablo 4 gems, the stat depends on where they are socketed:
 - Stash, vendors, aspect extraction and crafting arrive with hubs (Phases 5 and 7).
 
 ## Saving
-Save format v2 stores level, XP, skill points, gold, backpack, equipment and the loot RNG state.
+Save format v3 adds the skill tree ranks and the action bar (v2 saves get `level − 1` skill points
+and the starting skill). Save format v2 stores level, XP, skill points, gold, backpack, equipment and the loot RNG state.
 Version-1 saves migrate automatically (the character receives the starter kit on load).

@@ -117,3 +117,20 @@ by `npm run meshy -- icons`. Consistent painted style via a shared icon prompt.
 ### 2026-10-02 — Loot sounds are synthesised (WebAudio)
 Each rarity has its own procedural sound (brief §5.6) until the Howler.js audio system and recorded/
 generated sound files arrive in Phase 8.
+
+### 2026-10-02 — One effect vocabulary for tree nodes, aspects and uniques
+`src/data/effects.ts` defines four effect kinds (stat, damage, skillMod, overheat). Skills are recompiled
+from base data + rank + all effects whenever gear or the tree changes (`user.compiled`), so combat code
+reads a finished skill definition and never needs to know where a bonus came from.
+
+### 2026-10-02 — Skill tree replaces the fixed action bar
+New characters know only Hydraulic Strike; every other skill is learned in the tree (D4 style). Old saves
+get their skill points back (`level − 1`) via the v2 → v3 migration.
+
+### 2026-10-02 — Skill icons are full-bleed painted emblems
+Skill icons use their own prompt (no background removal, 8 % inset crop to drop the generator's rounded
+frame) so they read as abilities, not items. 10 icons, 30 credits.
+
+### 2026-10-02 — Balance simulator uses the real systems
+`scripts/sim` runs the actual skill/status/hazard/resource systems headless against a dummy instead of a
+separate spreadsheet model, so it can't drift from the game.

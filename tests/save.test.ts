@@ -42,6 +42,7 @@ const sample = (): SaveData => ({
   progression: { level: 3, xp: 40, skillPoints: 2 },
   inventory: { gold: 120, grid: [null, null], equipped: {} },
   loot: { seq: 7, rngState: [5, 6, 7, 8] },
+  skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
 });
 
 describe('save serialization', () => {
@@ -85,7 +86,25 @@ describe('save migrations', () => {
     expect(() => migrate({ version: 1 }, { 1: (d) => ({ ...d, version: 5 }) }, 2)).toThrow(/did not produce/);
   });
 
-  it('upgrades a real v1 save to v2 with progression defaults', () => {
+  it('upgrades a v2 save to v3, refunding a skill point per level', () => {
+    const v2 = {
+      version: 2,
+      savedAt: 'x',
+      seed: 's',
+      rngState: [1, 2, 3, 4],
+      tick: 1,
+      player: { position: { x: 0, y: 0, z: 0 }, facing: 0 },
+      progression: { level: 5, xp: 10, skillPoints: 0 },
+      inventory: null,
+      loot: { seq: 0, rngState: [1, 2, 3, 4] },
+    };
+    const save = parseSave(JSON.stringify(v2));
+    expect(save.version).toBe(3);
+    expect(save.progression.skillPoints).toBe(4);
+    expect(save.skills.ranks).toEqual({ 'n.hydraulic_strike': 1 });
+  });
+
+  it('upgrades a real v1 save all the way with progression defaults', () => {
     const v1 = {
       version: 1,
       savedAt: '2026-10-02T12:00:00.000Z',
@@ -95,7 +114,7 @@ describe('save migrations', () => {
       player: { position: { x: 1, y: 0, z: 2 }, facing: 0 },
     };
     const save = parseSave(JSON.stringify(v1));
-    expect(save.version).toBe(2);
+    expect(save.version).toBe(3);
     expect(save.progression).toEqual({ level: 1, xp: 0, skillPoints: 0 });
     expect(save.inventory).toBeNull();
     expect(save.loot.rngState).toEqual([1, 2, 3, 4]);
@@ -119,7 +138,7 @@ describe('SaveStore', () => {
 
   it('throws SaveError on a corrupt slot instead of returning garbage', () => {
     const storage = new MemoryStorage();
-    storage.setItem('ashfall.save.slot0', '{"version":2}');
+    storage.setItem('ashfall.save.slot0', '{"version":3}');
     expect(() => new SaveStore(storage).read('slot0')).toThrow(SaveError);
   });
 

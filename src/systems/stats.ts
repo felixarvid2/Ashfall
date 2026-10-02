@@ -10,6 +10,7 @@ import {
   Inventory,
   Mover,
   Progression,
+  Resource,
   SkillUser,
   type Attributes,
 } from '../core/components';
@@ -17,7 +18,11 @@ import type { Entity, World } from '../core/ecs';
 import { classDef } from '../data/db';
 import type { Item, Slot, StatKey } from '../data/loot/schemas';
 import type { Bonus, ClassDef } from '../data/schemas';
-import { itemStats } from './loot/generate';
+import type { Effect } from '../data/effects';
+import { num } from '../data/effects';
+import { itemEffects, itemStats } from './loot/generate';
+import { compileSkills } from './skillCompile';
+import { learnedSkills, tree, treeEffects } from './skillTree';
 
 /** Attribute effects (besides the primary attribute's +0.1 % damage per point). */
 export const ATTRIBUTE_RULES = {
@@ -47,10 +52,33 @@ export interface PlayerStats {
   attributes: Attributes;
   moveSpeedBonus: number;
   damageEstimate: number;
+  /** All effects from gear and the skill tree (skill modifiers are compiled separately). */
+  effects: Effect[];
+  overheat: { graceDelta: number; damageMul: number };
 }
 
-export function computePlayerStats(cls: ClassDef, level: number, equipped: Partial<Record<Slot, Item>>): PlayerStats {
-  const t = sumItemStats(Object.values(equipped).filter((i): i is Item => !!i));
+export function computePlayerStats(
+  cls: ClassDef,
+  level: number,
+  equipped: Partial<Record<Slot, Item>>,
+  extraEffects: Effect[] = [],
+): PlayerStats {
+  const items = Object.values(equipped).filter((i): i is Item => !!i);
+  const t = sumItemStats(items);
+  const effects = [...items.flatMap(itemEffects), ...extraEffects];
+  const multiplicative: Bonus[] = [];
+  const effectAdditive: Bonus[] = [];
+  const overheat = { graceDelta: 0, damageMul: 1 };
+  for (const e of effects) {
+    if (e.kind === 'stat') t.set(e.stat, (t.get(e.stat) ?? 0) + num(e.value));
+    else if (e.kind === 'damage') {
+      const b: Bonus = { value: num(e.value), ...(e.when ? { when: e.when } : {}), source: 'effect' };
+      (e.multiplicative ? multiplicative : effectAdditive).push(b);
+    } else if (e.kind === 'overheat') {
+      overheat.graceDelta += num(e.graceDelta);
+      overheat.damageMul *= num(e.damageMul, 1);
+    }
+  }
   const get = (k: StatKey) => t.get(k) ?? 0;
   const lv = level - 1;
   const all = get('allAttributes');
@@ -85,6 +113,7 @@ export function computePlayerStats(cls: ClassDef, level: number, equipped: Parti
   add('damageVsStunned', 'stunned');
   add('damageVsBurning', 'burning');
   add('meleeDamage', 'melee');
+  additive.push(...effectAdditive);
 
   const weaponDamage = get('weaponDamage') > 0 ? get('weaponDamage') : cls.weaponDamage;
   const critChance = Math.min(CAPS.critChance, cls.critChance + get('critChance') + attributes.dexterity * ATTRIBUTE_RULES.critPerDex);
@@ -101,7 +130,7 @@ export function computePlayerStats(cls: ClassDef, level: number, equipped: Parti
     armor,
     resist,
     additive,
-    multiplicative: [],
+    multiplicative,
     attackSpeed,
     cooldownReduction: Math.min(CAPS.cooldownReduction, get('cooldownReduction')),
     resourceGen: get('resourceGen') + attributes.willpower * ATTRIBUTE_RULES.resourceGenPerWill,
@@ -113,8 +142,14 @@ export function computePlayerStats(cls: ClassDef, level: number, equipped: Parti
 
   // Unconditional damage per second-ish estimate, for item comparisons and the stats panel.
   const unconditional = additive.filter((b) => !b.when).reduce((s, b) => s + b.value, 0);
+  const multi = multiplicative.filter((b) => !b.when).reduce((p, b) => p * (1 + b.value), 1);
   const damageEstimate =
-    weaponDamage * (1 + mainStat * 0.001) * (1 + unconditional + get('meleeDamage')) * (1 + critChance * critDamage) * (1 + attackSpeed);
+    weaponDamage *
+    (1 + mainStat * 0.001) *
+    (1 + unconditional + get('meleeDamage')) *
+    multi *
+    (1 + critChance * critDamage) *
+    (1 + attackSpeed);
 
   return {
     combat,
@@ -122,6 +157,8 @@ export function computePlayerStats(cls: ClassDef, level: number, equipped: Parti
     attributes,
     moveSpeedBonus: Math.min(CAPS.moveSpeed, get('moveSpeed')),
     damageEstimate,
+    effects,
+    overheat,
   };
 }
 
@@ -132,7 +169,23 @@ export function recomputePlayer(world: World, e: Entity): PlayerStats | null {
   const inv = world.get(e, Inventory);
   if (!user || !prog || !inv) return null;
   const cls = classDef(user.classId);
-  const stats = computePlayerStats(cls, prog.level, inv.equipped);
+  const skillTree = tree(user.classId);
+  const stats = computePlayerStats(cls, prog.level, inv.equipped, treeEffects(skillTree, user.tree));
+  user.compiled = compileSkills(learnedSkills(skillTree, user.tree), stats.effects);
+  // Forget action-bar entries for skills that are no longer learned (after a respec).
+  user.slots = user.slots.map((id) => (id && user.compiled[id] ? id : null));
+
+  const resource = world.get(e, Resource);
+  if (resource && cls.resource.overheat) {
+    const base = cls.resource.overheat;
+    resource.config = {
+      ...cls.resource,
+      overheat: {
+        grace: Math.max(0.2, base.grace + stats.overheat.graceDelta),
+        damagePerSecond: base.damagePerSecond * stats.overheat.damageMul,
+      },
+    };
+  }
 
   const combat = world.get(e, CombatStats);
   if (combat) Object.assign(combat, stats.combat, { level: prog.level });

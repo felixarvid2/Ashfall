@@ -5,6 +5,9 @@
 import {
   CombatStats,
   Dead,
+  DelayedStrike,
+  Hazard,
+  makeTransform,
   Faction,
   ForcedMove,
   Health,
@@ -18,11 +21,17 @@ import {
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, classDef, skill } from '../data/db';
-import type { Impact, SkillDef, StatusApply } from '../data/schemas';
+import type { Impact, StatusApply } from '../data/schemas';
+import type { CompiledSkill } from './skillCompile';
 import { angleDelta } from './movement';
 import { applyStatus, dealHit, gainResource, heal, removeStatuses } from './combat';
 import { livingInCircle, opposingTeam } from './targeting';
 
+
+/** Effective skill for a caster: compiled (ranks + modifiers) if learned, else the base data. */
+export function skillOf(user: SkillUser | undefined, id: string): CompiledSkill {
+  return user?.compiled[id] ?? { def: skill(id), rank: 1, bonuses: { additive: [], multiplicative: [] }, hazards: [] };
+}
 
 export function skillSystem(world: World, dt: number, ctx: GameContext): void {
   for (const e of world.query(SkillUser, Transform)) {
@@ -92,7 +101,8 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
     const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0);
     if (user.cast) {
       const cast = user.cast;
-      const def = skill(cast.skillId);
+      const compiled = skillOf(user, cast.skillId);
+      const def = compiled.def;
       // Attack speed shortens wind-up and recovery.
       cast.elapsed += dt * speed;
       if (mover) {
@@ -102,7 +112,7 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       faceToward(tr, cast.aimX, cast.aimZ);
       if (!cast.fired && cast.elapsed >= def.castTime) {
         cast.fired = true;
-        fireSkill(world, ctx, e, def, cast.aimX, cast.aimZ);
+        fireSkill(world, ctx, e, compiled, cast.aimX, cast.aimZ);
       }
       if (cast.elapsed >= def.castTime + def.recovery) user.cast = null;
     }
@@ -113,8 +123,22 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
         user.request = null;
         continue;
       }
-      const def = skill(id);
+      // Only learned skills can be used.
+      const compiled = user.compiled[id];
+      if (!compiled) {
+        user.request = null;
+        continue;
+      }
+      const def = compiled.def;
       if ((user.cooldowns[id] ?? 0) > 0) continue; // stay buffered until ttl expires
+      if (def.effect.kind === 'vent') {
+        const r = world.get(e, Resource);
+        if (!r || r.current < def.effect.minResource) {
+          user.request = null;
+          ctx.events.push({ type: 'notice', key: 'combat.notEnoughResource' });
+          continue;
+        }
+      }
       const resource = world.get(e, Resource);
       if (def.resourceCost > 0 && (!resource || resource.current < def.resourceCost)) {
         user.request = null;
@@ -132,7 +156,7 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       faceToward(tr, user.cast.aimX, user.cast.aimZ);
       if (def.castTime === 0) {
         user.cast.fired = true;
-        fireSkill(world, ctx, e, def, user.cast.aimX, user.cast.aimZ);
+        fireSkill(world, ctx, e, compiled, user.cast.aimX, user.cast.aimZ);
       }
     }
   }
@@ -157,10 +181,12 @@ export function forcedMoveSystem(world: World, dt: number, ctx: GameContext): vo
       tr.y = 0;
       world.remove(e, ForcedMove);
       if (fm.landingSkill) {
-        const def = skill(fm.landingSkill);
+        const compiled = skillOf(world.get(e, SkillUser), fm.landingSkill);
+        const def = compiled.def;
         if (def.effect.kind === 'leap') {
           const landing = def.effect.landing;
-          impactArea(world, ctx, e, tr.x, tr.z, landing.radius, null, landing);
+          impactArea(world, ctx, e, tr.x, tr.z, landing.radius, null, landing, [], compiled.bonuses);
+          spawnHazards(world, e, tr.x, tr.z, compiled);
           ctx.events.push({ type: 'vfx', kind: 'leapLand', x: tr.x, z: tr.z, radius: landing.radius, facing: tr.facing });
           if (landing.shake > 0) ctx.events.push({ type: 'shake', trauma: landing.shake });
         }
@@ -169,26 +195,67 @@ export function forcedMoveSystem(world: World, dt: number, ctx: GameContext): vo
   }
 }
 
-function fireSkill(world: World, ctx: GameContext, caster: Entity, def: SkillDef, aimX: number, aimZ: number): void {
+function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: CompiledSkill, aimX: number, aimZ: number): void {
+  const def = compiled.def;
   const tr = world.req(caster, Transform);
   const resource = world.get(caster, Resource);
   const gain = def.resourceGain * (1 + (world.get(caster, CombatStats)?.resourceGen ?? 0));
   const effect = def.effect;
   const bonusApplies =
     def.resourceBonus && resource && resource.current >= def.resourceBonus.threshold ? def.resourceBonus.applies : [];
+  const bonuses = compiled.bonuses;
 
   switch (effect.kind) {
     case 'meleeArc': {
-      const hits = impactArea(world, ctx, caster, tr.x, tr.z, effect.range, { facing: tr.facing, arcDeg: effect.arcDeg }, effect, bonusApplies);
+      const hits = impactArea(world, ctx, caster, tr.x, tr.z, effect.range, { facing: tr.facing, arcDeg: effect.arcDeg }, effect, bonusApplies, bonuses);
       ctx.events.push({ type: 'vfx', kind: 'slash', x: tr.x, z: tr.z, radius: effect.range, facing: tr.facing, arcDeg: effect.arcDeg });
       if (hits > 0 && resource) gainResource(resource, gain);
+      spawnHazards(world, caster, tr.x + Math.sin(tr.facing) * 1.5, tr.z + Math.cos(tr.facing) * 1.5, compiled);
       break;
     }
     case 'nova': {
-      const hits = impactArea(world, ctx, caster, tr.x, tr.z, effect.radius, null, effect, bonusApplies);
-      ctx.events.push({ type: 'vfx', kind: 'shockwave', x: tr.x, z: tr.z, radius: effect.radius, facing: 0 });
+      const hits = impactArea(world, ctx, caster, tr.x, tr.z, effect.radius, null, effect, bonusApplies, bonuses);
+      ctx.events.push({ type: 'vfx', kind: effect.knockback < 0 ? 'pull' : 'shockwave', x: tr.x, z: tr.z, radius: effect.radius, facing: 0 });
       if (effect.shake > 0 && hits === 0) ctx.events.push({ type: 'shake', trauma: effect.shake * 0.5 });
       if (hits > 0 && resource) gainResource(resource, gain);
+      spawnHazards(world, caster, tr.x, tr.z, compiled);
+      break;
+    }
+    case 'vent': {
+      // Spend all Heat: more stored Heat = a bigger blast.
+      const spent = resource ? resource.current : 0;
+      if (resource) resource.current = 0;
+      const impact = { ...effect, coefficient: effect.coefficient + effect.perResource * spent };
+      impactArea(world, ctx, caster, tr.x, tr.z, effect.radius, null, impact, [], bonuses);
+      ctx.events.push({ type: 'vfx', kind: 'vent', x: tr.x, z: tr.z, radius: effect.radius, facing: 0 });
+      ctx.events.push({ type: 'shake', trauma: effect.shake });
+      spawnHazards(world, caster, tr.x, tr.z, compiled);
+      break;
+    }
+    case 'orbital': {
+      let dx = aimX - tr.x;
+      let dz = aimZ - tr.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > effect.range) {
+        dx = (dx / dist) * effect.range;
+        dz = (dz / dist) * effect.range;
+      }
+      const lim = ctx.worldHalfSize;
+      const x = clamp(tr.x + dx, -lim, lim);
+      const z = clamp(tr.z + dz, -lim, lim);
+      const strike = world.create();
+      world.add(strike, Transform, makeTransform(x, 0, z));
+      world.add(strike, DelayedStrike, { caster, skillId: def.id, remaining: effect.delay, radius: effect.radius });
+      ctx.events.push({
+        type: 'telegraph',
+        owner: strike,
+        x,
+        z,
+        shape: { kind: 'circle', radius: effect.radius },
+        duration: effect.delay,
+        color: '#7ec8ff',
+      });
+      if (resource) gainResource(resource, gain);
       break;
     }
     case 'leap': {
@@ -222,10 +289,54 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, def: SkillDef
       }
       const team = world.get(caster, Faction)?.team ?? 'player';
       for (const apply of effect.applies) applyStatus(world, ctx, caster, apply, { team, level: 1, attacker: caster });
-      ctx.events.push({ type: 'vfx', kind: 'shield', x: tr.x, z: tr.z, radius: 1.2, facing: 0 });
+      if (effect.healFraction > 0) {
+        const health = world.get(caster, Health);
+        if (health) heal(world, ctx, caster, health.max * effect.healFraction);
+      }
+      if (resource && effect.resourceDelta !== 0) gainResource(resource, effect.resourceDelta);
+      ctx.events.push({ type: 'vfx', kind: effect.resourceDelta < 0 ? 'coolant' : 'shield', x: tr.x, z: tr.z, radius: 1.2, facing: 0 });
       if (resource) gainResource(resource, gain);
       break;
     }
+  }
+}
+
+/** Burning/poison areas left by skill modifiers (Rupture, Crater, Fissure aspect…). */
+function spawnHazards(world: World, caster: Entity, x: number, z: number, compiled: CompiledSkill): void {
+  if (!compiled.hazards.length) return;
+  const stats = world.get(caster, CombatStats);
+  const team = world.get(caster, Faction)?.team ?? 'player';
+  for (const h of compiled.hazards) {
+    const e = world.create();
+    world.add(e, Transform, makeTransform(x, 0, z));
+    world.add(e, Hazard, {
+      team,
+      radius: h.radius,
+      remaining: h.duration,
+      duration: h.duration,
+      tickTimer: 0,
+      applies: [{ status: h.status, duration: 1.5, dps: h.dpsCoefficient * (stats?.weaponDamage ?? 10) * (1 + (stats?.mainStat ?? 0) * 0.001) }],
+      attackerLevel: stats?.level ?? 1,
+    });
+  }
+}
+
+/** Lands orbital strikes when their delay runs out. */
+export function delayedStrikeSystem(world: World, dt: number, ctx: GameContext): void {
+  for (const e of world.query(DelayedStrike, Transform)) {
+    const strike = world.req(e, DelayedStrike);
+    strike.remaining -= dt;
+    if (strike.remaining > 0) continue;
+    const tr = world.req(e, Transform);
+    world.destroyDeferred(e);
+    if (!world.isAlive(strike.caster)) continue;
+    const compiled = skillOf(world.get(strike.caster, SkillUser), strike.skillId);
+    const effect = compiled.def.effect;
+    if (effect.kind !== 'orbital') continue;
+    impactArea(world, ctx, strike.caster, tr.x, tr.z, effect.radius, null, effect, [], compiled.bonuses);
+    ctx.events.push({ type: 'vfx', kind: 'orbital', x: tr.x, z: tr.z, radius: effect.radius, facing: 0 });
+    ctx.events.push({ type: 'shake', trauma: effect.shake });
+    spawnHazards(world, strike.caster, tr.x, tr.z, compiled);
   }
 }
 
@@ -243,6 +354,7 @@ function impactArea(
   arc: { facing: number; arcDeg: number } | null,
   impact: Impact,
   extraApplies: readonly StatusApply[] = [],
+  bonuses?: CompiledSkill['bonuses'],
 ): number {
   const team = world.get(caster, Faction)?.team ?? 'player';
   let hits = 0;
@@ -262,6 +374,7 @@ function impactArea(
       fromZ: z,
       applies: [...impact.applies, ...extraApplies],
       range: 'melee',
+      ...(bonuses ? { bonuses } : {}),
     });
     if (dealt !== null) hits++;
   }

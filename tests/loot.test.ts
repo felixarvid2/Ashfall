@@ -97,9 +97,16 @@ describe('item generation', () => {
     expect(own / n).toBeLessThan(0.97);
   });
 
-  it('disabled rarities (legendary+, Phase 3b) never drop yet', () => {
+  it('every rarity can drop, rarer ones less often', () => {
     const rng = new Rng('rarity');
-    for (let i = 0; i < 5000; i++) expect(['common', 'magic', 'rare']).toContain(rollRarity(rng));
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 50000; i++) {
+      const r = rollRarity(rng);
+      counts[r] = (counts[r] ?? 0) + 1;
+    }
+    for (const r of ['common', 'magic', 'rare', 'legendary', 'unique', 'mythic']) expect(counts[r] ?? 0).toBeGreaterThan(0);
+    expect(counts.common!).toBeGreaterThan(counts.rare!);
+    expect(counts.legendary!).toBeGreaterThan(counts.mythic!);
   });
 
   it('minimum rarity is respected', () => {

@@ -17,7 +17,7 @@ import { movementSystem } from '../src/systems/movement';
 import { forcedMoveSystem, skillSystem } from '../src/systems/skills';
 import { statusSystem } from '../src/systems/status';
 import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
-import { makeCtx, run, type SystemFn } from './helpers';
+import { learnSkills, makeCtx, run, type SystemFn } from './helpers';
 
 const SYSTEMS: SystemFn[] = [spatialSystem, skillSystem, statusSystem, movementSystem, forcedMoveSystem, collisionSystem];
 
@@ -25,6 +25,7 @@ function setup() {
   const world = new World();
   const ctx = makeCtx();
   const player = spawnPlayer(world, 'bastion', 0, 0);
+  learnSkills(world, player);
   Object.assign(world.req(player, CombatStats), { critChance: 0, weaponDamage: 14, mainStat: 20, resourceGen: 0 });
   return { world, ctx, player };
 }

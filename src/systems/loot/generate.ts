@@ -3,9 +3,12 @@
  * always produces the same loot — essential for reproducing bugs and for tests.
  */
 import type { Rng } from '../../core/rng';
-import { AFFIX_DEFS, BASE_ITEMS, CRYSTAL_DEFS, PROGRESSION, baseItem, rarityDef } from '../../data/loot/db';
+import { AFFIX_DEFS, ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, PROGRESSION, UNIQUE_DEFS, baseItem, rarityDef } from '../../data/loot/db';
+import { resolveEffects, type Effect } from '../../data/effects';
 import {
   RARITIES,
+  type AspectDef,
+  type UniqueDef,
   type AffixDef,
   type BaseItemDef,
   type DropTable,
@@ -109,18 +112,49 @@ export interface GenerateOptions {
   nameOf?: (baseId: string) => string;
 }
 
+/** An aspect that fits the item type and the player's class (85 % own class, like bases). */
+export function pickAspect(rng: Rng, type: ItemType, classId: string): AspectDef | null {
+  const fits = [...ASPECT_DEFS.values()].filter((a) => a.types.includes(type));
+  const own = fits.filter((a) => !a.classes || a.classes.includes(classId));
+  const pool = own.length > 0 && rng.chance(PROGRESSION.ownClassShare) ? own : fits;
+  return pool.length ? rng.pick(pool) : null;
+}
+
+export function rollAspectValue(rng: Rng, aspect: AspectDef, itemPower: number): number {
+  return roundStat(rng.range(aspect.min, aspect.max) * powerScale(aspect.scaling, itemPower));
+}
+
+export function pickUnique(rng: Rng, rarity: 'unique' | 'mythic', classId: string): UniqueDef | null {
+  const all = [...UNIQUE_DEFS.values()].filter((u) => u.rarity === rarity);
+  const own = all.filter((u) => !u.classes || u.classes.includes(classId));
+  const pool = own.length > 0 && rng.chance(PROGRESSION.ownClassShare) ? own : all;
+  return pool.length ? rng.pick(pool) : null;
+}
+
+function rollSockets(rng: Rng, base: BaseItemDef, chance: number): (null)[] {
+  let sockets = 0;
+  for (let i = 0; i < base.maxSockets; i++) if (rng.chance(chance)) sockets++;
+  return Array.from({ length: sockets }, () => null);
+}
+
 export function generateItem(rng: Rng, opts: GenerateOptions): Item {
-  const base = opts.baseId ? baseItem(opts.baseId) : pickBase(rng, opts.itemPower, opts.classId, opts.type);
   const rarity = opts.rarity ?? rollRarity(rng);
-  const def = rarityDef(rarity);
   const ip = opts.itemPower;
+
+  // Unique and mythic items come from fixed definitions.
+  if ((rarity === 'unique' || rarity === 'mythic') && !opts.baseId) {
+    const def = pickUnique(rng, rarity, opts.classId);
+    if (def) return generateUnique(rng, def, ip, opts.uid);
+    return generateItem(rng, { ...opts, rarity: 'legendary' });
+  }
+
+  const base = opts.baseId ? baseItem(opts.baseId) : pickBase(rng, ip, opts.classId, opts.type);
+  const def = rarityDef(rarity);
   const implicits = base.implicits.map((imp) => ({ stat: imp.stat, value: rollValue(rng, imp, ip) }));
   const count = rng.int(def.affixes[0], def.affixes[1]);
   const affixes = rollAffixes(rng, base.type, count, ip, def.greaterChance);
-  let sockets = 0;
-  for (let i = 0; i < base.maxSockets; i++) if (rng.chance(def.socketChance)) sockets++;
   const baseName = opts.nameOf?.(base.id) ?? base.id;
-  return {
+  const item: Item = {
     uid: opts.uid,
     base: base.id,
     rarity,
@@ -128,8 +162,46 @@ export function generateItem(rng: Rng, opts: GenerateOptions): Item {
     name: makeName(rng, baseName, rarity, affixes),
     implicits,
     affixes,
-    sockets: Array.from({ length: sockets }, () => null),
+    sockets: rollSockets(rng, base, def.socketChance),
   };
+  if (rarity === 'legendary') {
+    const aspect = pickAspect(rng, base.type, opts.classId);
+    if (aspect) item.aspect = { id: aspect.id, value: rollAspectValue(rng, aspect, ip) };
+    else item.rarity = 'rare';
+  }
+  return item;
+}
+
+export function generateUnique(rng: Rng, def: UniqueDef, itemPower: number, uid: string): Item {
+  const base = baseItem(def.base);
+  const mythic = def.rarity === 'mythic';
+  return {
+    uid,
+    base: base.id,
+    rarity: def.rarity,
+    itemPower,
+    name: def.id,
+    implicits: base.implicits.map((imp) => ({ stat: imp.stat, value: rollValue(rng, imp, itemPower) })),
+    affixes: def.affixes.map((a) => {
+      const value = rollValue(rng, a, itemPower) * (mythic ? GREATER_MULTIPLIER : 1);
+      return { stat: a.stat, value: roundStat(value), affix: `unique:${def.id}`, ...(mythic ? { greater: true } : {}) };
+    }),
+    sockets: rollSockets(rng, base, rarityDef(def.rarity).socketChance),
+    unique: def.id,
+  };
+}
+
+/** Effects granted by an item's aspect or unique power. */
+export function itemEffects(item: Item): Effect[] {
+  if (item.aspect) {
+    const a = ASPECT_DEFS.get(item.aspect.id);
+    if (a) return resolveEffects(a.effects as Effect[], item.aspect.value);
+  }
+  if (item.unique) {
+    const u = UNIQUE_DEFS.get(item.unique);
+    if (u) return resolveEffects(u.effects as Effect[], 0);
+  }
+  return [];
 }
 
 export function generateCrystal(rng: Rng, itemPower: number, uid: string, crystalId?: string): Item {

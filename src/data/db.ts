@@ -20,6 +20,8 @@ import {
 } from './schemas';
 import { BASTION_SKILLS } from './skills/bastion';
 import { STATUSES } from './statuses';
+import { SkillTreeSchema, type SkillTree } from './skillTree/schema';
+import { BASTION_TREE } from './skillTree/bastion';
 
 function byId<T extends { id: string }>(items: T[], what: string): Map<string, T> {
   const map = new Map<string, T>();
@@ -43,6 +45,10 @@ export const STATUS_DEFS = Object.fromEntries(
   Object.entries(STATUSES).map(([id, def]) => [id, StatusDefSchema.parse(def)]),
 ) as Record<StatusId, StatusDef>;
 export const ENCOUNTERS: ReadonlyMap<string, Encounter> = byId([EncounterSchema.parse(TEST_ARENA_WAVES)], 'encounter');
+
+export const SKILL_TREES: ReadonlyMap<string, SkillTree> = new Map(
+  [SkillTreeSchema.parse(BASTION_TREE)].map((t) => [t.classId, t] as const),
+);
 
 export function skill(id: string): SkillDef {
   const def = SKILLS.get(id);

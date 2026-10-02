@@ -60,7 +60,7 @@ export function playerControlSystem(world: World, _dt: number, ctx: GameContext)
         user.dodgeRequested = Math.hypot(dir.x, dir.z) > 1e-3 ? dir : { x: Math.sin(tr.facing), z: Math.cos(tr.facing) };
       }
       SLOT_KEYS.forEach((action, i) => {
-        if (input.isDown(action)) request(user, i + 2, aim);
+        if (input.isDown(action) || input.wasPressed(action)) request(user, i + 2, aim);
       });
       if (input.isMouseDown(2)) request(user, 1, aim);
     }

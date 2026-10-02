@@ -12,7 +12,20 @@ export type TelegraphShape =
   | { kind: 'cone'; radius: number; arcDeg: number; facing: number }
   | { kind: 'line'; length: number; width: number; facing: number };
 
-export type VfxKind = 'slash' | 'shockwave' | 'leapLand' | 'shield' | 'dodge' | 'enemySlash' | 'sporePulse' | 'boltHit' | 'heal';
+export type VfxKind =
+  | 'slash'
+  | 'shockwave'
+  | 'leapLand'
+  | 'shield'
+  | 'dodge'
+  | 'enemySlash'
+  | 'sporePulse'
+  | 'boltHit'
+  | 'heal'
+  | 'pull'
+  | 'vent'
+  | 'orbital'
+  | 'coolant';
 
 export type GameEvent =
   | {

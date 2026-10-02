@@ -452,3 +452,48 @@ html, body {
 }
 .loot-label:hover { border-color: currentColor; }
 .loot-label.gold { color: #e8c86a; cursor: default; }
+
+.item-tip-aspect { margin-top: 6px; padding-top: 6px; border-top: 1px solid #2a2420; color: #ff9a3a; }
+.item-tip-aspect.unique { color: #e0c27a; }
+.item-tip-flavor { margin-top: 4px; color: #8c7a5a; font-style: italic; font-size: 0.92em; }
+
+/* ---- Skill tree ------------------------------------------------------------------ */
+.tree-panel { left: 50%; transform: translateX(-50%); width: min(820px, calc(100vw - 32px)); top: 50px; max-height: calc(100vh - 200px); display: flex; flex-direction: column; overflow: hidden; }
+.tree-panel > div:not(.item-tooltip) { display: flex; flex-direction: column; min-height: 0; }
+.tree-scroll { overflow-y: auto; min-height: 0; flex: 1; }
+.tree-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.tree-points { color: var(--ui-muted); letter-spacing: 0.08em; }
+.tree-points.has { color: #e8c86a; text-shadow: 0 0 8px rgba(232, 200, 106, 0.5); }
+.tree-header button { font: inherit; font-size: 0.8em; color: var(--ui-text); background: #24201c; border: 1px solid var(--ui-border); padding: 4px 10px; cursor: pointer; }
+.tree-header button:disabled { opacity: 0.4; cursor: default; }
+.tree-bar { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
+.tree-slot { position: relative; width: 48px; height: 48px; border: 1px solid #4a4038; background: #15120f; cursor: pointer; }
+.tree-slot.selected { outline: 2px solid var(--ui-accent); }
+.tree-slot img { width: 100%; height: 100%; object-fit: cover; }
+.tree-slot .abbr, .tree-node .abbr { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #c8b89a; font-size: 0.8em; }
+.tree-branch { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid #221e1b; }
+.tree-branch.locked { opacity: 0.45; }
+.tree-branch-label { font-size: 0.72em; letter-spacing: 0.12em; text-transform: uppercase; color: #c8b89a; }
+.tree-nodes { display: flex; flex-wrap: wrap; gap: 5px; }
+.tree-node {
+  position: relative;
+  width: 74px;
+  min-height: 62px;
+  padding: 4px;
+  background: #15120f;
+  border: 1px solid #332c26;
+  cursor: pointer;
+  font-size: 0.66em;
+  text-align: center;
+}
+.tree-node img { width: 34px; height: 34px; display: block; margin: 0 auto 2px; object-fit: cover; filter: grayscale(0.8) brightness(0.6); }
+.tree-node.learned img { filter: none; }
+.tree-node.t-skill { border-color: #6a5a3a; }
+.tree-node.t-enhancement { border-color: #3a5a7a; }
+.tree-node.t-modifier { border-color: #4a3a6a; border-style: dashed; }
+.tree-node.t-keyPassive { border-color: #8a4a1a; }
+.tree-node.available { box-shadow: 0 0 8px rgba(232, 200, 106, 0.35); }
+.tree-node.learned { background: #241d14; border-color: #e8c86a; }
+.tree-node-name { color: var(--ui-text); line-height: 1.15; }
+.tree-node-rank { color: #e8c86a; margin-top: 2px; }
+.slot-icon { width: 100%; height: 100%; object-fit: cover; display: block; }

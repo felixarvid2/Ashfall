@@ -44,12 +44,13 @@ import { movementSystem } from './systems/movement';
 import { playerControlSystem } from './systems/playerControl';
 import { hazardSystem, projectileSystem } from './systems/projectiles';
 import { resourceSystem } from './systems/resource';
-import { forcedMoveSystem, skillSystem } from './systems/skills';
+import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from './systems/skills';
 import { statusSystem } from './systems/status';
 import { enemyNear } from './systems/targeting';
 import { DamageNumbers } from './ui/damageNumbers';
 import { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
+import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
 import { LootLabels } from './ui/lootLabels';
 import { playDropSound, playGoldSound, playPickupSound, unlockAudio } from './audio/lootSounds';
 import { PROGRESSION, BASE_ITEMS } from './data/loot/db';
@@ -59,6 +60,7 @@ import { addToGrid, emptyInventory, equipFromGrid, salvage, socketCrystal, targe
 import { PICKUP_KEY_RADIUS, grantXp, nextItemUid, pickUp, pickupSystem, rewardSystem, setItemNamer } from './systems/loot/rewards';
 import { computePlayerStats, recomputePlayer, sumItemStats } from './systems/stats';
 import { monsterLevel } from './systems/encounter';
+import { learn, learnedSkills, pointsSpent, resetTree, respecCost, tree } from './systems/skillTree';
 import { DevTools } from './ui/devtools';
 import { Hud, type HudState } from './ui/hud';
 import { Toasts } from './ui/toast';
@@ -86,6 +88,7 @@ export class Game {
   private readonly damageNumbers: DamageNumbers;
   private readonly inventoryPanel: InventoryPanel;
   private readonly characterPanel: CharacterPanel;
+  private readonly skillTreePanel: SkillTreePanel;
   private readonly lootLabels: LootLabels;
   private player!: Entity;
   private hitstop = 0;
@@ -132,6 +135,7 @@ export class Game {
       .add('status', statusSystem)
       .add('movement', movementSystem)
       .add('forcedMove', forcedMoveSystem)
+      .add('delayedStrikes', delayedStrikeSystem)
       .add('collision', collisionSystem)
       .add('projectiles', projectileSystem)
       .add('hazards', hazardSystem)
@@ -166,6 +170,33 @@ export class Game {
       health: this.world.req(this.player, Health),
       resourceMax: this.world.req(this.player, Resource).max,
     }));
+    this.skillTreePanel = new SkillTreePanel(
+      uiRoot,
+      () => {
+        const user = this.world.req(this.player, SkillUser);
+        const prog = this.world.req(this.player, Progression);
+        const t3 = tree(user.classId);
+        return {
+          tree: t3,
+          state: user.tree,
+          unspent: prog.skillPoints,
+          slots: user.slots,
+          compiled: user.compiled,
+          respecCost: respecCost(t3, prog.level),
+          gold: this.world.req(this.player, Inventory).gold,
+        };
+      },
+      {
+        learn: (id) => this.learnNode(id),
+        reset: () => this.resetSkillTree(),
+        assign: (slot, id) => this.assignSlot(slot, id),
+        iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
+      },
+    );
+    this.hud.setSkillResolvers(
+      (id) => this.world.get(this.player, SkillUser)?.compiled[id]?.def ?? skill(id),
+      (id) => this.renderer.assets.iconUrl(skillIconId(id), import.meta.env.BASE_URL),
+    );
     canvas.addEventListener('mousedown', unlockAudio, { once: true });
     window.addEventListener('keydown', unlockAudio, { once: true });
     this.devtools = new DevTools(
@@ -191,8 +222,9 @@ export class Game {
         },
         spawnLoot: () => {
           const tr = this.playerTransform;
-          for (let i = 0; i < 3; i++) {
-            this.ctx.rewards.push({ table: 'dt.wave_reward', level: monsterLevel(this.world, this.ctx), x: tr.x + 2, z: tr.z, xp: false });
+          const level = monsterLevel(this.world, this.ctx);
+          for (const rarity of ['legendary', 'legendary', 'unique', 'mythic'] as const) {
+            this.ctx.rewards.push({ table: 'dt.wave_reward', level, x: tr.x + 2, z: tr.z, xp: false, rarity });
           }
         },
         setScreenShake: (on) => {
@@ -261,6 +293,7 @@ export class Game {
     if (input.wasPressed('respawn') && this.world.has(this.player, Dead)) this.respawn();
     if (input.wasPressed('inventory')) this.inventoryPanel.toggle();
     if (input.wasPressed('character')) this.characterPanel.toggle();
+    if (input.wasPressed('skills')) this.skillTreePanel.toggle();
 
     this.scheduler.tick(this.world, dt, this.ctx);
     this.ctx.tick++;
@@ -341,6 +374,7 @@ export class Game {
           this.hud.showBanner(t('ui.levelUp', { level: event.level }), 2.5);
           this.toasts.show(t('ui.skillPoint'));
           this.characterPanel.refresh();
+          this.skillTreePanel.refresh();
           break;
         case 'overheat':
           this.notice('combat.overheat', 'error');
@@ -380,7 +414,7 @@ export class Game {
 
     const slots = user.slots.map((id) => {
       if (!id) return { id: null, cooldown: 0, cooldownMax: 0, affordable: false };
-      const def = skill(id);
+      const def = user.compiled[id]?.def ?? skill(id);
       return {
         id,
         cooldown: user.cooldowns[id] ?? 0,
@@ -491,6 +525,10 @@ export class Game {
       progression: { ...prog },
       inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped }),
       loot: { seq: this.ctx.loot.seq, rngState: [...this.ctx.loot.rng.getState()] },
+      skills: (() => {
+        const user = this.world.req(this.player, SkillUser);
+        return { ranks: { ...user.tree.ranks }, slots: [...user.slots] };
+      })(),
     };
   }
 
@@ -511,6 +549,11 @@ export class Game {
     mover.vx = mover.vz = 0;
 
     Object.assign(this.world.req(this.player, Progression), data.progression);
+    const user = this.world.req(this.player, SkillUser);
+    user.tree = { ranks: { ...data.skills.ranks } };
+    user.slots = [...data.skills.slots];
+    user.cast = null;
+    user.cooldowns = {};
     const inv = this.world.req(this.player, Inventory);
     if (data.inventory) {
       const grid = structuredClone(data.inventory.grid);
@@ -610,6 +653,59 @@ export class Game {
       damagePct: before.damageEstimate > 0 ? after.damageEstimate / before.damageEstimate - 1 : 0,
       life: after.maxLife - before.maxLife,
     };
+  }
+
+  // ---- Skill tree actions (called by the skill tree panel) ------------------
+
+  learnNode(id: string): void {
+    const user = this.world.req(this.player, SkillUser);
+    const prog = this.world.req(this.player, Progression);
+    const t = tree(user.classId);
+    const before = learnedSkills(t, user.tree);
+    const r = learn(t, user.tree, id, prog.skillPoints);
+    if (!r.ok) {
+      this.notice(`tree.cannot.${r.reason}`, 'error');
+      return;
+    }
+    prog.skillPoints--;
+    recomputePlayer(this.world, this.player);
+    // A newly learned skill goes into the first empty action bar slot.
+    for (const skillId of learnedSkills(t, user.tree).keys()) {
+      if (before.has(skillId) || user.slots.includes(skillId)) continue;
+      const free = user.slots.indexOf(null);
+      if (free >= 0) user.slots[free] = skillId;
+    }
+    this.skillTreePanel.refresh();
+  }
+
+  resetSkillTree(): void {
+    const user = this.world.req(this.player, SkillUser);
+    const prog = this.world.req(this.player, Progression);
+    const inv = this.world.req(this.player, Inventory);
+    const t = tree(user.classId);
+    const cost = respecCost(t, prog.level);
+    if (pointsSpent(t, user.tree) === 0) return;
+    if (inv.gold < cost) {
+      this.notice('tree.cannot.gold', 'error');
+      return;
+    }
+    inv.gold -= cost;
+    prog.skillPoints += resetTree(t, user.tree);
+    recomputePlayer(this.world, this.player);
+    user.slots = user.slots.map((s) => (s && user.compiled[s] ? s : null));
+    if (!user.slots.some(Boolean)) user.slots[0] = 'bastion.hydraulic_strike';
+    this.skillTreePanel.refresh();
+    this.inventoryPanel.refresh();
+  }
+
+  assignSlot(slot: number, skillId: string | null): void {
+    const user = this.world.req(this.player, SkillUser);
+    if (skillId && !user.compiled[skillId]) return;
+    // Moving a skill that is already on the bar swaps the two slots.
+    const existing = skillId ? user.slots.indexOf(skillId) : -1;
+    if (existing >= 0) user.slots[existing] = user.slots[slot] ?? null;
+    user.slots[slot] = skillId;
+    this.skillTreePanel.refresh();
   }
 
   private afterInventoryChange(): void {

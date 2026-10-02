@@ -1,6 +1,8 @@
 /** Core component definitions. Components are plain data — no methods, no Three.js objects. */
 import type { Bonus, ClassDef, DamageType, StatusId } from '../data/schemas';
 import type { Item, Slot } from '../data/loot/schemas';
+import type { CompiledSkill } from '../systems/skillCompile';
+import type { TreeState } from '../systems/skillTree';
 import { defineComponent, type Entity } from './ecs';
 
 /** World-space position (metres, y up) and facing (radians around y, 0 = +z). */
@@ -173,6 +175,10 @@ export interface SkillRequest {
 export interface SkillUser {
   classId: string;
   slots: (string | null)[];
+  /** Skill tree allocation. */
+  tree: TreeState;
+  /** Effective skills after ranks, tree modifiers, aspects and uniques (rebuilt by the stats system). */
+  compiled: Record<string, CompiledSkill>;
   cooldowns: Record<string, number>;
   cast: CastState | null;
   request: SkillRequest | null;
@@ -343,3 +349,12 @@ export interface PickupTarget {
   target: Entity;
 }
 export const PickupTarget = defineComponent<PickupTarget>('PickupTarget');
+
+/** Ultimate: an orbital strike that lands after a delay. */
+export interface DelayedStrike {
+  caster: Entity;
+  skillId: string;
+  remaining: number;
+  radius: number;
+}
+export const DelayedStrike = defineComponent<DelayedStrike>('DelayedStrike');

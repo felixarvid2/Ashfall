@@ -24,6 +24,7 @@ import { classDef, enemyDef } from '../data/db';
 import { PROGRESSION } from '../data/loot/db';
 import { emptyInventory } from '../systems/loot/inventory';
 import { recomputePlayer } from '../systems/stats';
+import { newTreeState, tree } from '../systems/skillTree';
 
 export function spawnPlayer(world: World, classId: string, x: number, z: number): Entity {
   const cls = classDef(classId);
@@ -63,6 +64,8 @@ export function spawnPlayer(world: World, classId: string, x: number, z: number)
   world.add(e, SkillUser, {
     classId,
     slots: [...cls.actionBar],
+    tree: newTreeState(tree(classId)),
+    compiled: {},
     cooldowns: {},
     cast: null,
     request: null,

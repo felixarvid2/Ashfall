@@ -1,4 +1,5 @@
 /** Shared per-game context handed to every system. */
+import type { Rarity } from '../data/loot/schemas';
 import type { Action, Settings } from '../data/settings';
 import type { EventQueue } from './events';
 import type { Rng } from './rng';
@@ -46,4 +47,6 @@ export interface RewardRequest {
   z: number;
   /** Grant XP (kills) or only loot (caches). */
   xp: boolean;
+  /** Also drop one guaranteed item of this rarity (debug, boss chests). */
+  rarity?: Rarity;
 }

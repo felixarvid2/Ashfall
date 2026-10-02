@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { ItemSchema, SlotSchema } from '../data/loot/schemas';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 const Vec3Schema = z.object({ x: z.number(), y: z.number(), z: z.number() });
 
@@ -38,6 +38,11 @@ export const SaveDataSchema = z.object({
     seq: z.number().int().nonnegative(),
     rngState: z.tuple([z.number(), z.number(), z.number(), z.number()]),
   }),
+  /** Skill tree ranks and the 6 action bar slots. */
+  skills: z.object({
+    ranks: z.record(z.string(), z.number().int().positive()),
+    slots: z.array(z.string().nullable()).length(6),
+  }),
 });
 
 export type SaveData = z.infer<typeof SaveDataSchema>;
@@ -59,6 +64,16 @@ export const MIGRATIONS: Record<number, Migration> = {
     inventory: null,
     loot: { seq: 0, rngState: d.rngState },
   }),
+  // v3 (Phase 3b): skill tree. Earlier characters get every point back to spend in the tree.
+  2: (d) => {
+    const prog = d.progression as { level: number; xp: number; skillPoints: number };
+    return {
+      ...d,
+      version: 3,
+      progression: { ...prog, skillPoints: Math.max(0, prog.level - 1) },
+      skills: { ranks: { 'n.hydraulic_strike': 1 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
+    };
+  },
 };
 
 export class SaveError extends Error {}

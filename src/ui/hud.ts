@@ -5,6 +5,7 @@
 import { t } from '../data/i18n';
 import type { Action, MoveMode } from '../data/settings';
 import { skill } from '../data/db';
+import type { SkillDef } from '../data/schemas';
 
 /** "KeyW" → "W", "Digit1" → "1", "F3" → "F3". */
 export function keyLabel(code: string): string {
@@ -97,12 +98,16 @@ class Slot {
 
   skillId: string | null = null;
 
-  set(name: string, category: string, cooldown: number, max: number, usable: boolean): void {
+  set(name: string, category: string, cooldown: number, max: number, usable: boolean, icon: string | null = null): void {
     const frac = max > 0 ? Math.min(1, cooldown / max) : 0;
-    const key = `${name}|${category}|${frac.toFixed(2)}|${usable}|${cooldown > 0 ? Math.ceil(cooldown) : 0}`;
+    const key = `${name}|${category}|${frac.toFixed(2)}|${usable}|${cooldown > 0 ? Math.ceil(cooldown) : 0}|${icon}`;
     if (key === this.last) return;
     this.last = key;
-    this.name.textContent = name;
+    if (icon) {
+      this.name.replaceChildren(Object.assign(document.createElement('img'), { src: icon, alt: name, className: 'slot-icon' }));
+    } else {
+      this.name.textContent = name;
+    }
     this.el.dataset.category = category;
     this.cd.style.background =
       frac > 0 ? `conic-gradient(rgba(0,0,0,0.72) ${frac * 360}deg, transparent 0deg)` : 'transparent';
@@ -135,6 +140,14 @@ export class Hud {
   private lastWave = '';
   private lastTarget = '';
   private respawnKey = 'R';
+  private resolveSkill: (id: string) => SkillDef = skill;
+  private resolveIcon: (id: string) => string | null = () => null;
+
+  /** Use effective (compiled) skill numbers and generated icons in the bar and tooltips. */
+  setSkillResolvers(def: (id: string) => SkillDef, icon: (id: string) => string | null): void {
+    this.resolveSkill = def;
+    this.resolveIcon = icon;
+  }
 
   constructor(root: HTMLElement, onRespawn: () => void) {
     const title = document.createElement('div');
@@ -223,6 +236,7 @@ export class Hud {
       dodge: first('dodge'),
       potion: first('potion'),
       inv: first('inventory'),
+      skills: first('skills'),
       pickup: first('pickup'),
       debug: first('toggleDebug'),
     });
@@ -248,9 +262,9 @@ export class Hud {
         slot.set('', 'empty', 0, 0, false);
         return;
       }
-      const def = skill(s.id);
+      const def = this.resolveSkill(s.id);
       const [cls, name] = s.id.split('.') as [string, string];
-      slot.set(t(`skills.${cls}.${name}.name`), def.category, s.cooldown, s.cooldownMax, s.affordable && s.cooldown <= 0);
+      slot.set(t(`skills.${cls}.${name}.name`), def.category, s.cooldown, s.cooldownMax, s.affordable && s.cooldown <= 0, this.resolveIcon(s.id));
     });
     this.dodgeSlot.set(t('hud.dodge'), 'dodge', state.dodge.cooldown, state.dodge.max, state.dodge.cooldown <= 0);
     this.potionSlot.set(`${t('hud.potion')} ×${state.potion.charges}`, 'potion', 0, 0, state.potion.charges > 0);
@@ -306,13 +320,13 @@ export class Hud {
       this.tooltip.hidden = true;
       return;
     }
-    const def = skill(slot.skillId);
+    const def = this.resolveSkill(slot.skillId);
     const [cls, name] = def.id.split('.') as [string, string];
     const resource = t('resources.heat');
     const lines = [`<strong>${t(`skills.${cls}.${name}.name`)}</strong>`, t(`skills.${cls}.${name}.desc`)];
     if (def.resourceCost > 0) lines.push(t('hud.cost', { amount: def.resourceCost, resource }));
     if (def.resourceGain > 0) lines.push(t('hud.generates', { amount: def.resourceGain, resource }));
-    if (def.cooldown > 0) lines.push(t('hud.cooldown', { seconds: def.cooldown }));
+    if (def.cooldown > 0) lines.push(t('hud.cooldown', { seconds: Number(def.cooldown.toFixed(1)) }));
     this.tooltip.innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
     const rect = slot.el.getBoundingClientRect();
     this.tooltip.hidden = false;

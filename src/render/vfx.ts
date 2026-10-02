@@ -166,6 +166,36 @@ export class VfxSystem {
     fx.update(fx, 0);
   }
 
+  private spawnPullRing(x: number, z: number, radius: number): void {
+    const fx = this.acquire('ring:pull', () => this.ring('#7ec8ff'));
+    fx.life = 0.35;
+    fx.group.position.set(x, 0.05, z);
+    fx.update = (f, t) => {
+      const r = radius * (1 - 0.85 * t);
+      f.group.scale.set(r, 1, r);
+      f.materials[0]!.opacity = 0.9 * (1 - t * 0.6);
+    };
+    fx.update(fx, 0);
+  }
+
+  /** Vertical light column for the orbital strike. */
+  private spawnBeam(x: number, z: number, radius: number): void {
+    const fx = this.acquire('beam', () => {
+      const mat = additive('#cfefff', 0.9);
+      const group = new THREE.Group();
+      group.add(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 20, 1, true).translate(0, 0.5, 0), mat));
+      return { group, materials: [mat] };
+    });
+    fx.life = 0.5;
+    fx.group.position.set(x, 0, z);
+    fx.update = (f, t) => {
+      const w = radius * (1 - t * 0.7);
+      f.group.scale.set(w, 40, w);
+      f.materials[0]!.opacity = 0.9 * (1 - t);
+    };
+    fx.update(fx, 0);
+  }
+
   private arcGeometry(arcDeg: number): THREE.BufferGeometry {
     let g = this.arcGeometries.get(arcDeg);
     if (!g) {
@@ -230,6 +260,26 @@ export class VfxSystem {
         break;
       case 'dodge':
         this.spawnRing('ring:dodge', '#c9c2b6', x, z, 1.2, 0.3, 0.3);
+        break;
+      case 'pull':
+        // Inward ring: starts wide and collapses onto the caster.
+        this.spawnPullRing(x, z, radius);
+        this.sparks.emit(x, 0.4, z, 20, '#7ec8ff', 6);
+        break;
+      case 'vent':
+        this.spawnRing('ring:vent', '#ff6a1a', x, z, radius, 0.5, 0.1);
+        this.spawnRing('ring:vent2', '#ffd27a', x, z, radius * 0.6, 0.35, 0.05);
+        this.sparks.emit(x, 0.4, z, 60, '#ff7a1a', 12);
+        break;
+      case 'orbital':
+        this.spawnRing('ring:orbital', '#9fd8ff', x, z, radius * 1.2, 0.6, 0.1);
+        this.spawnRing('ring:orbital2', '#ffffff', x, z, radius * 0.7, 0.3, 0.05);
+        this.spawnBeam(x, z, radius * 0.45);
+        this.sparks.emit(x, 0.5, z, 80, '#bfe8ff', 14);
+        break;
+      case 'coolant':
+        this.spawnRing('ring:coolant', '#7ec8ff', x, z, 2.4, 0.5, 0.2, 0.3);
+        this.sparks.emit(x, 1, z, 30, '#bfe8ff', 4);
         break;
       case 'boltHit':
         this.sparks.emit(x, 1.2, z, 10, '#ff7a3a', 4);

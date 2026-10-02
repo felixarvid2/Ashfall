@@ -27,7 +27,7 @@ import {
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, enemyDef } from '../data/db';
-import type { Condition, DamageType, StatusApply, StatusId } from '../data/schemas';
+import type { Bonus, Condition, DamageType, StatusApply, StatusId } from '../data/schemas';
 import { computeHit, computeOutgoing, computeTaken, type TargetState } from './damage';
 
 export function hasStatus(world: World, e: Entity, id: StatusId): boolean {
@@ -52,6 +52,15 @@ export function conditionsOf(world: World, e: Entity, attackRange: 'melee' | 'ra
   return set;
 }
 
+/** Conditions about the attacker itself ("while you have a barrier", "while Heat is high"). */
+export function attackerConditions(world: World, e: Entity): Condition[] {
+  const out: Condition[] = [];
+  const r = world.get(e, Resource);
+  if (r && r.current >= r.max * 0.7) out.push('highResource');
+  if (hasStatus(world, e, 'barrier')) out.push('hasBarrier');
+  return out;
+}
+
 export function targetState(world: World, e: Entity, attackRange: 'melee' | 'ranged' | null): TargetState {
   const stats = world.get(e, CombatStats);
   const vulnDef = STATUS_DEFS.vulnerable;
@@ -66,6 +75,8 @@ export function targetState(world: World, e: Entity, attackRange: 'melee' | 'ran
 }
 
 export interface HitSpec {
+  /** Extra damage bonuses that apply only to this hit (skill modifiers). */
+  bonuses?: { additive: readonly Bonus[]; multiplicative: readonly Bonus[] };
   coefficient: number;
   damageType: DamageType;
   knockback: number;
@@ -82,7 +93,16 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   const stats = world.get(attacker, CombatStats);
   const team = world.get(attacker, Faction)?.team ?? 'enemy';
   if (!stats) return null;
-  const result = computeHit({ ...stats, coefficient: hit.coefficient }, hit.damageType, targetState(world, target, hit.range), stats.level, ctx.rng);
+  const state = targetState(world, target, hit.range);
+  const conditions = new Set(state.conditions);
+  for (const c of attackerConditions(world, attacker)) conditions.add(c);
+  const input = {
+    ...stats,
+    coefficient: hit.coefficient,
+    additive: hit.bonuses ? [...stats.additive, ...hit.bonuses.additive] : stats.additive,
+    multiplicative: hit.bonuses ? [...stats.multiplicative, ...hit.bonuses.multiplicative] : stats.multiplicative,
+  };
+  const result = computeHit(input, hit.damageType, { ...state, conditions }, stats.level, ctx.rng);
   const dealt = applyDamage(world, ctx, target, result.final, {
     crit: result.crit,
     damageType: hit.damageType,
@@ -91,7 +111,7 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   });
   if (dealt === null) return null;
   markInCombat(world, attacker);
-  if (hit.knockback > 0 && isAlive(world, target)) applyKnockback(world, target, hit.fromX, hit.fromZ, hit.knockback);
+  if (hit.knockback !== 0 && isAlive(world, target)) applyKnockback(world, target, hit.fromX, hit.fromZ, hit.knockback);
   for (const apply of hit.applies) applyStatus(world, ctx, target, apply, { team, level: stats.level, attacker });
   return dealt;
 }
@@ -180,6 +200,9 @@ export function markInCombat(world: World, e: Entity): void {
   if (resource) resource.sinceCombat = 0;
 }
 
+const KNOCKBACK_TIME = 0.18;
+const PULL_STOP_DISTANCE = 1.2;
+
 export function applyKnockback(world: World, target: Entity, fromX: number, fromZ: number, strength: number): void {
   const tr = world.get(target, Transform);
   const mover = world.get(target, Mover);
@@ -196,8 +219,10 @@ export function applyKnockback(world: World, target: Entity, fromX: number, from
   }
   // Heavier things budge less.
   const mass = Math.max(0.5, world.get(target, Collider)?.mass ?? 1);
-  const speed = (strength * 4) / Math.sqrt(mass);
-  world.add(target, Knockback, { vx: dx * speed, vz: dz * speed, remaining: 0.18 });
+  let speed = (strength * 4) / Math.sqrt(mass);
+  // Negative strength pulls toward the origin, stopping short of it instead of overshooting.
+  if (strength < 0) speed = -Math.min(-speed, Math.max(0, len - PULL_STOP_DISTANCE) / KNOCKBACK_TIME);
+  world.add(target, Knockback, { vx: dx * speed, vz: dz * speed, remaining: KNOCKBACK_TIME });
 }
 
 export interface StatusSource {

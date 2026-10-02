@@ -1,10 +1,13 @@
 /** Shared test helpers: a headless GameContext, fake input and a tick runner. */
 import type { GameContext, InputState } from '../src/core/context';
-import { World } from '../src/core/ecs';
+import { SkillUser } from '../src/core/components';
+import { World, type Entity } from '../src/core/ecs';
 import { EventQueue } from '../src/core/events';
 import { Rng } from '../src/core/rng';
 import { SpatialHash } from '../src/core/spatial';
+import { classDef } from '../src/data/db';
 import { defaultSettings, type Action } from '../src/data/settings';
+import { recomputePlayer } from '../src/systems/stats';
 
 export function fakeInput(held: Action[] = [], mouseDown: number[] = []): InputState {
   return {
@@ -46,4 +49,13 @@ export function run(world: World, ctx: GameContext, systems: SystemFn[], ticks =
     ctx.tick++;
     ctx.time += 1 / 60;
   }
+}
+
+/** Learn skills at rank 1 (default: the class's starting action bar) and put them on the bar. */
+export function learnSkills(world: World, player: Entity, skills?: (string | null)[]): void {
+  const user = world.req(player, SkillUser);
+  const bar = skills ?? classDef(user.classId).actionBar;
+  for (const id of bar) if (id) user.tree.ranks[`n.${id.split('.')[1]}`] = 1;
+  user.slots = [...bar, null, null, null, null, null, null].slice(0, 6);
+  recomputePlayer(world, player);
 }

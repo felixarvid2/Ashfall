@@ -87,3 +87,15 @@ Implemented in `src/systems/stats.ts`.
   **life on kill** apply where their names say.
 - **Damage reduction** (cap 50 %) multiplies damage taken: `taken × (1 − DR)` after armor/resistance.
 - Crit chance is capped at 80 %.
+
+## Skill tree, aspects and uniques (Phase 3b)
+
+- Skill **ranks** multiply the skill's coefficient: × (1 + 0.1 × (rank − 1)).
+- Effects of kind `damage` go into the additive bucket, or the multiplicative bucket when marked
+  multiplicative (key passives, some aspects, Heart of Lumen); each multiplicative bonus is its own factor.
+- Per-skill bonuses (`skillMod` → `damage`) are added to the hit only for that skill.
+- **Attacker conditions**: `highResource` (resource ≥ 70 % of max) and `hasBarrier` are evaluated on the
+  attacker when the hit is dealt, alongside the target conditions.
+- Heat Vent coefficient = base + perResource × Heat spent. Hazards from modifiers/aspects deal
+  `dpsCoefficient × weapon damage × (1 + 0.001 × mainStat)` per second as a DoT.
+- Negative knockback pulls toward the caster and stops 1.2 m short of it.

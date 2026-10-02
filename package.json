@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "meshy": "tsx scripts/meshy/cli.ts"
+    "meshy": "tsx scripts/meshy/cli.ts",
+    "sim": "tsx scripts/sim/cli.ts"
   },
   "dependencies": {
     "three": "^0.186.1",

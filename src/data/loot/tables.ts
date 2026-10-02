@@ -6,10 +6,9 @@ export const RARITY_DEFS: z.input<typeof RarityDefSchema>[] = [
   { id: 'common', color: '#a8a8a8', affixes: [0, 0], greaterChance: 0, socketChance: 0.12, salvageGold: 0.5, beam: 0 },
   { id: 'magic', color: '#4a8cff', affixes: [1, 2], greaterChance: 0.01, socketChance: 0.22, salvageGold: 1, beam: 1.2 },
   { id: 'rare', color: '#ffd84a', affixes: [3, 4], greaterChance: 0.03, socketChance: 0.32, salvageGold: 2.5, beam: 2.4 },
-  // Legendary, unique and mythic need aspects/unique effects (Phase 3b).
-  { id: 'legendary', color: '#ff8a2a', affixes: [3, 4], greaterChance: 0.05, socketChance: 0.4, salvageGold: 5, beam: 5, enabled: false },
-  { id: 'unique', color: '#c9a45c', affixes: [4, 4], greaterChance: 0.1, socketChance: 0.4, salvageGold: 8, beam: 6, enabled: false },
-  { id: 'mythic', color: '#ff2a3a', affixes: [4, 4], greaterChance: 1, socketChance: 0.5, salvageGold: 20, beam: 9, enabled: false },
+  { id: 'legendary', color: '#ff8a2a', affixes: [3, 4], greaterChance: 0.05, socketChance: 0.4, salvageGold: 5, beam: 5 },
+  { id: 'unique', color: '#c9a45c', affixes: [4, 4], greaterChance: 0.1, socketChance: 0.4, salvageGold: 8, beam: 6 },
+  { id: 'mythic', color: '#ff2a3a', affixes: [4, 4], greaterChance: 1, socketChance: 0.5, salvageGold: 20, beam: 9 },
 ];
 
 /** Crystal tiers: chipped (< 150 item power), regular (< 300), flawless. */

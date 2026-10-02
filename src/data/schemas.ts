@@ -14,7 +14,19 @@ export const StatusIdSchema = z.enum(STATUS_IDS);
 export type StatusId = z.infer<typeof StatusIdSchema>;
 
 /** Conditions that gate a conditional damage bonus (e.g. "+20% vs vulnerable"). */
-export const CONDITIONS = ['vulnerable', 'stunned', 'burning', 'poisoned', 'chilled', 'elite', 'melee', 'ranged'] as const;
+export const CONDITIONS = [
+  'vulnerable',
+  'stunned',
+  'burning',
+  'poisoned',
+  'chilled',
+  'elite',
+  'melee',
+  'ranged',
+  // Attacker-side conditions (evaluated on the one dealing damage).
+  'highResource',
+  'hasBarrier',
+] as const;
 export const ConditionSchema = z.enum(CONDITIONS);
 export type Condition = z.infer<typeof ConditionSchema>;
 
@@ -72,7 +84,8 @@ export type StatusApply = z.infer<typeof StatusApplySchema>;
 const ImpactSchema = z.object({
   coefficient: z.number().nonnegative(),
   damageType: DamageTypeSchema,
-  knockback: z.number().nonnegative().default(0),
+  /** Metres pushed away from the caster; negative pulls toward it. */
+  knockback: z.number().default(0),
   applies: z.array(StatusApplySchema).default([]),
   hitstopMs: z.number().nonnegative().default(0),
   shake: z.number().min(0).max(1).default(0),
@@ -102,6 +115,24 @@ export const SkillEffectSchema = z.discriminatedUnion('kind', [
     applies: z.array(StatusApplySchema),
     /** Remove disabling statuses (stun/freeze) and slows on use. */
     cleanse: z.boolean().default(false),
+    /** Change the caster's resource on use (negative = vent Heat). */
+    resourceDelta: z.number().default(0),
+    /** Heal this fraction of max life on use. */
+    healFraction: z.number().min(0).max(1).default(0),
+  }),
+  // Spend stored resource in a blast: coefficient = base + perResource × resource spent.
+  ImpactSchema.extend({
+    kind: z.literal('vent'),
+    radius: z.number().positive(),
+    perResource: z.number().nonnegative(),
+    minResource: z.number().nonnegative(),
+  }),
+  // Delayed strike at the cursor after a telegraph (ultimate).
+  ImpactSchema.extend({
+    kind: z.literal('orbital'),
+    range: z.number().positive(),
+    radius: z.number().positive(),
+    delay: z.number().positive(),
   }),
 ]);
 export type SkillEffect = z.infer<typeof SkillEffectSchema>;

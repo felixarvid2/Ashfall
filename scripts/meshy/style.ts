@@ -43,8 +43,19 @@ export function buildConceptPrompt(entry: AssetEntry): string {
   );
 }
 
+/** Skill icons are full-bleed painted emblems; item icons are a single object on transparency. */
+export function isSkillIcon(entry: AssetEntry): boolean {
+  return entry.id.startsWith('icon.skill_');
+}
+
 /** Inventory icon prompt: one object, readable at 64 px, consistent painted style. */
 export function buildIconPrompt(entry: AssetEntry): string {
+  if (isSkillIcon(entry)) {
+    return clip(
+      `square game ability icon: ${entry.prompt}, bold centered silhouette filling the frame, painted digital art, ` +
+        `dark gritty sci-fi, dark smoky background with a strong orange or cyan accent glow, high contrast, readable at 48 px, no text, no border`,
+    );
+  }
   return clip(
     `game inventory icon of a ${entry.prompt}, single object centered, three-quarter view, painted digital art, ` +
       `dark gritty sci-fi, worn metal, rust and ash, dramatic rim light, muted colors with a strong accent glow, no text, no frame`,

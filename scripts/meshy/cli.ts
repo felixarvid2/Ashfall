@@ -30,7 +30,7 @@ import { PUBLIC_ASSETS_DIR, loadManifest, saveManifest, selectAssets, sourcePath
 import { applyReview } from './actions';
 import { contactSheet } from './contactSheet';
 import { optimizeAssets } from './optimize';
-import { buildConceptPrompt, buildIconPrompt, buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
+import { buildConceptPrompt, buildIconPrompt, isSkillIcon, buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
 import { CONCEPT_IMAGE_MODEL, ICON_IMAGE_MODEL } from './costs';
 import sharp from 'sharp';
 import { mkdirSync, statSync } from 'node:fs';
@@ -191,6 +191,8 @@ async function runImageTo3D(client: MeshyClient, manifest: AssetManifest, entry:
   log(`✓ ${entry.id}: textured model downloaded`);
 }
 
+const SKILL_ICON_INSET = 0.08;
+
 /** 2D icon: text-to-image with a transparent background, resized to 128 px WebP for the UI. */
 async function runIcon(client: MeshyClient, manifest: AssetManifest, entry: AssetEntry, opts: Options): Promise<void> {
   if (!entry.meshy.previewTaskId || opts.force) {
@@ -198,7 +200,7 @@ async function runIcon(client: MeshyClient, manifest: AssetManifest, entry: Asse
       ai_model: ICON_IMAGE_MODEL,
       prompt: buildIconPrompt(entry),
       aspect_ratio: '1:1',
-      remove_background: true,
+      remove_background: !isSkillIcon(entry),
     });
     entry.meshy = { ...entry.meshy, previewTaskId: id, lastError: undefined };
     saveManifest(manifest);
@@ -215,7 +217,18 @@ async function runIcon(client: MeshyClient, manifest: AssetManifest, entry: Asse
   const rel = `icons/${name}.webp`;
   const out = resolve(PUBLIC_ASSETS_DIR, rel);
   mkdirSync(dirname(out), { recursive: true });
-  await sharp(sourcePath(entry, 'preview.png')).trim().resize(128, 128, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).webp({ quality: 86 }).toFile(out);
+  const img = sharp(sourcePath(entry, 'preview.png'));
+  if (isSkillIcon(entry)) {
+    // Crop the inset so the generator's rounded frame corners never show.
+    const { width = 1024, height = 1024 } = await img.metadata();
+    const inset = Math.round(Math.min(width, height) * SKILL_ICON_INSET);
+    await img
+      .extract({ left: inset, top: inset, width: width - inset * 2, height: height - inset * 2 })
+      .resize(128, 128, { fit: 'cover' })
+      .webp({ quality: 86 })
+      .toFile(out);
+  }
+  else await img.trim().resize(128, 128, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).webp({ quality: 86 }).toFile(out);
   entry.file = rel;
   entry.stats = { triangles: 0, bytes: statSync(out).size };
   entry.status = 'optimized';

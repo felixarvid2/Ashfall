@@ -5,7 +5,7 @@
     "loading": "Loading assets… {done}/{total}"
   },
   "hud": {
-    "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {inv} inventory · {pickup} pick up · {debug} debug",
+    "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {pickup} pick up · {debug} debug",
     "life": "Life",
     "heat": "Heat",
     "overheating": "OVERHEATING",
@@ -69,7 +69,7 @@
       "high": "High"
     },
     "addLevel": "+1 level",
-    "spawnLoot": "Drop loot"
+    "spawnLoot": "Drop loot (+legendary/unique)"
   },
   "combat": {
     "notEnoughResource": "Not enough Heat",
@@ -92,6 +92,30 @@
       "energy_shield": {
         "name": "Energy Shield",
         "desc": "Project a barrier worth 35% of your life and shake off stuns and slows."
+      },
+      "piston_jab": {
+        "name": "Piston Jab",
+        "desc": "A fast, narrow jab that briefly makes enemies Vulnerable. Generates Heat."
+      },
+      "furnace_cleave": {
+        "name": "Furnace Cleave",
+        "desc": "A wide superheated cleave that sets enemies on fire."
+      },
+      "coolant_flush": {
+        "name": "Coolant Flush",
+        "desc": "Vent 40 Heat into coolant: heal 18% of your life and gain a small barrier."
+      },
+      "magnetic_pull": {
+        "name": "Magnetic Pull",
+        "desc": "A magnetic burst that drags nearby enemies to you and stuns them briefly."
+      },
+      "heat_vent": {
+        "name": "Heat Vent",
+        "desc": "Release all stored Heat as a wave of fire. The more Heat, the more damage (requires 20 Heat)."
+      },
+      "orbital_strike": {
+        "name": "Orbital Strike",
+        "desc": "Call down an orbital strike at the cursor. After a short warning it deals massive damage, stuns and makes enemies Vulnerable."
       }
     }
   },
@@ -255,5 +279,334 @@
     },
     "armorReduction": "Physical damage reduction",
     "close": "Close"
+  },
+  "tree": {
+    "title": "Skills",
+    "points": "{points} skill points available",
+    "reset": "Reset ({gold} gold)",
+    "resetConfirm": "Refund all skill points for {gold} gold?",
+    "barHint": "Click an action bar slot, then a learned skill to assign it. Right-click a slot to clear it.",
+    "unlockAt": "unlocks at {points} points",
+    "damage": "Damage: {pct}% of weapon damage",
+    "perRank": "Each rank: +10% damage",
+    "chooseOne": "Choose one of the two modifiers.",
+    "onlyOneKey": "You can only have one Key Passive.",
+    "assignHint": "Select an action bar slot first to assign this skill.",
+    "branches": {
+      "basic": "Basic",
+      "core": "Core",
+      "defensive": "Defensive",
+      "tactical": "Tactical",
+      "mastery": "Mastery",
+      "ultimate": "Ultimate",
+      "key": "Key Passive"
+    },
+    "types": {
+      "skill": "Active skill",
+      "enhancement": "Enhancement",
+      "modifier": "Modifier",
+      "passive": "Passive",
+      "keyPassive": "Key Passive"
+    },
+    "cannot": {
+      "noPoints": "No skill points left",
+      "locked": "Branch locked: spend more points",
+      "maxed": "Already at max rank",
+      "requires": "Learn the previous node first",
+      "exclusive": "You already chose another option",
+      "gold": "Not enough gold"
+    },
+    "e": {
+      "hydraulic_strike": {
+        "name": "Enhanced Strike",
+        "desc": "Hydraulic Strike generates 4 more Heat."
+      },
+      "piston_jab": {
+        "name": "Enhanced Jab",
+        "desc": "Piston Jab reaches 20% further."
+      },
+      "seismic_shock": {
+        "name": "Enhanced Shock",
+        "desc": "Seismic Shock radius +15%."
+      },
+      "furnace_cleave": {
+        "name": "Enhanced Cleave",
+        "desc": "Furnace Cleave costs 6 less Heat."
+      },
+      "energy_shield": {
+        "name": "Enhanced Shield",
+        "desc": "Energy Shield barrier +20%."
+      },
+      "coolant_flush": {
+        "name": "Enhanced Flush",
+        "desc": "Coolant Flush cooldown −20%."
+      },
+      "rocket_leap": {
+        "name": "Enhanced Leap",
+        "desc": "Rocket Leap landing radius +20%."
+      },
+      "magnetic_pull": {
+        "name": "Enhanced Pull",
+        "desc": "Magnetic Pull radius +20%."
+      },
+      "heat_vent": {
+        "name": "Enhanced Vent",
+        "desc": "Heat Vent damage +20%."
+      },
+      "orbital_strike": {
+        "name": "Enhanced Uplink",
+        "desc": "Orbital Strike cooldown −20%."
+      }
+    },
+    "m": {
+      "hydraulic_strike": {
+        "searing": {
+          "name": "Searing Strike",
+          "desc": "Hydraulic Strike always sets enemies on fire."
+        },
+        "crushing": {
+          "name": "Crushing Strike",
+          "desc": "Hydraulic Strike deals +40% damage to Stunned and to Vulnerable enemies."
+        }
+      },
+      "piston_jab": {
+        "rapid": {
+          "name": "Rapid Jab",
+          "desc": "Piston Jab winds up 40% faster and generates 3 more Heat."
+        },
+        "breaching": {
+          "name": "Breaching Jab",
+          "desc": "Piston Jab deals x50% damage to Vulnerable enemies."
+        }
+      },
+      "seismic_shock": {
+        "pull": {
+          "name": "Seismic Pull",
+          "desc": "Seismic Shock pulls enemies in instead of pushing them away."
+        },
+        "rupture": {
+          "name": "Rupture",
+          "desc": "Seismic Shock leaves a burning fissure for 3 seconds."
+        }
+      },
+      "furnace_cleave": {
+        "wildfire": {
+          "name": "Wildfire",
+          "desc": "Furnace Cleave deals +50% damage to Burning enemies."
+        },
+        "molten": {
+          "name": "Molten Whirl",
+          "desc": "Furnace Cleave hits all around you, but deals 15% less damage."
+        }
+      },
+      "energy_shield": {
+        "reactive": {
+          "name": "Reactive Plating",
+          "desc": "While you have a barrier, deal +15% damage."
+        },
+        "restoring": {
+          "name": "Restoring Field",
+          "desc": "Energy Shield also heals 12% of your life."
+        }
+      },
+      "coolant_flush": {
+        "cryo": {
+          "name": "Cryo Flush",
+          "desc": "Coolant Flush barrier is doubled."
+        },
+        "overpressure": {
+          "name": "Overpressure",
+          "desc": "Coolant Flush heals 50% more."
+        }
+      },
+      "rocket_leap": {
+        "afterburner": {
+          "name": "Afterburner",
+          "desc": "Rocket Leap cooldown −30%."
+        },
+        "crater": {
+          "name": "Impact Crater",
+          "desc": "Rocket Leap leaves a burning crater for 4 seconds."
+        }
+      },
+      "magnetic_pull": {
+        "polarity": {
+          "name": "Polarity",
+          "desc": "Magnetic Pull makes enemies Vulnerable for 3 seconds."
+        },
+        "lock": {
+          "name": "Magnetic Lock",
+          "desc": "Magnetic Pull stuns for 1.4 seconds."
+        }
+      },
+      "heat_vent": {
+        "supernova": {
+          "name": "Supernova",
+          "desc": "Heat Vent radius +40%."
+        },
+        "controlled": {
+          "name": "Controlled Burn",
+          "desc": "Heat Vent cooldown −35%."
+        }
+      },
+      "orbital_strike": {
+        "precision": {
+          "name": "Precision Uplink",
+          "desc": "Orbital Strike deals 35% more damage."
+        },
+        "barrage": {
+          "name": "Saturation Barrage",
+          "desc": "Orbital Strike radius +50%."
+        }
+      }
+    },
+    "p": {
+      "hydraulic_power": {
+        "name": "Hydraulic Power",
+        "desc": "+4% damage per rank."
+      },
+      "forged_frame": {
+        "name": "Forged Frame",
+        "desc": "+2% damage reduction per rank."
+      },
+      "thermal_capacitor": {
+        "name": "Thermal Capacitor",
+        "desc": "+4% resource generation per rank."
+      },
+      "crushing_force": {
+        "name": "Crushing Force",
+        "desc": "+6% damage to Vulnerable enemies per rank."
+      },
+      "reinforced_plating": {
+        "name": "Reinforced Plating",
+        "desc": "+20 armor per rank."
+      },
+      "vital_systems": {
+        "name": "Vital Systems",
+        "desc": "+15 maximum life per rank."
+      },
+      "servo_actuators": {
+        "name": "Servo Actuators",
+        "desc": "+3% movement speed per rank."
+      },
+      "combat_stims": {
+        "name": "Combat Stims",
+        "desc": "+10% stim pack healing per rank."
+      },
+      "overclock": {
+        "name": "Overclock",
+        "desc": "+3% attack speed per rank."
+      },
+      "heat_tolerance": {
+        "name": "Heat Tolerance",
+        "desc": "You can stay at max Heat 0.5 seconds longer before overheating, per rank."
+      },
+      "killing_blow": {
+        "name": "Killing Blow",
+        "desc": "+8% damage to Elites per rank."
+      }
+    },
+    "k": {
+      "reactor_core": {
+        "name": "Reactor Core",
+        "desc": "While Heat is at least 70%, deal x25% damage. You overheat 0.5 seconds sooner."
+      },
+      "bulwark_protocol": {
+        "name": "Bulwark Protocol",
+        "desc": "While you have a barrier, deal x20% damage. Barriers are 30% stronger."
+      },
+      "shockwave_engine": {
+        "name": "Shockwave Engine",
+        "desc": "Vulnerable enemies take x30% damage from you."
+      }
+    }
+  },
+  "aspects": {
+    "fissure": {
+      "name": "Fissuring",
+      "desc": "Seismic Shock leaves a burning fissure that deals {value} of weapon damage per second for 3 seconds."
+    },
+    "furnace": {
+      "name": "Furnace",
+      "desc": "Hydraulic Strike and Piston Jab generate {value} more Heat."
+    },
+    "momentum": {
+      "name": "Momentum",
+      "desc": "Rocket Leap cooldown is {value} shorter."
+    },
+    "aegis": {
+      "name": "Aegis",
+      "desc": "Energy Shield barrier is {value} stronger."
+    },
+    "echo": {
+      "name": "Echoing",
+      "desc": "Seismic Shock has {value} larger radius and deals {value} more damage."
+    },
+    "molten_fists": {
+      "name": "Molten",
+      "desc": "Hydraulic Strike always sets enemies on fire, dealing {value} of weapon damage over 3 seconds."
+    },
+    "brutality": {
+      "name": "Brutal",
+      "desc": "Deal x{value} damage to Stunned enemies."
+    },
+    "bulwark": {
+      "name": "Bulwark",
+      "desc": "While you have a barrier, deal x{value} damage."
+    },
+    "wrecking_ball": {
+      "name": "Wrecking",
+      "desc": "Rocket Leap has {value} larger landing radius and deals {value} more landing damage."
+    },
+    "vulnerability_matrix": {
+      "name": "Exposing",
+      "desc": "Deal x{value} damage to Vulnerable enemies."
+    },
+    "heat_sink": {
+      "name": "Heat Sink",
+      "desc": "Heat Vent cooldown is {value} shorter."
+    },
+    "gravity_well": {
+      "name": "Gravitic",
+      "desc": "Magnetic Pull has {value} larger radius."
+    },
+    "orbital_uplink": {
+      "name": "Uplinked",
+      "desc": "Orbital Strike cooldown is {value} shorter."
+    },
+    "cinder_core": {
+      "name": "Cinder",
+      "desc": "Furnace Cleave costs {value} less Heat."
+    },
+    "lifeblood": {
+      "name": "Lifeblood",
+      "desc": "Restore {value} life whenever an enemy dies."
+    },
+    "unbroken": {
+      "name": "Unbroken",
+      "desc": "+{value} damage reduction."
+    }
+  },
+  "uniques": {
+    "governors_crucible": {
+      "name": "Governor's Crucible",
+      "effect": "Seismic Shock costs no Heat, but has a 3.5 second cooldown.",
+      "flavor": "The governor wore it to the very end. It held. He didn't."
+    },
+    "ashwalker_treads": {
+      "name": "Ashwalker Treads",
+      "effect": "Rocket Leap cooldown −60% and landing damage +60%, but it costs 25 Heat and generates none.",
+      "flavor": "Every step a small eruption."
+    },
+    "fist_of_kharos": {
+      "name": "Fist of Kharos",
+      "effect": "Hydraulic Strike becomes a full spin that hits all around you, with 20% less damage.",
+      "flavor": "Forged from the first drill bit that touched the Lumen."
+    },
+    "heart_of_lumen": {
+      "name": "Heart of Lumen",
+      "effect": "Deal x35% damage. Overheating no longer damages you.",
+      "flavor": "It beats. It is not yours."
+    }
   }
 }

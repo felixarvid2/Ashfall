@@ -1,9 +1,16 @@
 /** Parsed and validated loot data. */
 import { AFFIXES } from './affixes';
+import { ASPECTS } from './aspects';
+import { UNIQUES } from './uniques';
+import { EffectSchema } from '../effects';
 import { BASES } from './bases';
 import {
   AffixDefSchema,
+  AspectDefSchema,
   BaseItemDefSchema,
+  UniqueDefSchema,
+  type AspectDef,
+  type UniqueDef,
   CrystalDefSchema,
   DropTableSchema,
   ProgressionSchema,
@@ -34,6 +41,14 @@ export const RARITY: ReadonlyMap<Rarity, RarityDef> = new Map(
 export const CRYSTAL_DEFS: ReadonlyMap<string, CrystalDef> = byId(CRYSTALS.map((c) => CrystalDefSchema.parse(c)), 'crystal');
 export const DROP_TABLE_DEFS: ReadonlyMap<string, DropTable> = byId(DROP_TABLES.map((d) => DropTableSchema.parse(d)), 'drop table');
 export const PROGRESSION = ProgressionSchema.parse(PROGRESSION_INPUT);
+export const ASPECT_DEFS: ReadonlyMap<string, AspectDef> = byId(
+  ASPECTS.map((a) => AspectDefSchema.parse({ ...a, effects: a.effects.map((e) => EffectSchema.parse(e)) })),
+  'aspect',
+);
+export const UNIQUE_DEFS: ReadonlyMap<string, UniqueDef> = byId(
+  UNIQUES.map((u) => UniqueDefSchema.parse({ ...u, effects: u.effects.map((e) => EffectSchema.parse(e)) })),
+  'unique',
+);
 
 export function baseItem(id: string): BaseItemDef {
   const b = BASE_ITEMS.get(id);
