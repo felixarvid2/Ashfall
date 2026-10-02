@@ -189,6 +189,7 @@ export class Game {
       },
       (id) => this.teleportTo(id),
       () => this.found,
+      this.renderer.rig.yaw,
     );
     this.inventoryPanel = new InventoryPanel(
       uiRoot,

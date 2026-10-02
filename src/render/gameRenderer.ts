@@ -278,6 +278,20 @@ export class GameRenderer {
       }
 
       const animator = this.animators.get(e);
+      const ai = world.get(e, EnemyAI);
+      let lean: { pitch: number; roll: number } | null = null;
+      if (!animator && ai && tr.y <= 0.5 && !world.has(e, Dead)) {
+        // Unrigged ground creatures (hounds, the boss): a procedural gait while moving, a crouch
+        // during the wind-up and a forward lunge on the strike.
+        const speed = Math.hypot(tr.x - tr.prevX, tr.z - tr.prevZ) * 60;
+        const gait = Math.min(1, speed / 3);
+        const phase = this.time * (6 + speed * 1.4) + e;
+        obj.position.y += Math.abs(Math.sin(phase)) * 0.12 * gait;
+        let pitch = Math.sin(phase * 2) * 0.04 * gait;
+        if (ai.state === 'windup') pitch = -0.16;
+        else if (ai.state === 'recover') pitch = 0.22;
+        lean = { pitch, roll: Math.sin(phase) * 0.06 * gait };
+      }
       if (animator) {
         animator.play(this.animationFor(world, e, animator));
         animator.update(frameDt * this.animationTimeScale);
@@ -298,6 +312,12 @@ export class GameRenderer {
       } else if (obj.rotation.x !== 0) {
         obj.rotation.x = 0;
         obj.rotation.z = 0;
+      }
+      if (lean) {
+        // Yaw first, then pitch and roll about the creature's own axes.
+        obj.rotation.order = 'YXZ';
+        obj.rotation.x = lean.pitch;
+        obj.rotation.z = lean.roll;
       }
       this.applyTint(world, e, obj, frameDt);
     }

@@ -166,7 +166,8 @@ function buildProps(): PropPlacement[] {
   }
 
   // Outpost Ember: the fuel station inside a barricaded ring with two gates.
-  props.push({ asset: 'prop.fuel_station', x: hub.x, z: hub.z + 4, rot: 0.2, colliders: [{ x: -4, z: 0, r: 2.6 }, { x: 4, z: 0, r: 2.6 }] });
+  // Placed on the far side of the hub (−x, −z is screen-up) so its canopy never hides the player.
+  props.push({ asset: 'prop.fuel_station', x: hub.x - 6, z: hub.z - 6, rot: Math.PI / 4, colliders: [{ x: -4, z: 0, r: 2.6 }, { x: 4, z: 0, r: 2.6 }] });
   props.push(...walledRing(hub.x, hub.z, hub.radius - 2, 18, [4, 5, 13, 14]));
   props.push(emergency(hub.x - 8, hub.z - 8), emergency(hub.x + 8, hub.z - 8), emergency(hub.x - 8, hub.z + 12), emergency(hub.x + 9, hub.z + 12));
   props.push(crate(hub.x + 11, hub.z - 2, 0.4), crate(hub.x + 11.5, hub.z, 1.2), crate(hub.x - 12, hub.z + 1, 0.8, 1.2));
