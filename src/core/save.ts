@@ -31,6 +31,8 @@ export const SaveDataSchema = z.object({
     level: z.number().int().min(1),
     xp: z.number().nonnegative(),
     skillPoints: z.number().int().nonnegative(),
+    /** Skill points already granted by Region Restoration. */
+    restorationGranted: z.number().int().nonnegative().default(0),
   }),
   /** null = a character that has never received its starter kit (saves migrated from v1). */
   inventory: z

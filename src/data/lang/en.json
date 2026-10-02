@@ -1763,5 +1763,56 @@
     "maw": {
       "defeated": "The First is dead. The Maw falls silent."
     }
+  },
+  "worldEvents": {
+    "convoy": {
+      "title": "Defend the Convoy",
+      "objective": "Keep the truck moving and alive: waypoint {n}/{count}"
+    },
+    "sporeNest": {
+      "title": "Purge the Spore Nest",
+      "objective": "Destroy the nest before it hatches: {s}s"
+    },
+    "rescue": {
+      "title": "Rescue Operation",
+      "objective": "Free the survivors: {n}/{count} · {s}s",
+      "freed": "Survivor freed ({n}/{count})"
+    },
+    "signalJam": {
+      "title": "Signal Jam",
+      "objective": "Defend the transmitter while it charges: {s}s"
+    },
+    "eliteHunt": {
+      "title": "Elite Hunt",
+      "objective": "Kill the elite before it escapes: {s}s"
+    },
+    "supplyDrop": {
+      "title": "Supply Drop",
+      "falling": "A supply crate is falling…",
+      "objective": "Reach the crate before the scavengers loot it: {s}s",
+      "contested": "Drive the scavengers off the crate first."
+    },
+    "tier": {
+      "gold": "Event complete: Gold",
+      "silver": "Event complete: Silver",
+      "bronze": "Event complete: Bronze"
+    },
+    "failed": "Event failed"
+  },
+  "storm": {
+    "warning": "Ash storm approaching {where}",
+    "over": "The ash storm passes",
+    "label": "Ash Storm"
+  },
+  "restoration": {
+    "tier": "Restoration tier {tier} reached",
+    "meter": "Restoration tier {tier} · {points}/{next} points",
+    "max": "Restoration tier {tier} (complete)",
+    "rewards": {
+      "skillPoint": "Restoration: +1 skill point for all your characters",
+      "potion": "Restoration: +1 stim pack charge for all your characters",
+      "goldFind": "Restoration: +10% gold found for all your characters",
+      "stash": "Restoration: +20 stash slots"
+    }
   }
 }

@@ -142,7 +142,7 @@ export function eliteSystem(world: World, dt: number, ctx: GameContext): void {
         fuse: s.warning,
         hazard: { team: 'enemy', radius: s.radius, remaining: 0.5, duration: 0.5, tickTimer: 0, applies: [{ status: 'rooted', duration: s.root }], attackerLevel: level, color: '#b06aff' },
       });
-      ctx.events.push({ type: 'telegraph', owner: e, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: s.radius }, duration: s.warning, color: '#b06aff' });
+      ctx.events.push({ type: 'telegraph', owner: null, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: s.radius }, duration: s.warning, color: '#b06aff' });
     }
   }
 }

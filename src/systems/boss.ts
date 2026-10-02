@@ -120,7 +120,7 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
     if (ph.plates && (boss.timers.plates -= dt) <= 0) {
       boss.timers.plates = ph.plates.every;
       boss.pending.push({ x: ptr.x, z: ptr.z, t: ph.plates.warning });
-      ctx.events.push({ type: 'telegraph', owner: e, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: ph.plates.radius }, duration: ph.plates.warning, color: '#ff3a2a' });
+      ctx.events.push({ type: 'telegraph', owner: null, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: ph.plates.radius }, duration: ph.plates.warning, color: '#ff3a2a' });
     }
     for (const p of boss.pending) p.t -= dt;
     for (const p of boss.pending.filter((q) => q.t <= 0)) {

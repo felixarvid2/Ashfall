@@ -4,6 +4,7 @@
  */
 import { PYLON_EFFECTS } from '../data/interactables';
 import {
+  AccountBonuses,
   Collider,
   CombatStats,
   Dead,
@@ -59,7 +60,8 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
     const cls = classDef(user.classId);
     for (const id in user.cooldowns) user.cooldowns[id] = Math.max(0, user.cooldowns[id]! - dt);
     user.dodgeCooldown = Math.max(0, user.dodgeCooldown - dt);
-    if (user.potionCharges < cls.potion.charges) {
+    const maxPotions = cls.potion.charges + (world.get(e, AccountBonuses)?.potionCharges ?? 0);
+    if (user.potionCharges < maxPotions) {
       user.potionRecharge -= dt;
       if (user.potionRecharge <= 0) {
         user.potionCharges++;
@@ -75,7 +77,7 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       user.potionRequested = false;
       const health = world.get(e, Health);
       if (user.potionCharges > 0 && health && health.current < health.max) {
-        if (user.potionCharges === cls.potion.charges) user.potionRecharge = cls.potion.recharge;
+        if (user.potionCharges === maxPotions) user.potionRecharge = cls.potion.recharge;
         user.potionCharges--;
         const potionBonus = 1 + (world.get(e, CombatStats)?.potionHealing ?? 0);
         heal(world, ctx, e, health.max * cls.potion.heal * potionBonus);

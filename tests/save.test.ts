@@ -40,7 +40,7 @@ const sample = (): SaveData => ({
   tick: 600,
   character: { name: 'Vex', classId: 'spectre' },
   player: { position: { x: 3.5, y: 0, z: -2 }, facing: 1.2 },
-  progression: { level: 3, xp: 40, skillPoints: 2 },
+  progression: { level: 3, xp: 40, skillPoints: 2, restorationGranted: 0 },
   inventory: { gold: 120, grid: [null, null], equipped: {}, aspects: [] },
   loot: { seq: 7, rngState: [5, 6, 7, 8] },
   skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
@@ -137,7 +137,7 @@ describe('save migrations', () => {
     const save = parseSave(JSON.stringify(v1));
     expect(save.version).toBe(SAVE_VERSION);
     expect(save.character.classId).toBe('bastion');
-    expect(save.progression).toEqual({ level: 1, xp: 0, skillPoints: 0 });
+    expect(save.progression).toEqual({ level: 1, xp: 0, skillPoints: 0, restorationGranted: 0 });
     expect(save.inventory).toBeNull();
     expect(save.loot.rngState).toEqual([1, 2, 3, 4]);
   });

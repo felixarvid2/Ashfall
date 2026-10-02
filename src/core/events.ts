@@ -58,7 +58,7 @@ export type GameEvent =
   | { type: 'death'; target: Entity; x: number; z: number; isPlayer: boolean }
   | { type: 'hitstop'; ms: number }
   | { type: 'shake'; trauma: number }
-  | { type: 'telegraph'; owner: Entity; x: number; z: number; shape: TelegraphShape; duration: number; color: string }
+  | { type: 'telegraph'; owner: Entity | null; x: number; z: number; shape: TelegraphShape; duration: number; color: string }
   | { type: 'vfx'; kind: VfxKind; x: number; z: number; radius: number; facing: number; arcDeg?: number }
   | { type: 'wave'; wave: number; enemies: number }
   | { type: 'waveCleared'; wave: number }
@@ -75,7 +75,7 @@ export type GameEvent =
   | { type: 'interact'; kind: string; id: string; detail?: string }
   | { type: 'quest'; id: string; state: 'started' | 'progress' | 'step' | 'completed' | 'failed' }
   /** Big centred message from game logic (boss phases, instance objectives). */
-  | { type: 'banner'; key: string; params?: Record<string, string | number>; seconds?: number };
+  | { type: 'banner'; key: string; params?: Record<string, string | number>; /** Params that are themselves language keys. */ keyParams?: Record<string, string>; seconds?: number };
 
 export class EventQueue {
   private events: GameEvent[] = [];

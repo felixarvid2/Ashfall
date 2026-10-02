@@ -334,6 +334,8 @@ export interface Progression {
   level: number;
   xp: number;
   skillPoints: number;
+  /** Skill points already granted by Region Restoration (account-wide rewards). */
+  restorationGranted?: number;
 }
 export const Progression = defineComponent<Progression>('Progression');
 
@@ -475,7 +477,7 @@ export const Turret = defineComponent<Turret>('Turret');
 export interface Interactable {
   /** Point-of-interest id (or teleporter id). */
   poi: string;
-  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache';
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject';
   /** Use radius (m). */
   radius: number;
   /** Spent for good (opened, read, claimed). */
@@ -512,6 +514,9 @@ export const Blast = defineComponent<Blast>('Blast');
 /** Account-wide permanent bonuses on the player (Echo Relics, Restoration). */
 export interface AccountBonuses {
   effects: import('../data/effects').Effect[];
+  /** Region Restoration rewards. */
+  potionCharges?: number;
+  goldFind?: number;
 }
 export const AccountBonuses = defineComponent<AccountBonuses>('AccountBonuses');
 

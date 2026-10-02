@@ -13,6 +13,8 @@ import { spawnEnemy } from './spawn';
 import { applyAffixes, championAffixes, rareAffixes } from '../systems/elites';
 import type { EliteAffix } from '../data/elites';
 import { createSetPieces, extraHubs, type SetPieceState } from './setPieces';
+import { createEvents, type EventState } from './worldEvents';
+import { createStorm, type StormState } from './storm';
 
 /** A pack wakes up when the player is this close… */
 export const PACK_WAKE = 55;
@@ -51,11 +53,15 @@ export interface ZoneRuntime {
   keycards: Set<string>;
   /** Stronghold and region boss state. */
   setPieces: SetPieceState;
+  /** World events by point-of-interest id. */
+  events: Map<string, EventState>;
+  /** Ash Storm (docs/regions/cinder-flats.md). */
+  storm: StormState;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
   const cells = Math.ceil((def.halfSize * 2) / def.mapCell);
-  return {
+  const zone: ZoneRuntime = {
     def,
     packs: new Map(def.packs.map((p) => [p.id, { state: 'dormant', members: [], clearedAt: -Infinity, spawns: 0 }])),
     discovered: new Set(def.teleporters.filter((t) => t.hub).map((t) => t.id)),
@@ -66,7 +72,11 @@ export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
     found: new Set(),
     keycards: new Set(),
     setPieces: createSetPieces(),
+    events: new Map(),
+    storm: createStorm(),
   };
+  zone.events = createEvents(zone);
+  return zone;
 }
 
 export function hubAt(zone: ZoneRuntime | undefined, x: number, z: number, margin = 0): HubDef | null {

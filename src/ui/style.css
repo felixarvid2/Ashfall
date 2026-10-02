@@ -638,3 +638,7 @@ html, body {
 .aspect-name { color: #ff9a3a; font-size: 0.85em; }
 .aspect-desc { color: #cfc4b0; font-size: 0.75em; margin: 2px 0; }
 .tooltip-price { margin-top: 6px; color: #ffd27a; font-size: 0.85em; }
+.event-box { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); text-align: center; background: rgba(10, 9, 8, 0.7); border: 1px solid #6a4a20; padding: 4px 14px; pointer-events: none; }
+.event-box[hidden] { display: none; }
+.event-title { color: #ffd23a; font-size: 0.8em; letter-spacing: 0.2em; text-transform: uppercase; }
+.event-text { color: #e8dcc8; font-size: 0.8em; }

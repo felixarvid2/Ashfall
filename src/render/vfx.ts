@@ -361,7 +361,7 @@ export class VfxSystem {
     }
   }
 
-  private spawnTelegraph(owner: Entity, x: number, z: number, shape: TelegraphShape, duration: number, color: string): void {
+  private spawnTelegraph(owner: Entity | null, x: number, z: number, shape: TelegraphShape, duration: number, color: string): void {
     const key = shape.kind === 'cone' ? `tele:cone:${shape.arcDeg}` : `tele:${shape.kind}`;
     const fx = this.acquire(key, () => {
       const geo = shape.kind === 'cone' ? this.coneGeometry(shape.arcDeg) : shape.kind === 'line' ? this.lineGeo : this.discGeo;
@@ -375,7 +375,7 @@ export class VfxSystem {
       return { group, materials: [outline, fill] };
     });
     fx.materials.forEach((m) => m.color.set(color));
-    fx.owner = owner;
+    fx.owner = owner ?? undefined;
     fx.life = duration;
     fx.group.position.set(x, 0.03, z);
     const inner = fx.group.children[1]!;

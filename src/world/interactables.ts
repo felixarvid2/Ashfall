@@ -42,6 +42,7 @@ import { livingInCircle } from '../systems/targeting';
 import { revealAround, type ZoneRuntime } from './zone';
 import { signal } from '../systems/quests';
 import { instanceInteract } from './instance';
+import { eventInteract } from './worldEvents';
 
 const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: number; glow?: string; collider?: number }>> = {
   chest: { asset: 'prop.supply_chest', collider: 0.7 },
@@ -252,6 +253,8 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
     case 'cache':
     case 'portal':
       return instanceInteract(world, ctx, target, it);
+    case 'eventObject':
+      return eventInteract(world, ctx, target, it);
     case 'questObject':
       // Quest objects vanish when used; the quest log decides what they mean.
       it.used = true;

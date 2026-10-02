@@ -4,6 +4,7 @@
  */
 import { PYLON_EFFECTS } from '../../data/interactables';
 import {
+  AccountBonuses,
   Dead,
   GroundGold,
   GroundItem,
@@ -105,6 +106,8 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
       world.add(e, GroundItem, { item, age: 0 });
       ctx.events.push({ type: 'loot', entity: e, rarity: item.rarity, x: p.x, z: p.z });
     });
+    // Restoration tier 3: more gold.
+    if (drop.gold > 0 && player !== undefined) drop.gold = Math.round(drop.gold * (1 + (world.get(player, AccountBonuses)?.goldFind ?? 0)));
     if (drop.gold > 0) {
       const p = spawnGround(world, ctx, req.x, req.z, drop.items.length, total);
       const e = world.create();

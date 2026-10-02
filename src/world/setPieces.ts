@@ -147,7 +147,7 @@ function gateAt(world: World, i: number): Entity {
   const a = (i / MAW.segments) * Math.PI * 2;
   const e = world.create();
   world.add(e, Transform, makeTransform(MAW.x + Math.sin(a) * MAW.radius, 0, MAW.z + Math.cos(a) * MAW.radius, a + Math.PI / 2));
-  world.add(e, Renderable, { assetId: 'prop.barricade', scale: 1.6, glow: '#ff3a2a' });
+  world.add(e, Renderable, { assetId: 'prop.barricade', scale: 1.25, glow: '#ff3a2a' });
   world.add(e, Collider, { radius: 3.2, mass: Infinity, layer: 'ground', isStatic: true });
   return e;
 }

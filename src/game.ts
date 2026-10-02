@@ -126,6 +126,9 @@ import { bossSystem, resetBoss } from './systems/boss';
 import { buildInstance, clearInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
+import { activeEvent, worldEventSystem } from './world/worldEvents';
+import { STORM, stormSystem } from './world/storm';
+import { RESTORATION, grantRestorationPoints, restorationBonuses, restorationSystem, tierFor } from './systems/restoration';
 import { ELITE_COLORS } from './data/elites';
 
 const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
@@ -225,6 +228,8 @@ export class Game {
       .add('elites', eliteSystem)
       .add('boss', bossSystem)
       .add('setPieces', setPieceSystem)
+      .add('worldEvents', worldEventSystem)
+      .add('storm', stormSystem)
       .add('minions', minionSystem)
       .add('status', statusSystem)
       .add('movement', movementSystem)
@@ -245,7 +250,8 @@ export class Game {
       .add('pickup', pickupSystem)
       .add('interact', interactSystem)
       .add('quests', questSystem)
-      .add('instance', instanceSystem);
+      .add('instance', instanceSystem)
+      .add('restoration', restorationSystem);
 
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
@@ -276,6 +282,13 @@ export class Game {
         return { rooms: inst.layout.rooms.map((r) => ({ ...roomCenter(r), size: ROOM_CELL, explored: r.explored, kind: r.kind })) };
       },
     );
+    this.mapUi.extraInfo = () => {
+      const entry = this.ctx.account?.restoration[ZONE.id];
+      const points = entry?.points.length ?? 0;
+      const tier = tierFor(points);
+      const next = RESTORATION.tiers[tier];
+      return next !== undefined ? t('restoration.meter', { tier, points, next }) : t('restoration.max', { tier });
+    };
     this.inventoryPanel = new InventoryPanel(
       uiRoot,
       () => this.world.req(this.player, Inventory),
@@ -294,7 +307,7 @@ export class Game {
       classId: () => this.world.req(this.player, SkillUser).classId,
       iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       stock: () => this.vendorStock,
-      stash: () => stashSlots(this.ctx.account!.stash, 0),
+      stash: () => stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots),
       buy: (i) => this.serviceResult(buyItem(this.world.req(this.player, Inventory), this.vendorStock, i)),
       sell: (i) => {
         const gold = sellItem(this.world.req(this.player, Inventory), i);
@@ -321,12 +334,12 @@ export class Game {
         if (item) this.serviceResult(imprintAspect(inv, ci, item));
       },
       toStash: (gi) => {
-        this.serviceResult(toStash(this.world.req(this.player, Inventory), gi, stashSlots(this.ctx.account!.stash, 0)));
+        this.serviceResult(toStash(this.world.req(this.player, Inventory), gi, stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots)));
         saveAccount(this.storage, this.ctx.account!);
         this.autosave();
       },
       fromStash: (i) => {
-        this.serviceResult(fromStash(this.world.req(this.player, Inventory), stashSlots(this.ctx.account!.stash, 0), i));
+        this.serviceResult(fromStash(this.world.req(this.player, Inventory), stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots), i));
         saveAccount(this.storage, this.ctx.account!);
         this.autosave();
       },
@@ -481,6 +494,7 @@ export class Game {
     const inv = this.world.req(this.player, Inventory);
     Object.assign(inv, emptyInventory(PROGRESSION.inventorySize));
     this.grantStarterKit();
+    if (this.ctx.account) grantRestorationPoints(this.world, this.ctx.account);
     this.inventoryPanel.refresh();
     this.save(true);
   }
@@ -509,7 +523,8 @@ export class Game {
   /** Account-wide relic bonuses on the current player entity. */
   private applyAccountBonuses(): void {
     if (!this.ctx.account) return;
-    this.world.add(this.player, AccountBonuses, { effects: relicEffects(this.ctx.account) });
+    const r = restorationBonuses(this.ctx.account);
+    this.world.add(this.player, AccountBonuses, { effects: relicEffects(this.ctx.account), potionCharges: r.potionCharges, goldFind: r.goldFind });
     recomputePlayer(this.world, this.player);
   }
 
@@ -528,6 +543,7 @@ export class Game {
   }
 
   private autosave(): void {
+    if (this.ctx.account) saveAccount(this.storage, this.ctx.account);
     if (this.slot === null || this.world.has(this.player, Dead)) return;
     try {
       this.saves.write(slotKey(this.slot), this.snapshot());
@@ -588,6 +604,7 @@ export class Game {
     const zoom = this.input.consumeWheel();
     if (zoom !== 0) this.renderer.rig.zoom(zoom);
 
+    this.updateStormLook();
     this.renderer.sync(this.world, alpha, frameDt);
     const tr = this.playerTransform;
     const px = tr.prevX + (tr.x - tr.prevX) * alpha;
@@ -671,7 +688,7 @@ export class Game {
             this.hud.showBanner(t(`zones.${ZONE.key}.${event.id}`), 2.2);
             // Safe hubs refill your stim packs.
             const user = this.world.req(this.player, SkillUser);
-            user.potionCharges = classDef(user.classId).potion.charges;
+            user.potionCharges = classDef(user.classId).potion.charges + (this.world.get(this.player, AccountBonuses)?.potionCharges ?? 0);
           }
           break;
         case 'interact':
@@ -680,9 +697,12 @@ export class Game {
         case 'quest':
           this.onQuestEvent(event.id, event.state);
           break;
-        case 'banner':
-          this.hud.showBanner(t(event.key, event.params), event.seconds ?? 2);
+        case 'banner': {
+          const params: Record<string, string | number> = { ...event.params };
+          for (const [k, v] of Object.entries(event.keyParams ?? {})) params[k] = t(v);
+          this.hud.showBanner(t(event.key, params), event.seconds ?? 2);
           break;
+        }
         default:
           break;
       }
@@ -756,7 +776,8 @@ export class Game {
     for (const e of this.world.query(Elite, Transform)) {
       if (this.world.has(e, Dead)) continue;
       const tr = this.world.req(e, Transform);
-      if (Math.hypot(tr.x - px, tr.z - pz) > 26) continue;
+      // Ash Storms hide name plates until enemies are close.
+      if (Math.hypot(tr.x - px, tr.z - pz) > 26 - 16 * (this.zone?.storm.exposure ?? 0)) continue;
       const el = this.world.req(e, Elite);
       const dn = this.world.get(e, DisplayName);
       const ai = this.world.get(e, EnemyAI);
@@ -902,6 +923,26 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     this.questLog.refresh();
   }
 
+  private lastStorm = -1;
+
+  /** Ash Storm: thicker, browner fog and Lumen glow on the infected while exposed. */
+  private updateStormLook(): void {
+    const zone = this.zone;
+    if (!zone || this.ctx.instance) return;
+    const x = Math.round(zone.storm.exposure * 50) / 50;
+    if (x === this.lastStorm) return;
+    this.lastStorm = x;
+    const base = ZONE.fog;
+    const mix = (a: string, b: string, t: number) => {
+      const pa = parseInt(a.slice(1), 16);
+      const pb = parseInt(b.slice(1), 16);
+      const ch = (sh: number) => Math.round(((pa >> sh) & 255) * (1 - t) + ((pb >> sh) & 255) * t);
+      return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`;
+    };
+    this.renderer.setLook({ color: mix(base.color, '#2a2219', x), density: base.density + STORM.fog * x });
+    this.renderer.stormGlow = x;
+  }
+
   private updateInteractPrompt(px: number, pz: number): void {
     const near = this.world.has(this.player, Dead) ? null : nearestInteractable(this.world, px, pz, this.ctx.time);
     const target = near !== null ? { ...this.world.req(near, Transform), kind: this.world.req(near, Interactable).kind } : null;
@@ -946,6 +987,12 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         break;
       case 'npc':
         if (id) this.talkTo(id);
+        break;
+      case 'restoration':
+        if (id) this.toasts.show(t(`restoration.rewards.${id}`));
+        saveAccount(this.storage, this.ctx.account!);
+        this.skillTreePanel.refresh();
+        this.autosave();
         break;
       case 'stash':
         this.openService('stash');
@@ -992,7 +1039,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         sub = sz.id;
       }
     }
-    return { title: t(`zones.${key}.name`), sub: t(`zones.${key}.${sub}`) };
+    const storm = zone.storm.exposure > 0.2 ? ` · ${t('storm.label')}` : '';
+    return { title: t(`zones.${key}.name`), sub: `${t(`zones.${key}.${sub}`)}${storm}` };
   }
 
   private hudState(): HudState {
@@ -1051,9 +1099,14 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       },
       slots,
       dodge: { cooldown: user.dodgeCooldown, max: cls.dodge.cooldown },
-      potion: { charges: user.potionCharges, max: cls.potion.charges },
+      potion: { charges: user.potionCharges, max: cls.potion.charges + (w.get(p, AccountBonuses)?.potionCharges ?? 0) },
       wave: enc && enc.wave > 0 ? { wave: enc.wave, alive: enc.alive, phase: enc.phase, timer: enc.timer } : null,
       ...(this.zone ? { location: this.locationLabel() } : {}),
+      ...(() => {
+        const tr = this.playerTransform;
+        const ev = this.ctx.instance ? null : activeEvent(this.zone, tr.x, tr.z);
+        return ev ? { event: { title: t(`worldEvents.${ev.type}.title`), text: t(ev.text, ev.params) } } : {};
+      })(),
       target,
       // Pylon buffs (and other timed boons) above the action bar.
       buffs: (w.get(p, StatusEffects)?.list ?? [])
@@ -1251,7 +1304,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       character: { name: this.characterName || t(`items.classes.${this.world.req(this.player, SkillUser).classId}`), classId: this.world.req(this.player, SkillUser).classId },
       // Saving inside a dungeon puts you back at its entrance.
       player: { position: this.ctx.instance ? { x: this.ctx.instance.exit.x, y: 0, z: this.ctx.instance.exit.z } : { x: tr.x, y: 0, z: tr.z }, facing: tr.facing },
-      progression: { ...prog },
+      progression: { ...prog, restorationGranted: prog.restorationGranted ?? 0 },
       inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped, aspects: inv.aspects ?? [] }),
       loot: { seq: this.ctx.loot.seq, rngState: [...this.ctx.loot.rng.getState()] },
       skills: (() => {
@@ -1318,6 +1371,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       syncSetPieces(this.world, this.zone);
     }
     restoreQuests(this.world, this.ctx, data.quests);
+    this.applyAccountBonuses();
+    if (this.ctx.account) grantRestorationPoints(this.world, this.ctx.account);
     this.renderer.rig.snapTo(x, y, z);
     this.inventoryPanel.refresh();
   }

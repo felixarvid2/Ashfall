@@ -34,6 +34,8 @@ export interface HudState {
   /** Open world: region and subzone name, shown where the wave tracker sits in the arena. */
   location?: { title: string; sub: string };
   target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[] } | null;
+  /** World event in progress near the player. */
+  event?: { title: string; text: string };
   /** Timed buffs on the player (Stim Pylons). */
   buffs?: { id: string; remaining: number; color: string }[];
   dead: boolean;
@@ -146,6 +148,8 @@ export class Hud {
   private readonly targetStatus: HTMLDivElement;
   private readonly buffBar: HTMLDivElement;
   private lastBuffs = '';
+  private readonly eventBox: HTMLDivElement;
+  private lastEvent = '';
   private readonly banner: HTMLDivElement;
   private readonly death: HTMLDivElement;
   private readonly deathHint: HTMLDivElement;
@@ -237,11 +241,15 @@ export class Hud {
     this.tooltip.className = 'tooltip';
     this.tooltip.hidden = true;
 
+    this.eventBox = document.createElement('div');
+    this.eventBox.className = 'event-box';
+    this.eventBox.dataset.testid = 'event-box';
+    this.eventBox.hidden = true;
     this.buffBar = document.createElement('div');
     this.buffBar.className = 'buff-bar';
     this.buffBar.dataset.testid = 'buff-bar';
 
-    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip, this.buffBar);
+    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip, this.buffBar, this.eventBox);
   }
 
   updateHint(moveMode: MoveMode, bindings: Record<Action, string[]>): void {
@@ -275,6 +283,17 @@ export class Hud {
   }
 
   update(state: HudState, dt: number): void {
+    const evKey = state.event ? `${state.event.title}|${state.event.text}` : '';
+    if (evKey !== this.lastEvent) {
+      this.lastEvent = evKey;
+      this.eventBox.hidden = !state.event;
+      if (state.event) {
+        this.eventBox.replaceChildren(
+          Object.assign(document.createElement('div'), { className: 'event-title', textContent: state.event.title }),
+          Object.assign(document.createElement('div'), { className: 'event-text', textContent: state.event.text }),
+        );
+      }
+    }
     const buffs = state.buffs ?? [];
     const buffKey = buffs.map((b) => `${b.id}:${Math.ceil(b.remaining)}`).join('|');
     if (buffKey !== this.lastBuffs) {

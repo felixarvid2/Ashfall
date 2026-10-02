@@ -39,6 +39,8 @@ export class GameRenderer {
   private readonly tint = new THREE.Color();
   private time = 0;
   screenShake = true;
+  /** Ash Storm exposure (0..1): infected enemies glow through the ash. */
+  stormGlow = 0;
   private readonly raycaster = new THREE.Raycaster();
   private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private readonly moon: THREE.DirectionalLight;
@@ -456,6 +458,9 @@ export class GameRenderer {
     // Holograms (decoys) and stealthed characters are drawn see-through.
     const hologram = world.get(e, Renderable)?.hologram ?? false;
     const glow = world.has(e, Dead) ? undefined : world.get(e, Renderable)?.glow;
+    const ai = world.get(e, EnemyAI);
+    const family = ai ? enemyDef(ai.defId).family : null;
+    const infected = !world.has(e, Dead) && (family === 'infected' || family === 'lumen');
     const stealth = effects?.list.some((s) => s.id === 'stealth') ?? false;
     const opacity = hologram ? 0.45 + 0.1 * Math.sin(this.time * 12) : stealth ? 0.3 : 1;
     for (const slot of slots) {
@@ -474,6 +479,11 @@ export class GameRenderer {
       if (glow && !flash && !active) {
         slot.material.emissive.set(glow);
         slot.material.emissiveIntensity = 0.35 + 0.1 * Math.sin(this.time * 4 + e);
+        continue;
+      }
+      if (this.stormGlow > 0 && !flash && !active && infected) {
+        slot.material.emissive.set('#5dff6a');
+        slot.material.emissiveIntensity = this.stormGlow * (0.45 + 0.1 * Math.sin(this.time * 3 + e));
         continue;
       }
       if (flash > 0) {

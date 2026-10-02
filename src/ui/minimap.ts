@@ -68,6 +68,8 @@ export class MapUi {
   private readonly sin: number;
   /** Extra markers (quest objectives) drawn on both maps. */
   markers: MapMarker[] = [];
+  /** Extra line under the full map (Region Restoration). */
+  extraInfo: () => string = () => '';
 
   constructor(
     parent: HTMLElement,
@@ -199,7 +201,8 @@ export class MapUi {
     const p = this.player();
     const [sx, sy] = project(v, p.x, p.z);
     this.arrow(c, sx, sy, p.facing, 8);
-    this.fullInfo.textContent = `${t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) })} · ${t('map.travel')}`;
+    const extra = this.extraInfo();
+    this.fullInfo.textContent = `${t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) })} · ${t('map.travel')}${extra ? ` · ${extra}` : ''}`;
   }
 
   private fogCanvas(zone: ZoneRuntime): HTMLCanvasElement {
