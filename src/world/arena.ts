@@ -18,6 +18,16 @@ export function spawnArenaProps(world: World, arena: ArenaDef): void {
     world.add(e, Transform, makeTransform(prop.x, 0, prop.z, prop.rot ?? 0));
     world.add(e, Renderable, { assetId: prop.asset, scale: prop.scale ?? 1 });
     if (prop.collider) world.add(e, Collider, { radius: prop.collider, mass: Infinity, layer: 'ground', isStatic: true });
+    // Long props get invisible collision circles rotated into place.
+    const rot = prop.rot ?? 0;
+    const scale = prop.scale ?? 1;
+    for (const c of prop.colliders ?? []) {
+      const blocker = world.create();
+      const x = prop.x + (c.x * Math.cos(rot) + c.z * Math.sin(rot)) * scale;
+      const z = prop.z + (-c.x * Math.sin(rot) + c.z * Math.cos(rot)) * scale;
+      world.add(blocker, Transform, makeTransform(x, 0, z));
+      world.add(blocker, Collider, { radius: c.r * scale, mass: Infinity, layer: 'ground', isStatic: true });
+    }
   }
 }
 

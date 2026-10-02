@@ -11,10 +11,11 @@ import { pipeline } from 'node:stream/promises';
 
 const BASE = 'https://api.meshy.ai/openapi';
 
-export type TaskKind = 'text-to-3d' | 'rigging' | 'animations' | 'remesh' | 'retexture' | 'text-to-image';
+export type TaskKind = 'text-to-3d' | 'image-to-3d' | 'rigging' | 'animations' | 'remesh' | 'retexture' | 'text-to-image';
 
 const PATHS: Record<TaskKind, string> = {
   'text-to-3d': '/v2/text-to-3d',
+  'image-to-3d': '/v1/image-to-3d',
   rigging: '/v1/rigging',
   animations: '/v1/animations',
   remesh: '/v1/remesh',
@@ -30,6 +31,7 @@ export interface MeshyTask {
   progress: number;
   model_urls?: Partial<Record<'glb' | 'fbx' | 'obj' | 'usdz', string>>;
   thumbnail_url?: string;
+  image_urls?: string[];
   texture_urls?: Record<string, string>[];
   task_error?: { message?: string } | null;
   consumed_credits?: number | null;

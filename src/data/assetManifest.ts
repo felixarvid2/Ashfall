@@ -36,6 +36,7 @@ export const RigSpecSchema = z.object({
 
 export const MeshyStateSchema = z
   .object({
+    /** Text-to-3D preview task, or the concept-image task for `source: "image"` assets. */
     previewTaskId: z.string().optional(),
     refineTaskId: z.string().optional(),
     rigTaskId: z.string().optional(),
@@ -55,6 +56,14 @@ export const AssetEntrySchema = z.object({
   id: z.string().regex(/^[a-z]+(\.[a-z0-9_]+)+$/),
   category: z.enum(['character', 'enemy', 'prop', 'environment', 'icon']),
   prompt: z.string(),
+  /**
+   * "text": text-to-3D preview → refine. "image": a concept image (text-to-image) is the cheap
+   * preview; image-to-3D with textures is the refine step. Use "image" for creatures that
+   * text-to-3D keeps turning into plain humans.
+   */
+  source: z.enum(['text', 'image']).default('text'),
+  /** Prompt for the concept image when source is "image". */
+  conceptPrompt: z.string().optional(),
   negativePrompt: z.string().optional(),
   /** Overrides the shared texture style for the refine step. */
   texturePrompt: z.string().optional(),
@@ -64,6 +73,8 @@ export const AssetEntrySchema = z.object({
   /** Apply the T-pose prompt/parameter (characters that will be rigged). */
   pose: z.enum(['t-pose', 'a-pose']).optional(),
   rig: RigSpecSchema.optional(),
+  /** Make the loaded model self-illuminated (Lumen crystals): emissive colour × its own texture. */
+  glow: z.object({ color: z.string().regex(/^#[0-9a-fA-F]{6}$/), intensity: z.number().nonnegative() }).optional(),
   status: AssetStatusSchema,
   meshy: MeshyStateSchema,
   /** Path under public/assets once optimized, e.g. "characters/bastion.glb". */

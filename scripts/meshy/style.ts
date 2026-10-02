@@ -34,3 +34,11 @@ export function buildNegativePrompt(entry: AssetEntry): string {
 function clip(text: string): string {
   return text.length <= MAX_PROMPT ? text : text.slice(0, MAX_PROMPT - 1).replace(/,[^,]*$/, '');
 }
+
+/** Concept image prompt: front view on a plain background works best for image-to-3D. */
+export function buildConceptPrompt(entry: AssetEntry): string {
+  return clip(
+    `${entry.conceptPrompt ?? entry.prompt}, full body, front view, centered, plain light grey background, ` +
+      `game character concept art, ${STYLE_BASE}`,
+  );
+}

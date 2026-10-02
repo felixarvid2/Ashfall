@@ -97,11 +97,26 @@ export class GameRenderer {
     ground.receiveShadow = true;
     s.add(ground);
 
+    const glowTexture = makeGlowTexture();
     for (const prop of arena.props) {
       if (!prop.light) continue;
       const light = new THREE.PointLight(prop.light.color, prop.light.intensity, prop.light.distance, 2);
       light.position.set(prop.x, prop.light.height, prop.z);
       s.add(light);
+      // A soft additive sprite makes the lamp itself read as a light source (and blooms).
+      const glow = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: glowTexture,
+          color: prop.light.color,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          transparent: true,
+          fog: false,
+        }),
+      );
+      glow.position.copy(light.position);
+      glow.scale.setScalar(prop.asset === 'prop.lumen_growth' ? 2.2 : 1.1);
+      s.add(glow);
     }
 
     arena.scatter.forEach((def, index) => {
@@ -315,6 +330,23 @@ export class GameRenderer {
     this.postfx?.setSize(w, h);
     this.rig.setAspect(w / h);
   }
+}
+
+/** Radial gradient used for lamp glows. */
+function makeGlowTexture(): THREE.Texture {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.25, 'rgba(255,255,255,0.6)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 /** Procedural ash-and-cinder ground texture (deterministic). */

@@ -29,7 +29,9 @@ import { loadManifest, saveManifest, selectAssets, sourcePath } from './manifest
 import { applyReview } from './actions';
 import { contactSheet } from './contactSheet';
 import { optimizeAssets } from './optimize';
-import { buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
+import { buildConceptPrompt, buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
+import { CONCEPT_IMAGE_MODEL } from './costs';
+import { copyFileSync, readFileSync } from 'node:fs';
 
 interface Options {
   command: string;
@@ -73,11 +75,14 @@ async function confirmBatch(client: MeshyClient | null, stage: Stage, assets: As
     log(`${stage}: nothing to do`);
     return false;
   }
-  const rows = assets.map((a) => ({ id: a.id, credits: stageCost(a, stage, DEFAULT_AI_MODEL) }));
+  const rows = assets.map((a) => ({
+    id: a.source === 'image' ? `${a.id} (${stage === 'preview' ? 'concept image' : 'image→3D'})` : a.id,
+    credits: stageCost(a, stage, DEFAULT_AI_MODEL),
+  }));
   const total = rows.reduce((s, r) => s + r.credits, 0);
   console.log(`\n${stage.toUpperCase()} batch — ${assets.length} asset(s)`);
-  for (const r of rows) console.log(`  ${r.id.padEnd(28)} ~${r.credits} credits`);
-  console.log(`  ${'TOTAL (estimate)'.padEnd(28)} ~${total} credits   (budget threshold ${opts.budget})\n`);
+  for (const r of rows) console.log(`  ${r.id.padEnd(44)} ~${r.credits} credits`);
+  console.log(`  ${'TOTAL (estimate)'.padEnd(44)} ~${total} credits   (budget threshold ${opts.budget})\n`);
   if (opts.dryRun) {
     log('dry run: nothing sent');
     return false;
@@ -118,7 +123,72 @@ function spent(entry: AssetEntry, task: MeshyTask): void {
 
 // ---- Stages ---------------------------------------------------------------------
 
+/** Image-sourced assets: the cheap "preview" is a concept image. */
+async function runConcept(client: MeshyClient, manifest: AssetManifest, entry: AssetEntry, opts: Options): Promise<void> {
+  if (!entry.meshy.previewTaskId || opts.force) {
+    const body: Record<string, unknown> = {
+      ai_model: CONCEPT_IMAGE_MODEL,
+      prompt: buildConceptPrompt(entry),
+      aspect_ratio: '1:1',
+    };
+    if (entry.pose) body.pose_mode = entry.pose;
+    const id = await client.create('text-to-image', body);
+    entry.meshy = { ...entry.meshy, previewTaskId: id, previewApproved: false, lastError: undefined };
+    saveManifest(manifest);
+    log(`${entry.id}: concept image task ${id}`);
+  }
+  const task = await client.wait('text-to-image', entry.meshy.previewTaskId!, `${entry.id} concept`);
+  if (task.status !== 'SUCCEEDED' || !task.image_urls?.[0]) {
+    entry.meshy.previewTaskId = undefined;
+    return fail(entry, manifest, `concept image ${task.status}: ${task.task_error?.message ?? ''}`);
+  }
+  spent(entry, task);
+  await download(task.image_urls[0], sourcePath(entry, 'concept.png'));
+  copyFileSync(sourcePath(entry, 'concept.png'), sourcePath(entry, 'preview.png'));
+  entry.status = 'preview';
+  saveManifest(manifest);
+  log(`✓ ${entry.id}: concept image downloaded`);
+}
+
+/** Image-sourced assets: image-to-3D with textures is the refine step. */
+async function runImageTo3D(client: MeshyClient, manifest: AssetManifest, entry: AssetEntry, opts: Options): Promise<void> {
+  if (!entry.meshy.refineTaskId || opts.force) {
+    const png = readFileSync(sourcePath(entry, 'concept.png'));
+    const body: Record<string, unknown> = {
+      name: `${entry.id} (image to 3D)`,
+      image_url: `data:image/png;base64,${png.toString('base64')}`,
+      ai_model: DEFAULT_AI_MODEL,
+      topology: 'triangle',
+      target_polycount: entry.targetPolycount,
+      should_remesh: true,
+      should_texture: true,
+      enable_pbr: true,
+      texture_resolution: TEXTURE_RESOLUTION,
+      remove_lighting: true,
+      origin_at: 'bottom',
+    };
+    if (entry.pose) body.pose_mode = entry.pose;
+    const id = await client.create('image-to-3d', body);
+    entry.meshy = { ...entry.meshy, refineTaskId: id, lastError: undefined };
+    saveManifest(manifest);
+    log(`${entry.id}: image-to-3D task ${id}`);
+  }
+  const task = await client.wait('image-to-3d', entry.meshy.refineTaskId!, `${entry.id} image-to-3D`);
+  if (task.status !== 'SUCCEEDED' || !task.model_urls?.glb) {
+    entry.meshy.refineTaskId = undefined;
+    return fail(entry, manifest, `image-to-3D ${task.status}: ${task.task_error?.message ?? ''}`);
+  }
+  spent(entry, task);
+  entry.meshy.aiModel = typeof task.ai_model === 'string' ? task.ai_model : entry.meshy.aiModel;
+  await download(task.model_urls.glb, sourcePath(entry, 'refined.glb'));
+  if (task.thumbnail_url) await download(task.thumbnail_url, sourcePath(entry, 'refined.png'));
+  entry.status = 'refined';
+  saveManifest(manifest);
+  log(`✓ ${entry.id}: textured model downloaded`);
+}
+
 async function runPreview(client: MeshyClient, manifest: AssetManifest, entry: AssetEntry, opts: Options): Promise<void> {
+  if (entry.source === 'image') return runConcept(client, manifest, entry, opts);
   if (!entry.meshy.previewTaskId || opts.force) {
     const body: Record<string, unknown> = {
       mode: 'preview',
@@ -164,6 +234,7 @@ async function runPreview(client: MeshyClient, manifest: AssetManifest, entry: A
 }
 
 async function runRefine(client: MeshyClient, manifest: AssetManifest, entry: AssetEntry, opts: Options): Promise<void> {
+  if (entry.source === 'image') return runImageTo3D(client, manifest, entry, opts);
   if (!entry.meshy.refineTaskId || opts.force) {
     const id = await client.create('text-to-3d', {
       mode: 'refine',

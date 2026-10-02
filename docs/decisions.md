@@ -63,3 +63,34 @@ First pass only; tune after playtesting.
 ### 2026-10-02 — Meshy budget prompt threshold: 800 credits
 The owner raised the confirmation threshold from the brief's 200 to **800 credits** per batch.
 Stored as `DEFAULT_BUDGET_CREDITS` in `scripts/meshy/config.ts`; the design brief was updated to match.
+
+### 2026-10-02 — Meshy model and texture settings
+Meshy 7.1 (`ai_model: "latest"`) for all 3D tasks, with automatic fallback to `meshy-6` if the account
+lacks entitlement. `target_polycount` is set per asset at generation, so Meshy already delivers close to
+the budget; our optimizer only trims further and builds LODs. PBR textures at 2K with baked lighting
+removed; the optimizer downsizes to 1024 px WebP for the game.
+
+### 2026-10-02 — Concept image → image-to-3D for creatures
+Text-to-3D kept turning "infected colonist with fungal growth" and "bloated spore carrier" into plain
+humans with arms down (twice). For those, the cheap preview is a concept image (text-to-image,
+`nano-banana-2`, 6 credits, T-pose) that the owner approves, and the refine step is image-to-3D with
+textures (30 credits). Manifest field `source: "image"` + `conceptPrompt`.
+
+### 2026-10-02 — WebP instead of KTX2 textures
+The brief asks for KTX2/Basis. That needs the KTX-Software `toktx` binary, which isn't available in this
+environment. WebP (via sharp) gives most of the download-size win; GPU memory is higher than KTX2.
+Switching later is a one-line change in `scripts/meshy/optimize.ts` once `toktx` is installed.
+
+### 2026-10-02 — Simplification across UV seams
+Meshy meshes have many small UV islands, which stop meshoptimizer's normal simplifier. The optimizer
+uses meshoptimizer's "Permissive" mode and falls back to sloppy simplification for aggressive LOD
+targets, then recomputes smooth normals.
+
+### 2026-10-02 — LODs for static props only
+Props get LOD1 (50 %) and LOD2 (20 %) files used through `THREE.LOD`. Skinned characters use a single
+level: their polycount is already low (4–12k) and swapping skinned LODs mid-animation is complex.
+
+### 2026-10-02 — Raw Meshy downloads are not committed
+`assets/source/**/*.glb` is git-ignored (tens of MB). Thumbnails, contact sheets, the manifest (with all
+task ids) and the optimized `public/assets` files are committed. Meshy keeps task outputs for 3 days, so
+raw files can be re-downloaded in that window; after that, regenerate from the manifest prompts.

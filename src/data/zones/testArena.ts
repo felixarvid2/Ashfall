@@ -8,6 +8,8 @@ export interface PropPlacement {
   scale?: number;
   /** Static collision radius in metres (omit for walk-through props). */
   collider?: number;
+  /** Extra collision circles in the prop's local space (long props: walls, pipes, wrecks). */
+  colliders?: { x: number; z: number; r: number }[];
   light?: { color: string; intensity: number; distance: number; height: number };
 }
 
@@ -30,6 +32,10 @@ const emergency = (x: number, z: number): PropPlacement => ({
   collider: 0.3,
   light: { color: '#ff7a1a', intensity: 90, distance: 16, height: 3.1 },
 });
+
+/** Collision circles spaced along the local x axis, for long props. */
+const line = (length: number, r: number, count: number) =>
+  Array.from({ length: count }, (_, i) => ({ x: -length / 2 + (length * i) / (count - 1), z: 0, r }));
 
 const growth = (x: number, z: number, scale = 1): PropPlacement => ({
   asset: 'prop.lumen_growth',
@@ -62,6 +68,18 @@ export const TEST_ARENA: ArenaDef = {
     { asset: 'prop.cargo_crate', x: 3, z: 11, rot: 2.2, collider: 0.95 },
     { asset: 'prop.cargo_crate', x: -10, z: 9, rot: 0.1, collider: 0.95 },
     { asset: 'prop.cargo_crate', x: 14, z: -10, rot: 1.9, collider: 0.95 },
+    // Cinder Flats kit: a crashed lander, a ruined checkpoint and colony debris.
+    { asset: 'prop.crashed_lander', x: -19, z: -15, rot: 0.6, colliders: line(5, 1.5, 4) },
+    { asset: 'env.wall_segment', x: 13, z: 15, rot: 0, colliders: line(3.4, 0.5, 5) },
+    { asset: 'env.wall_segment', x: 17.2, z: 12.6, rot: Math.PI / 2, colliders: line(3.4, 0.5, 5) },
+    { asset: 'prop.control_terminal', x: 11.5, z: 12.5, rot: 0.4, collider: 0.45 },
+    { asset: 'prop.barricade', x: -3, z: 8.5, rot: 0.2, colliders: line(2.2, 0.6, 3) },
+    { asset: 'prop.barricade', x: 6.5, z: -6.5, rot: 2.5, colliders: line(2.2, 0.6, 3) },
+    { asset: 'prop.control_terminal', x: -8, z: -7.5, rot: -0.6, collider: 0.45 },
+    { asset: 'prop.fuel_tank', x: 19, z: -4, rot: 1.2, collider: 1.1 },
+    { asset: 'prop.fuel_tank', x: 20.5, z: -1, rot: 1.0, collider: 1.1 },
+    { asset: 'prop.pipe_section', x: -14, z: 6, rot: 1.2, colliders: line(4, 0.6, 4) },
+    { asset: 'prop.pipe_section', x: 4, z: 18, rot: -0.3, colliders: line(4, 0.6, 4) },
   ],
   scatter: [{ asset: 'env.debris_rock', count: 700, seed: 'arena-debris', minScale: 0.4, maxScale: 1.8 }],
 };

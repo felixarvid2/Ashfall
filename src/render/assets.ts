@@ -66,6 +66,19 @@ export class AssetLibrary {
           const files = [entry.file!, ...(entry.lods ?? [])];
           const gltfs = await Promise.all(files.map((f) => loader.loadAsync(`${baseUrl}assets/${f}`)));
           const levels = gltfs.map((g) => g.scene);
+          if (entry.glow) {
+            const glow = entry.glow;
+            for (const level of levels) {
+              level.traverse((o) => {
+                const mat = (o as THREE.Mesh).material;
+                if (mat instanceof THREE.MeshStandardMaterial) {
+                  mat.emissive.set(glow.color);
+                  mat.emissiveIntensity = glow.intensity;
+                  mat.emissiveMap = mat.map;
+                }
+              });
+            }
+          }
           let skinned = false;
           for (const level of levels) {
             level.traverse((o) => {

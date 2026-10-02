@@ -5,6 +5,7 @@
       "id": "char.bastion",
       "category": "character",
       "prompt": "heavy armored space marine in a bulky battered exoskeleton, oversized hydraulic gauntlets, hydraulic joints, scorched gunmetal paint, glowing orange visor, full body, T-pose",
+      "source": "text",
       "targetPolycount": 12000,
       "heightMeters": 1.95,
       "pose": "t-pose",
@@ -38,11 +39,12 @@
           }
         ]
       },
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb1-1862-7037-a4e1-9a720fb5653f",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-264d-772a-b3a1-6acf72b18da9",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "capsule",
@@ -59,7 +61,9 @@
     {
       "id": "enemy.infected_colonist",
       "category": "enemy",
-      "prompt": "infected colonist zombie, torn mining jumpsuit, glowing green fungal growth bursting from the shoulders, T-pose",
+      "prompt": "infected colonist zombie, gaunt hunched human miner in a torn and stained mining jumpsuit, large clusters of bioluminescent sickly green fungal-crystal growth bursting out of both shoulders and the back, crystal shards growing from one forearm, sunken diseased face, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "infected human colonist zombie, gaunt hunched miner in a torn stained orange mining jumpsuit, large clusters of glowing sickly green fungal crystals bursting out of both shoulders and the upper back, crystal shards growing along one forearm, pale diseased skin, standing in a T-pose with arms straight out to the sides",
       "targetPolycount": 5000,
       "heightMeters": 1.75,
       "pose": "t-pose",
@@ -91,9 +95,10 @@
       },
       "status": "preview",
       "meshy": {
-        "previewTaskId": "01a0fcb2-c2a7-7243-ab57-dcb14d960ef9",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "previewTaskId": "01a0fcca-835e-761b-89f8-68669002d3b6",
+        "refineTaskId": "01a0fcce-2f81-700e-b27d-5cad384e35b3",
+        "previewApproved": true,
+        "creditsSpent": 46
       },
       "placeholder": {
         "shape": "capsule",
@@ -110,14 +115,16 @@
     {
       "id": "enemy.security_drone",
       "category": "enemy",
-      "prompt": "hijacked hovering security drone, cracked armored shell, single red sensor eye, dangling cables, scorched paint",
+      "prompt": "compact spherical hovering security drone, armored ball-shaped shell about 70 cm wide, single large red sensor eye on the front, small vector thrusters underneath, short antenna, cracked armor plates, dangling cables, no rotors, no propellers, no wings, not a helicopter",
+      "source": "text",
       "targetPolycount": 3000,
       "heightMeters": 0.7,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
-        "previewTaskId": "01a0fcb2-c4c9-7169-b2a9-7cc6a0c46f55",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "previewTaskId": "01a0fcc7-d4e9-73a8-8e1a-ee88984b1839",
+        "refineTaskId": "01a0fccc-7beb-750a-b142-a65447e8bedb",
+        "previewApproved": true,
+        "creditsSpent": 50
       },
       "placeholder": {
         "shape": "sphere",
@@ -134,7 +141,9 @@
     {
       "id": "enemy.spore_carrier",
       "category": "enemy",
-      "prompt": "bloated mutated colonist in a torn hazard suit covered in pulsing spore sacs, bioluminescent sickly green fungal-crystal growth on back and arms, full body, T-pose",
+      "prompt": "grotesquely bloated mutated colonist, swollen oversized torso and arms, torn hazard suit split open, back and shoulders covered in large pulsing round spore sacs, bioluminescent sickly green fungal-crystal growth spreading over the body, heavy hunched posture, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "grotesquely bloated mutated colonist, enormous swollen belly and torso, thick swollen arms, torn yellow hazard suit split open, back and shoulders covered in big round pulsing spore sacs, bioluminescent sickly green fungal-crystal growth spreading over the skin, standing in a T-pose with arms straight out to the sides",
       "targetPolycount": 6000,
       "heightMeters": 1.9,
       "pose": "t-pose",
@@ -166,9 +175,10 @@
       },
       "status": "preview",
       "meshy": {
-        "previewTaskId": "01a0fcb2-c4f9-748a-9fba-1f2082caf2a9",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "previewTaskId": "01a0fcca-8536-744b-bc96-52ed7291acc4",
+        "refineTaskId": "01a0fcce-315c-7296-8752-b68ef32a0b42",
+        "previewApproved": true,
+        "creditsSpent": 46
       },
       "placeholder": {
         "shape": "sphere",
@@ -187,14 +197,16 @@
     {
       "id": "prop.cargo_crate",
       "category": "prop",
-      "prompt": "battered industrial cargo crate, dented steel panels, hazard stripes, ash covered",
+      "prompt": "cube-shaped heavy industrial cargo crate, solid closed box with equal width depth and height, dented riveted steel panels, reinforced corners, yellow and black hazard stripes, ash covered",
+      "source": "text",
       "targetPolycount": 1500,
       "heightMeters": 1.1,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
-        "previewTaskId": "01a0fcb1-1a1d-7656-88c3-9933ec93e12e",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "previewTaskId": "01a0fcc7-d48d-752d-a693-c650ab7a7915",
+        "refineTaskId": "01a0fccc-7e0c-7192-864e-6aed49b9beaa",
+        "previewApproved": true,
+        "creditsSpent": 50
       },
       "placeholder": {
         "shape": "box",
@@ -210,13 +222,15 @@
       "id": "prop.emergency_light",
       "category": "prop",
       "prompt": "industrial emergency light post, rusted steel pole, caged orange warning lamp on top",
+      "source": "text",
       "targetPolycount": 1200,
       "heightMeters": 3.2,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb2-c4e0-7490-9bbd-d9dec4d745cd",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-2877-73f5-ba90-4e166f6d735e",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "cylinder",
@@ -233,13 +247,19 @@
       "id": "prop.lumen_growth",
       "category": "prop",
       "prompt": "cluster of bioluminescent sickly green fungal-crystal growth bursting through cracked metal floor",
+      "source": "text",
       "targetPolycount": 2000,
       "heightMeters": 0.9,
-      "status": "preview",
+      "glow": {
+        "color": "#5dff6a",
+        "intensity": 0.9
+      },
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb2-c4d7-7148-bfef-aefa784e96cb",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-2867-712b-8faa-813ef8158252",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "sphere",
@@ -256,13 +276,15 @@
       "id": "env.debris_rock",
       "category": "environment",
       "prompt": "chunk of scorched slag rock and twisted metal debris, ash dusted",
+      "source": "text",
       "targetPolycount": 600,
       "heightMeters": 0.4,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb2-c4e6-7448-9341-16af71d524d5",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-285e-72e0-b099-b665f9e509e0",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "box",
@@ -278,13 +300,15 @@
       "id": "prop.crashed_lander",
       "category": "prop",
       "prompt": "wrecked small colony landing craft hull section half buried in ash, torn hull plates, exposed ribs and cables, scorch marks",
+      "source": "text",
       "targetPolycount": 6000,
       "heightMeters": 3,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb3-7c63-7128-91d7-0dbd4b0ca67a",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-2865-7196-90ce-c117a3d7b929",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "box",
@@ -300,13 +324,15 @@
       "id": "env.wall_segment",
       "category": "environment",
       "prompt": "rusted modular industrial wall segment, riveted steel panels with pipes and yellow warning stripes, 4 meters wide, flat back",
+      "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 3,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb3-b18b-76e5-bebf-bc364a0f3452",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-2901-71b9-a5a5-93997e4c355e",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "box",
@@ -322,13 +348,15 @@
       "id": "prop.pipe_section",
       "category": "prop",
       "prompt": "broken large industrial pipe section lying on the ground, rusted steel, flange joints, 4 meters long",
+      "source": "text",
       "targetPolycount": 2000,
       "heightMeters": 1.2,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb3-b203-7007-a530-70be17b383ba",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-d0ce-7627-a13d-240d9bf44bd0",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "cylinder",
@@ -344,13 +372,15 @@
       "id": "prop.barricade",
       "category": "prop",
       "prompt": "makeshift colony barricade of welded scrap steel plates and sandbags, battle damaged",
+      "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 1.3,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb3-b210-746f-b316-d151664d5445",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-e747-70cc-a618-e6d5b52752ca",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "box",
@@ -366,13 +396,15 @@
       "id": "prop.control_terminal",
       "category": "prop",
       "prompt": "abandoned checkpoint control terminal pillar with cracked screen and hazard stripes, industrial sci-fi",
+      "source": "text",
       "targetPolycount": 2000,
       "heightMeters": 1.6,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb3-bf64-74c8-9586-57be1ac858eb",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc6-f9b5-70a7-83ca-873081a8db6f",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "box",
@@ -390,13 +422,15 @@
       "id": "prop.fuel_tank",
       "category": "prop",
       "prompt": "dented cylindrical industrial fuel tank on a steel frame, faded hazard markings, scorched and rusted",
+      "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 2.2,
-      "status": "preview",
+      "status": "refined",
       "meshy": {
         "previewTaskId": "01a0fcb4-2795-7002-83d2-356866650c17",
-        "previewApproved": false,
-        "creditsSpent": 20
+        "refineTaskId": "01a0fcc7-0f9d-721b-b283-c8d257f1320d",
+        "previewApproved": true,
+        "creditsSpent": 30
       },
       "placeholder": {
         "shape": "cylinder",
