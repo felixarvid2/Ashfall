@@ -1,6 +1,8 @@
 /** Shared per-game context handed to every system. */
 import type { Action, Settings } from '../data/settings';
+import type { EventQueue } from './events';
 import type { Rng } from './rng';
+import type { SpatialHash } from './spatial';
 
 /** The slice of Input that systems use — lets tests pass a fake. */
 export interface InputState {
@@ -16,10 +18,17 @@ export interface GameContext {
   rng: Rng;
   /** Number of fixed ticks simulated so far. */
   tick: number;
+  /** Simulated seconds since start. */
+  time: number;
   /** Camera yaw (radians) so WASD moves relative to the screen. */
   cameraYaw: number;
   /** Half-size of the walkable square, in metres. */
   worldHalfSize: number;
   /** Ground point under the cursor, provided by the render layer. */
   pickGround(): { x: number; z: number } | null;
+  events: EventQueue;
+  /** Moving colliders, rebuilt each tick by the spatial system. */
+  spatial: SpatialHash;
+  debug: { godMode: boolean };
+  stats: { kills: number };
 }

@@ -1,37 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { MoveTarget, Mover, PlayerControlled, Transform, makeTransform } from '../src/core/components';
-import type { GameContext, InputState } from '../src/core/context';
+import type { GameContext } from '../src/core/context';
 import { World } from '../src/core/ecs';
-import { Rng } from '../src/core/rng';
 import { defaultSettings, type Action } from '../src/data/settings';
 import { angleDelta, movementSystem } from '../src/systems/movement';
 import { playerControlSystem } from '../src/systems/playerControl';
+import { fakeInput as baseFakeInput, makeCtx } from './helpers';
 
-function fakeInput(held: Action[] = [], mouseDown = false): InputState {
-  return {
-    isDown: (a) => held.includes(a),
-    wasPressed: () => false,
-    isMouseDown: () => mouseDown,
-    wasMousePressed: () => false,
-  };
-}
+const fakeInput = (held: Action[] = [], mouseDown = false) => baseFakeInput(held, mouseDown ? [0] : []);
 
 function setup(ctxOverrides: Partial<GameContext> = {}) {
   const world = new World();
   const e = world.create();
   world.add(e, Transform, makeTransform());
-  world.add(e, Mover, { speed: 5, turnRate: 100, vx: 0, vz: 0 });
+  world.add(e, Mover, { speed: 5, speedMul: 1, turnRate: 100, vx: 0, vz: 0 });
   world.add(e, PlayerControlled, {});
-  const ctx: GameContext = {
-    input: fakeInput(),
-    settings: defaultSettings(),
-    rng: new Rng(1),
-    tick: 0,
-    cameraYaw: 0,
-    worldHalfSize: 40,
-    pickGround: () => null,
-    ...ctxOverrides,
-  };
+  const ctx: GameContext = makeCtx(ctxOverrides);
   const step = (ticks = 1) => {
     for (let i = 0; i < ticks; i++) {
       playerControlSystem(world, 1 / 60, ctx);

@@ -35,3 +35,27 @@ Near-isometric diagonal view as in the brief. WASD is camera-relative (W = up th
 ### 2026-10-02 — Collision deferred to Phase 1
 Phase 0 only needs a capsule on a plane. Simple circle-vs-circle/AABB collision comes with combat,
 when enemies need it too; Rapier will only be added if the simple approach falls short.
+
+### 2026-10-02 — Combat events decouple logic from presentation
+Systems push `GameEvent`s (damage, hit-stop, shake, telegraph, vfx…) to `ctx.events`; the renderer,
+damage numbers and HUD drain them once per frame. Logic stays headless-testable and never waits on visuals.
+
+### 2026-10-02 — Hit-stop freezes simulation time, not rendering
+`GameLoop.timeScale` drops to 0 for the hit-stop duration (real time). The world freezes for 45–90 ms while
+effects, camera shake and UI keep animating, which reads as impact without input lag.
+
+### 2026-10-02 — Enemy attacks are checked when they land, not when they start
+Telegraphs show the danger zone; the hit test happens at the end of the wind-up. Stepping out of the
+cone/line or dodging (i-frames) avoids the hit, so player skill matters. Drone aim locks at wind-up start.
+
+### 2026-10-02 — DoTs snapshot outgoing damage, mitigate per tick
+Matches the damage model doc: buffs on the attacker apply when the DoT is applied; target-side changes
+(Vulnerable, resistances) apply on each 0.5 s tick.
+
+### 2026-10-02 — Simple circle collision + spatial hash instead of Rapier
+Circle-vs-circle separation with mass weighting covers crowds, the player and props, and the 4 m grid
+keeps queries cheap with 100+ enemies. Rapier stays an option if dungeons need more.
+
+### 2026-10-02 — Starter numbers
+Bastion: 220 life, 60 armor, 14 weapon damage, 20 Strength. Enemies 30–70 life, 12–14 damage.
+First pass only; tune after playtesting.

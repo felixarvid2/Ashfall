@@ -17,8 +17,10 @@ export const PlaceholderSchema = z.object({
   size: z.tuple([z.number().positive(), z.number().positive(), z.number().positive()]),
   /** Optional emissive colour (lights, glowing growth). */
   emissive: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  emissiveIntensity: z.number().nonnegative().optional(),
   /** Adds a small visor so facing direction is visible. */
   showFacing: z.boolean().optional(),
+  facingColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
 });
 
 export const AssetEntrySchema = z.object({

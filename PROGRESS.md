@@ -4,7 +4,8 @@
 
 ## Current phase
 
-**Phase 0 – Foundation: ✅ done.** Next up: **Phase 1 – Core combat** (plan to be approved first).
+**Phase 1 – Core combat: ✅ done** (pending your playtest verdict on "is it fun?").
+Next up: **Phase 2 – Meshy pipeline** (needs a Meshy API key; plan to be approved first).
 
 ## Done
 
@@ -24,6 +25,33 @@
 - Dev-mode data validation at startup (`src/data/validate.ts`).
 - 44 unit tests (RNG, ECS, saves + migrations, i18n, movement, click-to-move, loop, data, settings).
 
+### Phase 1 – Core combat
+- **Bastion** with the **Heat** resource: built by Hydraulic Strike hits and by taking damage, decays out of combat,
+  and **overheats** (self-damage) if kept at 100 for more than 1.5 s.
+- **4 skills** (data in `src/data/skills/bastion.ts`): Hydraulic Strike (basic, arc, ignites above 70 Heat),
+  Seismic Shock (core, 35 Heat, knockback + Vulnerable), Rocket Leap (leap, stun on landing),
+  Energy Shield (barrier = 35 % life, cleanses stuns/slows). Plus **dodge** (Space, i-frames) and **stim packs** (Q).
+- Skill casting with wind-up/recovery, **input buffering**, cooldowns, resource costs, cursor aiming.
+- **3 enemy types with distinct AI** (`src/data/enemies.ts`): Infected Colonist (rusher, telegraphed claw),
+  Security Drone (hovering ranged, keeps distance, strafes, telegraphed bolts),
+  Spore Carrier (support: hides behind the pack, shields allies, leaves a poison cloud on death).
+  Group aggro, wandering when idle.
+- **Damage model** with additive/multiplicative buckets, crits, armor and resistances — see
+  [docs/damage-formula.md](docs/damage-formula.md).
+- **Statuses**: Burning, Poisoned (stacking), Chilled, Frozen, Stunned, Vulnerable, Barrier (+ DoT ticks).
+  Chilled/Frozen are implemented but nothing applies them yet (Spectre / cold enemies later).
+- **Combat feel**: hit-stop, screen shake (toggle in debug panel), floating damage numbers (crits, DoTs,
+  damage taken, absorbed, heals), hit flashes, status tints, sparks, slash arcs, shockwaves, telegraph decals
+  that fill up until the attack lands, barrier bubbles, stun rings, enemies knocked back and toppling over.
+- **Collision**: circle colliders with a spatial hash; crowds push each other; crates and posts block movement;
+  drones fly over ground units.
+- **Test arena waves** (`src/data/encounters.ts`): 5 waves then endless with +15 % life per wave.
+- **HUD**: life orb (with barrier), Heat orb (pulses when overheating), action bar with cooldown sweeps and
+  tooltips, wave tracker, target frame with statuses, death screen with respawn (R / click).
+- Debug panel: next wave, kill all, spawn 100 enemies, god mode, screen shake.
+- 103 unit tests (damage formula, statuses, DoTs, heat/overheat, every skill, dodge/potion, buffering,
+  all three AIs, collision, spatial hash, waves).
+
 ## How to run
 
 ```bash
@@ -34,25 +62,38 @@ npm test           # unit tests
 npm run build      # typecheck + production build into dist/
 ```
 
-Controls: **WASD** move · **mouse wheel** zoom · **F3** debug panel · **F5** quick save · **F9** quick load.
-Switch to click-to-move in the debug panel.
+Controls: **WASD** move · **LMB** Hydraulic Strike · **RMB** Seismic Shock · **1** Rocket Leap ·
+**2** Energy Shield · **Space** dodge · **Q** stim pack · **mouse wheel** zoom · **F3** debug panel ·
+**F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
+Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
+Shift + left-click to attack in place.
 
-## What to test (Phase 0)
-1. Walk around with WASD — the camera should follow smoothly, W walks "up" the screen.
-2. Scroll to zoom in/out a little.
-3. Press F3, switch Movement to "Click to move", hold left mouse to walk toward the cursor.
-4. F5 to save, walk away, F9 to load — you should snap back. Reload the page and F9 again.
-5. Debug panel → Export, then Import the downloaded file.
-6. Check the FPS meter on your machine (target: 60 FPS).
+## What to test (Phase 1)
+1. Fight the waves. Hold LMB to swing, build Heat, spend it on RMB (Seismic Shock) when surrounded.
+2. Watch the red telegraphs: step out of a colonist's cone or a drone's line before it fills, or dodge (Space).
+3. Kill the Spore Carrier first — or avoid its green death cloud.
+4. Ride Heat at 100 and notice the overheat warning and self-damage.
+5. Rocket Leap (1) into a pack, then Energy Shield (2) when low. Use stim packs (Q).
+6. Die once and respawn (R).
+7. Debug panel (F3) → "Spawn 100" and check the FPS meter on your machine (target 60 FPS with ~100 enemies).
+8. Try click-to-move mode too, and tell me which feels better.
+9. **Most important:** is it fun? Too easy/hard, too slow/fast, too much/little shake?
 
 ## Known issues / limitations
-- No collision yet: the player walks through crates and lights (collision arrives with combat in Phase 1).
+- No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
 - No post-processing (bloom, vignette, colour grading) yet — planned for Phase 2 alongside real assets.
-- Performance has only been measured in a headless CPU-rendered browser (≈6 FPS there, not representative);
-  please report real FPS from a laptop with integrated graphics.
-- Settings UI (key rebinding, text size, screen shake) is not built yet; settings exist in data and are persisted.
+- Enemies have no pathfinding around crates (they slide along them via collision); fine for the open arena,
+  needs a nav grid when dungeons arrive (Phase 5).
+- Performance has only been measured in a headless CPU-rendered browser (4–6 FPS there with 130 enemies,
+  ~450–530 draw calls — not representative). Placeholder enemies are individual meshes; instancing/LOD comes
+  with the real models in Phase 2. Please report real FPS from a laptop with integrated graphics.
+- Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
+- Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
+- Skill icons are text labels until icons are generated (brief §9.5).
 
 ## Next steps
-- Phase 1 plan: Bastion with 4 abilities (Heat resource), 3 placeholder enemy types with AI, damage, death,
-  status effects, hit-stop, screen shake, floating damage numbers, simple collision, a test arena.
-- Phase 2 needs a Meshy API key in `ashfall/.env` (or as the `MESHY_API_KEY` environment variable).
+- Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
+- Phase 2 – Meshy pipeline: read current docs.meshy.ai, manifest-driven generation with budget prompts and
+  `--dry-run`, gltf-transform post-processing, `/asset-viewer`, then real models for Bastion, the 3 enemies
+  and a Cinder Flats kit; bloom/vignette post-processing. Needs a Meshy API key in `ashfall/.env`
+  (or as the `MESHY_API_KEY` environment variable).

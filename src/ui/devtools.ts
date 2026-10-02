@@ -9,6 +9,9 @@ export interface DebugInfo {
   position: { x: number; z: number };
   seed: string;
   tick: number;
+  enemies: number;
+  wave: number;
+  kills: number;
 }
 
 export interface DebugActions {
@@ -18,6 +21,11 @@ export interface DebugActions {
   importSave(json: string): void;
   deleteSave(): void;
   setMoveMode(mode: MoveMode): void;
+  nextWave(): void;
+  killAll(): void;
+  spawnHorde(): void;
+  setGodMode(on: boolean): void;
+  setScreenShake(on: boolean): void;
 }
 
 export class DevTools {
@@ -31,7 +39,7 @@ export class DevTools {
   fps = 0;
   frameMs = 0;
 
-  constructor(root: HTMLElement, actions: DebugActions, showFps: boolean) {
+  constructor(root: HTMLElement, actions: DebugActions, showFps: boolean, screenShake: boolean) {
     this.fpsEl = document.createElement('div');
     this.fpsEl.className = 'fps-meter';
     this.fpsEl.hidden = !showFps;
@@ -43,7 +51,7 @@ export class DevTools {
     const h2 = document.createElement('h2');
     h2.textContent = t('debug.title');
     const dl = document.createElement('dl');
-    for (const key of ['fps', 'frameTime', 'entities', 'drawCalls', 'triangles', 'position', 'seed', 'tick']) {
+    for (const key of ['fps', 'frameTime', 'entities', 'enemies', 'wave', 'kills', 'drawCalls', 'triangles', 'position', 'seed', 'tick']) {
       const dt = document.createElement('dt');
       dt.textContent = t(`debug.${key}`);
       const dd = document.createElement('dd');
@@ -77,8 +85,27 @@ export class DevTools {
       fileInput.value = '';
     });
 
+    const checkbox = (label: string, initial: boolean, onChange: (on: boolean) => void) => {
+      const l = document.createElement('label');
+      l.textContent = label;
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = initial;
+      box.addEventListener('change', () => {
+        onChange(box.checked);
+        box.blur();
+      });
+      l.appendChild(box);
+      return l;
+    };
+    const godLabel = checkbox(t('debug.godMode'), false, actions.setGodMode);
+    const shakeLabel = checkbox(t('debug.screenShake'), screenShake, actions.setScreenShake);
+
+    const combatRow = document.createElement('div');
+    combatRow.className = 'row';
     const row = document.createElement('div');
     row.className = 'row';
+    let target = combatRow;
     const button = (label: string, onClick: () => void, testId: string) => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -88,15 +115,19 @@ export class DevTools {
         onClick();
         b.blur();
       });
-      row.appendChild(b);
+      target.appendChild(b);
     };
+    button(t('debug.nextWave'), actions.nextWave, 'debug-next-wave');
+    button(t('debug.killAll'), actions.killAll, 'debug-kill-all');
+    button(t('debug.spawnHorde'), actions.spawnHorde, 'debug-spawn-horde');
+    target = row;
     button(t('debug.save'), actions.save, 'debug-save');
     button(t('debug.load'), actions.load, 'debug-load');
     button(t('debug.export'), actions.exportSave, 'debug-export');
     button(t('debug.import'), () => fileInput.click(), 'debug-import');
     button(t('debug.deleteSave'), actions.deleteSave, 'debug-delete');
 
-    this.panel.append(h2, dl, moveLabel, row, fileInput);
+    this.panel.append(h2, dl, moveLabel, godLabel, shakeLabel, combatRow, row, fileInput);
     root.append(this.fpsEl, this.panel);
   }
 
@@ -131,6 +162,9 @@ export class DevTools {
       this.set('position', `${d.position.x.toFixed(1)}, ${d.position.z.toFixed(1)}`);
       this.set('seed', d.seed);
       this.set('tick', d.tick);
+      this.set('enemies', d.enemies);
+      this.set('wave', d.wave);
+      this.set('kills', d.kills);
     }
     this.frames = 0;
     this.elapsed = 0;

@@ -35,10 +35,22 @@ export class AssetLibrary {
     return entry;
   }
 
-  /** New Object3D for this asset. Shares geometry/material between instances. */
-  create(id: string): THREE.Object3D {
+  /**
+   * New Object3D for this asset. Geometry is shared; materials are shared too
+   * unless `uniqueMaterial` is set (needed for per-entity hit flashes and tints).
+   */
+  create(id: string, uniqueMaterial = false): THREE.Object3D {
     // GLB loading for optimized assets arrives with the Meshy pipeline (Phase 2).
-    return this.buildPlaceholder(id, this.entry(id).placeholder);
+    const obj = this.buildPlaceholder(id, this.entry(id).placeholder);
+    if (uniqueMaterial) {
+      const body = obj.children[0];
+      if (body instanceof THREE.Mesh) {
+        body.material = (body.material as THREE.Material).clone();
+        body.userData.baseEmissive = (body.material as THREE.MeshStandardMaterial).emissive.clone();
+        body.userData.baseEmissiveIntensity = (body.material as THREE.MeshStandardMaterial).emissiveIntensity;
+      }
+    }
+    return obj;
   }
 
   /** Shared geometry + material, for InstancedMesh use (debris, rocks, scrap). */
@@ -58,8 +70,8 @@ export class AssetLibrary {
     if (p.showFacing) {
       const visor = new THREE.Mesh(
         this.cachedGeometry('visor', () => new THREE.BoxGeometry(0.42, 0.14, 0.12)),
-        this.cachedMaterial('visor', () =>
-          new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff8a2a, emissiveIntensity: 3 }),
+        this.cachedMaterial(`visor:${p.facingColor ?? '#ff8a2a'}`, () =>
+          new THREE.MeshStandardMaterial({ color: 0x000000, emissive: p.facingColor ?? '#ff8a2a', emissiveIntensity: 3 }),
         ),
       );
       visor.position.set(0, p.size[1] * 0.82, p.size[2] * 0.42);
@@ -97,12 +109,12 @@ export class AssetLibrary {
   }
 
   private material(p: Placeholder): THREE.Material {
-    const key = `${p.color}:${p.emissive ?? ''}`;
+    const key = `${p.color}:${p.emissive ?? ''}:${p.emissiveIntensity ?? ''}`;
     return this.cachedMaterial(key, () => {
       const mat = new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.85, metalness: 0.25 });
       if (p.emissive) {
         mat.emissive = new THREE.Color(p.emissive);
-        mat.emissiveIntensity = 1.6;
+        mat.emissiveIntensity = p.emissiveIntensity ?? 1.6;
       }
       return mat;
     });

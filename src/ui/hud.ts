@@ -1,30 +1,199 @@
-/** Minimal Phase 0 HUD: title and controls hint. */
+/**
+ * In-game HUD: life and resource orbs, action bar with cooldowns, wave tracker,
+ * target frame and death screen. DOM is only touched when a value changes.
+ */
 import { t } from '../data/i18n';
 import type { Action, MoveMode } from '../data/settings';
+import { skill } from '../data/db';
 
 /** "KeyW" → "W", "Digit1" → "1", "F3" → "F3". */
 export function keyLabel(code: string): string {
   if (code.startsWith('Key')) return code.slice(3);
   if (code.startsWith('Digit')) return code.slice(5);
   if (code === 'Backquote') return '§';
+  if (code === 'Space') return 'Space';
+  if (code.startsWith('Shift')) return 'Shift';
   return code;
+}
+
+export interface SlotState {
+  id: string | null;
+  cooldown: number;
+  cooldownMax: number;
+  affordable: boolean;
+}
+
+export interface HudState {
+  life: { current: number; max: number; barrier: number };
+  resource: { kind: string; current: number; max: number; overheating: boolean };
+  slots: SlotState[];
+  dodge: { cooldown: number; max: number };
+  potion: { charges: number; max: number };
+  wave: { wave: number; alive: number; phase: 'intermission' | 'active'; timer: number } | null;
+  target: { name: string; current: number; max: number; statuses: string[] } | null;
+  dead: boolean;
+}
+
+const SLOT_LABELS = ['LMB', 'RMB', '1', '2', '3', '4'];
+
+class Orb {
+  readonly el: HTMLDivElement;
+  private readonly fill: HTMLDivElement;
+  private readonly shield: HTMLDivElement;
+  private readonly text: HTMLDivElement;
+  private last = '';
+
+  constructor(kind: 'life' | 'heat', label: string) {
+    this.el = document.createElement('div');
+    this.el.className = `orb orb-${kind}`;
+    this.el.title = label;
+    this.fill = document.createElement('div');
+    this.fill.className = 'orb-fill';
+    this.shield = document.createElement('div');
+    this.shield.className = 'orb-shield';
+    this.text = document.createElement('div');
+    this.text.className = 'orb-text';
+    const glass = document.createElement('div');
+    glass.className = 'orb-glass';
+    this.el.append(this.fill, this.shield, glass, this.text);
+  }
+
+  set(current: number, max: number, extra = 0, warn = false): void {
+    const key = `${Math.ceil(current)}/${max}/${Math.ceil(extra)}/${warn}`;
+    if (key === this.last) return;
+    this.last = key;
+    const pct = max > 0 ? Math.max(0, Math.min(1, current / max)) : 0;
+    this.fill.style.height = `${pct * 100}%`;
+    this.shield.style.height = `${Math.min(1, extra / Math.max(1, max)) * 100}%`;
+    this.text.textContent = `${Math.ceil(current)} / ${Math.round(max)}`;
+    this.el.classList.toggle('warn', warn);
+  }
+}
+
+class Slot {
+  readonly el: HTMLDivElement;
+  private readonly name: HTMLDivElement;
+  private readonly cd: HTMLDivElement;
+  private readonly cdText: HTMLDivElement;
+  private last = '';
+
+  constructor(label: string, private readonly onHover: (slot: Slot | null) => void) {
+    this.el = document.createElement('div');
+    this.el.className = 'slot';
+    const key = document.createElement('div');
+    key.className = 'slot-key';
+    key.textContent = label;
+    this.name = document.createElement('div');
+    this.name.className = 'slot-name';
+    this.cd = document.createElement('div');
+    this.cd.className = 'slot-cd';
+    this.cdText = document.createElement('div');
+    this.cdText.className = 'slot-cd-text';
+    this.el.append(this.name, this.cd, this.cdText, key);
+    this.el.addEventListener('mouseenter', () => this.onHover(this));
+    this.el.addEventListener('mouseleave', () => this.onHover(null));
+  }
+
+  skillId: string | null = null;
+
+  set(name: string, category: string, cooldown: number, max: number, usable: boolean): void {
+    const frac = max > 0 ? Math.min(1, cooldown / max) : 0;
+    const key = `${name}|${category}|${frac.toFixed(2)}|${usable}|${cooldown > 0 ? Math.ceil(cooldown) : 0}`;
+    if (key === this.last) return;
+    this.last = key;
+    this.name.textContent = name;
+    this.el.dataset.category = category;
+    this.cd.style.background =
+      frac > 0 ? `conic-gradient(rgba(0,0,0,0.72) ${frac * 360}deg, transparent 0deg)` : 'transparent';
+    this.cdText.textContent = cooldown > 0.05 && max >= 1 ? String(Math.ceil(cooldown)) : '';
+    this.el.classList.toggle('unusable', !usable);
+  }
 }
 
 export class Hud {
   private readonly hint: HTMLDivElement;
+  private readonly lifeOrb = new Orb('life', t('hud.life'));
+  private readonly heatOrb = new Orb('heat', t('hud.heat'));
+  private readonly slots: Slot[];
+  private readonly dodgeSlot: Slot;
+  private readonly potionSlot: Slot;
+  private readonly waveTitle: HTMLDivElement;
+  private readonly waveSub: HTMLDivElement;
+  private readonly target: HTMLDivElement;
+  private readonly targetName: HTMLDivElement;
+  private readonly targetFill: HTMLDivElement;
+  private readonly targetStatus: HTMLDivElement;
+  private readonly banner: HTMLDivElement;
+  private readonly death: HTMLDivElement;
+  private readonly deathHint: HTMLDivElement;
+  private readonly tooltip: HTMLDivElement;
+  private bannerTimer = 0;
+  private lastWave = '';
+  private lastTarget = '';
+  private respawnKey = 'R';
 
-  constructor(root: HTMLElement) {
+  constructor(root: HTMLElement, onRespawn: () => void) {
     const title = document.createElement('div');
     title.className = 'hud-title';
     const h1 = document.createElement('h1');
     h1.textContent = t('game.title');
     const sub = document.createElement('p');
     sub.textContent = t('game.subtitle');
-    title.append(h1, sub);
-
-    this.hint = document.createElement('div');
+    this.hint = document.createElement('p');
     this.hint.className = 'hud-hint';
-    root.append(title, this.hint);
+    title.append(h1, sub, this.hint);
+
+    const bar = document.createElement('div');
+    bar.className = 'action-bar';
+    const slotRow = document.createElement('div');
+    slotRow.className = 'slots';
+    this.slots = SLOT_LABELS.map((label) => new Slot(label, (s) => this.showTooltip(s)));
+    this.dodgeSlot = new Slot('Space', () => {});
+    this.potionSlot = new Slot('Q', () => {});
+    this.dodgeSlot.el.classList.add('slot-small');
+    this.potionSlot.el.classList.add('slot-small');
+    slotRow.append(...this.slots.map((s) => s.el), this.dodgeSlot.el, this.potionSlot.el);
+    bar.append(this.lifeOrb.el, slotRow, this.heatOrb.el);
+
+    const wave = document.createElement('div');
+    wave.className = 'wave-tracker';
+    this.waveTitle = document.createElement('div');
+    this.waveTitle.className = 'wave-title';
+    this.waveSub = document.createElement('div');
+    this.waveSub.className = 'wave-sub';
+    wave.append(this.waveTitle, this.waveSub);
+
+    this.target = document.createElement('div');
+    this.target.className = 'target-frame';
+    this.targetName = document.createElement('div');
+    this.targetName.className = 'target-name';
+    const track = document.createElement('div');
+    track.className = 'target-track';
+    this.targetFill = document.createElement('div');
+    this.targetFill.className = 'target-fill';
+    track.appendChild(this.targetFill);
+    this.targetStatus = document.createElement('div');
+    this.targetStatus.className = 'target-status';
+    this.target.append(this.targetName, track, this.targetStatus);
+    this.target.hidden = true;
+
+    this.banner = document.createElement('div');
+    this.banner.className = 'center-banner';
+
+    this.death = document.createElement('div');
+    this.death.className = 'death-screen';
+    const dt = document.createElement('h2');
+    dt.textContent = t('hud.youDied');
+    this.deathHint = document.createElement('p');
+    this.death.append(dt, this.deathHint);
+    this.death.hidden = true;
+    this.death.addEventListener('click', onRespawn);
+
+    this.tooltip = document.createElement('div');
+    this.tooltip.className = 'tooltip';
+    this.tooltip.hidden = true;
+
+    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip);
   }
 
   updateHint(moveMode: MoveMode, bindings: Record<Action, string[]>): void {
@@ -35,9 +204,92 @@ export class Hud {
         : t('moveMode.clickHint');
     this.hint.textContent = t('hud.controlsHint', {
       move,
+      lmb: 'LMB',
+      rmb: 'RMB',
+      dodge: first('dodge'),
+      potion: first('potion'),
       debug: first('toggleDebug'),
-      save: first('quickSave'),
-      load: first('quickLoad'),
     });
+    this.respawnKey = first('respawn');
+    this.deathHint.textContent = t('hud.respawnHint', { key: this.respawnKey });
+  }
+
+  /** Big centred message (wave start/clear). */
+  showBanner(text: string, seconds = 2): void {
+    this.banner.textContent = text;
+    this.banner.classList.add('show');
+    this.bannerTimer = seconds;
+  }
+
+  update(state: HudState, dt: number): void {
+    this.lifeOrb.set(state.life.current, state.life.max, state.life.barrier, state.life.current / state.life.max < 0.3);
+    this.heatOrb.set(state.resource.current, state.resource.max, 0, state.resource.overheating);
+
+    state.slots.forEach((s, i) => {
+      const slot = this.slots[i]!;
+      slot.skillId = s.id;
+      if (!s.id) {
+        slot.set('', 'empty', 0, 0, false);
+        return;
+      }
+      const def = skill(s.id);
+      const [cls, name] = s.id.split('.') as [string, string];
+      slot.set(t(`skills.${cls}.${name}.name`), def.category, s.cooldown, s.cooldownMax, s.affordable && s.cooldown <= 0);
+    });
+    this.dodgeSlot.set(t('hud.dodge'), 'dodge', state.dodge.cooldown, state.dodge.max, state.dodge.cooldown <= 0);
+    this.potionSlot.set(`${t('hud.potion')} ×${state.potion.charges}`, 'potion', 0, 0, state.potion.charges > 0);
+
+    let waveKey = '';
+    if (state.wave) {
+      waveKey =
+        state.wave.phase === 'active'
+          ? `${t('hud.wave', { wave: state.wave.wave })}|${t('hud.hostiles', { count: state.wave.alive })}`
+          : `${t('hud.wave', { wave: state.wave.wave })}|${t('hud.nextWave', { seconds: Math.ceil(state.wave.timer) })}`;
+    }
+    if (waveKey !== this.lastWave) {
+      this.lastWave = waveKey;
+      const [a = '', b = ''] = waveKey.split('|');
+      this.waveTitle.textContent = a;
+      this.waveSub.textContent = b;
+    }
+
+    const targetKey = state.target
+      ? `${state.target.name}|${Math.ceil(state.target.current)}|${state.target.max}|${state.target.statuses.join(',')}`
+      : '';
+    if (targetKey !== this.lastTarget) {
+      this.lastTarget = targetKey;
+      this.target.hidden = !state.target;
+      if (state.target) {
+        this.targetName.textContent = state.target.name;
+        this.targetFill.style.width = `${Math.max(0, state.target.current / state.target.max) * 100}%`;
+        this.targetStatus.textContent = state.target.statuses.map((s) => t(`statuses.${s}`)).join(' · ');
+      }
+    }
+
+    this.death.hidden = !state.dead;
+
+    if (this.bannerTimer > 0) {
+      this.bannerTimer -= dt;
+      if (this.bannerTimer <= 0) this.banner.classList.remove('show');
+    }
+  }
+
+  private showTooltip(slot: Slot | null): void {
+    if (!slot || !slot.skillId) {
+      this.tooltip.hidden = true;
+      return;
+    }
+    const def = skill(slot.skillId);
+    const [cls, name] = def.id.split('.') as [string, string];
+    const resource = t('resources.heat');
+    const lines = [`<strong>${t(`skills.${cls}.${name}.name`)}</strong>`, t(`skills.${cls}.${name}.desc`)];
+    if (def.resourceCost > 0) lines.push(t('hud.cost', { amount: def.resourceCost, resource }));
+    if (def.resourceGain > 0) lines.push(t('hud.generates', { amount: def.resourceGain, resource }));
+    if (def.cooldown > 0) lines.push(t('hud.cooldown', { seconds: def.cooldown }));
+    this.tooltip.innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
+    const rect = slot.el.getBoundingClientRect();
+    this.tooltip.hidden = false;
+    this.tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    this.tooltip.style.top = `${rect.top - 8}px`;
   }
 }

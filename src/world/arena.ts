@@ -1,6 +1,6 @@
 /** Builds a zone's static entities from its data definition. */
 import type { World } from '../core/ecs';
-import { Renderable, Transform, makeTransform } from '../core/components';
+import { Collider, Renderable, Transform, makeTransform } from '../core/components';
 import { Rng } from '../core/rng';
 import type { ArenaDef } from '../data/zones/testArena';
 
@@ -17,6 +17,7 @@ export function spawnArenaProps(world: World, arena: ArenaDef): void {
     const e = world.create();
     world.add(e, Transform, makeTransform(prop.x, 0, prop.z, prop.rot ?? 0));
     world.add(e, Renderable, { assetId: prop.asset, scale: prop.scale ?? 1 });
+    if (prop.collider) world.add(e, Collider, { radius: prop.collider, mass: Infinity, layer: 'ground', isStatic: true });
   }
 }
 

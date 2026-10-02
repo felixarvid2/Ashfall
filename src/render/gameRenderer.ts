@@ -4,7 +4,9 @@
  */
 import * as THREE from 'three';
 import type { Entity, World } from '../core/ecs';
-import { Renderable, Transform } from '../core/components';
+import { Dead, EnemyAI, Renderable, StatusEffects, Transform } from '../core/components';
+import type { GameEvent } from '../core/events';
+import { STATUS_DEFS } from '../data/db';
 import { Rng } from '../core/rng';
 import type { ArenaDef } from '../data/zones/testArena';
 import { scatterInstances } from '../world/arena';
@@ -12,6 +14,7 @@ import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
 import { AssetLibrary } from './assets';
 import { CameraRig } from './camera';
+import { VfxSystem } from './vfx';
 
 export class GameRenderer {
   readonly renderer: THREE.WebGLRenderer;
@@ -19,7 +22,13 @@ export class GameRenderer {
   readonly rig: CameraRig;
   readonly assets = new AssetLibrary();
   private readonly ash = new AshFall();
+  readonly vfx = new VfxSystem();
   private readonly objects = new Map<Entity, THREE.Object3D>();
+  /** Seconds of white hit-flash left per entity. */
+  private readonly flashes = new Map<Entity, number>();
+  private readonly tint = new THREE.Color();
+  private time = 0;
+  screenShake = true;
   private readonly raycaster = new THREE.Raycaster();
   private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private readonly moon: THREE.DirectionalLight;
@@ -27,6 +36,7 @@ export class GameRenderer {
   private readonly playerLight = new THREE.PointLight('#ffd2a1', 0, 0, 2);
   private readonly hit = new THREE.Vector3();
   private readonly ndc = new THREE.Vector2();
+  private readonly projected = new THREE.Vector3();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -39,7 +49,7 @@ export class GameRenderer {
 
     this.rig = new CameraRig(1);
     this.moon = new THREE.DirectionalLight();
-    this.scene.add(this.ash.points);
+    this.scene.add(this.ash.points, this.vfx.root);
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -115,8 +125,18 @@ export class GameRenderer {
     return point ? { x: point.x, z: point.z } : null;
   }
 
+  /** Feed logic events to effects and the camera. */
+  handleEvents(events: readonly GameEvent[]): void {
+    for (const event of events) {
+      this.vfx.handle(event);
+      if (event.type === 'damage' && !event.dot) this.flashes.set(event.target, 0.1);
+      if (event.type === 'shake' && this.screenShake) this.rig.addTrauma(event.trauma);
+    }
+  }
+
   /** Mirror ECS → scene, interpolating between the last two ticks by `alpha`. */
-  sync(world: World, alpha: number): void {
+  sync(world: World, alpha: number, frameDt: number): void {
+    this.time += frameDt;
     const seen = new Set<Entity>();
     for (const e of world.query(Transform, Renderable)) {
       seen.add(e);
@@ -124,7 +144,8 @@ export class GameRenderer {
       let obj = this.objects.get(e);
       if (!obj) {
         const r = world.req(e, Renderable);
-        obj = this.assets.create(r.assetId);
+        // Characters get their own material so they can flash and tint.
+        obj = this.assets.create(r.assetId, world.has(e, StatusEffects));
         obj.scale.setScalar(r.scale ?? 1);
         this.objects.set(e, obj);
         this.scene.add(obj);
@@ -135,13 +156,67 @@ export class GameRenderer {
         tr.prevZ + (tr.z - tr.prevZ) * alpha,
       );
       obj.rotation.y = tr.prevFacing + angleDelta(tr.prevFacing, tr.facing) * alpha;
+      // Hovering machines bob gently (procedural animation, brief §9.4).
+      if (tr.y > 0.5 && world.has(e, EnemyAI)) obj.position.y += Math.sin(this.time * 3 + e) * 0.08;
+
+      const dead = world.get(e, Dead);
+      if (dead) {
+        // Topple over, then sink into the ash.
+        const fall = Math.min(1, dead.elapsed / 0.3);
+        obj.rotation.set(0, dead.fallDir, 0);
+        obj.rotateX((Math.PI / 2) * fall * 0.95);
+        if (dead.elapsed > 1.2) obj.position.y -= (dead.elapsed - 1.2) * 0.8;
+      } else if (obj.rotation.x !== 0) {
+        obj.rotation.x = 0;
+        obj.rotation.z = 0;
+      }
+      this.applyTint(world, e, obj, frameDt);
     }
     for (const [e, obj] of this.objects) {
       if (!seen.has(e)) {
         this.scene.remove(obj);
         this.objects.delete(e);
+        this.flashes.delete(e);
       }
     }
+    this.vfx.update(world, frameDt, alpha);
+  }
+
+  /** Hit flash and status colours via the body material's emissive channel. */
+  private applyTint(world: World, e: Entity, obj: THREE.Object3D, dt: number): void {
+    const body = obj.children[0];
+    if (!(body instanceof THREE.Mesh) || body.userData.baseEmissive === undefined) return;
+    const mat = body.material as THREE.MeshStandardMaterial;
+    let flash = this.flashes.get(e) ?? 0;
+    if (flash > 0) {
+      flash -= dt;
+      this.flashes.set(e, flash);
+    }
+    if (flash > 0) {
+      mat.emissive.set('#ffffff');
+      mat.emissiveIntensity = 1.2;
+      return;
+    }
+    const effects = world.get(e, StatusEffects);
+    const priority = ['burning', 'poisoned', 'chilled', 'frozen', 'vulnerable'] as const;
+    const active = effects ? priority.find((id) => effects.list.some((s) => s.id === id)) : undefined;
+    if (active && !world.has(e, Dead)) {
+      this.tint.set(STATUS_DEFS[active].color);
+      mat.emissive.copy(this.tint);
+      mat.emissiveIntensity = 0.16 + 0.1 * Math.sin(this.time * 10);
+    } else {
+      mat.emissive.copy(body.userData.baseEmissive as THREE.Color);
+      mat.emissiveIntensity = body.userData.baseEmissiveIntensity as number;
+    }
+  }
+
+  /** Project a world point to CSS pixels (for damage numbers). Null if behind the camera. */
+  toScreen(x: number, y: number, z: number, out: { x: number; y: number }): boolean {
+    this.projected.set(x, y, z).project(this.rig.camera);
+    if (this.projected.z > 1) return false;
+    out.x = (this.projected.x * 0.5 + 0.5) * this.canvas.clientWidth;
+    out.y = (-this.projected.y * 0.5 + 0.5) * this.canvas.clientHeight;
+    return true;
   }
 
   /** Follow a world position with the camera and draw a frame. */

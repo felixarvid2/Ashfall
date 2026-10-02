@@ -1,5 +1,6 @@
 /** Core component definitions. Components are plain data — no methods, no Three.js objects. */
-import { defineComponent } from './ecs';
+import type { Bonus, ClassDef, DamageType, StatusId } from '../data/schemas';
+import { defineComponent, type Entity } from './ecs';
 
 /** World-space position (metres, y up) and facing (radians around y, 0 = +z). */
 export interface Transform {
@@ -22,6 +23,8 @@ export function makeTransform(x = 0, y = 0, z = 0, facing = 0): Transform {
 /** Can move on the ground plane. `vx/vz` is the desired velocity this tick (m/s). */
 export interface Mover {
   speed: number;
+  /** Multiplier from statuses (0 = stunned, <1 = chilled). Recomputed every tick. */
+  speedMul: number;
   /** How fast the entity turns to face its movement (radians/s). */
   turnRate: number;
   vx: number;
@@ -47,3 +50,210 @@ export interface Renderable {
   scale?: number;
 }
 export const Renderable = defineComponent<Renderable>('Renderable');
+
+// ---- Combat -------------------------------------------------------------------
+
+export type Team = 'player' | 'enemy';
+export interface Faction {
+  team: Team;
+}
+export const Faction = defineComponent<Faction>('Faction');
+
+export interface Health {
+  current: number;
+  max: number;
+}
+export const Health = defineComponent<Health>('Health');
+
+/** Offensive and defensive numbers used by the damage formula (docs/damage-formula.md). */
+export interface CombatStats {
+  level: number;
+  weaponDamage: number;
+  mainStat: number;
+  critChance: number;
+  /** Bonus on top of 1× for crits: 0.5 → crits deal 1.5×. */
+  critDamage: number;
+  armor: number;
+  resist: Partial<Record<DamageType, number>>;
+  /** Additive "+x% damage" bonuses — summed into one bucket. */
+  additive: Bonus[];
+  /** Multiplicative "×x% damage" bonuses — each multiplies separately. */
+  multiplicative: Bonus[];
+  /** Tags used by conditional bonuses ("elite"). */
+  tags: string[];
+}
+export const CombatStats = defineComponent<CombatStats>('CombatStats');
+
+/** Circle collider. Air colliders only push other air colliders (drones float over crowds). */
+export interface Collider {
+  radius: number;
+  mass: number;
+  layer: 'ground' | 'air';
+  /** Static obstacles never move. */
+  isStatic: boolean;
+}
+export const Collider = defineComponent<Collider>('Collider');
+
+export interface StatusInstance {
+  id: StatusId;
+  remaining: number;
+  duration: number;
+  /** DoT damage per second (pre-mitigation). */
+  dps: number;
+  /** Barrier points left. */
+  amount: number;
+  /** Damage accumulated since the last DoT tick. */
+  pending: number;
+  sourceTeam: Team;
+  attackerLevel: number;
+}
+export interface StatusEffects {
+  list: StatusInstance[];
+  /** False while stunned/frozen. Recomputed every tick by the status system. */
+  canAct: boolean;
+  /** Time until the next DoT damage tick. */
+  dotTimer: number;
+}
+export const StatusEffects = defineComponent<StatusEffects>('StatusEffects');
+
+/** Class resource (Heat for Bastion). */
+export interface Resource {
+  kind: 'heat' | 'focus' | 'biomass';
+  current: number;
+  max: number;
+  /** Seconds since the owner last dealt or took damage. */
+  sinceCombat: number;
+  /** Seconds spent at max (Heat overheat). */
+  atMaxFor: number;
+  overheatTick: number;
+  config: ClassDef['resource'];
+}
+export const Resource = defineComponent<Resource>('Resource');
+
+export interface CastState {
+  skillId: string;
+  elapsed: number;
+  fired: boolean;
+  aimX: number;
+  aimZ: number;
+}
+export interface SkillRequest {
+  slot: number;
+  aimX: number;
+  aimZ: number;
+  /** Seconds the request stays buffered while the caster is busy. */
+  ttl: number;
+}
+export interface SkillUser {
+  classId: string;
+  slots: (string | null)[];
+  cooldowns: Record<string, number>;
+  cast: CastState | null;
+  request: SkillRequest | null;
+  dodgeCooldown: number;
+  dodgeRequested: { x: number; z: number } | null;
+  potionCharges: number;
+  potionRecharge: number;
+  potionRequested: boolean;
+}
+export const SkillUser = defineComponent<SkillUser>('SkillUser');
+
+/** Scripted movement that overrides normal movement (leaps, dodges). */
+export interface ForcedMove {
+  fromX: number;
+  fromZ: number;
+  toX: number;
+  toZ: number;
+  elapsed: number;
+  duration: number;
+  height: number;
+  /** Skill whose landing effect fires on arrival, if any. */
+  landingSkill: string | null;
+}
+export const ForcedMove = defineComponent<ForcedMove>('ForcedMove');
+
+/** Ignores damage (dodge i-frames). */
+export interface Invulnerable {
+  remaining: number;
+}
+export const Invulnerable = defineComponent<Invulnerable>('Invulnerable');
+
+export interface Knockback {
+  vx: number;
+  vz: number;
+  remaining: number;
+}
+export const Knockback = defineComponent<Knockback>('Knockback');
+
+export type AiState = 'idle' | 'chase' | 'windup' | 'recover';
+export interface EnemyAI {
+  defId: string;
+  state: AiState;
+  timer: number;
+  cooldown: number;
+  aggro: boolean;
+  aimX: number;
+  aimZ: number;
+  strafeDir: 1 | -1;
+  strafeTimer: number;
+  wanderX: number;
+  wanderZ: number;
+}
+export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
+
+export interface Projectile {
+  team: Team;
+  vx: number;
+  vz: number;
+  radius: number;
+  remaining: number;
+  damage: number;
+  damageType: DamageType;
+  attackerLevel: number;
+  owner: Entity;
+}
+export const Projectile = defineComponent<Projectile>('Projectile');
+
+/** Ground area that repeatedly applies statuses to the opposing team (spore clouds). */
+export interface Hazard {
+  team: Team;
+  radius: number;
+  remaining: number;
+  duration: number;
+  tickTimer: number;
+  applies: { status: StatusId; duration: number; dps?: number }[];
+  attackerLevel: number;
+}
+export const Hazard = defineComponent<Hazard>('Hazard');
+
+export interface Dead {
+  elapsed: number;
+  /** Seconds before the corpse is removed (players are never removed). */
+  removeAfter: number;
+  /** Direction the body falls (radians). */
+  fallDir: number;
+}
+export const Dead = defineComponent<Dead>('Dead');
+
+/** Marks which wave spawned an enemy. */
+export interface WaveMember {
+  wave: number;
+}
+export const WaveMember = defineComponent<WaveMember>('WaveMember');
+
+/** Click-to-move attack order: walk into range of this enemy, then use the basic skill. */
+export interface AttackTarget {
+  target: Entity;
+}
+export const AttackTarget = defineComponent<AttackTarget>('AttackTarget');
+
+/** Singleton tracking the wave encounter in the test arena. */
+export interface EncounterState {
+  encounterId: string;
+  /** Number of waves started so far (1-based once the first wave spawns). */
+  wave: number;
+  phase: 'intermission' | 'active';
+  timer: number;
+  alive: number;
+}
+export const EncounterState = defineComponent<EncounterState>('EncounterState');

@@ -8,7 +8,76 @@
       "targetPolycount": 12000,
       "status": "planned",
       "meshy": {},
-      "placeholder": { "shape": "capsule", "color": "#7d838a", "size": [0.9, 1.9, 0.9], "showFacing": true }
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#7d838a",
+        "size": [
+          0.9,
+          1.9,
+          0.9
+        ],
+        "showFacing": true,
+        "facingColor": "#ff8a2a"
+      }
+    },
+    {
+      "id": "enemy.infected_colonist",
+      "category": "enemy",
+      "prompt": "infected colonist zombie, torn mining jumpsuit, glowing green fungal growth bursting from the shoulders, T-pose",
+      "targetPolycount": 5000,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#56604c",
+        "size": [
+          0.8,
+          1.7,
+          0.8
+        ],
+        "showFacing": true,
+        "facingColor": "#6bff7a"
+      }
+    },
+    {
+      "id": "enemy.security_drone",
+      "category": "enemy",
+      "prompt": "hijacked hovering security drone, cracked armored shell, single red sensor eye, dangling cables, scorched paint",
+      "targetPolycount": 3000,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#4a4f57",
+        "size": [
+          0.9,
+          0.6,
+          0.9
+        ],
+        "showFacing": true,
+        "facingColor": "#ff3b30"
+      }
+    },
+    {
+      "id": "enemy.spore_carrier",
+      "category": "enemy",
+      "prompt": "bloated mutated colonist covered in pulsing spore sacs, bioluminescent sickly green fungal-crystal growth, hunched, T-pose",
+      "targetPolycount": 6000,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#3b4a2a",
+        "size": [
+          1.3,
+          1.5,
+          1.3
+        ],
+        "emissive": "#3d8f3a",
+        "emissiveIntensity": 0.6,
+        "showFacing": true,
+        "facingColor": "#b6ff5a"
+      }
     },
     {
       "id": "prop.cargo_crate",
@@ -17,7 +86,15 @@
       "targetPolycount": 1500,
       "status": "planned",
       "meshy": {},
-      "placeholder": { "shape": "box", "color": "#4a4038", "size": [1.4, 1.1, 1.4] }
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a4038",
+        "size": [
+          1.4,
+          1.1,
+          1.4
+        ]
+      }
     },
     {
       "id": "prop.emergency_light",
@@ -26,7 +103,16 @@
       "targetPolycount": 1200,
       "status": "planned",
       "meshy": {},
-      "placeholder": { "shape": "cylinder", "color": "#3a3a3c", "size": [0.25, 3.2, 0.25], "emissive": "#ff7a1a" }
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#3a3a3c",
+        "size": [
+          0.25,
+          3.2,
+          0.25
+        ],
+        "emissive": "#ff7a1a"
+      }
     },
     {
       "id": "prop.lumen_growth",
@@ -35,7 +121,16 @@
       "targetPolycount": 2000,
       "status": "planned",
       "meshy": {},
-      "placeholder": { "shape": "sphere", "color": "#1f3a22", "size": [1.2, 0.8, 1.2], "emissive": "#5dff6a" }
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#1f3a22",
+        "size": [
+          1.2,
+          0.8,
+          1.2
+        ],
+        "emissive": "#5dff6a"
+      }
     },
     {
       "id": "env.debris_rock",
@@ -44,7 +139,15 @@
       "targetPolycount": 400,
       "status": "planned",
       "meshy": {},
-      "placeholder": { "shape": "box", "color": "#2b2a29", "size": [0.6, 0.35, 0.5] }
+      "placeholder": {
+        "shape": "box",
+        "color": "#2b2a29",
+        "size": [
+          0.6,
+          0.35,
+          0.5
+        ]
+      }
     }
   ]
 }

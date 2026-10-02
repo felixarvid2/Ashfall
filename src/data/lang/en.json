@@ -4,7 +4,22 @@
     "subtitle": "Kharos IV — one year after the fall"
   },
   "hud": {
-    "controlsHint": "{move} to move · Mouse wheel to zoom · {debug} debug panel · {save} save · {load} load"
+    "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {debug} debug",
+    "life": "Life",
+    "heat": "Heat",
+    "overheating": "OVERHEATING",
+    "wave": "Wave {wave}",
+    "hostiles": "{count} hostiles remaining",
+    "waveCleared": "Wave {wave} cleared",
+    "nextWave": "Next wave in {seconds}",
+    "youDied": "You have fallen",
+    "respawnHint": "Press {key} or click to rise again",
+    "dodge": "Dodge",
+    "potion": "Stim pack",
+    "cooldown": "Cooldown {seconds}s",
+    "cost": "Costs {amount} {resource}",
+    "generates": "Generates {amount} {resource}",
+    "slotEmpty": "Empty slot"
   },
   "moveMode": {
     "wasd": "WASD",
@@ -37,6 +52,57 @@
     "export": "Export",
     "import": "Import",
     "deleteSave": "Delete save",
-    "saveDeleted": "Save deleted"
+    "saveDeleted": "Save deleted",
+    "enemies": "Enemies",
+    "wave": "Wave",
+    "kills": "Kills",
+    "nextWave": "Next wave",
+    "killAll": "Kill all",
+    "spawnHorde": "Spawn 100",
+    "godMode": "God mode",
+    "screenShake": "Screen shake"
+  },
+  "combat": {
+    "notEnoughResource": "Not enough Heat",
+    "overheat": "Overheating! Spend Heat to cool down"
+  },
+  "skills": {
+    "bastion": {
+      "hydraulic_strike": {
+        "name": "Hydraulic Strike",
+        "desc": "Swing your hydraulic fist in a wide arc. Above 70 Heat, sets enemies on fire."
+      },
+      "seismic_shock": {
+        "name": "Seismic Shock",
+        "desc": "Slam the ground, knocking enemies back and making them Vulnerable."
+      },
+      "rocket_leap": {
+        "name": "Rocket Leap",
+        "desc": "Boost into the air and crash down, stunning enemies where you land."
+      },
+      "energy_shield": {
+        "name": "Energy Shield",
+        "desc": "Project a barrier worth 35% of your life and shake off stuns and slows."
+      }
+    }
+  },
+  "enemies": {
+    "infected_colonist": "Infected Colonist",
+    "security_drone": "Security Drone",
+    "spore_carrier": "Spore Carrier"
+  },
+  "resources": {
+    "heat": "Heat",
+    "focus": "Focus",
+    "biomass": "Biomass"
+  },
+  "statuses": {
+    "burning": "Burning",
+    "poisoned": "Poisoned",
+    "chilled": "Chilled",
+    "frozen": "Frozen",
+    "stunned": "Stunned",
+    "vulnerable": "Vulnerable",
+    "barrier": "Barrier"
   }
 }

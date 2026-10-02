@@ -4,6 +4,7 @@
  */
 import manifestJson from '../../assets/manifest.json';
 import { AssetManifestSchema } from './assetManifest';
+import { CLASSES, ENCOUNTERS, ENEMY_DEFS, SKILLS } from './db';
 import en from './lang/en.json';
 import { SettingsSchema } from './settings';
 import { TEST_ARENA, type ArenaDef } from './zones/testArena';
@@ -32,6 +33,37 @@ export function validateGameData(): string[] {
       }
     }
     for (const s of arena.scatter) if (!ids.has(s.asset)) errors.push(`${arena.id}: unknown scatter asset ${s.asset}`);
+  }
+
+  // Combat data (schemas are enforced when db.ts loads; these are cross-references).
+  for (const cls of CLASSES.values()) {
+    if (!ids.has(cls.assetId)) errors.push(`class ${cls.id}: unknown asset ${cls.assetId}`);
+    for (const id of cls.actionBar) {
+      if (id === null) continue;
+      const def = SKILLS.get(id);
+      if (!def) errors.push(`class ${cls.id}: action bar references unknown skill ${id}`);
+      else if (def.classId !== cls.id) errors.push(`class ${cls.id}: skill ${id} belongs to ${def.classId}`);
+    }
+  }
+  for (const enemy of ENEMY_DEFS.values()) {
+    if (!ids.has(enemy.assetId)) errors.push(`enemy ${enemy.id}: unknown asset ${enemy.assetId}`);
+    const [min, max] = enemy.preferredRange ?? [0, 0];
+    if (min > max) errors.push(`enemy ${enemy.id}: preferredRange min > max`);
+  }
+  for (const enc of ENCOUNTERS.values()) {
+    for (const wave of enc.waves) {
+      for (const g of wave.groups) if (!ENEMY_DEFS.has(g.enemy)) errors.push(`${enc.id}: unknown enemy ${g.enemy}`);
+    }
+    if (enc.spawnRing[0] > enc.spawnRing[1]) errors.push(`${enc.id}: spawnRing min > max`);
+  }
+  for (const def of SKILLS.values()) {
+    const [cls, name] = def.id.split('.');
+    const strings = (en as { skills?: Record<string, Record<string, unknown>> }).skills;
+    if (!strings?.[cls!]?.[name!]) errors.push(`lang/en.json: missing strings for skill ${def.id}`);
+  }
+  for (const enemy of ENEMY_DEFS.values()) {
+    const names = (en as { enemies?: Record<string, string> }).enemies;
+    if (!names?.[enemy.id]) errors.push(`lang/en.json: missing name for enemy ${enemy.id}`);
   }
 
   if (!SettingsSchema.safeParse({}).success) errors.push('settings: defaults do not validate');

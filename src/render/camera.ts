@@ -33,6 +33,9 @@ export class CameraRig {
   private readonly focus = new THREE.Vector3();
   private distance: number;
   private targetDistance: number;
+  /** Screen-shake trauma in [0, 1]; shake strength is trauma². */
+  private trauma = 0;
+  private shakeTime = 0;
 
   constructor(aspect: number, options: Partial<CameraRigOptions> = {}) {
     this.opts = { ...DEFAULTS, ...options };
@@ -59,7 +62,13 @@ export class CameraRig {
     );
   }
 
+  addTrauma(amount: number): void {
+    this.trauma = Math.min(1, this.trauma + amount);
+  }
+
   update(targetX: number, targetY: number, targetZ: number, dt: number): void {
+    this.trauma = Math.max(0, this.trauma - dt * 1.8);
+    this.shakeTime += dt;
     const k = 1 - Math.exp(-this.opts.followSharpness * dt);
     this.focus.x += (targetX - this.focus.x) * k;
     this.focus.y += (targetY + 1 - this.focus.y) * k;
@@ -85,5 +94,13 @@ export class CameraRig {
       this.focus.z + Math.cos(this.yaw) * horizontal,
     );
     this.camera.lookAt(this.focus);
+    if (this.trauma > 0) {
+      // Smooth pseudo-noise from summed sines; avoids jittery random shake.
+      const s = this.trauma * this.trauma;
+      const t = this.shakeTime * 32;
+      this.camera.position.x += (Math.sin(t * 1.1) + Math.sin(t * 2.3) * 0.5) * s * 0.35;
+      this.camera.position.y += (Math.sin(t * 1.7) + Math.sin(t * 3.1) * 0.5) * s * 0.35;
+      this.camera.rotation.z += Math.sin(t * 1.3) * s * 0.02;
+    }
   }
 }

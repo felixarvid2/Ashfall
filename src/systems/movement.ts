@@ -1,7 +1,7 @@
 /** Integrates movement on the ground plane and turns entities toward their heading. */
 import type { GameContext } from '../core/context';
 import type { World } from '../core/ecs';
-import { MoveTarget, Mover, Transform } from '../core/components';
+import { Dead, ForcedMove, Knockback, MoveTarget, Mover, Transform } from '../core/components';
 
 const ARRIVE_DISTANCE = 0.08;
 
@@ -22,12 +22,23 @@ export function movementSystem(world: World, dt: number, ctx: GameContext): void
     tr.prevZ = tr.z;
     tr.prevFacing = tr.facing;
 
-    const target = world.get(e, MoveTarget);
+    // Leaps and dodges are driven by the forced-move system.
+    if (world.has(e, ForcedMove)) continue;
+
+    const dead = world.has(e, Dead);
+    const kb = world.get(e, Knockback);
+    if (dead) {
+      mover.vx = 0;
+      mover.vz = 0;
+    }
+
+    const target = dead ? undefined : world.get(e, MoveTarget);
     if (target) {
       const dx = target.x - tr.x;
       const dz = target.z - tr.z;
       const dist = Math.hypot(dx, dz);
-      const step = mover.speed * dt;
+      const speed = mover.speed * mover.speedMul;
+      const step = speed * dt;
       if (dist <= Math.max(ARRIVE_DISTANCE, step)) {
         tr.x = target.x;
         tr.z = target.z;
@@ -35,18 +46,26 @@ export function movementSystem(world: World, dt: number, ctx: GameContext): void
         mover.vz = 0;
         world.remove(e, MoveTarget);
       } else {
-        mover.vx = (dx / dist) * mover.speed;
-        mover.vz = (dz / dist) * mover.speed;
+        mover.vx = (dx / dist) * speed;
+        mover.vz = (dz / dist) * speed;
       }
     }
 
-    tr.x += mover.vx * dt;
-    tr.z += mover.vz * dt;
+    let vx = mover.vx * (target ? 1 : mover.speedMul);
+    let vz = mover.vz * (target ? 1 : mover.speedMul);
+    if (kb) {
+      vx += kb.vx;
+      vz += kb.vz;
+      kb.remaining -= dt;
+      if (kb.remaining <= 0) world.remove(e, Knockback);
+    }
+    tr.x += vx * dt;
+    tr.z += vz * dt;
     const limit = ctx.worldHalfSize;
     tr.x = Math.min(limit, Math.max(-limit, tr.x));
     tr.z = Math.min(limit, Math.max(-limit, tr.z));
 
-    if (mover.vx !== 0 || mover.vz !== 0) {
+    if (!dead && mover.speedMul > 0 && (mover.vx !== 0 || mover.vz !== 0)) {
       const desired = Math.atan2(mover.vx, mover.vz);
       const delta = angleDelta(tr.facing, desired);
       const maxTurn = mover.turnRate * dt;
