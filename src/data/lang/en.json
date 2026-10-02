@@ -1,0 +1,42 @@
+{
+  "game": {
+    "title": "Ashfall",
+    "subtitle": "Kharos IV — one year after the fall"
+  },
+  "hud": {
+    "controlsHint": "{move} to move · Mouse wheel to zoom · {debug} debug panel · {save} save · {load} load"
+  },
+  "moveMode": {
+    "wasd": "WASD",
+    "click": "Click to move",
+    "clickHint": "Left-click"
+  },
+  "save": {
+    "saved": "Game saved",
+    "loaded": "Game loaded",
+    "noSave": "No saved game found",
+    "exported": "Save exported",
+    "imported": "Save imported",
+    "importFailed": "Could not import save: {reason}",
+    "loadFailed": "Could not load save: {reason}",
+    "storageUnavailable": "Browser storage is unavailable"
+  },
+  "debug": {
+    "title": "Debug",
+    "fps": "FPS",
+    "frameTime": "Frame",
+    "entities": "Entities",
+    "drawCalls": "Draw calls",
+    "triangles": "Triangles",
+    "position": "Position",
+    "seed": "Seed",
+    "tick": "Tick",
+    "moveMode": "Movement",
+    "save": "Save",
+    "load": "Load",
+    "export": "Export",
+    "import": "Import",
+    "deleteSave": "Delete save",
+    "saveDeleted": "Save deleted"
+  }
+}

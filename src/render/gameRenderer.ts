@@ -1,0 +1,207 @@
+/**
+ * Owns the Three.js renderer, scene and camera, and mirrors ECS state into the
+ * scene each frame. Game logic never imports this module.
+ */
+import * as THREE from 'three';
+import type { Entity, World } from '../core/ecs';
+import { Renderable, Transform } from '../core/components';
+import { Rng } from '../core/rng';
+import type { ArenaDef } from '../data/zones/testArena';
+import { scatterInstances } from '../world/arena';
+import { angleDelta } from '../systems/movement';
+import { AshFall } from './ash';
+import { AssetLibrary } from './assets';
+import { CameraRig } from './camera';
+
+export class GameRenderer {
+  readonly renderer: THREE.WebGLRenderer;
+  readonly scene = new THREE.Scene();
+  readonly rig: CameraRig;
+  readonly assets = new AssetLibrary();
+  private readonly ash = new AshFall();
+  private readonly objects = new Map<Entity, THREE.Object3D>();
+  private readonly raycaster = new THREE.Raycaster();
+  private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  private readonly moon: THREE.DirectionalLight;
+  /** Warm light that travels with the player (the classic ARPG "light radius"). */
+  private readonly playerLight = new THREE.PointLight('#ffd2a1', 0, 0, 2);
+  private readonly hit = new THREE.Vector3();
+  private readonly ndc = new THREE.Vector2();
+
+  constructor(private readonly canvas: HTMLCanvasElement) {
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+
+    this.rig = new CameraRig(1);
+    this.moon = new THREE.DirectionalLight();
+    this.scene.add(this.ash.points);
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+  }
+
+  /** Static environment: lights, fog, ground, instanced scatter. */
+  buildArena(arena: ArenaDef): void {
+    const s = this.scene;
+    s.background = new THREE.Color(arena.fog.color);
+    s.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
+    s.add(new THREE.AmbientLight(arena.ambient.color, arena.ambient.intensity));
+    s.add(new THREE.HemisphereLight('#4a5466', '#2a2018', arena.ambient.intensity * 1.6));
+    const pl = arena.playerLight;
+    this.playerLight.color.set(pl.color);
+    this.playerLight.intensity = pl.intensity;
+    this.playerLight.distance = pl.distance;
+    s.add(this.playerLight);
+
+    this.moon.color.set(arena.moon.color);
+    this.moon.intensity = arena.moon.intensity;
+    this.moon.castShadow = true;
+    this.moon.shadow.mapSize.set(2048, 2048);
+    const sc = this.moon.shadow.camera;
+    sc.left = sc.bottom = -22;
+    sc.right = sc.top = 22;
+    sc.near = 1;
+    sc.far = 80;
+    this.moon.shadow.bias = -0.0005;
+    s.add(this.moon, this.moon.target);
+
+    const size = arena.halfSize * 2 + 40;
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(size, size),
+      new THREE.MeshStandardMaterial({ map: makeGroundTexture(), color: 0x8a847c, roughness: 1, metalness: 0 }),
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    s.add(ground);
+
+    for (const prop of arena.props) {
+      if (!prop.light) continue;
+      const light = new THREE.PointLight(prop.light.color, prop.light.intensity, prop.light.distance, 2);
+      light.position.set(prop.x, prop.light.height, prop.z);
+      s.add(light);
+    }
+
+    arena.scatter.forEach((def, index) => {
+      const { geometry, material } = this.assets.instancingParts(def.asset);
+      const instances = scatterInstances(arena, index);
+      const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
+      const m = new THREE.Matrix4();
+      const q = new THREE.Quaternion();
+      const up = new THREE.Vector3(0, 1, 0);
+      instances.forEach((inst, i) => {
+        q.setFromAxisAngle(up, inst.rot);
+        m.compose(
+          new THREE.Vector3(inst.x, -0.05, inst.z),
+          q,
+          new THREE.Vector3(inst.scale, inst.scale * 0.8, inst.scale),
+        );
+        mesh.setMatrixAt(i, m);
+      });
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      s.add(mesh);
+    });
+  }
+
+  /** Point on the ground under the cursor, or null if the ray misses. */
+  pickGround(ndcX: number, ndcY: number): { x: number; z: number } | null {
+    this.ndc.set(ndcX, ndcY);
+    this.raycaster.setFromCamera(this.ndc, this.rig.camera);
+    const point = this.raycaster.ray.intersectPlane(this.groundPlane, this.hit);
+    return point ? { x: point.x, z: point.z } : null;
+  }
+
+  /** Mirror ECS → scene, interpolating between the last two ticks by `alpha`. */
+  sync(world: World, alpha: number): void {
+    const seen = new Set<Entity>();
+    for (const e of world.query(Transform, Renderable)) {
+      seen.add(e);
+      const tr = world.req(e, Transform);
+      let obj = this.objects.get(e);
+      if (!obj) {
+        const r = world.req(e, Renderable);
+        obj = this.assets.create(r.assetId);
+        obj.scale.setScalar(r.scale ?? 1);
+        this.objects.set(e, obj);
+        this.scene.add(obj);
+      }
+      obj.position.set(
+        tr.prevX + (tr.x - tr.prevX) * alpha,
+        tr.prevY + (tr.y - tr.prevY) * alpha,
+        tr.prevZ + (tr.z - tr.prevZ) * alpha,
+      );
+      obj.rotation.y = tr.prevFacing + angleDelta(tr.prevFacing, tr.facing) * alpha;
+    }
+    for (const [e, obj] of this.objects) {
+      if (!seen.has(e)) {
+        this.scene.remove(obj);
+        this.objects.delete(e);
+      }
+    }
+  }
+
+  /** Follow a world position with the camera and draw a frame. */
+  render(frameDt: number, followX: number, followY: number, followZ: number): void {
+    this.rig.update(followX, followY, followZ, frameDt);
+    const f = this.rig.focusPoint;
+    // Keep the shadow frustum centred on the action.
+    this.playerLight.position.set(followX, 3.2, followZ);
+    this.moon.position.set(f.x - 12, 30, f.z + 6);
+    this.moon.target.position.set(f.x, 0, f.z);
+    this.ash.update(frameDt, f);
+    this.renderer.render(this.scene, this.rig.camera);
+  }
+
+  get stats(): { drawCalls: number; triangles: number } {
+    const info = this.renderer.info.render;
+    return { drawCalls: info.calls, triangles: info.triangles };
+  }
+
+  private resize(): void {
+    const w = this.canvas.clientWidth || window.innerWidth;
+    const h = this.canvas.clientHeight || window.innerHeight;
+    this.renderer.setSize(w, h, false);
+    this.rig.setAspect(w / h);
+  }
+}
+
+/** Procedural ash-and-cinder ground texture (deterministic). */
+function makeGroundTexture(): THREE.Texture {
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const rng = new Rng('ground-texture');
+  ctx.fillStyle = '#5b5650';
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < 9000; i++) {
+    const v = rng.int(50, 120);
+    ctx.fillStyle = `rgba(${v},${v - 3},${v - 6},${rng.range(0.15, 0.5)})`;
+    const r = rng.range(1, 6);
+    ctx.fillRect(rng.range(0, size), rng.range(0, size), r, r);
+  }
+  ctx.strokeStyle = 'rgba(15,12,10,0.6)';
+  for (let i = 0; i < 40; i++) {
+    ctx.lineWidth = rng.range(0.5, 2);
+    ctx.beginPath();
+    let x = rng.range(0, size);
+    let y = rng.range(0, size);
+    ctx.moveTo(x, y);
+    for (let j = 0; j < 6; j++) {
+      x += rng.range(-30, 30);
+      y += rng.range(-30, 30);
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(14, 14);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}

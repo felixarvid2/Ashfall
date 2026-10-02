@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "char.bastion",
+      "category": "character",
+      "prompt": "heavy armored space marine in bulky battered exoskeleton, hydraulic joints, scorched paint, full body, T-pose",
+      "targetPolycount": 12000,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": { "shape": "capsule", "color": "#7d838a", "size": [0.9, 1.9, 0.9], "showFacing": true }
+    },
+    {
+      "id": "prop.cargo_crate",
+      "category": "prop",
+      "prompt": "battered industrial cargo crate, dented steel panels, hazard stripes, ash covered",
+      "targetPolycount": 1500,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": { "shape": "box", "color": "#4a4038", "size": [1.4, 1.1, 1.4] }
+    },
+    {
+      "id": "prop.emergency_light",
+      "category": "prop",
+      "prompt": "industrial emergency light post, rusted steel pole, caged orange warning lamp on top",
+      "targetPolycount": 1200,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": { "shape": "cylinder", "color": "#3a3a3c", "size": [0.25, 3.2, 0.25], "emissive": "#ff7a1a" }
+    },
+    {
+      "id": "prop.lumen_growth",
+      "category": "prop",
+      "prompt": "cluster of bioluminescent sickly green fungal-crystal growth bursting through cracked metal floor",
+      "targetPolycount": 2000,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": { "shape": "sphere", "color": "#1f3a22", "size": [1.2, 0.8, 1.2], "emissive": "#5dff6a" }
+    },
+    {
+      "id": "env.debris_rock",
+      "category": "environment",
+      "prompt": "chunk of scorched slag rock and twisted metal debris, ash dusted",
+      "targetPolycount": 400,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": { "shape": "box", "color": "#2b2a29", "size": [0.6, 0.35, 0.5] }
+    }
+  ]
+}
