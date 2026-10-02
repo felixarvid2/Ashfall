@@ -2,6 +2,8 @@
  * Top-level game: wires ECS, systems, input, rendering, UI and saving together.
  */
 import {
+  DisplayName,
+  Npc,
   AccountBonuses,
   Interactable,
   CombatStats,
@@ -85,7 +87,21 @@ import { loadAccount, relicEffects, saveAccount } from './core/account';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { keyLabel } from './ui/hud';
 import { LORE_XP_PER_LEVEL, PYLONS } from './data/interactables';
-import { createQuestRuntime, questMarkers, questSystem, restoreQuests, saveQuests, spawnQuestWorld } from './systems/quests';
+import {
+  choose,
+  completeTalk,
+  createQuestRuntime,
+  offeredBy,
+  questMarkers,
+  questSystem,
+  restoreQuests,
+  saveQuests,
+  spawnQuestWorld,
+  startQuest,
+  waitingOn,
+} from './systems/quests';
+import { NPCS, questDef } from './data/quests/db';
+import { DialoguePanel, NpcPlates, QuestLog, QuestTracker, type DialogueButton, type DialoguePage, type QuestLogEntry, type TrackedQuest } from './ui/questUi';
 import { STASH_POSITION } from './data/quests/cinderFlats';
 
 const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
@@ -121,6 +137,12 @@ export class Game {
   private readonly mapUi: MapUi;
   private readonly interactPrompt: InteractPrompt;
   private readonly loreReader: LoreReader;
+  private readonly dialogue: DialoguePanel;
+  private readonly npcPlates: NpcPlates;
+  private readonly questTracker: QuestTracker;
+  private readonly questLog: QuestLog;
+  /** NPC the open conversation is with. */
+  private talkingTo: string | null = null;
   private player!: Entity;
   private hitstop = 0;
   private lastTarget: { entity: Entity; until: number } | null = null;
@@ -198,6 +220,12 @@ export class Game {
     this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
     this.interactPrompt = new InteractPrompt(uiRoot);
     this.loreReader = new LoreReader(uiRoot);
+    this.dialogue = new DialoguePanel(uiRoot);
+    this.npcPlates = new NpcPlates(uiRoot);
+    this.questTracker = new QuestTracker(uiRoot);
+    this.questLog = new QuestLog(uiRoot, () => this.questLogEntries(), (id) => {
+      if (this.ctx.quests) this.ctx.quests.tracked = id;
+    });
     this.mapUi = new MapUi(
       uiRoot,
       () => this.ctx.zone,
@@ -442,6 +470,7 @@ export class Game {
     if (input.wasPressed('character')) this.characterPanel.toggle();
     if (input.wasPressed('skills')) this.skillTreePanel.toggle();
     if (input.wasPressed('map')) this.mapUi.toggle();
+    if (input.wasPressed('quests')) this.questLog.toggle();
     if (this.loreReader.open && (input.wasPressed('pickup') || input.wasPressed('map'))) this.loreReader.close();
 
     this.scheduler.tick(this.world, dt, this.ctx);
@@ -485,6 +514,7 @@ export class Game {
     this.mapUi.markers = questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
     this.mapUi.update(frameDt);
     this.updateInteractPrompt(px, pz);
+    this.updateQuestUi(px, pz);
 
     this.devtools.frame(frameDt, () => ({
       entities: this.world.entityCount,
@@ -547,12 +577,198 @@ export class Game {
           if (event.entered) this.hud.showBanner(t(`zones.${ZONE.key}.${event.id}`), 2.2);
           break;
         case 'interact':
-          this.onInteract(event.kind, event.detail);
+          this.onInteract(event.kind, event.detail, event.id);
+          break;
+        case 'quest':
+          this.onQuestEvent(event.id, event.state);
           break;
         default:
           break;
       }
     }
+  }
+
+  // ---- Quests and conversations ------------------------------------------------
+
+  private stepText(id: string): string {
+    const st = this.ctx.quests?.active.get(id);
+    if (!st) return '';
+    const step = questDef(id).steps[st.step];
+    const count = step?.kind === 'kill' || step?.kind === 'interact' ? step.count : step?.kind === 'escort' ? step.path.length - 1 : 0;
+    return t(`quests.${id}.steps.${st.step}`, { n: Math.min(st.progress, count), count });
+  }
+
+  private orderedQuests(): string[] {
+    const rt = this.ctx.quests;
+    if (!rt) return [];
+    const rank = { main: 0, side: 1, mystery: 2 } as const;
+    return [...rt.active.keys()].sort((a, b) => {
+      if (a === rt.tracked) return -1;
+      if (b === rt.tracked) return 1;
+      return rank[questDef(a).kind] - rank[questDef(b).kind];
+    });
+  }
+
+  private questLogEntries(): { active: QuestLogEntry[]; done: string[] } {
+    const rt = this.ctx.quests;
+    if (!rt) return { active: [], done: [] };
+    return {
+      active: this.orderedQuests().map((id) => {
+        const def = questDef(id);
+        return {
+          id,
+          title: t(`quests.${id}.title`),
+          summary: t(`quests.${id}.summary`),
+          step: this.stepText(id),
+          kind: def.kind,
+          level: def.level,
+          rewards: t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold }),
+          tracked: rt.tracked === id,
+        };
+      }),
+      done: [...rt.done.keys()].map((id) => t(`quests.${id}.title`)),
+    };
+  }
+
+  private updateQuestUi(px: number, pz: number): void {
+    const rt = this.ctx.quests;
+    if (!rt) return;
+    const tracked: TrackedQuest[] = this.orderedQuests().map((id) => ({
+      id,
+      title: t(`quests.${id}.title`),
+      step: this.stepText(id),
+      kind: questDef(id).kind,
+      tracked: rt.tracked === id,
+    }));
+    this.questTracker.update(tracked);
+    const plates: { id: string; x: number; z: number; name: string; marker: '!' | '?' | '' }[] = [];
+    for (const e of this.world.query(Npc, Transform)) {
+      const tr = this.world.req(e, Transform);
+      if (Math.hypot(tr.x - px, tr.z - pz) > 32) continue;
+      const id = this.world.req(e, Npc).id;
+      const marker = waitingOn(rt, id).length ? '?' : offeredBy(rt, id).length ? '!' : '';
+      plates.push({ id, x: tr.x, z: tr.z, name: t(`npcs.${id}.name`), marker });
+    }
+    this.npcPlates.update(plates, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
+    // Walking away ends the conversation.
+    if (this.dialogue.open && this.talkingTo) {
+      const npc = this.world.query(Npc, Transform).find((e) => this.world.req(e, Npc).id === this.talkingTo);
+      const tr = npc !== undefined ? this.world.req(npc, Transform) : undefined;
+      if (!tr || Math.hypot(tr.x - px, tr.z - pz) > 7) this.closeDialogue();
+    }
+  }
+
+  private closeDialogue(): void {
+    this.dialogue.close();
+    this.talkingTo = null;
+  }
+
+  private talkTo(npc: string): void {
+    this.talkingTo = npc;
+    this.dialogue.show(this.npcRoot(npc));
+  }
+
+  private page(npc: string, text: string, buttons: DialogueButton[]): DialoguePage {
+    return { speaker: t(`npcs.${npc}.name`), role: t(`npcs.${npc}.title`), text, buttons };
+  }
+
+  private npcRoot(npc: string): DialoguePage {
+    const rt = this.ctx.quests!;
+    const buttons: DialogueButton[] = [];
+    for (const w of waitingOn(rt, npc)) {
+      buttons.push({ tag: t('questUi.talkTag'), label: t(`quests.${w.id}.title`), onClick: () => this.questTalk(npc, w.id) });
+    }
+    for (const q of offeredBy(rt, npc)) {
+      buttons.push({ tag: t('questUi.offerTag'), label: t(`quests.${q.id}.title`), onClick: () => this.questOffer(npc, q.id) });
+    }
+    const service = NPCS.get(npc)?.service;
+    if (service) buttons.push({ label: t(`npcs.${npc}.service`), onClick: () => this.openService(service) });
+    buttons.push({ label: t('questUi.goodbye'), onClick: () => this.closeDialogue() });
+    return this.page(npc, t(`npcs.${npc}.greeting`), buttons);
+  }
+
+  private questOffer(npc: string, id: string): void {
+    const def = questDef(id);
+    const text = `${t(`quests.${id}.offer`)}
+${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
+    this.dialogue.show(
+      this.page(npc, text, [
+        {
+          label: t('questUi.accept'),
+          onClick: () => {
+            startQuest(this.world, this.ctx, id);
+            this.world.flushDestroyed();
+            this.dialogue.show(this.npcRoot(npc));
+          },
+        },
+        { label: t('questUi.decline'), onClick: () => this.dialogue.show(this.npcRoot(npc)) },
+      ]),
+    );
+  }
+
+  private questTalk(npc: string, id: string): void {
+    const st = this.ctx.quests!.active.get(id);
+    const step = st && questDef(id).steps[st.step];
+    if (!st || !step) return;
+    if (step.kind === 'choice') {
+      const key = `quests.${id}.choice${st.step}`;
+      this.dialogue.show(
+        this.page(
+          npc,
+          t(`${key}.prompt`),
+          step.options.map((o) => ({
+            label: t(`${key}.${o.id}`),
+            onClick: () => {
+              choose(this.world, this.ctx, id, o.id);
+              this.dialogue.show(this.page(npc, t(`quests.${id}.result.${o.id}`), [{ label: t('questUi.continue'), onClick: () => this.closeDialogue() }]));
+            },
+          })),
+        ),
+      );
+      return;
+    }
+    const lines = t(`quests.${id}.talk${st.step}`);
+    this.dialogue.show(
+      this.page(npc, lines, [
+        {
+          label: t('questUi.continue'),
+          onClick: () => {
+            completeTalk(this.world, this.ctx, id);
+            this.world.flushDestroyed();
+            this.dialogue.show(this.npcRoot(npc));
+          },
+        },
+      ]),
+    );
+  }
+
+  private openService(service: string): void {
+    this.toasts.show(t(`npcs.${this.talkingTo ?? 'benny'}.service`));
+    void service;
+  }
+
+  private onQuestEvent(id: string, state: 'started' | 'progress' | 'step' | 'completed' | 'failed'): void {
+    const title = t(`quests.${id}.title`);
+    switch (state) {
+      case 'started':
+        this.toasts.show(t('questUi.started', { title }));
+        break;
+      case 'progress':
+      case 'step':
+        this.toasts.show(t('questUi.progress', { title, step: this.stepText(id) }));
+        break;
+      case 'completed':
+        this.hud.showBanner(t('questUi.completedBanner'), 2.2);
+        this.toasts.show(t('questUi.completed', { title }));
+        this.toasts.show(t(`quests.${id}.done`));
+        playDropSound('rare');
+        this.autosave();
+        break;
+      case 'failed':
+        this.toasts.show(t('questUi.failed', { title }), 'error');
+        break;
+    }
+    this.questLog.refresh();
   }
 
   private updateInteractPrompt(px: number, pz: number): void {
@@ -563,7 +779,7 @@ export class Game {
     );
   }
 
-  private onInteract(kind: string, detail: string | undefined): void {
+  private onInteract(kind: string, detail: string | undefined, id?: string): void {
     switch (kind) {
       case 'chest':
       case 'lockedChest':
@@ -596,6 +812,9 @@ export class Game {
         break;
       case 'teleporter':
         if (!this.mapUi.open) this.mapUi.toggle();
+        break;
+      case 'npc':
+        if (id) this.talkTo(id);
         break;
       default:
         break;
@@ -666,7 +885,9 @@ export class Game {
       const ai = w.req(te, EnemyAI);
       const th = w.req(te, Health);
       const statuses = [...new Set(w.get(te, StatusEffects)?.list.map((s) => s.id) ?? [])];
-      target = { name: t(`enemies.${ai.defId}`), current: th.current, max: th.max, statuses };
+      const dn = w.get(te, DisplayName);
+      const name = dn ? (dn.literal ? dn.key : t(dn.key)) : t(`enemies.${ai.defId}`);
+      target = { name, current: th.current, max: th.max, statuses };
     }
 
     const enc = this.encounter;

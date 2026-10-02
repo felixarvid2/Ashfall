@@ -50,7 +50,7 @@ const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: numb
   relic: { asset: 'prop.echo_relic', glow: '#9fb8ff', collider: 0.5 },
   lore: { asset: 'prop.control_terminal', scale: 0.8, glow: '#2a6a8a', collider: 0.45 },
   signalTower: { asset: 'prop.signal_tower', scale: 1.1, collider: 1 },
-  teleporter: { asset: 'prop.teleporter', glow: '#2a8aff' },
+  teleporter: { asset: 'prop.teleporter', scale: 0.38, glow: '#2a8aff' },
   stash: { asset: 'prop.supply_chest', scale: 1.1, glow: '#7dd8a0', collider: 0.8 },
 };
 

@@ -259,6 +259,7 @@ export class Hud {
       inv: first('inventory'),
       skills: first('skills'),
       map: first('map'),
+      quests: first('quests'),
       pickup: first('pickup'),
       debug: first('toggleDebug'),
     });

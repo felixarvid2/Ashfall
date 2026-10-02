@@ -55,7 +55,11 @@ describe('quest data', () => {
   });
 
   it('references real NPCs, quests and language strings', () => {
-    const lang = en as unknown as { quests: Record<string, { title: string; summary: string; steps: Record<string, string> }>; npcs: Record<string, { name: string }> };
+    const raw = en as unknown as { quests: Record<string, Record<string, { title: string; summary: string; steps: Record<string, string> }>>; npcs: Record<string, { name: string }> };
+    const lang = {
+      quests: Object.fromEntries(Object.entries(raw.quests).flatMap(([group, qs]) => Object.entries(qs).map(([k, v]) => [`${group}.${k}`, v]))),
+      npcs: raw.npcs,
+    };
     for (const q of QUESTS.values()) {
       if (q.giver) expect(NPCS.has(q.giver), `${q.id} giver`).toBe(true);
       for (const a of q.after) expect(QUESTS.has(a), `${q.id} after ${a}`).toBe(true);

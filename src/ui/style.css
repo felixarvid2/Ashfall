@@ -588,3 +588,36 @@ html, body {
 .lore-body { line-height: 1.55; color: #d8cdb8; font-style: italic; white-space: pre-wrap; }
 .buff-bar { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
 .buff { padding: 2px 8px; border: 1px solid; background: rgba(10, 9, 8, 0.8); font-size: 0.8em; letter-spacing: 0.05em; white-space: nowrap; }
+
+/* Conversations, NPC plates, quest tracker and log (Region 1). */
+.dialogue-panel { left: 50%; top: auto; bottom: 150px; transform: translateX(-50%); width: min(620px, calc(100vw - 40px)); max-height: 50vh; }
+.dialogue-name { color: var(--ui-accent); letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.95em; }
+.dialogue-role { color: #8a7e6c; font-size: 0.75em; margin-bottom: 8px; }
+.dialogue-text p { margin: 0 0 6px; line-height: 1.5; color: #e2d8c6; }
+.dialogue-buttons { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.dialogue-buttons button, .quest-log button {
+  font: inherit; font-size: 0.85em; text-align: left; color: var(--ui-text); background: #1e1a17;
+  border: 1px solid var(--ui-border); padding: 5px 10px; cursor: pointer;
+}
+.dialogue-buttons button:hover, .quest-log button:hover:not(:disabled) { border-color: var(--ui-accent); color: #fff; }
+.quest-log button:disabled { opacity: 0.5; cursor: default; }
+.dialogue-tag { color: #ffd23a; margin-right: 8px; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.1em; }
+.npc-plates { position: absolute; inset: 0; pointer-events: none; }
+.npc-plate { position: absolute; left: 0; top: 0; text-align: center; }
+.npc-name { color: #cfe8d8; font-size: 0.75em; text-shadow: 0 0 3px #000, 0 0 6px #000; white-space: nowrap; }
+.npc-marker { color: #ffd23a; font-weight: bold; font-size: 1.5em; line-height: 1; text-shadow: 0 0 6px #000, 0 0 10px #ff9a00; }
+.quest-tracker { position: absolute; right: 14px; top: 236px; width: 230px; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
+.quest-row { background: rgba(10, 9, 8, 0.55); padding: 5px 8px; border-left: 2px solid #6a5a44; }
+.quest-row.tracked { border-left-color: #ffd23a; }
+.quest-title { color: #e8dcc8; font-size: 0.8em; letter-spacing: 0.05em; }
+.q-main .quest-title { color: #ffd27a; }
+.q-mystery .quest-title { color: #c9a8ff; }
+.quest-step { color: #b8ad9a; font-size: 0.75em; margin: 2px 0 0; }
+.quest-log { left: 12px; width: 420px; }
+.log-entry { border-bottom: 1px solid #2e2823; padding: 8px 0; }
+.log-entry.tracked { border-left: 2px solid #ffd23a; padding-left: 8px; }
+.log-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.log-kind { color: #8a7e6c; font-size: 0.7em; }
+.log-summary { color: #cfc4b0; font-size: 0.8em; margin: 4px 0; line-height: 1.4; }
+.log-done-title { font-size: 0.8em; color: #8a7e6c; margin: 12px 0 4px; letter-spacing: 0.15em; text-transform: uppercase; }
+.log-done { color: #8a7e6c; font-size: 0.75em; }
