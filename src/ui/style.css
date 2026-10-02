@@ -621,3 +621,20 @@ html, body {
 .log-summary { color: #cfc4b0; font-size: 0.8em; margin: 4px 0; line-height: 1.4; }
 .log-done-title { font-size: 0.8em; color: #8a7e6c; margin: 12px 0 4px; letter-spacing: 0.15em; text-transform: uppercase; }
 .log-done { color: #8a7e6c; font-size: 0.75em; }
+
+/* Hub services. */
+.service-panel { left: 12px; width: 380px; }
+.service-close { position: absolute; right: 8px; top: 6px; background: none; border: none; color: var(--ui-text); font-size: 1.2em; cursor: pointer; }
+.service-grid { margin: 8px 0; }
+.service-grid .inv-cell { position: relative; cursor: pointer; }
+.service-grid .price { position: absolute; right: 2px; bottom: 1px; font-size: 0.65em; color: #ffd27a; text-shadow: 0 0 3px #000; }
+.service-item { margin: 8px 0; font-size: 0.95em; }
+.service-btn { display: block; width: 100%; text-align: left; margin: 4px 0; font: inherit; font-size: 0.8em; color: var(--ui-text); background: #1e1a17; border: 1px solid var(--ui-border); padding: 5px 8px; cursor: pointer; }
+.service-btn:hover:not(:disabled) { border-color: var(--ui-accent); color: #fff; }
+.service-btn:disabled { opacity: 0.45; cursor: default; }
+.service-sep { border-top: 1px solid #2e2823; margin: 10px 0 6px; }
+.service-sub { margin: 10px 0 4px; font-size: 0.75em; color: #8a7e6c; text-transform: uppercase; letter-spacing: 0.15em; }
+.aspect-row { border-bottom: 1px solid #2a2420; padding: 6px 0; }
+.aspect-name { color: #ff9a3a; font-size: 0.85em; }
+.aspect-desc { color: #cfc4b0; font-size: 0.75em; margin: 2px 0; }
+.tooltip-price { margin-top: 6px; color: #ffd27a; font-size: 0.85em; }

@@ -103,6 +103,20 @@ import {
 import { NPCS, questDef } from './data/quests/db';
 import { DialoguePanel, NpcPlates, QuestLog, QuestTracker, type DialogueButton, type DialoguePage, type QuestLogEntry, type TrackedQuest } from './ui/questUi';
 import { STASH_POSITION } from './data/quests/cinderFlats';
+import { ServicePanel, type ServiceKind } from './ui/servicePanel';
+import {
+  buy as buyItem,
+  extractAspect,
+  fromStash,
+  imprintAspect,
+  rerollAffix,
+  rollVendorStock,
+  salvageJunk,
+  sell as sellItem,
+  stashSlots,
+  toStash,
+} from './systems/hub/services';
+import { VENDOR } from './data/services';
 
 const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
 import { spawnEnemy, spawnPlayer } from './world/spawn';
@@ -143,6 +157,10 @@ export class Game {
   private readonly questLog: QuestLog;
   /** NPC the open conversation is with. */
   private talkingTo: string | null = null;
+  private readonly servicePanel: ServicePanel;
+  private vendorStock: (Item | null)[] = [];
+  /** Simulated time when the trader restocks (also on level up). */
+  private vendorRestockAt = -Infinity;
   private player!: Entity;
   private hitstop = 0;
   private lastTarget: { entity: Entity; until: number } | null = null;
@@ -250,6 +268,56 @@ export class Game {
         iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       },
     );
+    this.servicePanel = new ServicePanel(uiRoot, {
+      inventory: () => this.world.req(this.player, Inventory),
+      classId: () => this.world.req(this.player, SkillUser).classId,
+      iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
+      stock: () => this.vendorStock,
+      stash: () => stashSlots(this.ctx.account!.stash, 0),
+      buy: (i) => this.serviceResult(buyItem(this.world.req(this.player, Inventory), this.vendorStock, i)),
+      sell: (i) => {
+        const gold = sellItem(this.world.req(this.player, Inventory), i);
+        if (gold > 0) {
+          playGoldSound();
+          this.toasts.show(t('loot.salvaged', { gold }));
+        }
+        this.afterInventoryChange();
+      },
+      reroll: (gi, ai) => {
+        const inv = this.world.req(this.player, Inventory);
+        const item = inv.grid[gi];
+        if (item) this.serviceResult(rerollAffix(this.ctx.loot.rng, inv, item, ai));
+      },
+      salvageJunk: () => {
+        const gold = salvageJunk(this.world.req(this.player, Inventory));
+        if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
+        this.afterInventoryChange();
+      },
+      extract: (gi) => this.serviceResult(extractAspect(this.world.req(this.player, Inventory), gi)),
+      imprint: (ci, gi) => {
+        const inv = this.world.req(this.player, Inventory);
+        const item = inv.grid[gi];
+        if (item) this.serviceResult(imprintAspect(inv, ci, item));
+      },
+      toStash: (gi) => {
+        this.serviceResult(toStash(this.world.req(this.player, Inventory), gi, stashSlots(this.ctx.account!.stash, 0)));
+        saveAccount(this.storage, this.ctx.account!);
+        this.autosave();
+      },
+      fromStash: (i) => {
+        this.serviceResult(fromStash(this.world.req(this.player, Inventory), stashSlots(this.ctx.account!.stash, 0), i));
+        saveAccount(this.storage, this.ctx.account!);
+        this.autosave();
+      },
+    });
+    this.servicePanel.onToggle = (open) => {
+      if (open) {
+        this.inventoryPanel.toggle(true);
+        this.inventoryPanel.setGridClick((i) => this.servicePanel.backpackClick(i));
+      } else {
+        this.inventoryPanel.setGridClick(null);
+      }
+    };
     this.characterPanel = new CharacterPanel(uiRoot, () => ({
       className: t(`items.classes.${this.world.req(this.player, SkillUser).classId}`),
       progression: this.world.req(this.player, Progression),
@@ -557,6 +625,7 @@ export class Game {
           this.inventoryPanel.refresh();
           break;
         case 'levelUp':
+          this.vendorRestockAt = -Infinity;
           this.hud.showBanner(t('ui.levelUp', { level: event.level }), 2.5);
           this.toasts.show(t('ui.skillPoint'));
           this.characterPanel.refresh();
@@ -574,7 +643,12 @@ export class Game {
           this.hud.showBanner(t(`zones.teleporters.${event.id}`), 2);
           break;
         case 'hub':
-          if (event.entered) this.hud.showBanner(t(`zones.${ZONE.key}.${event.id}`), 2.2);
+          if (event.entered) {
+            this.hud.showBanner(t(`zones.${ZONE.key}.${event.id}`), 2.2);
+            // Safe hubs refill your stim packs.
+            const user = this.world.req(this.player, SkillUser);
+            user.potionCharges = classDef(user.classId).potion.charges;
+          }
           break;
         case 'interact':
           this.onInteract(event.kind, event.detail, event.id);
@@ -650,6 +724,8 @@ export class Game {
       plates.push({ id, x: tr.x, z: tr.z, name: t(`npcs.${id}.name`), marker });
     }
     this.npcPlates.update(plates, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
+    // Leaving the hub closes its services.
+    if (this.servicePanel.open && !this.zone?.inHub) this.servicePanel.close();
     // Walking away ends the conversation.
     if (this.dialogue.open && this.talkingTo) {
       const npc = this.world.query(Npc, Transform).find((e) => this.world.req(e, Npc).id === this.talkingTo);
@@ -742,9 +818,24 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     );
   }
 
-  private openService(service: string): void {
-    this.toasts.show(t(`npcs.${this.talkingTo ?? 'benny'}.service`));
-    void service;
+  private openService(service: ServiceKind): void {
+    this.closeDialogue();
+    if (service === 'vendor' && (this.ctx.time >= this.vendorRestockAt || this.vendorStock.every((i) => i === null))) this.restockVendor();
+    this.servicePanel.show(service);
+  }
+
+  private restockVendor(): void {
+    const user = this.world.req(this.player, SkillUser);
+    const level = this.world.req(this.player, Progression).level;
+    this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`));
+    this.vendorRestockAt = this.ctx.time + VENDOR.refreshSeconds;
+  }
+
+  private serviceResult(r: { ok: true } | { ok: false; reason: string }): void {
+    if (!r.ok) this.notice(`services.cannot.${r.reason}`, 'error');
+    else playPickupSound();
+    this.afterInventoryChange();
+    this.servicePanel.refresh();
   }
 
   private onQuestEvent(id: string, state: 'started' | 'progress' | 'step' | 'completed' | 'failed'): void {
@@ -815,6 +906,9 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         break;
       case 'npc':
         if (id) this.talkTo(id);
+        break;
+      case 'stash':
+        this.openService('stash');
         break;
       default:
         break;
@@ -1005,7 +1099,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       character: { name: this.characterName || t(`items.classes.${this.world.req(this.player, SkillUser).classId}`), classId: this.world.req(this.player, SkillUser).classId },
       player: { position: { x: tr.x, y: 0, z: tr.z }, facing: tr.facing },
       progression: { ...prog },
-      inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped }),
+      inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped, aspects: inv.aspects ?? [] }),
       loot: { seq: this.ctx.loot.seq, rngState: [...this.ctx.loot.rng.getState()] },
       skills: (() => {
         const user = this.world.req(this.player, SkillUser);
@@ -1053,7 +1147,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       const grid = structuredClone(data.inventory.grid);
       // Older saves may have a smaller backpack; pad to the current size.
       while (grid.length < PROGRESSION.inventorySize) grid.push(null);
-      Object.assign(inv, { gold: data.inventory.gold, grid, equipped: structuredClone(data.inventory.equipped) });
+      Object.assign(inv, { gold: data.inventory.gold, grid, equipped: structuredClone(data.inventory.equipped), aspects: structuredClone(data.inventory.aspects) });
     } else {
       Object.assign(inv, emptyInventory(PROGRESSION.inventorySize));
       this.grantStarterKit();
@@ -1214,6 +1308,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   private afterInventoryChange(): void {
     recomputePlayer(this.world, this.player);
     this.inventoryPanel.refresh();
+    this.servicePanel?.refresh();
   }
 
   save(quiet = false): void {

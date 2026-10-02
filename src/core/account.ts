@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import type { Effect } from '../data/effects';
 import { RELIC_BONUS } from '../data/interactables';
-import type { StatKey } from '../data/loot/schemas';
+import { ItemSchema, type StatKey } from '../data/loot/schemas';
 
 const KEY = 'ashfall.account';
 
@@ -15,11 +15,13 @@ export const AccountSchema = z.object({
   relics: z.record(z.string(), z.string()).default({}),
   /** Restoration points earned per zone, and the reward tiers already granted. */
   restoration: z.record(z.string(), z.object({ points: z.array(z.string()).default([]), tiers: z.number().int().default(0) })).default({}),
+  /** Shared stash (all characters). */
+  stash: z.array(ItemSchema.nullable()).default([]),
 });
 export type AccountData = z.infer<typeof AccountSchema>;
 
 export function emptyAccount(): AccountData {
-  return { version: 1, relics: {}, restoration: {} };
+  return { version: 1, relics: {}, restoration: {}, stash: [] };
 }
 
 export function loadAccount(storage: Storage | undefined): AccountData {

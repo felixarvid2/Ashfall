@@ -38,6 +38,7 @@ export const SaveDataSchema = z.object({
       gold: z.number().int().nonnegative(),
       grid: z.array(ItemSchema.nullable()),
       equipped: z.partialRecord(SlotSchema, ItemSchema),
+      aspects: z.array(z.object({ id: z.string(), value: z.number() })).default([]),
     })
     .nullable(),
   loot: z.object({

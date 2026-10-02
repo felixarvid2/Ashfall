@@ -231,6 +231,8 @@ export const ItemSchema = z.object({
   aspect: z.object({ id: z.string(), value: z.number() }).optional(),
   /** Unique or mythic item definition id. */
   unique: z.string().optional(),
+  /** Times an affix was rerolled at the blacksmith (each try costs more). */
+  rerolls: z.number().int().nonnegative().optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;
 

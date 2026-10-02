@@ -41,7 +41,7 @@ const sample = (): SaveData => ({
   character: { name: 'Vex', classId: 'spectre' },
   player: { position: { x: 3.5, y: 0, z: -2 }, facing: 1.2 },
   progression: { level: 3, xp: 40, skillPoints: 2 },
-  inventory: { gold: 120, grid: [null, null], equipped: {} },
+  inventory: { gold: 120, grid: [null, null], equipped: {}, aspects: [] },
   loot: { seq: 7, rngState: [5, 6, 7, 8] },
   skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
   world: { zone: 'zone.cinder_flats', discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=', found: [], keycards: [] },

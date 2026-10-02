@@ -338,6 +338,8 @@ export interface Inventory {
   grid: (Item | null)[];
   equipped: Partial<Record<Slot, Item>>;
   gold: number;
+  /** Aspects extracted at the Technician, ready to imprint. */
+  aspects?: { id: string; value: number }[];
 }
 export const Inventory = defineComponent<Inventory>('Inventory');
 

@@ -1635,5 +1635,42 @@
     "level": "Level {level}",
     "completedList": "Completed",
     "completedBanner": "Quest complete"
+  },
+  "services": {
+    "vendor": {
+      "title": "Benny's Trade",
+      "hint": "Click an item to buy it. Click an item in your backpack to sell it.",
+      "price": "Price: {gold} gold",
+      "sellFor": "Sells for {gold} gold"
+    },
+    "blacksmith": {
+      "title": "Hekla's Forge",
+      "hint": "Select an item in your backpack to reroll one of its affixes.",
+      "reroll": "reroll ({gold} gold)",
+      "cannot": "This item has no affixes that can be reworked.",
+      "salvageJunk": "Salvage all common and magic items in the backpack"
+    },
+    "technician": {
+      "title": "Pell's Workbench",
+      "hint": "Select a legendary to extract its aspect, or a rare or legendary to imprint one.",
+      "extract": "Extract aspect ({gold} gold)",
+      "extractWarn": "The item is destroyed; its aspect goes into your cache.",
+      "imprint": "Imprint ({gold} gold)",
+      "cache": "Aspect cache ({n})",
+      "empty": "No aspects stored yet."
+    },
+    "stash": {
+      "title": "Stash",
+      "hint": "Shared by all your characters. Click a stash item to take it; click a backpack item to store it."
+    },
+    "cannot": {
+      "gold": "Not enough gold.",
+      "full": "No room.",
+      "empty": "Nothing there.",
+      "invalid": "That can't be done to this item.",
+      "noAspect": "Only legendary items have an aspect to extract.",
+      "cacheFull": "Your aspect cache is full.",
+      "type": "That aspect doesn't fit this item."
+    }
   }
 }

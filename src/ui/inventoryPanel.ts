@@ -39,6 +39,8 @@ export class InventoryPanel {
   private readonly gold: HTMLDivElement;
   private readonly tooltip: HTMLDivElement;
   private selectedCrystal: number | null = null;
+  /** While a hub service is open, clicking a backpack item goes to it (sell, stash, select). */
+  private gridClick: ((index: number) => void) | null = null;
 
   constructor(
     parent: HTMLElement,
@@ -70,6 +72,10 @@ export class InventoryPanel {
 
   get open(): boolean {
     return !this.root.hidden;
+  }
+
+  setGridClick(fn: ((index: number) => void) | null): void {
+    this.gridClick = fn;
   }
 
   toggle(force?: boolean): void {
@@ -113,6 +119,11 @@ export class InventoryPanel {
         });
         cell.addEventListener('click', (e) => {
           if (!item) return;
+          if (this.gridClick) {
+            this.gridClick(index);
+            this.hideTooltip();
+            return;
+          }
           if (e.shiftKey) {
             this.actions.salvage(index);
             this.hideTooltip();
@@ -135,34 +146,7 @@ export class InventoryPanel {
   }
 
   private cell(item: Item | null, emptyLabel = ''): HTMLDivElement {
-    const cell = document.createElement('div');
-    cell.className = 'inv-cell';
-    if (!item) {
-      cell.classList.add('empty');
-      if (emptyLabel) cell.appendChild(Object.assign(document.createElement('span'), { textContent: emptyLabel, className: 'slot-label' }));
-      return cell;
-    }
-    const color = item.crystal ? (CRYSTAL_DEFS.get(item.crystal.id)?.color ?? '#fff') : rarityDef(item.rarity).color;
-    cell.style.setProperty('--rarity', color);
-    cell.classList.add(`r-${item.rarity}`);
-    const iconId = item.crystal ? (CRYSTAL_DEFS.get(item.crystal.id)?.icon ?? '') : (BASE_ITEMS.get(item.base)?.icon ?? '');
-    const url = this.actions.iconUrl(iconId);
-    if (url) {
-      cell.appendChild(Object.assign(document.createElement('img'), { src: url, alt: '', draggable: false }));
-    } else {
-      cell.appendChild(Object.assign(document.createElement('span'), { textContent: abbreviate(itemDisplayName(item)), className: 'abbr' }));
-    }
-    if (item.sockets.length) {
-      const dots = document.createElement('div');
-      dots.className = 'sockets';
-      for (const s of item.sockets) {
-        const d = document.createElement('i');
-        if (s) d.style.background = CRYSTAL_DEFS.get(s.crystal)?.color ?? '#fff';
-        dots.appendChild(d);
-      }
-      cell.appendChild(dots);
-    }
-    return cell;
+    return renderItemCell(item, (id) => this.actions.iconUrl(id), emptyLabel);
   }
 
   private hover(cell: HTMLElement, item: Item, equipped: boolean): void {
@@ -189,6 +173,37 @@ export class InventoryPanel {
   private hideTooltip(): void {
     this.tooltip.hidden = true;
   }
+}
+
+export function renderItemCell(item: Item | null, iconUrl: (id: string) => string | null, emptyLabel = ''): HTMLDivElement {
+  const cell = document.createElement('div');
+  cell.className = 'inv-cell';
+  if (!item) {
+    cell.classList.add('empty');
+    if (emptyLabel) cell.appendChild(Object.assign(document.createElement('span'), { textContent: emptyLabel, className: 'slot-label' }));
+    return cell;
+  }
+  const color = item.crystal ? (CRYSTAL_DEFS.get(item.crystal.id)?.color ?? '#fff') : rarityDef(item.rarity).color;
+  cell.style.setProperty('--rarity', color);
+  cell.classList.add(`r-${item.rarity}`);
+  const iconId = item.crystal ? (CRYSTAL_DEFS.get(item.crystal.id)?.icon ?? '') : (BASE_ITEMS.get(item.base)?.icon ?? '');
+  const url = iconUrl(iconId);
+  if (url) {
+    cell.appendChild(Object.assign(document.createElement('img'), { src: url, alt: '', draggable: false }));
+  } else {
+    cell.appendChild(Object.assign(document.createElement('span'), { textContent: abbreviate(itemDisplayName(item)), className: 'abbr' }));
+  }
+  if (item.sockets.length) {
+    const dots = document.createElement('div');
+    dots.className = 'sockets';
+    for (const s of item.sockets) {
+      const d = document.createElement('i');
+      if (s) d.style.background = CRYSTAL_DEFS.get(s.crystal)?.color ?? '#fff';
+      dots.appendChild(d);
+    }
+    cell.appendChild(dots);
+  }
+  return cell;
 }
 
 function abbreviate(name: string): string {
