@@ -12,6 +12,7 @@ import { monsterLevel } from '../systems/encounter';
 import { spawnEnemy } from './spawn';
 import { applyAffixes, championAffixes, rareAffixes } from '../systems/elites';
 import type { EliteAffix } from '../data/elites';
+import { createSetPieces, extraHubs, type SetPieceState } from './setPieces';
 
 /** A pack wakes up when the player is this close… */
 export const PACK_WAKE = 55;
@@ -48,6 +49,8 @@ export interface ZoneRuntime {
   found: Set<string>;
   /** Keycards carried (opening their locked chest spends them). */
   keycards: Set<string>;
+  /** Stronghold and region boss state. */
+  setPieces: SetPieceState;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
@@ -62,12 +65,15 @@ export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
     inHub: null,
     found: new Set(),
     keycards: new Set(),
+    setPieces: createSetPieces(),
   };
 }
 
 export function hubAt(zone: ZoneRuntime | undefined, x: number, z: number, margin = 0): HubDef | null {
   if (!zone) return null;
   for (const h of zone.def.hubs) if (Math.hypot(x - h.x, z - h.z) <= h.radius + margin) return h;
+  // Reclaimed strongholds are hubs too.
+  for (const h of extraHubs(zone)) if (Math.hypot(x - h.x, z - h.z) <= h.radius + margin) return h;
   return null;
 }
 

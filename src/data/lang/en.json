@@ -1242,7 +1242,8 @@
       "ashValley": "Ash Valley",
       "checkpointSierra": "Checkpoint Sierra",
       "hub": {
-        "ember": "Outpost Ember"
+        "ember": "Outpost Ember",
+        "sierra": "Checkpoint Sierra (reclaimed)"
       }
     },
     "teleporters": {
@@ -1753,5 +1754,14 @@
     "gateOpen": "The way to the boss is open",
     "cleared": "Bunker cleared",
     "complete": "Instance complete"
+  },
+  "setPieces": {
+    "sierra": {
+      "start": "Checkpoint Sierra: destroy the Spore Feeders",
+      "reclaimed": "Checkpoint Sierra reclaimed"
+    },
+    "maw": {
+      "defeated": "The First is dead. The Maw falls silent."
+    }
   }
 }

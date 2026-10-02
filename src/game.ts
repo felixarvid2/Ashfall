@@ -125,6 +125,7 @@ import { championAffixes, eliteSystem } from './systems/elites';
 import { bossSystem, resetBoss } from './systems/boss';
 import { buildInstance, clearInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
+import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
 import { ELITE_COLORS } from './data/elites';
 
 const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
@@ -223,6 +224,7 @@ export class Game {
       .add('enemyAI', enemyAISystem)
       .add('elites', eliteSystem)
       .add('boss', bossSystem)
+      .add('setPieces', setPieceSystem)
       .add('minions', minionSystem)
       .add('status', statusSystem)
       .add('movement', movementSystem)
@@ -521,6 +523,7 @@ export class Game {
     zone.found.clear();
     zone.keycards.clear();
     syncInteractables(this.world, zone);
+    syncSetPieces(this.world, zone);
     restoreQuests(this.world, this.ctx, { active: {}, done: {}, tracked: null });
   }
 
@@ -1084,6 +1087,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     // Back at the nearest discovered teleporter (docs/world-and-gameplay.md §13).
     const tr = this.playerTransform;
     // Inside a dungeon you come back at its entrance; bosses reset (docs/world-and-gameplay.md §13).
+    setPiecesOnDeath(w, this.zone);
     for (const b of w.query(Boss)) resetBoss(w, b);
     const tp = this.ctx.instance ? { x: this.ctx.instance.start.x - 2, z: this.ctx.instance.start.z - 2 } : this.zone ? nearestTeleporter(this.zone, tr.x, tr.z) : ZONE.playerSpawn;
     const spawn = { x: tp.x + 2, z: tp.z + 2 };
@@ -1311,6 +1315,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       for (const id of data.world.found) this.zone.found.add(id);
       for (const id of data.world.keycards) this.zone.keycards.add(id);
       syncInteractables(this.world, this.zone);
+      syncSetPieces(this.world, this.zone);
     }
     restoreQuests(this.world, this.ctx, data.quests);
     this.renderer.rig.snapTo(x, y, z);

@@ -5,6 +5,7 @@
 import { t } from '../data/i18n';
 import type { PoiKind } from '../data/zones/zoneTypes';
 import { revealedFraction, type ZoneRuntime } from '../world/zone';
+import { extraHubs } from '../world/setPieces';
 
 const MINI_SIZE = 180;
 /** Metres shown from the centre of the minimap to its edge. */
@@ -267,7 +268,7 @@ export class MapUi {
     // Hubs.
     c.strokeStyle = '#7dd8a0';
     c.lineWidth = 1.5 / v.scale;
-    for (const h of def.hubs) {
+    for (const h of [...def.hubs, ...extraHubs(zone)]) {
       if (!seen(h.x, h.z)) continue;
       c.beginPath();
       c.arc(h.x, h.z, Math.max(4 / v.scale, h.radius), 0, Math.PI * 2);
