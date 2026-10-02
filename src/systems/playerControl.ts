@@ -62,7 +62,7 @@ export function playerControlSystem(world: World, _dt: number, ctx: GameContext)
       SLOT_KEYS.forEach((action, i) => {
         if (input.isDown(action) || input.wasPressed(action)) request(user, i + 2, aim);
       });
-      if (input.isMouseDown(2)) request(user, 1, aim);
+      if (input.isMouseDown(2) || input.wasMousePressed(2)) request(user, 1, aim);
     }
 
     if (ctx.settings.moveMode === 'click') {
@@ -76,7 +76,7 @@ export function playerControlSystem(world: World, _dt: number, ctx: GameContext)
     if (world.has(e, PickupTarget) && !moveDir) continue;
     world.remove(e, PickupTarget);
     world.remove(e, MoveTarget);
-    if (user && input.isMouseDown(0)) request(user, 0, aim);
+    if (user && (input.isMouseDown(0) || input.wasMousePressed(0))) request(user, 0, aim);
     if (!moveDir) {
       mover.vx = 0;
       mover.vz = 0;
