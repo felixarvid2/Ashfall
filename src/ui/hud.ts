@@ -31,6 +31,8 @@ export interface HudState {
   dodge: { cooldown: number; max: number };
   potion: { charges: number; max: number };
   wave: { wave: number; alive: number; phase: 'intermission' | 'active'; timer: number } | null;
+  /** Open world: region and subzone name, shown where the wave tracker sits in the arena. */
+  location?: { title: string; sub: string };
   target: { name: string; current: number; max: number; statuses: string[] } | null;
   dead: boolean;
   xp: { level: number; current: number; next: number; skillPoints: number };
@@ -248,6 +250,7 @@ export class Hud {
       potion: first('potion'),
       inv: first('inventory'),
       skills: first('skills'),
+      map: first('map'),
       pickup: first('pickup'),
       debug: first('toggleDebug'),
     });
@@ -287,6 +290,8 @@ export class Hud {
         state.wave.phase === 'active'
           ? `${t('hud.wave', { wave: state.wave.wave })}|${t('hud.hostiles', { count: state.wave.alive })}`
           : `${t('hud.wave', { wave: state.wave.wave })}|${t('hud.nextWave', { seconds: Math.ceil(state.wave.timer) })}`;
+    } else if (state.location) {
+      waveKey = `${state.location.title}|${state.location.sub}`;
     }
     if (waveKey !== this.lastWave) {
       this.lastWave = waveKey;

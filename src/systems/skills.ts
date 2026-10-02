@@ -34,6 +34,7 @@ import type { Impact } from '../data/schemas';
 import type { CompiledSkill } from './skillCompile';
 import { applyStatus, gainResource, heal, kill, removeStatuses } from './combat';
 import { impactArea, spawnHazards } from './impact';
+import { hubAt } from '../world/zone';
 import { consumeCorpse, findCorpses, minionsOf, raiseCorpse } from './minions';
 import { livingInCircle } from './targeting';
 
@@ -131,6 +132,11 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       if (cast.elapsed >= def.castTime + def.recovery) user.cast = null;
     }
 
+    if (user.request && hubAt(ctx.zone, tr.x, tr.z)) {
+      // No fighting in a safe hub.
+      user.request = null;
+      ctx.events.push({ type: 'notice', key: 'map.noCombat' });
+    }
     if (!user.cast && user.request && canAct && !world.has(e, ForcedMove)) {
       const id = user.slots[user.request.slot];
       if (!id) {

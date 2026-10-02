@@ -43,6 +43,12 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   { id: 'dt.infected_colonist', itemChance: 0.12, goldChance: 0.35, gold: [1, 3], crystalChance: 0.015, xp: 12 },
   { id: 'dt.security_drone', itemChance: 0.16, goldChance: 0.4, gold: [1, 4], crystalChance: 0.02, xp: 14 },
   { id: 'dt.spore_carrier', itemChance: 0.4, goldChance: 0.6, gold: [3, 6], crystalChance: 0.05, rarityBias: { rare: 2 }, xp: 26 },
+  { id: 'dt.bloater', itemChance: 0.14, goldChance: 0.4, gold: [1, 3], crystalChance: 0.02, xp: 14 },
+  { id: 'dt.spore_hound', itemChance: 0.1, goldChance: 0.3, gold: [1, 2], crystalChance: 0.01, xp: 9 },
+  { id: 'dt.sergeant', itemChance: 0.9, extraItems: 1, goldChance: 1, gold: [6, 12], crystalChance: 0.15, rarityBias: { rare: 2.5, legendary: 2 }, minRarity: 'magic', xp: 70 },
+  // Elites: champions (blue) and rare elites (yellow) roll extra, better loot.
+  { id: 'dt.champion', itemChance: 0.6, goldChance: 1, gold: [3, 6], crystalChance: 0.08, rarityBias: { rare: 2, legendary: 1.5 }, minRarity: 'magic', xp: 40 },
+  { id: 'dt.rare_elite', itemChance: 1, extraItems: 2, goldChance: 1, gold: [8, 14], crystalChance: 0.2, rarityBias: { rare: 3, legendary: 3, unique: 2 }, minRarity: 'magic', xp: 120 },
   // Reward cache that drops when a wave is cleared.
   {
     id: 'dt.wave_reward',

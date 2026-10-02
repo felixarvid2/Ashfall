@@ -166,8 +166,9 @@ export class AssetLibrary {
   instancingParts(id: string): { geometry: THREE.BufferGeometry; material: THREE.Material } {
     const model = this.models.get(id);
     if (model && !model.skinned) {
-      // Bake the first mesh's normalised transform into a geometry copy.
-      const root = model.levels[0]!;
+      // Bake the first mesh's normalised transform into a geometry copy. Scatter uses the lightest
+      // LOD: thousands of instances don't need the close-up mesh.
+      const root = model.levels[model.levels.length - 1]!;
       root.updateMatrixWorld(true);
       let found: { geometry: THREE.BufferGeometry; material: THREE.Material } | null = null;
       root.traverse((o) => {

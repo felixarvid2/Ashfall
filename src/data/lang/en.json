@@ -5,7 +5,7 @@
     "loading": "Loading assets… {done}/{total}"
   },
   "hud": {
-    "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {pickup} pick up · {debug} debug",
+    "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {map} map · {pickup} interact · {debug} debug",
     "life": "Life",
     "heat": "Heat",
     "overheating": "OVERHEATING",
@@ -206,9 +206,12 @@
     }
   },
   "enemies": {
-    "infected_colonist": "Infected Colonist",
-    "security_drone": "Security Drone",
-    "spore_carrier": "Spore Carrier"
+    "infected_colonist": "Ash Walker",
+    "security_drone": "Sentry Drone",
+    "spore_carrier": "Spore Carrier",
+    "bloater": "Bloater",
+    "spore_hound": "Spore Hound",
+    "sergeant": "Contaminated Sergeant"
   },
   "resources": {
     "heat": "Heat",
@@ -1212,5 +1215,39 @@
         "desc": "A former biologist infected with Lumen who can command it. Biomass gathered from the dead raises servants and spreads spores. Forbidden power, with a price."
       }
     }
+  },
+  "zones": {
+    "cinderFlats": {
+      "name": "Cinder Flats",
+      "impactFields": "The Impact Fields",
+      "route7": "Route 7",
+      "ashValley": "Ash Valley",
+      "checkpointSierra": "Checkpoint Sierra",
+      "hub": {
+        "ember": "Outpost Ember"
+      }
+    },
+    "teleporters": {
+      "tp": {
+        "ember": "Outpost Ember",
+        "impact": "Impact Fields",
+        "route7": "Route 7",
+        "valley": "Ash Valley",
+        "sierra": "Sierra Approach",
+        "maw": "The Maw"
+      }
+    }
+  },
+  "map": {
+    "title": "Map",
+    "discovered": "Teleporter discovered: {name}",
+    "travel": "Click a discovered teleporter to travel.",
+    "explored": "{pct}% explored",
+    "safe": "Safe zone",
+    "enterHub": "Entering {name}",
+    "leaveHub": "Leaving {name}",
+    "noCombat": "You can't fight here",
+    "teleporting": "Teleporting to {name}…",
+    "hint": "{map} map"
   }
 }

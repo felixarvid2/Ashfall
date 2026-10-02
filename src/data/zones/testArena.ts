@@ -11,6 +11,8 @@ export interface PropPlacement {
   /** Extra collision circles in the prop's local space (long props: walls, pipes, wrecks). */
   colliders?: { x: number; z: number; r: number }[];
   light?: { color: string; intensity: number; distance: number; height: number };
+  /** Huge far-away landmark: ignores fog and distance culling so it can be seen across the region. */
+  landmark?: boolean;
 }
 
 export interface ArenaDef {

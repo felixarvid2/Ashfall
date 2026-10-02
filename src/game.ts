@@ -43,7 +43,8 @@ import { SpatialHash } from './core/spatial';
 import { classDef, skill } from './data/db';
 import { t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
-import { TEST_ARENA } from './data/zones/testArena';
+import { CINDER_FLATS } from './data/zones/cinderFlats';
+import { createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
 import { isAlive, kill } from './systems/combat';
@@ -73,6 +74,7 @@ import { computePlayerStats, recomputePlayer, sumItemStats } from './systems/sta
 import { monsterLevel } from './systems/encounter';
 import { learn, learnedSkills, pointsSpent, resetTree, respecCost, tree } from './systems/skillTree';
 import { DevTools } from './ui/devtools';
+import { MapUi } from './ui/minimap';
 import { Hud, type HudState } from './ui/hud';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
@@ -80,6 +82,8 @@ import { spawnEnemy, spawnPlayer } from './world/spawn';
 
 /** Placeholder class for the player entity before a character is chosen. */
 const DEFAULT_CLASS = 'bastion';
+/** The open-world region being played (one region at a time, docs/world-and-gameplay.md §15). */
+const ZONE = CINDER_FLATS;
 /** Seconds between automatic saves while playing. */
 const AUTOSAVE_INTERVAL = 60;
 /** How long the target frame keeps showing the last enemy you hit. */
@@ -103,6 +107,9 @@ export class Game {
   private readonly characterPanel: CharacterPanel;
   private readonly skillTreePanel: SkillTreePanel;
   private readonly lootLabels: LootLabels;
+  private readonly mapUi: MapUi;
+  /** Points of interest found this character (opened chests, relics, logs…). */
+  readonly found = new Set<string>();
   private player!: Entity;
   private hitstop = 0;
   private lastTarget: { entity: Entity; until: number } | null = null;
@@ -131,7 +138,7 @@ export class Game {
       tick: 0,
       time: 0,
       cameraYaw: this.renderer.rig.yaw,
-      worldHalfSize: TEST_ARENA.halfSize,
+      worldHalfSize: ZONE.halfSize,
       pickGround: () =>
         this.input.mouseSeen ? this.renderer.pickGround(this.input.mouseNdc.x, this.input.mouseNdc.y) : null,
       events: new EventQueue(),
@@ -140,12 +147,14 @@ export class Game {
       stats: { kills: 0 },
       loot: { rng: new Rng(seed).fork('loot'), seq: 0 },
       rewards: [],
-      zoneLevels: TEST_ARENA.levels,
+      zoneLevels: ZONE.levels,
+      zone: createZoneRuntime(ZONE),
     };
     setItemNamer((baseId) => t(`items.bases.${baseId}`));
 
     this.scheduler
       .add('spatial', spatialSystem)
+      .add('zone', zoneSystem)
       .add('playerControl', playerControlSystem)
       .add('skills', skillSystem)
       .add('enemyAI', enemyAISystem)
@@ -171,6 +180,16 @@ export class Game {
     this.toasts = new Toasts(uiRoot);
     this.hud = new Hud(uiRoot, () => this.respawn());
     this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
+    this.mapUi = new MapUi(
+      uiRoot,
+      () => this.ctx.zone,
+      () => {
+        const tr = this.playerTransform;
+        return { x: tr.x, z: tr.z, facing: tr.facing };
+      },
+      (id) => this.teleportTo(id),
+      () => this.found,
+    );
     this.inventoryPanel = new InventoryPanel(
       uiRoot,
       () => this.world.req(this.player, Inventory),
@@ -268,19 +287,11 @@ export class Game {
     this.devtools.setMoveMode(this.settings.moveMode);
     this.refreshHint();
 
-    spawnArenaProps(this.world, TEST_ARENA);
-    this.player = spawnPlayer(this.world, DEFAULT_CLASS, TEST_ARENA.playerSpawn.x, TEST_ARENA.playerSpawn.z);
+    spawnArenaProps(this.world, ZONE);
+    this.player = spawnPlayer(this.world, DEFAULT_CLASS, ZONE.playerSpawn.x, ZONE.playerSpawn.z);
     const tr = this.playerTransform;
     this.renderer.rig.snapTo(tr.x, tr.y, tr.z);
 
-    const encounter = this.world.create();
-    this.world.add(encounter, EncounterState, {
-      encounterId: 'encounter.test_arena',
-      wave: 0,
-      phase: 'intermission',
-      timer: 2.5,
-      alive: 0,
-    });
 
     this.loop = new GameLoop({
       update: (dt) => this.update(dt),
@@ -291,7 +302,7 @@ export class Game {
   /** Load 3D models (falls back to placeholders) and build the static environment. */
   async loadAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
     await this.renderer.assets.preload(import.meta.env.BASE_URL, onProgress);
-    this.renderer.buildArena(TEST_ARENA);
+    this.renderer.buildArena(ZONE);
   }
 
   start(): void {
@@ -345,7 +356,7 @@ export class Game {
   /** Replace the player entity with a fresh one of another class. */
   private respawnAs(classId: string): void {
     const old = this.player;
-    const spawn = TEST_ARENA.playerSpawn;
+    const spawn = ZONE.playerSpawn;
     this.player = spawnPlayer(this.world, classId, spawn.x, spawn.z);
     this.world.destroy(old);
     this.renderer.rig.snapTo(spawn.x, 0, spawn.z);
@@ -384,6 +395,7 @@ export class Game {
     if (input.wasPressed('inventory')) this.inventoryPanel.toggle();
     if (input.wasPressed('character')) this.characterPanel.toggle();
     if (input.wasPressed('skills')) this.skillTreePanel.toggle();
+    if (input.wasPressed('map')) this.mapUi.toggle();
 
     this.scheduler.tick(this.world, dt, this.ctx);
     this.ctx.tick++;
@@ -423,6 +435,7 @@ export class Game {
       this.characterPanel.refresh();
     }
     this.hud.update(this.hudState(), frameDt);
+    this.mapUi.update(frameDt);
 
     this.devtools.frame(frameDt, () => ({
       entities: this.world.entityCount,
@@ -477,6 +490,13 @@ export class Game {
         case 'notice':
           this.notice(event.key, 'error');
           break;
+        case 'discover':
+          this.toasts.show(t('map.discovered', { name: t(`zones.teleporters.${event.id}`) }));
+          this.hud.showBanner(t(`zones.teleporters.${event.id}`), 2);
+          break;
+        case 'hub':
+          if (event.entered) this.hud.showBanner(t(`zones.${ZONE.key}.${event.id}`), 2.2);
+          break;
         default:
           break;
       }
@@ -494,6 +514,24 @@ export class Game {
   private get encounter(): EncounterState | undefined {
     const e = this.world.first(EncounterState);
     return e === undefined ? undefined : this.world.req(e, EncounterState);
+  }
+
+  /** Region and subzone (or hub) under the player, for the HUD. */
+  private locationLabel(): { title: string; sub: string } {
+    const zone = this.zone!;
+    const tr = this.playerTransform;
+    const key = zone.def.key;
+    if (zone.inHub) return { title: t(`zones.${key}.name`), sub: t(`zones.${key}.${zone.inHub}`) };
+    let sub = 'route7';
+    let best = Infinity;
+    for (const sz of zone.def.subzones) {
+      const d = Math.hypot(tr.x - sz.center[0], tr.z - sz.center[1]);
+      if (sz.radius > 0 && d < sz.radius && d < best) {
+        best = d;
+        sub = sz.id;
+      }
+    }
+    return { title: t(`zones.${key}.name`), sub: t(`zones.${key}.${sub}`) };
   }
 
   private hudState(): HudState {
@@ -545,6 +583,7 @@ export class Game {
       dodge: { cooldown: user.dodgeCooldown, max: cls.dodge.cooldown },
       potion: { charges: user.potionCharges, max: cls.potion.charges },
       wave: enc && enc.wave > 0 ? { wave: enc.wave, alive: enc.alive, phase: enc.phase, timer: enc.timer } : null,
+      ...(this.zone ? { location: this.locationLabel() } : {}),
       target,
       dead: w.has(p, Dead),
       xp: (() => {
@@ -571,10 +610,33 @@ export class Game {
     const user = w.req(p, SkillUser);
     user.cast = null;
     user.request = null;
-    const spawn = TEST_ARENA.playerSpawn;
+    // Back at the nearest discovered teleporter (docs/world-and-gameplay.md §13).
+    const tr = this.playerTransform;
+    const tp = this.zone ? nearestTeleporter(this.zone, tr.x, tr.z) : ZONE.playerSpawn;
+    const spawn = { x: tp.x + 2, z: tp.z + 2 };
     Object.assign(this.playerTransform, makeTransform(spawn.x, 0, spawn.z, Math.PI));
     w.add(p, Invulnerable, { remaining: 2 });
     this.renderer.rig.snapTo(spawn.x, 0, spawn.z);
+  }
+
+  get zone(): ZoneRuntime | undefined {
+    return this.ctx.zone;
+  }
+
+  /** Travel to a discovered teleporter (map). */
+  teleportTo(id: string): boolean {
+    const zone = this.zone;
+    const tp = zone?.def.teleporters.find((t) => t.id === id);
+    if (!zone || !tp || !zone.discovered.has(id) || this.world.has(this.player, Dead)) return false;
+    this.toasts.show(t('map.teleporting', { name: t(`zones.teleporters.${id}`) }));
+    const x = tp.x + 2;
+    const z = tp.z + 2;
+    Object.assign(this.playerTransform, makeTransform(x, 0, z, Math.PI));
+    this.world.remove(this.player, MoveTarget);
+    this.world.remove(this.player, ForcedMove);
+    this.world.add(this.player, Invulnerable, { remaining: 1.5 });
+    this.renderer.rig.snapTo(x, 0, z);
+    return true;
   }
 
   // ---- Debug helpers ----------------------------------------------------------
@@ -625,6 +687,9 @@ export class Game {
         const user = this.world.req(this.player, SkillUser);
         return { ranks: { ...user.tree.ranks }, slots: [...user.slots] };
       })(),
+      world: this.zone
+        ? { zone: this.zone.def.id, discovered: [...this.zone.discovered], revealed: encodeRevealed(this.zone) }
+        : { zone: ZONE.id, discovered: [], revealed: '' },
     };
   }
 
@@ -665,6 +730,10 @@ export class Game {
     recomputePlayer(this.world, this.player);
     const health = this.world.req(this.player, Health);
     health.current = health.max;
+    if (this.zone && data.world.zone === this.zone.def.id) {
+      for (const id of data.world.discovered) this.zone.discovered.add(id);
+      if (data.world.revealed) decodeRevealed(this.zone, data.world.revealed);
+    }
     this.renderer.rig.snapTo(x, y, z);
     this.inventoryPanel.refresh();
   }

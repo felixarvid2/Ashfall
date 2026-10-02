@@ -44,6 +44,7 @@ const sample = (): SaveData => ({
   inventory: { gold: 120, grid: [null, null], equipped: {} },
   loot: { seq: 7, rngState: [5, 6, 7, 8] },
   skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
+  world: { zone: 'zone.cinder_flats', discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=' },
 });
 
 describe('save serialization', () => {
@@ -87,12 +88,22 @@ describe('save migrations', () => {
     expect(() => migrate({ version: 1 }, { 1: (d) => ({ ...d, version: 5 }) }, 2)).toThrow(/did not produce/);
   });
 
-  it('upgrades a v3 save to v4 as a Bastion character', () => {
+  it('upgrades a v3 save as a Bastion character', () => {
     const v3 = { ...sample(), version: 3 } as Record<string, unknown>;
     delete v3.character;
+    delete v3.world;
     const save = parseSave(JSON.stringify(v3));
-    expect(save.version).toBe(4);
+    expect(save.version).toBe(SAVE_VERSION);
     expect(save.character).toEqual({ name: 'Bastion', classId: 'bastion' });
+  });
+
+  it('upgrades a v4 save into the open world at the escape pod', () => {
+    const v4 = { ...sample(), version: 4 } as Record<string, unknown>;
+    delete v4.world;
+    const save = parseSave(JSON.stringify(v4));
+    expect(save.world.zone).toBe('zone.cinder_flats');
+    expect(save.world.discovered).toContain('tp.ember');
+    expect(save.player.position.x).toBeLessThan(-250);
   });
 
   it('upgrades a v2 save, refunding a skill point per level', () => {

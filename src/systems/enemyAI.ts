@@ -23,10 +23,11 @@ import type { Entity, World } from '../core/ecs';
 import { CombatStats } from '../core/components';
 import { enemyDef } from '../data/db';
 import type { EnemyDef } from '../data/schemas';
-import { applyStatus, dealHit, hasStatus, conditionsOf } from './combat';
+import { applyStatus, dealHit, hasStatus, conditionsOf, kill } from './combat';
 import { computeOutgoing } from './damage';
 import { angleDelta } from './movement';
 import { livingInCircle } from './targeting';
+import { hubAt } from '../world/zone';
 
 const ALERT_RADIUS = 9;
 const WANDER_SPEED = 0.35;
@@ -39,11 +40,14 @@ interface Candidate {
 }
 
 /** Living, visible player-team entities enemies may attack (player, decoys, minions). */
-function targetCandidates(world: World): Candidate[] {
+function targetCandidates(world: World, ctx: GameContext): Candidate[] {
   const out: Candidate[] = [];
   for (const e of world.query(Faction, Health, Transform)) {
     if (world.req(e, Faction).team !== 'player' || world.has(e, Dead)) continue;
     if (hasStatus(world, e, 'stealth')) continue;
+    // Nobody is attacked inside a safe hub.
+    const t = world.req(e, Transform);
+    if (hubAt(ctx.zone, t.x, t.z)) continue;
     out.push({ e, tr: world.req(e, Transform), taunt: world.get(e, Taunt)?.radius ?? 0 });
   }
   return out;
@@ -65,7 +69,7 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
 }
 
 export function enemyAISystem(world: World, dt: number, ctx: GameContext): void {
-  const candidates = targetCandidates(world);
+  const candidates = targetCandidates(world, ctx);
 
   for (const e of world.query(EnemyAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
@@ -78,6 +82,14 @@ export function enemyAISystem(world: World, dt: number, ctx: GameContext): void 
     mover.vz = 0;
 
     if (!(world.get(e, StatusEffects)?.canAct ?? true)) continue;
+
+    // Enemies keep out of safe hubs.
+    const hub = hubAt(ctx.zone, tr.x, tr.z, 3);
+    if (hub) {
+      ai.state = 'idle';
+      steer(mover, tr, tr.x - hub.x, tr.z - hub.z, mover.speed, 0);
+      continue;
+    }
 
     const target = chooseTarget(candidates, tr.x, tr.z);
     if (!target) {
@@ -109,6 +121,25 @@ export function enemyAISystem(world: World, dt: number, ctx: GameContext): void 
         break;
       case 'support':
         support(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
+        break;
+      case 'kamikaze':
+        kamikaze(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
+        break;
+      case 'flanker':
+        // Circle to the target's side first, then attack like a rusher.
+        if (dist > 3.2 && ai.state !== 'windup' && ai.state !== 'recover') {
+          const away = Math.atan2(tr.x - ptr.x, tr.z - ptr.z) + ai.strafeDir * 1.2;
+          const fx = ptr.x + Math.sin(away) * 2.6;
+          const fz = ptr.z + Math.cos(away) * 2.6;
+          ai.state = 'chase';
+          face(tr, fx, fz, def.turnRate, dt);
+          steer(mover, tr, fx - tr.x, fz - tr.z, mover.speed, 0.3);
+        } else {
+          rusher(world, ctx, e, ai, def, tr, mover, player, ptr, dist, dt);
+        }
+        break;
+      case 'tank':
+        ranged(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
         break;
     }
   }
@@ -239,7 +270,17 @@ function ranged(
     face(tr, ai.aimX, ai.aimZ, def.turnRate, dt);
     ai.timer -= dt;
     if (ai.timer <= 0) {
-      fireProjectile(world, ctx, e, tr, ai.aimX, ai.aimZ, atk);
+      // Bursts fire one shot per interval while staying in wind-up.
+      const fired = ai.burstFired ?? 0;
+      const spread = atk.burst > 1 ? ((fired / (atk.burst - 1)) - 0.5) * ((atk.spreadDeg * Math.PI) / 180) : 0;
+      const ang = Math.atan2(ai.aimX - tr.x, ai.aimZ - tr.z) + spread;
+      fireProjectile(world, ctx, e, tr, tr.x + Math.sin(ang) * 10, tr.z + Math.cos(ang) * 10, atk);
+      ai.burstFired = fired + 1;
+      if (ai.burstFired < atk.burst) {
+        ai.timer = atk.burstInterval;
+        return;
+      }
+      ai.burstFired = 0;
       ai.state = 'recover';
       ai.timer = 0.25;
       ai.cooldown = atk.cooldown;
@@ -321,6 +362,53 @@ function fireProjectile(
     attackerLevel: stats.level,
     owner,
   });
+}
+
+function kamikaze(
+  world: World,
+  ctx: GameContext,
+  e: Entity,
+  ai: EnemyAIData,
+  def: EnemyDef,
+  tr: Transform,
+  mover: Mover,
+  ptr: Transform,
+  dist: number,
+  dt: number,
+): void {
+  if (def.attack.kind !== 'explode') return;
+  const atk = def.attack;
+  if (ai.state === 'windup') {
+    ai.timer -= dt;
+    if (ai.timer <= 0) {
+      // Burst: hit everything on the opposing side in the radius, then die (leaving the cloud).
+      for (const target of livingInCircle(world, ctx, tr.x, tr.z, atk.radius, 'player')) {
+        dealHit(world, ctx, e, target, {
+          coefficient: 1,
+          damageType: atk.damageType,
+          knockback: atk.knockback,
+          fromX: tr.x,
+          fromZ: tr.z,
+          applies: [],
+          range: 'melee',
+        });
+      }
+      ctx.events.push({ type: 'vfx', kind: 'corpseBurst', x: tr.x, z: tr.z, radius: atk.radius, facing: 0 });
+      ctx.events.push({ type: 'shake', trauma: 0.3 });
+      kill(world, ctx, e, 0);
+    }
+    return;
+  }
+  ai.state = 'chase';
+  face(tr, ptr.x, ptr.z, def.turnRate, dt);
+  if (dist <= atk.range) {
+    ai.state = 'windup';
+    ai.attackSeq++;
+    ai.timer = atk.windup;
+    ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'circle', radius: atk.radius }, duration: atk.windup, color: '#c8d040' });
+    return;
+  }
+  steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed, 0.5);
 }
 
 function support(

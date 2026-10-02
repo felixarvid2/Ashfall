@@ -1,5 +1,6 @@
 /** Shared per-game context handed to every system. */
 import type { Rarity } from '../data/loot/schemas';
+import type { ZoneRuntime } from '../world/zone';
 import type { Action, Settings } from '../data/settings';
 import type { EventQueue } from './events';
 import type { Rng } from './rng';
@@ -38,6 +39,8 @@ export interface GameContext {
   rewards: RewardRequest[];
   /** Monster level range of the current zone. */
   zoneLevels: [number, number];
+  /** Open-world zone state (absent in the test arena and headless sims). */
+  zone?: ZoneRuntime;
 }
 
 export interface RewardRequest {

@@ -1690,6 +1690,862 @@
         "triangles": 0,
         "bytes": 5852
       }
+    },
+    {
+      "id": "enemy.spore_hound",
+      "category": "enemy",
+      "prompt": "mutated mining dog, lean muscular hound with patchy hairless skin, bioluminescent sickly green fungal-crystal growth sprouting along the spine and jaw, long legs, snarling, standing on all four legs, side view",
+      "source": "text",
+      "targetPolycount": 3500,
+      "heightMeters": 0.95,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-72da-73c1-be2e-e700dcb7db1d",
+        "refineTaskId": "01a0fe8d-d584-70b5-823b-bca18669abc9",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "enemies/spore_hound.glb",
+      "lods": [
+        "enemies/spore_hound_lod1.glb",
+        "enemies/spore_hound_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 3657,
+        "bytes": 338224,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a4a3a",
+        "size": [
+          0.5,
+          0.9,
+          1.3
+        ]
+      }
+    },
+    {
+      "id": "enemy.sergeant",
+      "category": "enemy",
+      "prompt": "infected colony security sergeant in heavy riot armor holding a large riot shield and a machine gun, cracked helmet visor, bioluminescent sickly green fungal-crystal growth bursting from the shoulder, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "infected sci-fi colony security sergeant in battered heavy riot armor, large riot shield strapped to the left forearm, machine gun in the right hand, cracked helmet visor, clusters of glowing sickly green fungal crystals bursting from one shoulder and the neck, scorched paint, standing in a T-pose with arms straight out to the sides",
+      "targetPolycount": 6000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-7504-7441-affe-9895cfc088a3",
+        "refineTaskId": "01a0fe8d-d7a7-7411-8f8c-c093983bb7cc",
+        "rigTaskId": "01a0fe91-e663-7745-ab88-654d3d891dfc",
+        "animationTaskId": "01a0fe92-3391-71df-beb0-74ae22077632",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/sergeant.glb",
+      "stats": {
+        "triangles": 6249,
+        "bytes": 532788,
+        "textures": 1
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4a5040",
+        "size": [
+          0.9,
+          2,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "boss.the_first",
+      "category": "enemy",
+      "prompt": "gigantic grotesque creature of many fused human bodies and twisted scrap metal plates, hunched colossal brute with huge arms, bioluminescent sickly green fungal-crystal growth bursting from its back, a single glowing maw, standing",
+      "source": "text",
+      "targetPolycount": 9000,
+      "heightMeters": 6,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-74bd-7365-97db-494d18fdb11a",
+        "refineTaskId": "01a0fe8d-d72f-7551-a80b-a2acf7c32fb3",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "enemies/the_first.glb",
+      "lods": [
+        "enemies/the_first_lod1.glb",
+        "enemies/the_first_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 9255,
+        "bytes": 382128,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3a4a30",
+        "size": [
+          3.2,
+          6,
+          3.2
+        ],
+        "emissive": "#5dff6a",
+        "emissiveIntensity": 1.5
+      }
+    },
+    {
+      "id": "npc.cook",
+      "category": "character",
+      "prompt": "weary middle-aged colony cook in a stained apron over a padded work jacket, rolled sleeves, ladle on the belt, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "weary middle-aged sci-fi colony cook in a stained apron over a padded grey work jacket, rolled sleeves, a ladle and knives on the belt, tired face, worn boots, standing in a T-pose with arms straight out to the sides",
+      "targetPolycount": 5000,
+      "heightMeters": 1.78,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.78,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 11
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-74d2-760f-bbac-35c3bb307c65",
+        "refineTaskId": "01a0fe8d-d837-72ce-8aef-2ccaf6cca64a",
+        "rigTaskId": "01a0fe91-e7d9-70fa-8b75-72ac437c7633",
+        "animationTaskId": "01a0fe92-2d05-7316-910a-45e37645e8e2",
+        "previewApproved": true,
+        "creditsSpent": 44,
+        "clips": {
+          "idle": "idle"
+        }
+      },
+      "file": "characters/cook.glb",
+      "stats": {
+        "triangles": 5071,
+        "bytes": 622252,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#8a6a4a",
+        "size": [
+          0.7,
+          1.78,
+          0.7
+        ]
+      }
+    },
+    {
+      "id": "npc.blacksmith",
+      "category": "character",
+      "prompt": "broad-shouldered former miner turned blacksmith, heavy leather apron over mining overalls, welding goggles on the forehead, big gloves, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "broad-shouldered sci-fi former miner turned blacksmith, heavy scorched leather apron over orange mining overalls, welding goggles pushed up on the forehead, thick gloves, soot-stained face, standing in a T-pose with arms straight out to the sides",
+      "targetPolycount": 5000,
+      "heightMeters": 1.78,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.78,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 11
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-74a0-7744-8efc-9c9a31529299",
+        "refineTaskId": "01a0fe8d-d78d-7278-915b-d16ab8a7f234",
+        "rigTaskId": "01a0fe91-e898-7098-9a74-df859b74af3d",
+        "animationTaskId": "01a0fe92-3212-7355-a77c-4fcf8bd68021",
+        "previewApproved": true,
+        "creditsSpent": 44,
+        "clips": {
+          "idle": "idle"
+        }
+      },
+      "file": "characters/blacksmith.glb",
+      "stats": {
+        "triangles": 5122,
+        "bytes": 631412,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#6a4a3a",
+        "size": [
+          0.7,
+          1.78,
+          0.7
+        ]
+      }
+    },
+    {
+      "id": "npc.technician",
+      "category": "character",
+      "prompt": "young data engineer in a hooded tech jacket with glowing cyan cable trim, data pad on the forearm, headset, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "young sci-fi data engineer in a hooded grey tech jacket with glowing cyan cable trim, a data pad strapped to the forearm, headset with a mic, cargo pants and sneakers, standing in a T-pose with arms straight out to the sides",
+      "targetPolycount": 5000,
+      "heightMeters": 1.78,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.78,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 11
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-74a2-7742-9f10-0b476b92eb00",
+        "refineTaskId": "01a0fe8d-d73e-7447-9c93-f2bca29f5de8",
+        "rigTaskId": "01a0fe91-e7e9-757b-8bdf-e011ada08e2b",
+        "animationTaskId": "01a0fe92-22cf-767d-8c13-f8515c0db2bf",
+        "previewApproved": true,
+        "creditsSpent": 44,
+        "clips": {
+          "idle": "idle"
+        }
+      },
+      "file": "characters/technician.glb",
+      "stats": {
+        "triangles": 5076,
+        "bytes": 550948,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3a5a6a",
+        "size": [
+          0.7,
+          1.78,
+          0.7
+        ]
+      }
+    },
+    {
+      "id": "prop.meridian_freighter",
+      "category": "prop",
+      "prompt": "colossal crashed cargo space freighter broken in two, nose buried in ash, torn hull plates and exposed ribs, smoke stains, industrial sci-fi",
+      "source": "text",
+      "targetPolycount": 9000,
+      "heightMeters": 16,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-b86f-7665-adcf-d132db3e5824",
+        "refineTaskId": "01a0fe8e-93e4-7486-8bda-5a03d0751e53",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/meridian_freighter.glb",
+      "lods": [
+        "props/meridian_freighter_lod1.glb",
+        "props/meridian_freighter_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 8944,
+        "bytes": 382280,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a4640",
+        "size": [
+          30,
+          16,
+          60
+        ]
+      }
+    },
+    {
+      "id": "prop.elevator_foundation",
+      "category": "prop",
+      "prompt": "gigantic broken space elevator foundation tower, massive concrete and steel pylon snapped halfway up, cables hanging, warning lights",
+      "source": "text",
+      "targetPolycount": 6000,
+      "heightMeters": 40,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe86-ba2b-7320-ad65-daaf74d008a9",
+        "refineTaskId": "01a0fe8e-b63b-71fe-aefd-e04d94ec5e30",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/elevator_foundation.glb",
+      "lods": [
+        "props/elevator_foundation_lod1.glb",
+        "props/elevator_foundation_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 5176,
+        "bytes": 286380,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#5a5650",
+        "size": [
+          24,
+          40,
+          24
+        ]
+      }
+    },
+    {
+      "id": "prop.refinery_silhouette",
+      "category": "prop",
+      "prompt": "huge burning industrial refinery complex with tall smokestacks spewing fire, distant silhouette",
+      "source": "text",
+      "targetPolycount": 5000,
+      "heightMeters": 45,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe87-0ab6-7418-a086-e5cd3c8aac69",
+        "refineTaskId": "01a0fe8f-674c-73fa-9197-23f5ac563782",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/refinery_silhouette.glb",
+      "lods": [
+        "props/refinery_silhouette_lod1.glb",
+        "props/refinery_silhouette_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 4301,
+        "bytes": 245540,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a2a20",
+        "size": [
+          60,
+          45,
+          30
+        ],
+        "emissive": "#ff6a1a",
+        "emissiveIntensity": 1.5
+      }
+    },
+    {
+      "id": "prop.escape_pod",
+      "category": "prop",
+      "prompt": "small crashed single-person escape pod half buried in ash, scorched hull, open hatch, smoking",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 2.4,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe87-3edc-729a-af16-5f44da5a0aed",
+        "refineTaskId": "01a0fe8f-8090-7324-b283-cd2973ec0aa1",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/escape_pod.glb",
+      "lods": [
+        "props/escape_pod_lod1.glb",
+        "props/escape_pod_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2940,
+        "bytes": 290276,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#6a6660",
+        "size": [
+          2,
+          2.4,
+          3
+        ]
+      }
+    },
+    {
+      "id": "prop.fuel_station",
+      "category": "prop",
+      "prompt": "abandoned barricaded fuel station with a flat canopy roof, two fuel pumps, scrap metal walls and sandbags, lights inside",
+      "source": "text",
+      "targetPolycount": 6000,
+      "heightMeters": 6,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe87-46b7-7581-80a3-9c4a425dff2f",
+        "refineTaskId": "01a0fe8f-e021-73ae-8673-29897ba1bfc0",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/fuel_station.glb",
+      "lods": [
+        "props/fuel_station_lod1.glb",
+        "props/fuel_station_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 5819,
+        "bytes": 262672,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a5048",
+        "size": [
+          14,
+          6,
+          10
+        ]
+      }
+    },
+    {
+      "id": "prop.teleporter",
+      "category": "prop",
+      "prompt": "sci-fi teleporter pad, circular metal platform with a ring of glowing cyan emitters and four short pylons",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 1.2,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe87-cf60-7518-84b8-1d37284d59ee",
+        "refineTaskId": "01a0fe8f-f0d4-70f3-a1d1-436076e07419",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/teleporter.glb",
+      "lods": [
+        "props/teleporter_lod1.glb",
+        "props/teleporter_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2978,
+        "bytes": 133076,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#3a6a8a",
+        "size": [
+          3,
+          0.4,
+          3
+        ],
+        "emissive": "#5ad2ff",
+        "emissiveIntensity": 1.5
+      }
+    },
+    {
+      "id": "prop.stim_pylon",
+      "category": "prop",
+      "prompt": "tall sci-fi stim pylon, metal column with a glowing energy core cage in the middle, cables at the base",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 2.6,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe88-22f3-7589-a5e8-cd1318ea76b7",
+        "refineTaskId": "01a0fe90-27a4-72c5-98f6-0deb4156937d",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/stim_pylon.glb",
+      "lods": [
+        "props/stim_pylon_lod1.glb",
+        "props/stim_pylon_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2492,
+        "bytes": 240480,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#6a3a8a",
+        "size": [
+          0.8,
+          2.6,
+          0.8
+        ],
+        "emissive": "#c77dff",
+        "emissiveIntensity": 1.5
+      }
+    },
+    {
+      "id": "prop.echo_relic",
+      "category": "prop",
+      "prompt": "ancient alien relic stone obelisk with glowing geometric engravings, small, half sunk in ash",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 1.6,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe88-5ff6-719d-b6fb-d0de174317c4",
+        "refineTaskId": "01a0fe90-3a49-7123-b51b-c23000feafef",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/echo_relic.glb",
+      "lods": [
+        "props/echo_relic_lod1.glb",
+        "props/echo_relic_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2507,
+        "bytes": 105864,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a4a6a",
+        "size": [
+          0.6,
+          1.6,
+          0.6
+        ],
+        "emissive": "#9fb8ff",
+        "emissiveIntensity": 1.5
+      }
+    },
+    {
+      "id": "prop.signal_tower",
+      "category": "prop",
+      "prompt": "rusted radio signal tower with a dish antenna on top and a control box at the base, lattice steel frame",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 9,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe88-6622-741d-8f9a-ec894e7adc31",
+        "refineTaskId": "01a0fe90-4663-733f-99c4-567cf3b521bd",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/signal_tower.glb",
+      "lods": [
+        "props/signal_tower_lod1.glb",
+        "props/signal_tower_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2578,
+        "bytes": 342836,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#5a5a5a",
+        "size": [
+          1.6,
+          9,
+          1.6
+        ]
+      }
+    },
+    {
+      "id": "prop.supply_chest",
+      "category": "prop",
+      "prompt": "heavy sci-fi military supply chest with reinforced corners, hazard stripes and a small status light, closed",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 0.9,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe88-6bc2-77b3-b39e-0382188ab48f",
+        "refineTaskId": "01a0fe90-9b7d-7602-8377-ed276d44566d",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/supply_chest.glb",
+      "lods": [
+        "props/supply_chest_lod1.glb",
+        "props/supply_chest_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2466,
+        "bytes": 138776,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a5a3a",
+        "size": [
+          1.4,
+          0.9,
+          0.8
+        ]
+      }
+    },
+    {
+      "id": "prop.spore_feeder",
+      "category": "prop",
+      "prompt": "pulsating organic spore feeder pod, a fleshy sac on root-like legs glowing sickly green, tubes feeding into the ground",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 2.4,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe88-b174-73ee-92ba-bd91aa1a6e5e",
+        "refineTaskId": "01a0fe90-bec4-7665-a203-23034f46b5b4",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/spore_feeder.glb",
+      "lods": [
+        "props/spore_feeder_lod1.glb",
+        "props/spore_feeder_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 3113,
+        "bytes": 268584,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4a6a3a",
+        "size": [
+          1.6,
+          2.4,
+          1.6
+        ],
+        "emissive": "#5dff6a",
+        "emissiveIntensity": 1.5
+      }
+    },
+    {
+      "id": "prop.spore_nest",
+      "category": "prop",
+      "prompt": "large organic spore nest mound of fungal growth with glowing sickly green pods and openings",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 1.6,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe88-f7d8-7601-bb9a-49896f74570c",
+        "refineTaskId": "01a0fe90-d03b-758f-bf85-634b23c4338e",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/spore_nest.glb",
+      "lods": [
+        "props/spore_nest_lod1.glb",
+        "props/spore_nest_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2776,
+        "bytes": 146628,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#4a5a3a",
+        "size": [
+          2.4,
+          1.6,
+          2.4
+        ],
+        "emissive": "#5dff6a",
+        "emissiveIntensity": 1.5
+      }
+    },
+    {
+      "id": "prop.generator",
+      "category": "prop",
+      "prompt": "industrial power generator unit with a big switch lever, cables and a status light, battered metal housing",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 1.8,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe89-06cf-7328-8dfe-70dd78ad0a34",
+        "refineTaskId": "01a0fe90-f90f-75f5-baae-c167e5bc2754",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/generator.glb",
+      "lods": [
+        "props/generator_lod1.glb",
+        "props/generator_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2788,
+        "bytes": 136396,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a5a40",
+        "size": [
+          1.6,
+          1.8,
+          1.2
+        ]
+      }
+    },
+    {
+      "id": "prop.explosive_barrel",
+      "category": "prop",
+      "prompt": "red explosive fuel barrel with hazard symbols, dented steel drum",
+      "source": "text",
+      "targetPolycount": 1500,
+      "heightMeters": 1.1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe89-4c76-7442-8cec-c4ef35bfde1a",
+        "refineTaskId": "01a0fe90-fcab-73e7-a2bf-ee5b809ac80a",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/explosive_barrel.glb",
+      "lods": [
+        "props/explosive_barrel_lod1.glb",
+        "props/explosive_barrel_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1541,
+        "bytes": 130260,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#a82a1a",
+        "size": [
+          0.7,
+          1.1,
+          0.7
+        ]
+      }
+    },
+    {
+      "id": "prop.water_tanker",
+      "category": "prop",
+      "prompt": "old six-wheeled colony water tanker truck, cylindrical tank on the back, rusted and patched",
+      "source": "text",
+      "targetPolycount": 5000,
+      "heightMeters": 3.4,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe89-6e15-766b-ac90-a5f59fd6b8fd",
+        "refineTaskId": "01a0fe91-4739-7235-b7c8-00cfd4cf5288",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/water_tanker.glb",
+      "lods": [
+        "props/water_tanker_lod1.glb",
+        "props/water_tanker_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 4865,
+        "bytes": 128116,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a5a6a",
+        "size": [
+          2.6,
+          3.4,
+          7
+        ]
+      }
+    },
+    {
+      "id": "icon.keycard",
+      "category": "icon",
+      "prompt": "military access keycard with a red stripe and a chip",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe8b-497f-708c-9a9d-4ffe6fc452bb",
+        "creditsSpent": 3
+      },
+      "file": "icons/keycard.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 6952
+      }
+    },
+    {
+      "id": "icon.lore_log",
+      "category": "icon",
+      "prompt": "small handheld audio log recorder with a cracked screen",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe8b-4aac-77f1-8365-814b7caa0173",
+        "creditsSpent": 3
+      },
+      "file": "icons/lore_log.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4012
+      }
+    },
+    {
+      "id": "icon.echo_relic",
+      "category": "icon",
+      "prompt": "small ancient alien relic fragment with glowing geometric engravings",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fe8b-4b34-71c5-b485-51b331bbd78b",
+        "creditsSpent": 3
+      },
+      "file": "icons/echo_relic.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4998
+      }
     }
   ]
 }

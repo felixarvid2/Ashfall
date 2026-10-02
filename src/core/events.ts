@@ -68,7 +68,9 @@ export type GameEvent =
   | { type: 'loot'; entity: Entity; rarity: Rarity; x: number; z: number }
   | { type: 'pickup'; kind: 'gold'; amount: number }
   | { type: 'pickup'; kind: 'item'; rarity: Rarity; name: string }
-  | { type: 'notice'; key: string };
+  | { type: 'notice'; key: string }
+  | { type: 'discover'; id: string }
+  | { type: 'hub'; id: string; entered: boolean };
 
 export class EventQueue {
   private events: GameEvent[] = [];

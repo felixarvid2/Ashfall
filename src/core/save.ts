@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { ItemSchema, SlotSchema } from '../data/loot/schemas';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** Number of character slots on the select screen. */
 export const CHARACTER_SLOTS = 3;
@@ -49,6 +49,12 @@ export const SaveDataSchema = z.object({
     ranks: z.record(z.string(), z.number().int().positive()),
     slots: z.array(z.string().nullable()).length(6),
   }),
+  /** Open-world progress: the region, discovered teleporters and the fog-of-war bitmap (base64). */
+  world: z.object({
+    zone: z.string(),
+    discovered: z.array(z.string()),
+    revealed: z.string(),
+  }),
 });
 
 export type SaveData = z.infer<typeof SaveDataSchema>;
@@ -82,6 +88,13 @@ export const MIGRATIONS: Record<number, Migration> = {
   },
   // v4 (Phase 4): several characters and classes. Older saves were always a Bastion.
   3: (d) => ({ ...d, version: 4, character: { name: 'Bastion', classId: 'bastion' } }),
+  // v5 (Phase 5): the open world. Characters arrive at the escape pod in Cinder Flats.
+  4: (d) => ({
+    ...d,
+    version: 5,
+    player: { position: { x: -296, y: 0, z: -224 }, facing: 0 },
+    world: { zone: 'zone.cinder_flats', discovered: ['tp.ember'], revealed: '' },
+  }),
 };
 
 export class SaveError extends Error {}

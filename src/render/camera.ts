@@ -39,7 +39,7 @@ export class CameraRig {
 
   constructor(aspect: number, options: Partial<CameraRigOptions> = {}) {
     this.opts = { ...DEFAULTS, ...options };
-    this.camera = new THREE.PerspectiveCamera(this.opts.fovDeg, aspect, 0.5, 200);
+    this.camera = new THREE.PerspectiveCamera(this.opts.fovDeg, aspect, 0.5, 1200);
     this.yaw = THREE.MathUtils.degToRad(this.opts.yawDeg);
     this.pitch = THREE.MathUtils.degToRad(this.opts.pitchDeg);
     this.distance = this.targetDistance = (this.opts.minDistance + this.opts.maxDistance) / 2;

@@ -101,12 +101,21 @@ export class GameRenderer {
     ground.receiveShadow = true;
     s.add(ground);
 
+    // Roads (open-world zones): flat dark ribbons along each polyline.
+    const roads = (arena as { roads?: { width: number; points: [number, number][] }[] }).roads ?? [];
+    if (roads.length) {
+      const roadMat = new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 });
+      for (const road of roads) s.add(roadMesh(road.points, road.width, roadMat));
+    }
+
     const glowTexture = makeGlowTexture();
+    // Lights come from a small pool moved to the lamps nearest the camera (hundreds of real point
+    // lights would make every material's shader far too expensive).
+    this.lightSpots = [];
     for (const prop of arena.props) {
       if (!prop.light) continue;
-      const light = new THREE.PointLight(prop.light.color, prop.light.intensity, prop.light.distance, 2);
-      light.position.set(prop.x, prop.light.height, prop.z);
-      s.add(light);
+      const light = { x: prop.x, z: prop.z, ...prop.light };
+      this.lightSpots.push(light);
       // A soft additive sprite makes the lamp itself read as a light source (and blooms).
       const glow = new THREE.Sprite(
         new THREE.SpriteMaterial({
@@ -118,31 +127,72 @@ export class GameRenderer {
           fog: false,
         }),
       );
-      glow.position.copy(light.position);
+      glow.position.set(prop.x, prop.light.height, prop.z);
       glow.scale.setScalar(prop.asset === 'prop.lumen_growth' ? 1.2 : 1.1);
       glow.material.opacity = prop.asset === 'prop.lumen_growth' ? 0.35 : 0.9;
       s.add(glow);
     }
 
+    // Scatter is split into square chunks so frustum culling (and the shadow pass) skip the
+    // parts of a big region that are off screen.
+    const CHUNK = 48;
     arena.scatter.forEach((def, index) => {
       const { geometry, material } = this.assets.instancingParts(def.asset);
-      const instances = scatterInstances(arena, index);
-      const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
+      const chunks = new Map<string, ReturnType<typeof scatterInstances>>();
+      for (const inst of scatterInstances(arena, index)) {
+        const key = `${Math.floor(inst.x / CHUNK)},${Math.floor(inst.z / CHUNK)}`;
+        let list = chunks.get(key);
+        if (!list) chunks.set(key, (list = []));
+        list.push(inst);
+      }
       const m = new THREE.Matrix4();
       const q = new THREE.Quaternion();
       const up = new THREE.Vector3(0, 1, 0);
-      instances.forEach((inst, i) => {
-        q.setFromAxisAngle(up, inst.rot);
-        m.compose(
-          new THREE.Vector3(inst.x, -0.05, inst.z),
-          q,
-          new THREE.Vector3(inst.scale, inst.scale * 0.8, inst.scale),
-        );
-        mesh.setMatrixAt(i, m);
-      });
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      s.add(mesh);
+      for (const instances of chunks.values()) {
+        const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
+        instances.forEach((inst, i) => {
+          q.setFromAxisAngle(up, inst.rot);
+          m.compose(new THREE.Vector3(inst.x, -0.05, inst.z), q, new THREE.Vector3(inst.scale, inst.scale * 0.8, inst.scale));
+          mesh.setMatrixAt(i, m);
+        });
+        mesh.computeBoundingSphere();
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        s.add(mesh);
+      }
+    });
+  }
+
+  private lightSpots: { x: number; z: number; color: string; intensity: number; distance: number; height: number }[] = [];
+  private readonly lightPool: THREE.PointLight[] = [];
+  private lightTimer = 0;
+
+  /** Move the pooled point lights to the lamps nearest the focus point. */
+  private updateLightPool(fx: number, fz: number, dt: number): void {
+    if (this.lightPool.length === 0) {
+      for (let i = 0; i < LIGHT_POOL; i++) {
+        const l = new THREE.PointLight('#ffffff', 0, 10, 2);
+        this.lightPool.push(l);
+        this.scene.add(l);
+      }
+    }
+    this.lightTimer -= dt;
+    if (this.lightTimer > 0) return;
+    this.lightTimer = 0.2;
+    const nearest = this.lightSpots
+      .map((l) => ({ l, d: (l.x - fx) ** 2 + (l.z - fz) ** 2 }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, LIGHT_POOL);
+    this.lightPool.forEach((light, i) => {
+      const spot = nearest[i]?.l;
+      if (!spot) {
+        light.intensity = 0;
+        return;
+      }
+      light.color.set(spot.color);
+      light.intensity = spot.intensity;
+      light.distance = spot.distance;
+      light.position.set(spot.x, spot.height, spot.z);
     });
   }
 
@@ -176,10 +226,30 @@ export class GameRenderer {
         // Characters get their own material so they can flash and tint.
         obj = this.assets.create(r.assetId, world.has(e, StatusEffects));
         obj.scale.setScalar(r.scale ?? 1);
+        if (r.landmark) {
+          // Landmarks read as dark silhouettes through the fog from anywhere in the region.
+          obj.traverse((o) => {
+            const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+            if (m && 'fog' in m) {
+              const own = m.clone() as THREE.MeshStandardMaterial;
+              own.fog = false;
+              if (own.color) own.color.multiplyScalar(0.35);
+              (o as THREE.Mesh).material = own;
+            }
+          });
+        }
         this.objects.set(e, obj);
         this.scene.add(obj);
         const clips = this.assets.clips(r.assetId);
         if (clips.size > 0) this.animators.set(e, new CharacterAnimator(obj, clips));
+      }
+      // Cull far-away static props (the fog hides them anyway); characters and landmarks stay.
+      const r = world.req(e, Renderable);
+      if (!r.landmark && !world.has(e, Mover)) {
+        const f = this.rig.focusPoint;
+        const visible = (tr.x - f.x) ** 2 + (tr.z - f.z) ** 2 < CULL_DISTANCE * CULL_DISTANCE;
+        obj.visible = visible;
+        if (!visible) continue;
       }
       obj.position.set(
         tr.prevX + (tr.x - tr.prevX) * alpha,
@@ -350,6 +420,7 @@ export class GameRenderer {
     const f = this.rig.focusPoint;
     // Keep the shadow frustum centred on the action.
     this.playerLight.position.set(followX, 4.5, followZ);
+    this.updateLightPool(followX, followZ, frameDt);
     this.moon.position.set(f.x - 12, 30, f.z + 6);
     this.moon.target.position.set(f.x, 0, f.z);
     this.ash.update(frameDt, f);
@@ -383,6 +454,42 @@ export class GameRenderer {
     this.postfx?.setSize(w, h);
     this.rig.setAspect(w / h);
   }
+}
+
+const LIGHT_POOL = 12;
+const CULL_DISTANCE = 95;
+
+/** A flat strip along a polyline (roads). */
+function roadMesh(points: [number, number][], width: number, material: THREE.Material): THREE.Mesh {
+  const pos: number[] = [];
+  const idx: number[] = [];
+  const uv: number[] = [];
+  let dist = 0;
+  points.forEach(([x, z], i) => {
+    const prev = points[Math.max(0, i - 1)]!;
+    const next = points[Math.min(points.length - 1, i + 1)]!;
+    let dx = next[0] - prev[0];
+    let dz = next[1] - prev[1];
+    const len = Math.hypot(dx, dz) || 1;
+    dx /= len;
+    dz /= len;
+    if (i > 0) dist += Math.hypot(x - points[i - 1]![0], z - points[i - 1]![1]);
+    const h = width / 2;
+    pos.push(x - dz * h, 0.03, z + dx * h, x + dz * h, 0.03, z - dx * h);
+    uv.push(0, dist / width, 1, dist / width);
+    if (i > 0) {
+      const a = (i - 1) * 2;
+      idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const mesh = new THREE.Mesh(g, material);
+  mesh.receiveShadow = true;
+  return mesh;
 }
 
 /** Radial gradient used for lamp glows. */

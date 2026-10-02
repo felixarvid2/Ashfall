@@ -378,6 +378,20 @@ const EnemyAttackSchema = z.discriminatedUnion('kind', [
     radius: z.number().positive(),
     maxRange: z.number().positive(),
     damageType: DamageTypeSchema,
+    /** Shots per attack (machine-gun bursts), fired `burstInterval` apart within `spreadDeg`. */
+    burst: z.number().int().positive().default(1),
+    burstInterval: z.number().nonnegative().default(0.1),
+    spreadDeg: z.number().nonnegative().default(0),
+  }),
+  // Walks up, swells (telegraphed circle) and bursts, dying in the blast.
+  z.object({
+    kind: z.literal('explode'),
+    range: z.number().positive(),
+    radius: z.number().positive(),
+    windup: z.number().positive(),
+    cooldown: z.number().nonnegative().default(0),
+    damageType: DamageTypeSchema,
+    knockback: z.number().nonnegative().default(0),
   }),
   z.object({
     kind: z.literal('buffAllies'),
@@ -392,7 +406,7 @@ export const EnemyDefSchema = z.object({
   id: z.string(),
   assetId: z.string(),
   family: z.enum(['infected', 'insect', 'machine', 'beast', 'lumen']),
-  behavior: z.enum(['rusher', 'ranged', 'support']),
+  behavior: z.enum(['rusher', 'ranged', 'support', 'kamikaze', 'flanker', 'tank']),
   life: z.number().positive(),
   armor: z.number().nonnegative(),
   resist: ResistancesSchema,
@@ -404,6 +418,11 @@ export const EnemyDefSchema = z.object({
   preferredRange: z.tuple([z.number().nonnegative(), z.number().nonnegative()]).optional(),
   /** Hover height for flying enemies (metres). */
   hover: z.number().nonnegative().default(0),
+  /** Model scale and constant emissive tint (variants of a shared model). */
+  scale: z.number().positive().default(1),
+  glow: z.string().optional(),
+  /** Fraction of damage blocked by a shield when hit from the front (within 60°). */
+  frontShield: z.number().min(0).max(0.95).default(0),
   collider: z.object({ radius: z.number().positive(), mass: z.number().positive() }),
   /** Drop table id in src/data/loot/tables.ts (defaults to "dt.<enemy id>"). */
   dropTable: z.string().optional(),

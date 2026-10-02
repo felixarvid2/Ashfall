@@ -55,6 +55,8 @@ export interface Renderable {
   hologram?: boolean;
   /** Constant emissive glow (raised minions glow Lumen green). */
   glow?: string;
+  /** Huge landmark: never distance-culled and ignores fog. */
+  landmark?: boolean;
 }
 export const Renderable = defineComponent<Renderable>('Renderable');
 
@@ -236,6 +238,10 @@ export interface EnemyAI {
   wanderZ: number;
   /** Increments every time an attack wind-up starts (lets visuals restart the attack clip). */
   attackSeq: number;
+  /** Shots fired so far in the current burst (machine guns). */
+  burstFired?: number;
+  /** Open-world pack this enemy belongs to (pack spawner). */
+  pack?: string;
 }
 export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
 

@@ -114,7 +114,7 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
     multiplicative: hit.bonuses ? [...stats.multiplicative, ...hit.bonuses.multiplicative] : stats.multiplicative,
   };
   const result = computeHit(input, hit.damageType, { ...state, conditions }, stats.level, ctx.rng);
-  const dealt = applyDamage(world, ctx, target, result.final, {
+  const dealt = applyDamage(world, ctx, target, result.final * frontShieldFactor(world, target, hit.fromX, hit.fromZ), {
     crit: result.crit,
     damageType: hit.damageType,
     dot: false,
@@ -134,6 +134,21 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   if (hit.knockback !== 0 && isAlive(world, target)) applyKnockback(world, target, hit.fromX, hit.fromZ, hit.knockback);
   for (const apply of hit.applies) applyStatus(world, ctx, target, apply, { team, level: stats.level, attacker });
   return dealt;
+}
+
+/** Riot shields: enemies with `frontShield` block part of hits that come from in front of them. */
+function frontShieldFactor(world: World, target: Entity, fromX: number, fromZ: number): number {
+  const ai = world.get(target, EnemyAI);
+  if (!ai) return 1;
+  const shield = enemyDef(ai.defId).frontShield;
+  if (shield <= 0 || hasStatus(world, target, 'stunned')) return 1;
+  const tr = world.get(target, Transform);
+  if (!tr) return 1;
+  const angle = Math.atan2(fromX - tr.x, fromZ - tr.z);
+  let d = angle - tr.facing;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return Math.abs(d) <= Math.PI / 3 ? 1 - shield : 1;
 }
 
 export interface DamageOptions {
@@ -369,8 +384,10 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
   if (ai) {
     const def = enemyDef(ai.defId);
     if (tr) {
+      const tags = world.get(target, CombatStats)?.tags ?? [];
+      const eliteTable = tags.includes('rare') ? 'dt.rare_elite' : tags.includes('champion') ? 'dt.champion' : null;
       ctx.rewards.push({
-        table: def.dropTable ?? `dt.${def.id}`,
+        table: eliteTable ?? def.dropTable ?? `dt.${def.id}`,
         level: world.get(target, Level)?.value ?? 1,
         x: tr.x,
         z: tr.z,

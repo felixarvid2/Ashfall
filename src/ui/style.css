@@ -552,3 +552,8 @@ html, body {
 .char-create, .char-back { font: inherit; padding: 8px 18px; cursor: pointer; border: 1px solid var(--ui-border); background: #24201c; color: var(--ui-text); letter-spacing: 0.1em; }
 .char-create { background: #6a3a14; border-color: #c87a3a; color: #fff; }
 .char-create:hover { background: #8a4a1a; }
+
+/* ---- Minimap and full map --------------------------------------------------------- */
+.minimap { position: absolute; top: 44px; right: 14px; width: 180px; height: 180px; pointer-events: none; }
+.map-panel { left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 14px; width: auto; max-height: none; overflow: visible; }
+.map-canvas { display: block; width: min(640px, calc(100vw - 60px), calc(100vh - 140px)); aspect-ratio: 1; cursor: crosshair; border: 1px solid #3a322a; }
