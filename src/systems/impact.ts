@@ -9,6 +9,7 @@ import { dealHit, heal } from './combat';
 import { angleDelta } from './movement';
 import type { CompiledSkill } from './skillCompile';
 import { livingInCircle, opposingTeam } from './targeting';
+import { hitDestructibles } from '../world/interactables';
 
 /**
  * Hit every opposing living entity in a circle (optionally limited to an arc).
@@ -39,6 +40,8 @@ export function impactArea(
     }
     if (hitOne(world, ctx, caster, target, x, z, impact, extraApplies, bonuses) !== null) hits++;
   }
+  // Player attacks set off explosive barrels.
+  if (team === 'player') hitDestructibles(world, x, z, radius);
   if (hits > 0) {
     if (impact.hitstopMs > 0) ctx.events.push({ type: 'hitstop', ms: impact.hitstopMs });
     if (impact.shake > 0) ctx.events.push({ type: 'shake', trauma: impact.shake });

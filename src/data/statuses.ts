@@ -15,4 +15,10 @@ export const STATUSES: Record<StatusId, z.input<typeof StatusDefSchema>> = {
   evasive: { kind: 'buff', color: '#c9c2b6' },
   chitin: { kind: 'ward', damageReduction: 0.3, thornsCoefficient: 0.6, color: '#a8d86a' },
   rooted: { kind: 'disable', color: '#6bff7a' },
+  overcharge: { kind: 'buff', color: '#ff6a3a' },
+  kinetic: { kind: 'buff', color: '#ffd23a' },
+  aegis: { kind: 'buff', color: '#9fd8ff' },
+  chainReaction: { kind: 'buff', color: '#ff9a3a' },
+  magnet: { kind: 'buff', color: '#c77dff' },
+  overclock: { kind: 'buff', color: '#5ad2ff' },
 };

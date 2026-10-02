@@ -4,6 +4,7 @@
  * Formulas are documented in docs/damage-formula.md ("Attributes and item stats").
  */
 import {
+  AccountBonuses,
   CombatStats,
   DerivedStats,
   Health,
@@ -170,7 +171,8 @@ export function recomputePlayer(world: World, e: Entity): PlayerStats | null {
   if (!user || !prog || !inv) return null;
   const cls = classDef(user.classId);
   const skillTree = tree(user.classId);
-  const stats = computePlayerStats(cls, prog.level, inv.equipped, treeEffects(skillTree, user.tree));
+  const account = world.get(e, AccountBonuses)?.effects ?? [];
+  const stats = computePlayerStats(cls, prog.level, inv.equipped, [...treeEffects(skillTree, user.tree), ...account]);
   user.compiled = compileSkills(learnedSkills(skillTree, user.tree), stats.effects);
   // Forget action-bar entries for skills that are no longer learned (after a respec).
   user.slots = user.slots.map((id) => (id && user.compiled[id] ? id : null));

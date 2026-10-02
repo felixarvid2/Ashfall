@@ -557,3 +557,34 @@ html, body {
 .minimap { position: absolute; top: 44px; right: 14px; width: 180px; height: 180px; pointer-events: none; }
 .map-panel { left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 14px; width: auto; max-height: none; overflow: visible; }
 .map-canvas { display: block; width: min(640px, calc(100vw - 60px), calc(100vh - 140px)); aspect-ratio: 1; cursor: crosshair; border: 1px solid #3a322a; }
+
+/* Interaction prompt and lore reader (Region 1). */
+.interact-prompt {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 4px 10px;
+  background: rgba(10, 9, 8, 0.82);
+  border: 1px solid #5a4a36;
+  color: #e8dcc8;
+  font-size: 0.85em;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.interact-prompt[hidden] { display: none; }
+.interact-key {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 4px;
+  margin-right: 4px;
+  border: 1px solid #c8a060;
+  color: #ffd27a;
+  text-align: center;
+  font-weight: bold;
+}
+.lore-panel { left: 50%; top: 22%; transform: translateX(-50%); width: min(520px, calc(100vw - 40px)); }
+.lore-panel button { font: inherit; font-size: 0.85em; color: var(--ui-text); background: #24201c; border: 1px solid var(--ui-border); padding: 4px 14px; cursor: pointer; margin-top: 10px; }
+.lore-body { line-height: 1.55; color: #d8cdb8; font-style: italic; white-space: pre-wrap; }
+.buff-bar { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
+.buff { padding: 2px 8px; border: 1px solid; background: rgba(10, 9, 8, 0.8); font-size: 0.8em; letter-spacing: 0.05em; white-space: nowrap; }

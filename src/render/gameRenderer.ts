@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import type { Entity, World } from '../core/ecs';
-import { CombatStats, Dead, EnemyAI, ForcedMove, MinionAI, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, MinionAI, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CharacterAnimator, type PlayRequest } from './animator';
@@ -224,7 +224,7 @@ export class GameRenderer {
       if (!obj) {
         const r = world.req(e, Renderable);
         // Characters get their own material so they can flash and tint.
-        obj = this.assets.create(r.assetId, world.has(e, StatusEffects));
+        obj = this.assets.create(r.assetId, world.has(e, StatusEffects) || world.has(e, Interactable) || r.glow !== undefined);
         obj.scale.setScalar(r.scale ?? 1);
         if (r.landmark) {
           // Landmarks read as dark silhouettes through the fog from anywhere in the region.

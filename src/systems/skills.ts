@@ -2,6 +2,7 @@
  * Player skills: buffered requests → cast (wind-up, effect, recovery),
  * cooldowns, resource costs, dodge, potions and forced moves (leap/dodge).
  */
+import { PYLON_EFFECTS } from '../data/interactables';
 import {
   Collider,
   CombatStats,
@@ -32,7 +33,7 @@ import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, classDef, skill } from '../data/db';
 import type { Impact } from '../data/schemas';
 import type { CompiledSkill } from './skillCompile';
-import { applyStatus, gainResource, heal, kill, removeStatuses } from './combat';
+import { applyStatus, gainResource, hasStatus, heal, kill, removeStatuses } from './combat';
 import { impactArea, spawnHazards } from './impact';
 import { hubAt } from '../world/zone';
 import { consumeCorpse, findCorpses, minionsOf, raiseCorpse } from './minions';
@@ -113,7 +114,7 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       if (user.request.ttl <= 0) user.request = null;
     }
 
-    const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0);
+    const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0) + (hasStatus(world, e, 'kinetic') ? PYLON_EFFECTS.kineticSpeed : 0);
     if (user.cast) {
       const cast = user.cast;
       const compiled = skillOf(user, cast.skillId);
@@ -166,7 +167,8 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
         continue;
       }
       if (resource && def.resourceCost > 0) resource.current -= def.resourceCost;
-      user.cooldowns[id] = def.cooldown * (1 - (world.get(e, CombatStats)?.cooldownReduction ?? 0));
+      // Overclock pylon: no cooldowns while it lasts.
+      user.cooldowns[id] = hasStatus(world, e, 'overclock') ? 0 : def.cooldown * (1 - (world.get(e, CombatStats)?.cooldownReduction ?? 0));
       user.cast = { skillId: id, elapsed: 0, fired: false, aimX: user.request.aimX, aimZ: user.request.aimZ };
       user.request = null;
       if (mover) {

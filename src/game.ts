@@ -2,6 +2,8 @@
  * Top-level game: wires ECS, systems, input, rendering, UI and saving together.
  */
 import {
+  AccountBonuses,
+  Interactable,
   CombatStats,
   Dead,
   DerivedStats,
@@ -40,7 +42,7 @@ import {
   type SaveData,
 } from './core/save';
 import { SpatialHash } from './core/spatial';
-import { classDef, skill } from './data/db';
+import { STATUS_DEFS, classDef, skill } from './data/db';
 import { t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
 import { CINDER_FLATS } from './data/zones/cinderFlats';
@@ -78,6 +80,13 @@ import { MapUi } from './ui/minimap';
 import { Hud, type HudState } from './ui/hud';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
+import { blastSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
+import { loadAccount, relicEffects, saveAccount } from './core/account';
+import { InteractPrompt, LoreReader } from './ui/interactUi';
+import { keyLabel } from './ui/hud';
+import { LORE_XP_PER_LEVEL, PYLONS } from './data/interactables';
+
+const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
 import { spawnEnemy, spawnPlayer } from './world/spawn';
 
 /** Placeholder class for the player entity before a character is chosen. */
@@ -108,8 +117,8 @@ export class Game {
   private readonly skillTreePanel: SkillTreePanel;
   private readonly lootLabels: LootLabels;
   private readonly mapUi: MapUi;
-  /** Points of interest found this character (opened chests, relics, logs…). */
-  readonly found = new Set<string>();
+  private readonly interactPrompt: InteractPrompt;
+  private readonly loreReader: LoreReader;
   private player!: Entity;
   private hitstop = 0;
   private lastTarget: { entity: Entity; until: number } | null = null;
@@ -149,6 +158,7 @@ export class Game {
       rewards: [],
       zoneLevels: ZONE.levels,
       zone: createZoneRuntime(ZONE),
+      account: loadAccount(this.storage),
     };
     setItemNamer((baseId) => t(`items.bases.${baseId}`));
 
@@ -170,16 +180,20 @@ export class Game {
       .add('tethers', tetherSystem)
       .add('turrets', turretSystem)
       .add('hazards', hazardSystem)
+      .add('blasts', blastSystem)
       .add('resource', resourceSystem)
       .add('death', deathSystem)
       .add('encounter', encounterSystem)
       .add('rewards', rewardSystem)
-      .add('pickup', pickupSystem);
+      .add('pickup', pickupSystem)
+      .add('interact', interactSystem);
 
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
     this.hud = new Hud(uiRoot, () => this.respawn());
     this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
+    this.interactPrompt = new InteractPrompt(uiRoot);
+    this.loreReader = new LoreReader(uiRoot);
     this.mapUi = new MapUi(
       uiRoot,
       () => this.ctx.zone,
@@ -188,7 +202,7 @@ export class Game {
         return { x: tr.x, z: tr.z, facing: tr.facing };
       },
       (id) => this.teleportTo(id),
-      () => this.found,
+      () => this.zone?.found ?? new Set<string>(),
       this.renderer.rig.yaw,
     );
     this.inventoryPanel = new InventoryPanel(
@@ -289,7 +303,9 @@ export class Game {
     this.refreshHint();
 
     spawnArenaProps(this.world, ZONE);
+    if (this.ctx.zone) spawnInteractables(this.world, this.ctx.zone);
     this.player = spawnPlayer(this.world, DEFAULT_CLASS, ZONE.playerSpawn.x, ZONE.playerSpawn.z);
+    this.applyAccountBonuses();
     const tr = this.playerTransform;
     this.renderer.rig.snapTo(tr.x, tr.y, tr.z);
 
@@ -335,6 +351,7 @@ export class Game {
   /** Start a brand-new character in a slot (overwrites a corrupt slot). */
   newCharacter(slot: number, classId: string, name: string): void {
     this.respawnAs(classId);
+    this.resetZoneProgress();
     this.slot = slot;
     this.characterName = name;
     const inv = this.world.req(this.player, Inventory);
@@ -360,8 +377,28 @@ export class Game {
     const spawn = ZONE.playerSpawn;
     this.player = spawnPlayer(this.world, classId, spawn.x, spawn.z);
     this.world.destroy(old);
+    this.applyAccountBonuses();
     this.renderer.rig.snapTo(spawn.x, 0, spawn.z);
     this.refreshHint();
+  }
+
+  /** Account-wide relic bonuses on the current player entity. */
+  private applyAccountBonuses(): void {
+    if (!this.ctx.account) return;
+    this.world.add(this.player, AccountBonuses, { effects: relicEffects(this.ctx.account) });
+    recomputePlayer(this.world, this.player);
+  }
+
+  /** Fresh open-world progress for a new character (or before applying a save). */
+  private resetZoneProgress(): void {
+    const zone = this.zone;
+    if (!zone) return;
+    const fresh = createZoneRuntime(zone.def);
+    zone.discovered = fresh.discovered;
+    zone.revealed.fill(0);
+    zone.found.clear();
+    zone.keycards.clear();
+    syncInteractables(this.world, zone);
   }
 
   private autosave(): void {
@@ -397,6 +434,7 @@ export class Game {
     if (input.wasPressed('character')) this.characterPanel.toggle();
     if (input.wasPressed('skills')) this.skillTreePanel.toggle();
     if (input.wasPressed('map')) this.mapUi.toggle();
+    if (this.loreReader.open && (input.wasPressed('pickup') || input.wasPressed('map'))) this.loreReader.close();
 
     this.scheduler.tick(this.world, dt, this.ctx);
     this.ctx.tick++;
@@ -437,6 +475,7 @@ export class Game {
     }
     this.hud.update(this.hudState(), frameDt);
     this.mapUi.update(frameDt);
+    this.updateInteractPrompt(px, pz);
 
     this.devtools.frame(frameDt, () => ({
       entities: this.world.entityCount,
@@ -498,9 +537,59 @@ export class Game {
         case 'hub':
           if (event.entered) this.hud.showBanner(t(`zones.${ZONE.key}.${event.id}`), 2.2);
           break;
+        case 'interact':
+          this.onInteract(event.kind, event.detail);
+          break;
         default:
           break;
       }
+    }
+  }
+
+  private updateInteractPrompt(px: number, pz: number): void {
+    const near = this.world.has(this.player, Dead) ? null : nearestInteractable(this.world, px, pz, this.ctx.time);
+    const target = near !== null ? { ...this.world.req(near, Transform), kind: this.world.req(near, Interactable).kind } : null;
+    this.interactPrompt.update(target, keyLabel(resolveKeybindings(this.settings).pickup[0] ?? 'KeyE'), (x, y, z, out) =>
+      this.renderer.toScreen(x, y, z, out),
+    );
+  }
+
+  private onInteract(kind: string, detail: string | undefined): void {
+    switch (kind) {
+      case 'chest':
+      case 'lockedChest':
+        playDropSound('magic');
+        if (kind === 'lockedChest') this.toasts.show(t('interact.lockedChest'));
+        break;
+      case 'keycard':
+        playPickupSound();
+        this.toasts.show(t('interact.keycard'));
+        break;
+      case 'pylon':
+        if (detail) {
+          this.hud.showBanner(t(`pylons.${detail}.name`), 2);
+          this.toasts.show(t('interact.pylonToast', { name: t(`pylons.${detail}.name`), desc: t(`pylons.${detail}.desc`) }));
+        }
+        break;
+      case 'relic':
+        if (detail) this.toasts.show(t('interact.relic', { bonus: t(`relics.${detail}`) }));
+        saveAccount(this.storage, this.ctx.account!);
+        this.characterPanel.refresh();
+        this.autosave();
+        break;
+      case 'lore':
+        if (detail) this.loreReader.show(detail, LORE_XP_PER_LEVEL * this.world.req(this.player, Progression).level);
+        this.autosave();
+        break;
+      case 'signalTower':
+        this.toasts.show(t('interact.signalTower'));
+        this.autosave();
+        break;
+      case 'teleporter':
+        if (!this.mapUi.open) this.mapUi.toggle();
+        break;
+      default:
+        break;
     }
   }
 
@@ -586,6 +675,10 @@ export class Game {
       wave: enc && enc.wave > 0 ? { wave: enc.wave, alive: enc.alive, phase: enc.phase, timer: enc.timer } : null,
       ...(this.zone ? { location: this.locationLabel() } : {}),
       target,
+      // Pylon buffs (and other timed boons) above the action bar.
+      buffs: (w.get(p, StatusEffects)?.list ?? [])
+        .filter((st) => PYLON_STATUSES.has(st.id))
+        .map((st) => ({ id: st.id, remaining: st.remaining, color: STATUS_DEFS[st.id].color })),
       dead: w.has(p, Dead),
       xp: (() => {
         const prog = w.req(p, Progression);
@@ -689,8 +782,14 @@ export class Game {
         return { ranks: { ...user.tree.ranks }, slots: [...user.slots] };
       })(),
       world: this.zone
-        ? { zone: this.zone.def.id, discovered: [...this.zone.discovered], revealed: encodeRevealed(this.zone) }
-        : { zone: ZONE.id, discovered: [], revealed: '' },
+        ? {
+            zone: this.zone.def.id,
+            discovered: [...this.zone.discovered],
+            revealed: encodeRevealed(this.zone),
+            found: [...this.zone.found],
+            keycards: [...this.zone.keycards],
+          }
+        : { zone: ZONE.id, discovered: [], revealed: '', found: [], keycards: [] },
     };
   }
 
@@ -731,9 +830,13 @@ export class Game {
     recomputePlayer(this.world, this.player);
     const health = this.world.req(this.player, Health);
     health.current = health.max;
+    this.resetZoneProgress();
     if (this.zone && data.world.zone === this.zone.def.id) {
       for (const id of data.world.discovered) this.zone.discovered.add(id);
       if (data.world.revealed) decodeRevealed(this.zone, data.world.revealed);
+      for (const id of data.world.found) this.zone.found.add(id);
+      for (const id of data.world.keycards) this.zone.keycards.add(id);
+      syncInteractables(this.world, this.zone);
     }
     this.renderer.rig.snapTo(x, y, z);
     this.inventoryPanel.refresh();

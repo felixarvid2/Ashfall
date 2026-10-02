@@ -41,6 +41,8 @@ export interface GameContext {
   zoneLevels: [number, number];
   /** Open-world zone state (absent in the test arena and headless sims). */
   zone?: ZoneRuntime;
+  /** Account-wide progress (Echo Relics, Restoration); absent in headless sims. */
+  account?: import('./account').AccountData;
 }
 
 export interface RewardRequest {

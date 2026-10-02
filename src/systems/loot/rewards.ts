@@ -2,6 +2,7 @@
  * Rewards: XP and levelling, drop rolls (items, crystals, gold) spawned on the ground,
  * and picking loot up (gold automatically, items by click/walk-over or the pickup key).
  */
+import { PYLON_EFFECTS } from '../../data/interactables';
 import {
   Dead,
   GroundGold,
@@ -14,6 +15,7 @@ import {
   Progression,
   CombatStats,
   SkillUser,
+  StatusEffects,
   Transform,
   makeTransform,
 } from '../../core/components';
@@ -85,7 +87,8 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
   for (const req of requests) {
     const table = dropTable(req.table);
     if (player !== undefined && req.xp) {
-      grantXp(world, ctx, player, killXp(table, req.level));
+      const magnet = world.get(player, StatusEffects)?.list.some((st) => st.id === 'magnet') ? PYLON_EFFECTS.magnetXp : 1;
+      grantXp(world, ctx, player, killXp(table, req.level) * magnet);
       const lifeOnKill = world.get(player, CombatStats)?.lifeOnKill ?? 0;
       if (lifeOnKill > 0) heal(world, ctx, player, lifeOnKill);
     }

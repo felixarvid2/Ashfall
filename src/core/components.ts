@@ -462,3 +462,48 @@ export interface Turret {
   slamSeq: number;
 }
 export const Turret = defineComponent<Turret>('Turret');
+
+// ---- Open world -------------------------------------------------------------------
+
+/** A point of interest the player can use with the interact key (docs/world-and-gameplay.md §3). */
+export interface Interactable {
+  /** Point-of-interest id (or teleporter id). */
+  poi: string;
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter';
+  /** Use radius (m). */
+  radius: number;
+  /** Spent for good (opened, read, claimed). */
+  used: boolean;
+  /** Reusable objects (pylons, supply crates) come back at this time (ctx.time). */
+  readyAt: number;
+}
+export const Interactable = defineComponent<Interactable>('Interactable');
+
+/** Breakable object: explosive barrels go off when hit, chaining into each other. */
+export interface Destructible {
+  /** Hit radius (m). */
+  radius: number;
+  /** Blast when destroyed (barrels); null = just breaks. */
+  blast: { radius: number; flat: number } | null;
+}
+export const Destructible = defineComponent<Destructible>('Destructible');
+
+/** A pending explosion: barrels caught in a blast, Chain Reaction corpses. */
+export interface Blast {
+  fuse: number;
+  radius: number;
+  /** Player whose weapon damage scales the blast (Chain Reaction); null = environmental. */
+  owner: Entity | null;
+  coefficient: number;
+  /** Environmental damage to enemies (before mitigation). */
+  flat: number;
+  /** Explosive barrels hurt the player too. */
+  hurtsPlayer: boolean;
+}
+export const Blast = defineComponent<Blast>('Blast');
+
+/** Account-wide permanent bonuses on the player (Echo Relics, Restoration). */
+export interface AccountBonuses {
+  effects: import('../data/effects').Effect[];
+}
+export const AccountBonuses = defineComponent<AccountBonuses>('AccountBonuses');

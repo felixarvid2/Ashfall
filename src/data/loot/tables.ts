@@ -49,6 +49,9 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   // Elites: champions (blue) and rare elites (yellow) roll extra, better loot.
   { id: 'dt.champion', itemChance: 0.6, goldChance: 1, gold: [3, 6], crystalChance: 0.08, rarityBias: { rare: 2, legendary: 1.5 }, minRarity: 'magic', xp: 40 },
   { id: 'dt.rare_elite', itemChance: 1, extraItems: 2, goldChance: 1, gold: [8, 14], crystalChance: 0.2, rarityBias: { rare: 3, legendary: 3, unique: 2 }, minRarity: 'magic', xp: 120 },
+  // Open-world containers: supply crates along the roads, locked chests (keycard) and bunker caches.
+  { id: 'dt.supply_crate', itemChance: 0.7, goldChance: 1, gold: [3, 8], crystalChance: 0.06, rarityBias: { magic: 1.5 }, xp: 0 },
+  { id: 'dt.locked_chest', itemChance: 1, extraItems: 2, goldChance: 1, gold: [12, 24], crystalChance: 0.35, rarityBias: { rare: 3, legendary: 2.5 }, minRarity: 'magic', xp: 0 },
   // Reward cache that drops when a wave is cleared.
   {
     id: 'dt.wave_reward',

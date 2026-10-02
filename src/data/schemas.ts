@@ -26,6 +26,13 @@ export const STATUS_IDS = [
   // Xenomant: hardened chitin (less damage taken, thorns) and roots that hold enemies in place.
   'chitin',
   'rooted',
+  // Stim Pylon buffs (docs/world-and-gameplay.md §3.1).
+  'overcharge',
+  'kinetic',
+  'aegis',
+  'chainReaction',
+  'magnet',
+  'overclock',
 ] as const;
 export const StatusIdSchema = z.enum(STATUS_IDS);
 export type StatusId = z.infer<typeof StatusIdSchema>;

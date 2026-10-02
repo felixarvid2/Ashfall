@@ -54,6 +54,9 @@ export const SaveDataSchema = z.object({
     zone: z.string(),
     discovered: z.array(z.string()),
     revealed: z.string(),
+    /** One-time points of interest used (relics, logs, locked chests, towers, keycards). */
+    found: z.array(z.string()).default([]),
+    keycards: z.array(z.string()).default([]),
   }),
 });
 
@@ -93,7 +96,7 @@ export const MIGRATIONS: Record<number, Migration> = {
     ...d,
     version: 5,
     player: { position: { x: -296, y: 0, z: -224 }, facing: 0 },
-    world: { zone: 'zone.cinder_flats', discovered: ['tp.ember'], revealed: '' },
+    world: { zone: 'zone.cinder_flats', discovered: ['tp.ember'], revealed: '', found: [], keycards: [] },
   }),
 };
 

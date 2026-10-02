@@ -70,7 +70,9 @@ export type GameEvent =
   | { type: 'pickup'; kind: 'item'; rarity: Rarity; name: string }
   | { type: 'notice'; key: string }
   | { type: 'discover'; id: string }
-  | { type: 'hub'; id: string; entered: boolean };
+  | { type: 'hub'; id: string; entered: boolean }
+  /** The player used a point of interest (UI shows toasts, the lore reader, buff banners). */
+  | { type: 'interact'; kind: string; id: string; detail?: string };
 
 export class EventQueue {
   private events: GameEvent[] = [];

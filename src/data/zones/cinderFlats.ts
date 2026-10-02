@@ -286,8 +286,8 @@ function buildPois(): PoiDef[] {
     const a = rng.range(0, Math.PI * 2);
     pois.push({ id: `keycard.${i}`, kind: 'keycard', x: x + Math.sin(a) * 22, z: z + Math.cos(a) * 22, data: { opens: `locked.${i}` } });
   });
-  const pylons = ['overcharge', 'kinetic', 'barrier', 'chainReaction', 'magnet'];
-  const pylonAt: [number, number][] = [[-200, -130], [10, 0], [-70, 120], [200, 20], [250, 140]];
+  const pylons = ['overcharge', 'kinetic', 'barrier', 'chainReaction', 'magnet', 'overclock'];
+  const pylonAt: [number, number][] = [[-200, -130], [10, 0], [-70, 120], [200, 20], [250, 140], [130, -110]];
   pylonAt.forEach(([x, z], i) => pois.push({ id: `pylon.${i}`, kind: 'pylon', x, z, data: { type: pylons[i]! } }));
   const relics: [number, number][] = [
     [-320, -300], [-300, 40], [-200, 300], [-30, 290], [100, 320], [320, 320], [330, -320], [130, -200], [-120, -300], [0, 90],

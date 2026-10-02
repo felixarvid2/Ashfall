@@ -34,6 +34,8 @@ export interface HudState {
   /** Open world: region and subzone name, shown where the wave tracker sits in the arena. */
   location?: { title: string; sub: string };
   target: { name: string; current: number; max: number; statuses: string[] } | null;
+  /** Timed buffs on the player (Stim Pylons). */
+  buffs?: { id: string; remaining: number; color: string }[];
   dead: boolean;
   xp: { level: number; current: number; next: number; skillPoints: number };
 }
@@ -142,6 +144,8 @@ export class Hud {
   private readonly targetName: HTMLDivElement;
   private readonly targetFill: HTMLDivElement;
   private readonly targetStatus: HTMLDivElement;
+  private readonly buffBar: HTMLDivElement;
+  private lastBuffs = '';
   private readonly banner: HTMLDivElement;
   private readonly death: HTMLDivElement;
   private readonly deathHint: HTMLDivElement;
@@ -233,7 +237,11 @@ export class Hud {
     this.tooltip.className = 'tooltip';
     this.tooltip.hidden = true;
 
-    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip);
+    this.buffBar = document.createElement('div');
+    this.buffBar.className = 'buff-bar';
+    this.buffBar.dataset.testid = 'buff-bar';
+
+    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip, this.buffBar);
   }
 
   updateHint(moveMode: MoveMode, bindings: Record<Action, string[]>): void {
@@ -266,6 +274,21 @@ export class Hud {
   }
 
   update(state: HudState, dt: number): void {
+    const buffs = state.buffs ?? [];
+    const buffKey = buffs.map((b) => `${b.id}:${Math.ceil(b.remaining)}`).join('|');
+    if (buffKey !== this.lastBuffs) {
+      this.lastBuffs = buffKey;
+      this.buffBar.replaceChildren(
+        ...buffs.map((b) => {
+          const el = document.createElement('div');
+          el.className = 'buff';
+          el.style.borderColor = b.color;
+          el.style.color = b.color;
+          el.textContent = `${t(`statuses.${b.id}`)} ${Math.ceil(b.remaining)}s`;
+          return el;
+        }),
+      );
+    }
     this.lifeOrb.set(state.life.current, state.life.max, state.life.barrier, state.life.current / state.life.max < 0.3);
     this.heatOrb.setKind(state.resource.kind, t(`resources.${state.resource.kind}`));
     this.heatOrb.set(state.resource.current, state.resource.max, 0, state.resource.overheating);

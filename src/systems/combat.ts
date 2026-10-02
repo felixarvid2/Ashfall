@@ -2,7 +2,9 @@
  * Applying hits, damage, statuses, healing and death to entities.
  * Pure formula lives in damage.ts; this module mutates the world and emits events.
  */
+import { PYLON_EFFECTS } from '../data/interactables';
 import {
+  Blast,
   Collider,
   CombatStats,
   Dead,
@@ -111,7 +113,12 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
     ...(stealthed ? { critChance: 1 } : {}),
     coefficient: hit.coefficient,
     additive: hit.bonuses ? [...stats.additive, ...hit.bonuses.additive] : stats.additive,
-    multiplicative: hit.bonuses ? [...stats.multiplicative, ...hit.bonuses.multiplicative] : stats.multiplicative,
+    multiplicative: [
+      ...stats.multiplicative,
+      ...(hit.bonuses?.multiplicative ?? []),
+      // Overcharge pylon.
+      ...(hasStatus(world, attacker, 'overcharge') ? [{ value: PYLON_EFFECTS.overchargeDamage, source: 'pylon' }] : []),
+    ],
   };
   const result = computeHit(input, hit.damageType, { ...state, conditions }, stats.level, ctx.rng);
   const dealt = applyDamage(world, ctx, target, result.final * frontShieldFactor(world, target, hit.fromX, hit.fromZ), {
@@ -164,7 +171,7 @@ export interface DamageOptions {
  */
 export function applyDamage(world: World, ctx: GameContext, target: Entity, amount: number, opts: DamageOptions): number | null {
   if (!isAlive(world, target)) return null;
-  if (world.has(target, Invulnerable)) {
+  if (world.has(target, Invulnerable) || hasStatus(world, target, 'aegis')) {
     // Avoiding a hit by dodging feeds Focus.
     const r = world.get(target, Resource);
     if (r && !opts.dot && r.config.onAvoid > 0 && opts.sourceTeam !== world.get(target, Faction)?.team) gainResource(r, r.config.onAvoid);
@@ -424,6 +431,19 @@ function onEnemyDeath(world: World, ctx: GameContext, target: Entity, wasMarked:
     const near = r.config.onNearbyDeath;
     const ptr = world.get(e, Transform);
     if (near && tr && ptr && Math.hypot(tr.x - ptr.x, tr.z - ptr.z) <= near.radius) gainResource(r, near.amount);
+    // Chain Reaction pylon: the body explodes a moment later (which can chain further).
+    if (tr && hasStatus(world, e, 'chainReaction')) {
+      const blast = world.create();
+      world.add(blast, Transform, makeTransform(tr.x, 0, tr.z));
+      world.add(blast, Blast, {
+        fuse: 0.15,
+        radius: PYLON_EFFECTS.chainRadius,
+        owner: e,
+        coefficient: PYLON_EFFECTS.chainCoefficient,
+        flat: 0,
+        hurtsPlayer: false,
+      });
+    }
   }
   void ctx;
 }

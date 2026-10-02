@@ -230,7 +230,13 @@
     "stealth": "Stealthed",
     "evasive": "Evasive",
     "chitin": "Chitin",
-    "rooted": "Rooted"
+    "rooted": "Rooted",
+    "overcharge": "Overcharge",
+    "kinetic": "Kinetic",
+    "aegis": "Barrier Pylon",
+    "chainReaction": "Chain Reaction",
+    "magnet": "Magnet",
+    "overclock": "Overclock"
   },
   "items": {
     "bases": {
@@ -1249,5 +1255,112 @@
     "noCombat": "You can't fight here",
     "teleporting": "Teleporting to {name}…",
     "hint": "{map} map"
+  },
+  "interact": {
+    "prompt": "{key} {action}",
+    "actions": {
+      "chest": "Open Supply Crate",
+      "lockedChest": "Open Locked Chest",
+      "keycard": "Take Keycard",
+      "pylon": "Activate Stim Pylon",
+      "relic": "Claim Echo Relic",
+      "lore": "Read Log",
+      "signalTower": "Activate Signal Tower",
+      "teleporter": "Open Map"
+    },
+    "needKeycard": "Locked. A keycard should be lying somewhere nearby.",
+    "keycard": "Keycard taken. A locked chest is close by.",
+    "lockedChest": "The keycard fits. The chest opens.",
+    "signalTower": "Signal tower online: the surrounding area is revealed on the map.",
+    "relic": "Echo Relic: {bonus} for all your characters",
+    "pylonBanner": "{name}",
+    "pylonToast": "{name}: {desc}",
+    "close": "Close",
+    "loreXp": "+{xp} XP"
+  },
+  "pylons": {
+    "overcharge": {
+      "name": "Overcharge",
+      "desc": "+50% damage for 60 seconds"
+    },
+    "kinetic": {
+      "name": "Kinetic",
+      "desc": "+40% attack and movement speed for 60 seconds"
+    },
+    "barrier": {
+      "name": "Barrier",
+      "desc": "absorbs all damage for 10 seconds"
+    },
+    "chainReaction": {
+      "name": "Chain Reaction",
+      "desc": "enemies explode when they die, for 60 seconds"
+    },
+    "magnet": {
+      "name": "Magnet",
+      "desc": "double experience from kills for 60 seconds"
+    },
+    "overclock": {
+      "name": "Overclock",
+      "desc": "skills have no cooldown for 8 seconds"
+    }
+  },
+  "relics": {
+    "maxLife": "+8 maximum life",
+    "damage": "+2% damage",
+    "armor": "+12 armor",
+    "moveSpeed": "+2% movement speed",
+    "resourceGen": "+3% resource generation"
+  },
+  "lore": {
+    "cf": {
+      "0": {
+        "title": "Escape pod flight recorder",
+        "body": "Pod 3 of the Halcyon relay. Distress call received from Kharos IV, Governor's seal attached. Atmospheric entry nominal. Correction: entry not nominal. Debris field over the landing zone. Brace. Brace. Brace."
+      },
+      "1": {
+        "title": "Scrawled on a lander hatch",
+        "body": "WE WAITED THREE DAYS FOR THE EVAC SHUTTLE. IT NEVER CAME. GONE EAST TO THE FUEL STATION. IF YOU CAN READ THIS, DON'T DRINK THE WATER FROM THE CRATERS. – T."
+      },
+      "2": {
+        "title": "Dr. Ines Okafor – personal log 1",
+        "body": "The crystals in the deep core samples aren't inert. Under the scope they move, slowly, toward heat. I filed a report with the Governor's office. They thanked me for my diligence and asked me to keep the samples sealed."
+      },
+      "3": {
+        "title": "Convoy driver's data pad",
+        "body": "Route 7 is closed at the checkpoint. Soldiers say there's a quarantine. Nobody says what for. We've been idling for nine hours and the ash is getting into the filters. Marta keeps coughing. She says it's just the ash."
+      },
+      "4": {
+        "title": "Outpost Ember notice board",
+        "body": "RULES OF EMBER: 1. Nobody sleeps outside the ring. 2. Anyone with green in their eyes leaves. No arguments. 3. The cook decides the rations. 4. Keep the generator running. The light keeps them away. Mostly."
+      },
+      "5": {
+        "title": "Dr. Ines Okafor – personal log 2",
+        "body": "Second report ignored. Three drill crew from Shaft 9 are in the infirmary with a fever and green veins under their fingernails. The Governor says the drills keep running. Quotas from the Consortium. I said people will die. He said people already are."
+      },
+      "6": {
+        "title": "Mining foreman's audio log",
+        "body": "Shift change. The dogs won't go into the lower tunnels anymore. Brix bit a handler today, that dog has never bitten anyone. Its gums were glowing. I put it down myself. Had to use the whole clip."
+      },
+      "7": {
+        "title": "Dr. Ines Okafor – personal log 3",
+        "body": "I've named it Lumen, for the light. It isn't a disease. It is a network. Every infected host is a node, and the nodes talk to each other. Whatever is at the bottom of the mine is listening to all of them."
+      },
+      "8": {
+        "title": "Freighter Meridian – bridge log",
+        "body": "Meridian to Kharos traffic: we're taking on refugees, three hundred, no room for more. Spore contamination detected in cargo bay two. Sealing bulkheads. Engines unresponsive. Going down near the elevator foundation. Tell my daughter—"
+      },
+      "9": {
+        "title": "Dr. Ines Okafor – personal log 4",
+        "body": "Patient zero was Elias Brandt, the first colonist to touch an exposed vein in Shaft 1. He didn't die. They moved him to a sealed pit north of the checkpoint and stopped feeding him. Something down there is still growing."
+      },
+      "10": {
+        "title": "Checkpoint Sierra standing orders",
+        "body": "By order of Governor Kade: no civilian traffic past Sierra. Anyone showing signs of infection is to be detained, not treated. Weapons free on non-compliant persons. Drill operations are to continue uninterrupted. – Commandant R. Hale"
+      },
+      "11": {
+        "title": "Dr. Ines Okafor – personal log 5",
+        "body": "They're coming for my notes. If someone finds this: the Governor knew. He had my reports a full month before the first evacuation order, and he kept the drills running. The mine isn't a mine anymore. It's a door. Don't let them open it wider."
+      }
+    }
   }
 }

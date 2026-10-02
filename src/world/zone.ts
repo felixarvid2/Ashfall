@@ -42,6 +42,10 @@ export interface ZoneRuntime {
   timer: number;
   /** Hub the player is standing in, if any. */
   inHub: string | null;
+  /** One-time points of interest this character has used (locked chests, relics, logs, towers…). */
+  found: Set<string>;
+  /** Keycards carried (opening their locked chest spends them). */
+  keycards: Set<string>;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
@@ -54,6 +58,8 @@ export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
     cells,
     timer: 0,
     inHub: null,
+    found: new Set(),
+    keycards: new Set(),
   };
 }
 

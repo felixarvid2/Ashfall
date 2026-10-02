@@ -44,7 +44,7 @@ const sample = (): SaveData => ({
   inventory: { gold: 120, grid: [null, null], equipped: {} },
   loot: { seq: 7, rngState: [5, 6, 7, 8] },
   skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
-  world: { zone: 'zone.cinder_flats', discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=' },
+  world: { zone: 'zone.cinder_flats', discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=', found: [], keycards: [] },
 });
 
 describe('save serialization', () => {

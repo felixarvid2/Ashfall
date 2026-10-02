@@ -7,6 +7,7 @@ import { computeTaken } from './damage';
 import { hitOne, impactArea, spawnHazards } from './impact';
 import { skillOf } from './skills';
 import { livingInCircle, opposingTeam } from './targeting';
+import { hitDestructibles } from '../world/interactables';
 
 const HAZARD_TICK = 1;
 
@@ -48,6 +49,8 @@ function skillProjectile(world: World, ctx: GameContext, e: Entity, p: Projectil
   const spec = p.skill!;
   if (!world.isAlive(p.owner)) return true;
   const compiled = skillOf(world.get(p.owner, SkillUser), spec.skillId);
+  // Shots that reach an explosive barrel set it off and stop.
+  if (p.team === 'player' && hitDestructibles(world, tr.x, tr.z, p.radius) > 0 && spec.pierce <= 0) return true;
   for (const target of livingInCircle(world, ctx, tr.x, tr.z, p.radius, opposingTeam(p.team))) {
     if (spec.hit.includes(target)) continue;
     spec.hit.push(target);
