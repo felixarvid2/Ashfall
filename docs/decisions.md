@@ -59,3 +59,7 @@ keeps queries cheap with 100+ enemies. Rapier stays an option if dungeons need m
 ### 2026-10-02 — Starter numbers
 Bastion: 220 life, 60 armor, 14 weapon damage, 20 Strength. Enemies 30–70 life, 12–14 damage.
 First pass only; tune after playtesting.
+
+### 2026-10-02 — Meshy budget prompt threshold: 800 credits
+The owner raised the confirmation threshold from the brief's 200 to **800 credits** per batch.
+Stored as `DEFAULT_BUDGET_CREDITS` in `scripts/meshy/config.ts`; the design brief was updated to match.

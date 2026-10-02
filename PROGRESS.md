@@ -93,7 +93,8 @@ Shift + left-click to attack in place.
 
 ## Next steps
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
-- Phase 2 – Meshy pipeline: read current docs.meshy.ai, manifest-driven generation with budget prompts and
-  `--dry-run`, gltf-transform post-processing, `/asset-viewer`, then real models for Bastion, the 3 enemies
+- Phase 2 – Meshy pipeline: read current docs.meshy.ai, manifest-driven generation that asks before any batch
+  over **800 credits** (`scripts/meshy/config.ts`, override with `--budget`) and has `--dry-run`, gltf-transform post-processing, `/asset-viewer`, then real models for Bastion, the 3 enemies
   and a Cinder Flats kit; bloom/vignette post-processing. Needs a Meshy API key in `ashfall/.env`
-  (or as the `MESHY_API_KEY` environment variable).
+  (or as the `MESHY_API_KEY` environment variable — the owner has added it to the cloud environment settings;
+  it is picked up by new sessions).

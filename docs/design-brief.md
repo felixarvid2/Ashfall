@@ -222,7 +222,7 @@ Bygg skripten i `scripts/meshy/`, som körs med Node:
 2. **Generering:** Ett skript skickar uppgifter för alla assets med status `planned`, pollar tills de är klara (med backoff och respekt för rate limits), och laddar ner GLB-filer och texturer till `assets/source/`.
 3. **Cache och idempotens:** Om en asset redan har genererats ska den aldrig genereras igen, om inte kommandot körs med `--force`. Spara alla uppgifts-id så att inget går förlorat om skriptet kraschar.
 4. **Två steg för kostnadskontroll:** Generera först en förhandsvisning (billigare). Förfina med texturer bara för assets som godkänts.
-5. **Budget:** Skriptet ska visa uppskattad kreditkostnad och **fråga mig innan det skickar en batch** som kostar mer än en gräns jag sätter (standard 200 krediter). Det ska också finnas ett `--dry-run`-läge.
+5. **Budget:** Skriptet ska visa uppskattad kreditkostnad och **fråga mig innan det skickar en batch** som kostar mer än en gräns jag sätter (standard 800 krediter). Det ska också finnas ett `--dry-run`-läge.
 6. **Efterbehandling** med `gltf-transform`:
    - Förenkla geometrin till mål-polygonantalet (Meshy-modeller är ofta för tunga för ett spel med många fiender).
    - Skapa LOD-nivåer.
