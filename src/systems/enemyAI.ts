@@ -9,10 +9,11 @@ import {
   Dead,
   EnemyAI,
   Faction,
+  Health,
   Mover,
-  PlayerControlled,
   Projectile,
   StatusEffects,
+  Taunt,
   Transform,
   makeTransform,
   type EnemyAI as EnemyAIData,
@@ -22,7 +23,7 @@ import type { Entity, World } from '../core/ecs';
 import { CombatStats } from '../core/components';
 import { enemyDef } from '../data/db';
 import type { EnemyDef } from '../data/schemas';
-import { applyStatus, dealHit, isAlive, conditionsOf } from './combat';
+import { applyStatus, dealHit, hasStatus, conditionsOf } from './combat';
 import { computeOutgoing } from './damage';
 import { angleDelta } from './movement';
 import { livingInCircle } from './targeting';
@@ -30,10 +31,41 @@ import { livingInCircle } from './targeting';
 const ALERT_RADIUS = 9;
 const WANDER_SPEED = 0.35;
 
+interface Candidate {
+  e: Entity;
+  tr: Transform;
+  /** Taunt radius (decoys), 0 for normal targets. */
+  taunt: number;
+}
+
+/** Living, visible player-team entities enemies may attack (player, decoys, minions). */
+function targetCandidates(world: World): Candidate[] {
+  const out: Candidate[] = [];
+  for (const e of world.query(Faction, Health, Transform)) {
+    if (world.req(e, Faction).team !== 'player' || world.has(e, Dead)) continue;
+    if (hasStatus(world, e, 'stealth')) continue;
+    out.push({ e, tr: world.req(e, Transform), taunt: world.get(e, Taunt)?.radius ?? 0 });
+  }
+  return out;
+}
+
+/** A taunting decoy in range wins; otherwise the nearest candidate. */
+export function chooseTarget(candidates: readonly Candidate[], x: number, z: number): Candidate | null {
+  let best: Candidate | null = null;
+  let bestScore = Infinity;
+  for (const c of candidates) {
+    const d = Math.hypot(c.tr.x - x, c.tr.z - z);
+    const score = c.taunt > 0 && d <= c.taunt ? d - 1000 : d;
+    if (score < bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  return best;
+}
+
 export function enemyAISystem(world: World, dt: number, ctx: GameContext): void {
-  const player = world.first(PlayerControlled, Transform);
-  const playerAlive = player !== undefined && isAlive(world, player);
-  const ptr = player !== undefined ? world.req(player, Transform) : null;
+  const candidates = targetCandidates(world);
 
   for (const e of world.query(EnemyAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
@@ -47,10 +79,14 @@ export function enemyAISystem(world: World, dt: number, ctx: GameContext): void 
 
     if (!(world.get(e, StatusEffects)?.canAct ?? true)) continue;
 
-    if (!playerAlive || !ptr || player === undefined) {
+    const target = chooseTarget(candidates, tr.x, tr.z);
+    if (!target) {
+      // Nobody visible (player stealthed or dead): drop the attack and wait.
       ai.state = 'idle';
       continue;
     }
+    const player = target.e;
+    const ptr = target.tr;
     const dx = ptr.x - tr.x;
     const dz = ptr.z - tr.z;
     const dist = Math.hypot(dx, dz);

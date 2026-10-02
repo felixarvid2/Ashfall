@@ -30,7 +30,7 @@ import { PUBLIC_ASSETS_DIR, loadManifest, saveManifest, selectAssets, sourcePath
 import { applyReview } from './actions';
 import { contactSheet } from './contactSheet';
 import { optimizeAssets } from './optimize';
-import { buildConceptPrompt, buildIconPrompt, isSkillIcon, buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
+import { buildConceptPrompt, buildIconPrompt, isPortrait, isSkillIcon, buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
 import { CONCEPT_IMAGE_MODEL, ICON_IMAGE_MODEL } from './costs';
 import sharp from 'sharp';
 import { mkdirSync, statSync } from 'node:fs';
@@ -224,7 +224,7 @@ async function runIcon(client: MeshyClient, manifest: AssetManifest, entry: Asse
     const inset = Math.round(Math.min(width, height) * SKILL_ICON_INSET);
     await img
       .extract({ left: inset, top: inset, width: width - inset * 2, height: height - inset * 2 })
-      .resize(128, 128, { fit: 'cover' })
+      .resize(isPortrait(entry) ? 320 : 128, isPortrait(entry) ? 320 : 128, { fit: 'cover' })
       .webp({ quality: 86 })
       .toFile(out);
   }

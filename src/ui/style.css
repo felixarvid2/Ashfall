@@ -28,7 +28,7 @@ html, body {
 /* Overlays never block the canvas; only interactive panels opt back in. */
 #ui * { pointer-events: none; }
 #ui .debug-panel, #ui .debug-panel *, #ui .slots, #ui .slots *, #ui .death-screen,
-#ui .panel, #ui .panel *, #ui .loot-label:not(.gold) { pointer-events: auto; }
+#ui .panel, #ui .panel *, #ui .loot-label:not(.gold), #ui .char-select, #ui .char-select * { pointer-events: auto; }
 
 
 .hud-title {
@@ -205,6 +205,8 @@ html, body {
 }
 .orb-life .orb-fill { background: radial-gradient(circle at 50% 80%, #c22a1f, #5a0c08); }
 .orb-heat .orb-fill { background: radial-gradient(circle at 50% 80%, #ffae3a, #8a3a08); }
+.orb-focus .orb-fill { background: radial-gradient(circle at 50% 80%, #6fe0ff, #0a4a6a); }
+.orb-biomass .orb-fill { background: radial-gradient(circle at 50% 80%, #8aff6a, #1f5a10); }
 .orb-shield { background: rgba(159, 216, 255, 0.35); border-top: 2px solid rgba(200, 235, 255, 0.8); }
 .orb-glass {
   position: absolute;
@@ -497,3 +499,56 @@ html, body {
 .tree-node-name { color: var(--ui-text); line-height: 1.15; }
 .tree-node-rank { color: #e8c86a; margin-top: 2px; }
 .slot-icon { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---- Character select -------------------------------------------------------------- */
+.char-select {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6vh 16px 16px;
+  overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 30%, #2a1a10 0%, #0d0a08 60%, #050403 100%);
+  color: var(--ui-text);
+}
+.char-select h1 { font-size: 3em; letter-spacing: 0.4em; margin: 0; color: #e8c8a0; text-shadow: 0 0 24px rgba(255, 120, 40, 0.4); }
+.char-select-sub { color: var(--ui-muted); letter-spacing: 0.2em; margin-bottom: 4vh; text-transform: uppercase; font-size: 0.85em; }
+.char-select h2 { font-weight: normal; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ui-accent); font-size: 1.1em; text-align: center; }
+.char-select-body { width: min(900px, 100%); }
+.char-slots, .char-classes { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.char-slot, .char-class {
+  position: relative;
+  width: 220px;
+  min-height: 280px;
+  border: 1px solid var(--ui-border);
+  background: rgba(20, 16, 12, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.char-slot:hover, .char-class:not(.locked):hover { border-color: var(--ui-accent); transform: translateY(-2px); }
+.char-class.selected { border-color: var(--ui-accent); box-shadow: 0 0 18px rgba(255, 140, 50, 0.35); }
+.char-class.locked { opacity: 0.45; cursor: default; }
+.char-slot.empty { justify-content: center; border-style: dashed; }
+.char-slot-plus { font-size: 3em; color: var(--ui-muted); }
+.char-portrait { width: 100%; aspect-ratio: 1; object-fit: cover; margin-bottom: 10px; border: 1px solid #2a2420; }
+.char-portrait.placeholder { display: flex; align-items: center; justify-content: center; font-size: 3em; background: #1a1612; color: var(--ui-muted); }
+.char-slot-name { font-size: 1.15em; letter-spacing: 0.08em; }
+.char-slot-info { color: var(--ui-muted); font-size: 0.85em; margin-top: 4px; }
+.char-slot-delete { position: absolute; top: 6px; right: 6px; background: none; border: none; color: var(--ui-muted); cursor: pointer; font-size: 1em; }
+.char-slot-delete:hover { color: #ff5a4a; }
+.char-class-details { max-width: 640px; margin: 20px auto 0; text-align: center; line-height: 1.5; }
+.char-class-title { font-size: 1.4em; letter-spacing: 0.15em; color: #e8c8a0; }
+.char-class-tagline { color: var(--ui-accent); margin-bottom: 6px; }
+.char-create-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+.char-name-input { font: inherit; padding: 8px 12px; background: #15120f; color: var(--ui-text); border: 1px solid var(--ui-border); width: 220px; }
+.char-create, .char-back { font: inherit; padding: 8px 18px; cursor: pointer; border: 1px solid var(--ui-border); background: #24201c; color: var(--ui-text); letter-spacing: 0.1em; }
+.char-create { background: #6a3a14; border-color: #c87a3a; color: #fff; }
+.char-create:hover { background: #8a4a1a; }

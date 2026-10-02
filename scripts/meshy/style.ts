@@ -45,11 +45,22 @@ export function buildConceptPrompt(entry: AssetEntry): string {
 
 /** Skill icons are full-bleed painted emblems; item icons are a single object on transparency. */
 export function isSkillIcon(entry: AssetEntry): boolean {
-  return entry.id.startsWith('icon.skill_');
+  return entry.id.startsWith('icon.skill_') || isPortrait(entry);
+}
+
+/** Class portraits for the character select screen (also full-bleed). */
+export function isPortrait(entry: AssetEntry): boolean {
+  return entry.id.startsWith('icon.portrait_');
 }
 
 /** Inventory icon prompt: one object, readable at 64 px, consistent painted style. */
 export function buildIconPrompt(entry: AssetEntry): string {
+  if (isPortrait(entry)) {
+    return clip(
+      `dark sci-fi character portrait, head and shoulders, ${entry.prompt}, painted digital art, dramatic rim light, ` +
+        `smoky dark background, gritty worn materials, muted colors with one strong accent glow, no text, no border`,
+    );
+  }
   if (isSkillIcon(entry)) {
     return clip(
       `square game ability icon: ${entry.prompt}, bold centered silhouette filling the frame, painted digital art, ` +

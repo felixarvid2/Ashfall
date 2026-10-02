@@ -8,6 +8,8 @@ import type { AspectDefSchema } from './schemas';
 type Aspect = z.input<typeof AspectDefSchema>;
 const B = ['bastion'];
 const S = (skill: string) => `bastion.${skill}`;
+const SP = ['spectre'];
+const X = (skill: string) => `spectre.${skill}`;
 
 export const ASPECTS: Aspect[] = [
   { id: 'fissure', classes: B, types: ['weapon', 'gloves', 'amulet', 'ring'], min: 0.25, max: 0.45, scaling: 'sqrt',
@@ -41,6 +43,25 @@ export const ASPECTS: Aspect[] = [
     effects: [{ kind: 'skillMod', skill: S('orbital_strike'), mods: [{ op: 'mul', field: 'cooldown', value: '-$' }] }] },
   { id: 'cinder_core', classes: B, types: ['weapon', 'ring'], min: 6, max: 12, scaling: 'none', display: 'flat',
     effects: [{ kind: 'skillMod', skill: S('furnace_cleave'), mods: [{ op: 'add', field: 'resourceCost', value: '-$' }] }] },
+  // ---- Spectre
+  { id: 'ricochet', classes: SP, types: ['weapon', 'gloves', 'ring'], min: 1, max: 2, scaling: 'none', display: 'flat',
+    effects: [{ kind: 'skillMod', skill: X('quick_shot'), mods: [{ op: 'add', field: 'pierce', value: '$' }] }] },
+  { id: 'marksman', classes: SP, types: ['weapon', 'amulet', 'gloves'], min: 0.2, max: 0.4, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: X('piercing_shot'), mods: [{ op: 'mul', field: 'coefficient', value: '$' }] }] },
+  { id: 'bullet_storm', classes: SP, types: ['weapon', 'gloves', 'amulet'], min: 1, max: 3, scaling: 'none', display: 'flat',
+    effects: [{ kind: 'skillMod', skill: X('pistol_barrage'), mods: [{ op: 'add', field: 'count', value: '$' }] }] },
+  { id: 'trapper', classes: SP, types: ['boots', 'amulet', 'pants'], min: 1, max: 2, scaling: 'none', display: 'flat',
+    effects: [{ kind: 'skillMod', skill: X('minefield'), mods: [{ op: 'add', field: 'count', value: '$' }] }] },
+  { id: 'demolition', classes: SP, types: ['gloves', 'amulet', 'ring'], min: 0.15, max: 0.3, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: X('cluster_grenade'), mods: [{ op: 'mul', field: 'radius', value: '$' }, { op: 'mul', field: 'coefficient', value: '$' }] }] },
+  { id: 'phantom', classes: SP, types: ['boots', 'amulet'], min: 0.2, max: 0.35, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: X('phase_shift'), mods: [{ op: 'mul', field: 'cooldown', value: '-$' }] }] },
+  { id: 'ambusher', classes: SP, types: ['weapon', 'ring', 'chest'], min: 0.4, max: 0.7, scaling: 'sqrt',
+    effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'stealthed' }] },
+  { id: 'predator', classes: SP, types: ['weapon', 'ring', 'amulet', 'helm'], min: 0.1, max: 0.2, scaling: 'sqrt',
+    effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'marked' }] },
+  { id: 'blade_dancer', classes: SP, types: ['weapon', 'offHand', 'gloves'], min: 0.2, max: 0.4, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: X('vibro_slash'), mods: [{ op: 'mul', field: 'coefficient', value: '$' }, { op: 'mul', field: 'arcDeg', value: '$' }] }] },
   // Generic aspects (any class)
   { id: 'lifeblood', types: ['ring', 'amulet', 'gloves'], min: 6, max: 12, scaling: 'linear', display: 'flat',
     effects: [{ kind: 'stat', stat: 'lifeOnKill', value: '$' }] },

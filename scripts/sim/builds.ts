@@ -2,6 +2,7 @@
 import type { Build } from './sim';
 
 const skill = (id: string, rank = 1) => ({ [`n.${id}`]: rank });
+const sp = skill;
 
 export const BUILDS: Build[] = [
   {
@@ -131,5 +132,57 @@ export const BUILDS: Build[] = [
       { skill: 'bastion.energy_shield' },
       { skill: 'bastion.heat_vent', minHeat: 101 },
     ],
+  },
+  // ---- Spectre
+  {
+    name: 'Spectre L1 starter (Quick Shot)',
+    classId: 'spectre',
+    distance: 7,
+    level: 1,
+    nodes: {},
+    rotation: [{ skill: 'spectre.quick_shot' }],
+  },
+  {
+    name: 'Spectre L10 sniper (Piercing Shot)',
+    classId: 'spectre',
+    distance: 7,
+    level: 10,
+    nodes: {
+      ...sp('quick_shot', 2),
+      'e.quick_shot': 1,
+      'm.quick_shot.rapid': 1,
+      ...sp('piercing_shot', 3),
+      'p.steady_aim': 2,
+    },
+    rotation: [{ skill: 'spectre.piercing_shot' }, { skill: 'spectre.quick_shot' }],
+  },
+  {
+    name: 'Spectre L10 trapper (mines + barrage)',
+    classId: 'spectre',
+    distance: 3.5,
+    level: 10,
+    nodes: { ...sp('quick_shot'), ...sp('pistol_barrage', 3), ...sp('holo_decoy'), ...sp('minefield', 2), 'p.marksmanship': 1 },
+    rotation: [{ skill: 'spectre.minefield' }, { skill: 'spectre.pistol_barrage' }, { skill: 'spectre.quick_shot' }],
+  },
+  {
+    name: 'Spectre L10 blades (Vibro Slash + Phase)',
+    classId: 'spectre',
+    level: 10,
+    nodes: {
+      ...sp('vibro_slash', 3),
+      'e.vibro_slash': 1,
+      'm.vibro_slash.flurry': 1,
+      ...sp('pistol_barrage', 2),
+      ...sp('smoke_cloak'),
+      'p.marksmanship': 1,
+    },
+    rotation: [{ skill: 'spectre.smoke_cloak' }, { skill: 'spectre.pistol_barrage', minHeat: 60 }, { skill: 'spectre.vibro_slash' }],
+  },
+  // ---- Bastion at level 10 for comparison
+  {
+    name: 'Bastion L10 Strike + Shock',
+    level: 10,
+    nodes: { ...skill('hydraulic_strike', 3), 'e.hydraulic_strike': 1, ...skill('seismic_shock', 3), 'p.hydraulic_power': 2 },
+    rotation: [{ skill: 'bastion.seismic_shock' }, { skill: 'bastion.hydraulic_strike' }],
   },
 ];

@@ -10,4 +10,7 @@ export const STATUSES: Record<StatusId, z.input<typeof StatusDefSchema>> = {
   stunned: { kind: 'disable', color: '#ffe066' },
   vulnerable: { kind: 'vulnerable', damageTakenMultiplier: 1.2, color: '#c77dff' },
   barrier: { kind: 'barrier', color: '#9fd8ff' },
+  marked: { kind: 'mark', damageTakenMultiplier: 1.25, refund: 15, color: '#ff4a6a' },
+  stealth: { kind: 'buff', color: '#5a6a80' },
+  evasive: { kind: 'buff', color: '#c9c2b6' },
 };

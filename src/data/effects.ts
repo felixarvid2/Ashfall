@@ -26,6 +26,17 @@ export const SKILL_FIELDS = [
   'barrier',
   'heal',
   'maxRange',
+  // Projectiles, grenades, traps, decoys
+  'count',
+  'pierce',
+  'speed',
+  'spreadDeg',
+  'explodeRadius',
+  'duration',
+  'triggerRadius',
+  'tauntRadius',
+  'lifeFraction',
+  'burstCoefficient',
 ] as const;
 export const SkillFieldSchema = z.enum(SKILL_FIELDS);
 export type SkillField = z.infer<typeof SkillFieldSchema>;

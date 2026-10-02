@@ -78,4 +78,42 @@ export const UNIQUES: Unique[] = [
       { kind: 'overheat', graceDelta: 0, damageMul: 0 },
     ],
   },
+  {
+    // Piercing Shot detonates on every enemy it passes through.
+    id: 'widowmaker',
+    base: 'marksman_rifle',
+    rarity: 'unique',
+    classes: ['spectre'],
+    affixes: [
+      { stat: 'critDamage', min: 0.2, max: 0.3, scaling: 'sqrt' },
+      { stat: 'dexterity', min: 10, max: 15, scaling: 'linear' },
+      { stat: 'damageVsElite', min: 0.15, max: 0.22, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'spectre.piercing_shot',
+        mods: [{ op: 'set', field: 'explodeRadius', value: 1.8 }, { op: 'mul', field: 'coefficient', value: -0.3 }],
+      },
+    ],
+  },
+  {
+    // Quick Shot fires a three-round spread.
+    id: 'echo_holsters',
+    base: 'twin_pistols',
+    rarity: 'unique',
+    classes: ['spectre'],
+    affixes: [
+      { stat: 'attackSpeed', min: 0.08, max: 0.12, scaling: 'none' },
+      { stat: 'critChance', min: 0.04, max: 0.06, scaling: 'none' },
+      { stat: 'resourceGen', min: 0.08, max: 0.12, scaling: 'none' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'spectre.quick_shot',
+        mods: [{ op: 'set', field: 'count', value: 3 }, { op: 'set', field: 'spreadDeg', value: 24 }, { op: 'mul', field: 'coefficient', value: -0.4 }],
+      },
+    ],
+  },
 ];

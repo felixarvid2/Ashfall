@@ -19,6 +19,7 @@ import {
   Resource,
   SkillUser,
   StatusEffects,
+  Summon,
   Transform,
   makeTransform,
   type StatusInstance,
@@ -43,7 +44,7 @@ export function conditionsOf(world: World, e: Entity, attackRange: 'melee' | 'ra
   const effects = world.get(e, StatusEffects);
   if (effects) {
     for (const s of effects.list) {
-      if (s.id === 'vulnerable' || s.id === 'burning' || s.id === 'poisoned' || s.id === 'chilled') set.add(s.id);
+      if (s.id === 'vulnerable' || s.id === 'burning' || s.id === 'poisoned' || s.id === 'chilled' || s.id === 'marked') set.add(s.id);
       if (s.id === 'stunned' || s.id === 'frozen') set.add('stunned');
     }
   }
@@ -58,19 +59,23 @@ export function attackerConditions(world: World, e: Entity): Condition[] {
   const r = world.get(e, Resource);
   if (r && r.current >= r.max * 0.7) out.push('highResource');
   if (hasStatus(world, e, 'barrier')) out.push('hasBarrier');
+  if (hasStatus(world, e, 'evasive')) out.push('evasive');
+  if (hasStatus(world, e, 'stealth')) out.push('stealthed');
   return out;
 }
 
 export function targetState(world: World, e: Entity, attackRange: 'melee' | 'ranged' | null): TargetState {
   const stats = world.get(e, CombatStats);
   const vulnDef = STATUS_DEFS.vulnerable;
+  const markDef = STATUS_DEFS.marked;
+  const marked = markDef.kind === 'mark' && hasStatus(world, e, 'marked') ? markDef.damageTakenMultiplier : 1;
   return {
     armor: stats?.armor ?? 0,
     resist: stats?.resist ?? {},
     vulnerable: hasStatus(world, e, 'vulnerable'),
     vulnerableMultiplier: vulnDef.kind === 'vulnerable' ? vulnDef.damageTakenMultiplier : 1.2,
     conditions: conditionsOf(world, e, attackRange),
-    damageTakenMultiplier: 1 - (stats?.damageReduction ?? 0),
+    damageTakenMultiplier: (1 - (stats?.damageReduction ?? 0)) * marked,
   };
 }
 
@@ -96,8 +101,11 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   const state = targetState(world, target, hit.range);
   const conditions = new Set(state.conditions);
   for (const c of attackerConditions(world, attacker)) conditions.add(c);
+  // Attacking from stealth is a guaranteed crit and reveals the attacker.
+  const stealthed = hasStatus(world, attacker, 'stealth');
   const input = {
     ...stats,
+    ...(stealthed ? { critChance: 1 } : {}),
     coefficient: hit.coefficient,
     additive: hit.bonuses ? [...stats.additive, ...hit.bonuses.additive] : stats.additive,
     multiplicative: hit.bonuses ? [...stats.multiplicative, ...hit.bonuses.multiplicative] : stats.multiplicative,
@@ -110,7 +118,10 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
     sourceTeam: team,
   });
   if (dealt === null) return null;
+  if (stealthed) removeStatuses(world, attacker, (st) => st.id === 'stealth');
   markInCombat(world, attacker);
+  const attackerResource = world.get(attacker, Resource);
+  if (result.crit && attackerResource && attackerResource.config.onCrit > 0) gainResource(attackerResource, attackerResource.config.onCrit);
   if (hit.knockback !== 0 && isAlive(world, target)) applyKnockback(world, target, hit.fromX, hit.fromZ, hit.knockback);
   for (const apply of hit.applies) applyStatus(world, ctx, target, apply, { team, level: stats.level, attacker });
   return dealt;
@@ -129,7 +140,12 @@ export interface DamageOptions {
  */
 export function applyDamage(world: World, ctx: GameContext, target: Entity, amount: number, opts: DamageOptions): number | null {
   if (!isAlive(world, target)) return null;
-  if (world.has(target, Invulnerable)) return null;
+  if (world.has(target, Invulnerable)) {
+    // Avoiding a hit by dodging feeds Focus.
+    const r = world.get(target, Resource);
+    if (r && !opts.dot && r.config.onAvoid > 0 && opts.sourceTeam !== world.get(target, Faction)?.team) gainResource(r, r.config.onAvoid);
+    return null;
+  }
   const health = world.req(target, Health);
   const tr = world.get(target, Transform);
   const isPlayer = world.has(target, PlayerControlled);
@@ -317,7 +333,9 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
   if (world.has(target, Dead)) return;
   const isPlayer = world.has(target, PlayerControlled);
   const tr = world.get(target, Transform);
-  world.add(target, Dead, { elapsed: 0, removeAfter: isPlayer ? Infinity : 2.4, fallDir });
+  const wasMarked = hasStatus(world, target, 'marked');
+  const isSummon = world.has(target, Summon);
+  world.add(target, Dead, { elapsed: 0, removeAfter: isPlayer ? Infinity : isSummon ? 0.6 : 2.4, fallDir });
   const mover = world.get(target, Mover);
   if (mover) {
     mover.vx = 0;
@@ -353,8 +371,24 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
       });
     }
     ctx.stats.kills++;
+    onEnemyDeath(world, ctx, target, wasMarked);
   }
   ctx.events.push({ type: 'death', target, x: tr?.x ?? 0, z: tr?.z ?? 0, isPlayer });
+}
+
+/** Resource rules that trigger when an enemy dies: mark refunds and nearby-death gains (Biomass). */
+function onEnemyDeath(world: World, ctx: GameContext, target: Entity, wasMarked: boolean): void {
+  const tr = world.get(target, Transform);
+  const markDef = STATUS_DEFS.marked;
+  for (const e of world.query(PlayerControlled, Resource)) {
+    if (world.has(e, Dead)) continue;
+    const r = world.req(e, Resource);
+    if (wasMarked && markDef.kind === 'mark') gainResource(r, markDef.refund);
+    const near = r.config.onNearbyDeath;
+    const ptr = world.get(e, Transform);
+    if (near && tr && ptr && Math.hypot(tr.x - ptr.x, tr.z - ptr.z) <= near.radius) gainResource(r, near.amount);
+  }
+  void ctx;
 }
 
 /** Resolve a mitigated DoT tick for a target (used by the status system). */

@@ -4,7 +4,7 @@
  * bar editor and a full respec for gold.
  */
 import { t } from '../data/i18n';
-import { skill } from '../data/db';
+import { classDef, skill } from '../data/db';
 import type { SkillTree, TreeNode } from '../data/skillTree/schema';
 import { BRANCHES } from '../data/skillTree/schema';
 import type { CompiledSkill } from '../systems/skillCompile';
@@ -206,7 +206,7 @@ export class SkillTreePanel {
       const e = def.effect as { coefficient?: number; landing?: { coefficient: number } };
       const coef = e.coefficient ?? e.landing?.coefficient;
       if (coef !== undefined) add('item-tip-stats', t('tree.damage', { pct: Math.round(coef * 100) }));
-      if (def.resourceCost > 0) add('muted', t('hud.cost', { amount: Math.round(def.resourceCost), resource: t('resources.heat') }));
+      if (def.resourceCost > 0) add('muted', t('hud.cost', { amount: Math.round(def.resourceCost), resource: t(`resources.${classDef(def.classId).resource.id}`) }));
       if (def.cooldown > 0) add('muted', t('hud.cooldown', { seconds: def.cooldown.toFixed(1) }));
       if (rank < (n.maxRank ?? 5)) add('muted', t('tree.perRank'));
     }

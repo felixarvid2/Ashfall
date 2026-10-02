@@ -134,3 +134,25 @@ frame) so they read as abilities, not items. 10 icons, 30 credits.
 ### 2026-10-02 — Balance simulator uses the real systems
 `scripts/sim` runs the actual skill/status/hazard/resource systems headless against a dummy instead of a
 separate spreadsheet model, so it can't drift from the game.
+
+### 2026-10-02 — Phase 4 plan approved: 4a framework + Spectre, 4b Xenomant, 4c balance
+Owner approved: three save slots (one character each), Spectre first, Xenomant minions reuse the killed
+enemy's own model with a Lumen glow (no extra credits), skills are not locked to weapon types.
+
+### 2026-10-02 — Enemies choose targets instead of always chasing the player
+`enemyAI` builds a candidate list once per tick (living, visible player-team entities). A decoy's taunt
+radius wins; otherwise the nearest target. Stealthed players are skipped. This also covers Xenomant
+minions in 4b without more AI code.
+
+### 2026-10-02 — Player projectiles compute damage on impact
+Enemy bolts keep their fire-time damage, but skill projectiles carry the skill id and call the normal
+hit path when they connect, so crits, conditions (Marked, Vulnerable), per-skill bonuses and statuses
+all work the same as for melee skills.
+
+### 2026-10-02 — Resource rules are class data
+Focus and Biomass are not separate systems: the class resource config gained `onCrit`, `onAvoid` and
+`onNearbyDeath`, next to Heat's `gainPerLifePercentLost` and `overheat`.
+
+### 2026-10-02 — Character select shown before the game loop starts
+The world is built behind the menu; choosing or creating a character replaces the placeholder player
+entity and starts the loop. "Character select" in the debug panel saves and reloads the page.

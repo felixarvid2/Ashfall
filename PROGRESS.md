@@ -4,8 +4,8 @@
 
 ## Current phase
 
-**Phase 3 – Loot and progression ✅ done** (3a: levels, items, loot, inventory · 3b: skill tree, aspects,
-uniques, mythic, balance simulator). Next: **Phase 4** (plan first, per the brief).
+**Phase 4 – All classes: 4a ✅ done** (class framework, character select, Spectre). Next: **4b** — Xenomant
+(Biomass, corpses, minions), then **4c** — balance all three classes to level 10.
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 
 ## Done
@@ -108,6 +108,24 @@ Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 - Debug "Drop loot" now also drops 2 legendaries, a unique and a mythic.
 - 158 unit tests.
 
+### Phase 4a – Character select and Spectre (see docs/classes.md)
+- **Character select**: 3 save slots, one character each (name, class, level), class picker with Meshy
+  portraits and a short pitch, delete with confirmation. Autosave every 60 s, on level-up and when the
+  tab closes. Save format v4 (character name + class); older saves become a Bastion in slot 1.
+- **Spectre** (Dexterity, **Focus**: regenerates on its own, +4 per crit, +10 per dodged hit):
+  10 skills — Quick Shot, Vibro Slash, Piercing Shot, Pistol Barrage, Holo Decoy, Smoke Cloak, Phase Shift,
+  Minefield, Cluster Grenade, Death Mark — full tree with enhancements, modifiers, passives and 3 key
+  passives (Deadeye, Saboteur, Ghost). 9 aspects, 2 uniques (Widowmaker, Echo Holsters), new base Twin Pistols.
+- **Class framework**: player projectiles (pierce, spread, explode), grenades with bomblets, mines,
+  blink, decoys that taunt, stealth (enemies lose you, next hit crits), Marked (more damage taken,
+  Focus refund on death), "evasive" window after dodges, resource rules per class in data.
+  Enemies now pick targets (player, decoys — later minions) and ignore stealthed players.
+- HUD resource orb and tooltips follow the class (Heat orange, Focus blue).
+- Assets (Meshy): rigged + animated Spectre (idle, run, shoot, slash, throw, hit, death), 10 Spectre skill
+  icons, Twin Pistols icon, 3 class portraits. **Credits used: 803 of 3100** (2297 left).
+- `npm run sim` now covers both classes (Spectre L1 26 DPS ≈ Bastion; L10 builds 118–166 vs Bastion 132).
+- 171 unit tests.
+
 ## How to run
 
 ```bash
@@ -116,7 +134,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests
 npm run build      # typecheck + production build into dist/
-npm run sim        # balance simulator (DPS of sample builds)
+npm run sim        # balance simulator (DPS of sample builds, both classes)
 ```
 
 Meshy pipeline (needs `MESHY_API_KEY` in `ashfall/.env`): `npm run meshy -- status`.
@@ -128,6 +146,18 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 **F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
+
+## What to test (Phase 4a)
+1. Reload the page: the character select appears. An old save shows up as a Bastion in slot 1.
+2. Create a **Spectre** in an empty slot. Shoot with LMB (Quick Shot) — Focus (blue orb) refills on its own
+   and faster on crits. Dodge through attacks to gain Focus.
+3. Level up (F3 → "+1 level") and try the skills: Piercing Shot through a line, Pistol Barrage up close,
+   Holo Decoy (enemies chase the hologram), Smoke Cloak (enemies lose you; next hit crits), Phase Shift,
+   Minefield, Cluster Grenade and Death Mark.
+4. Try three builds: sniper (Piercing Shot + Deadeye), trapper (Minefield/Grenade + Saboteur),
+   blades (Vibro Slash + Phase Shift + Ghost).
+5. F3 → "Character select" returns to the menu (progress is saved). Make a Bastion too and switch.
+6. **Tell me how Spectre feels compared to Bastion** — too fragile, too strong, fun?
 
 ## What to test (Phase 3b)
 1. Start a new character (F3 → delete save, reload): only Hydraulic Strike is on the bar.
@@ -182,7 +212,8 @@ Shift + left-click to attack in place.
 - Textures are WebP, not KTX2 (no `toktx` binary here) — see docs/decisions.md.
 - The drone was asked for "no rotors" but has small ones; acceptable for now.
 - The balance simulator's dummy doesn't fight back, so it only measures damage, not survivability.
-- Only Bastion has a tree; Spectre and Xenomant trees come with those classes.
+- Xenomant is shown as "Coming soon" on the class picker until Phase 4b.
+- Spectre's weapons are not visible in its hands (animations only); shots come from the body.
 - Raw Meshy downloads (`assets/source/**/*.glb`) are not in git; re-download within 3 days or regenerate.
 - Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
@@ -190,5 +221,6 @@ Shift + left-click to attack in place.
 ## Next steps
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
-- Your playtest feedback on Phase 3 (skill feel, loot frequency, item power) → tune data.
-- Phase 4 plan (see docs/design-brief.md) before any code.
+- Your playtest feedback on Phase 4a (Spectre feel, character select).
+- Phase 4b: Xenomant (Biomass, corpses, minion AI, DoT clouds, life steal, Wrath of Lumen), assets.
+- Phase 4c: level 1–10 balance pass for all three classes, 3 builds each in the simulator.

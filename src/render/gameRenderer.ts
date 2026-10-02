@@ -234,7 +234,7 @@ export class GameRenderer {
     if (fm && fm.height > 0) return { state: 'cast', loop: false, fit: fm.duration, token: fm };
     if (user?.cast) {
       const def = skill(user.cast.skillId);
-      const state = def.category === 'basic' ? 'attack' : 'cast';
+      const state = def.anim ?? (def.category === 'basic' ? 'attack' : 'cast');
       const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0);
       return { state, loop: false, fit: (def.castTime + def.recovery) / speed, token: user.cast };
     }
@@ -273,10 +273,26 @@ export class GameRenderer {
       this.flashes.set(e, flash);
     }
     const effects = world.get(e, StatusEffects);
-    const priority = ['burning', 'poisoned', 'chilled', 'frozen', 'vulnerable'] as const;
+    const priority = ['burning', 'poisoned', 'chilled', 'frozen', 'marked', 'vulnerable'] as const;
     const active = effects && !world.has(e, Dead) ? priority.find((id) => effects.list.some((s) => s.id === id)) : undefined;
     if (active) this.tint.set(STATUS_DEFS[active].color);
+    // Holograms (decoys) and stealthed characters are drawn see-through.
+    const hologram = world.get(e, Renderable)?.hologram ?? false;
+    const stealth = effects?.list.some((s) => s.id === 'stealth') ?? false;
+    const opacity = hologram ? 0.45 + 0.1 * Math.sin(this.time * 12) : stealth ? 0.3 : 1;
     for (const slot of slots) {
+      const see = opacity < 1;
+      if (slot.material.transparent !== see) {
+        slot.material.transparent = see;
+        slot.material.depthWrite = !see;
+        slot.material.needsUpdate = true;
+      }
+      slot.material.opacity = opacity;
+      if (hologram) {
+        slot.material.emissive.set('#3ab8ff');
+        slot.material.emissiveIntensity = 0.9;
+        continue;
+      }
       if (flash > 0) {
         slot.material.emissive.set('#ffffff');
         slot.material.emissiveIntensity = 1.2;

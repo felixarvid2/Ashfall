@@ -69,7 +69,8 @@
       "high": "High"
     },
     "addLevel": "+1 level",
-    "spawnLoot": "Drop loot (+legendary/unique)"
+    "spawnLoot": "Drop loot (+legendary/unique)",
+    "switchCharacter": "Character select"
   },
   "combat": {
     "notEnoughResource": "Not enough Heat",
@@ -117,6 +118,48 @@
         "name": "Orbital Strike",
         "desc": "Call down an orbital strike at the cursor. After a short warning it deals massive damage, stuns and makes enemies Vulnerable."
       }
+    },
+    "spectre": {
+      "quick_shot": {
+        "name": "Quick Shot",
+        "desc": "A fast shot at the cursor. Generates Focus."
+      },
+      "vibro_slash": {
+        "name": "Vibro Slash",
+        "desc": "A wide vibroblade slash that makes enemies Vulnerable. Generates Focus."
+      },
+      "piercing_shot": {
+        "name": "Piercing Shot",
+        "desc": "A heavy round that passes through every enemy in a line."
+      },
+      "pistol_barrage": {
+        "name": "Pistol Barrage",
+        "desc": "Fire a fan of five pistol rounds. Devastating up close."
+      },
+      "holo_decoy": {
+        "name": "Holo Decoy",
+        "desc": "Project a hologram that enemies nearby attack instead of you."
+      },
+      "smoke_cloak": {
+        "name": "Smoke Cloak",
+        "desc": "Vanish in smoke for 4 seconds: enemies lose track of you and your next hit is a guaranteed critical strike. Removes stuns and slows."
+      },
+      "phase_shift": {
+        "name": "Phase Shift",
+        "desc": "Blink to the cursor, briefly untouchable."
+      },
+      "minefield": {
+        "name": "Minefield",
+        "desc": "Throw three mines that arm after a moment and explode when enemies step close, stunning them."
+      },
+      "cluster_grenade": {
+        "name": "Cluster Grenade",
+        "desc": "Throw a grenade that explodes, sets enemies on fire and scatters bomblets."
+      },
+      "death_mark": {
+        "name": "Death Mark",
+        "desc": "Mark every enemy in a wide area for 10 seconds. Marked enemies take 25% more damage and refund 15 Focus when they die."
+      }
     }
   },
   "enemies": {
@@ -136,7 +179,10 @@
     "frozen": "Frozen",
     "stunned": "Stunned",
     "vulnerable": "Vulnerable",
-    "barrier": "Barrier"
+    "barrier": "Barrier",
+    "marked": "Marked",
+    "stealth": "Stealthed",
+    "evasive": "Evasive"
   },
   "items": {
     "bases": {
@@ -155,7 +201,8 @@
       "mag_boots": "Mag Boots",
       "signal_pendant": "Signal Pendant",
       "conduit_ring": "Conduit Ring",
-      "crystal": "Crystal"
+      "crystal": "Crystal",
+      "twin_pistols": "Twin Pistols"
     },
     "types": {
       "helm": "Helm",
@@ -356,6 +403,46 @@
       "orbital_strike": {
         "name": "Enhanced Uplink",
         "desc": "Orbital Strike cooldown −20%."
+      },
+      "quick_shot": {
+        "name": "Enhanced Shot",
+        "desc": "Quick Shot generates 3 more Focus."
+      },
+      "vibro_slash": {
+        "name": "Enhanced Slash",
+        "desc": "Vibro Slash arc +30%."
+      },
+      "piercing_shot": {
+        "name": "Enhanced Piercing",
+        "desc": "Piercing Shot costs 5 less Focus."
+      },
+      "pistol_barrage": {
+        "name": "Enhanced Barrage",
+        "desc": "Pistol Barrage fires 2 more rounds."
+      },
+      "holo_decoy": {
+        "name": "Enhanced Decoy",
+        "desc": "Holo Decoy lasts 2 seconds longer."
+      },
+      "smoke_cloak": {
+        "name": "Enhanced Cloak",
+        "desc": "Smoke Cloak cooldown −20%."
+      },
+      "phase_shift": {
+        "name": "Enhanced Phase",
+        "desc": "Phase Shift range +30%."
+      },
+      "minefield": {
+        "name": "Enhanced Minefield",
+        "desc": "Minefield places one more mine."
+      },
+      "cluster_grenade": {
+        "name": "Enhanced Grenade",
+        "desc": "Cluster Grenade radius +20%."
+      },
+      "death_mark": {
+        "name": "Enhanced Mark",
+        "desc": "Death Mark cooldown −20%."
       }
     },
     "m": {
@@ -458,6 +545,106 @@
           "name": "Saturation Barrage",
           "desc": "Orbital Strike radius +50%."
         }
+      },
+      "quick_shot": {
+        "rapid": {
+          "name": "Rapid Fire",
+          "desc": "Quick Shot aims 50% faster."
+        },
+        "ricochet": {
+          "name": "Ricochet",
+          "desc": "Quick Shot passes through 2 enemies."
+        }
+      },
+      "vibro_slash": {
+        "venom": {
+          "name": "Venom Edge",
+          "desc": "Vibro Slash poisons enemies."
+        },
+        "flurry": {
+          "name": "Flurry",
+          "desc": "Vibro Slash winds up 30% faster and deals +20% damage to Vulnerable enemies."
+        }
+      },
+      "piercing_shot": {
+        "deadshot": {
+          "name": "Deadshot",
+          "desc": "Piercing Shot deals +50% damage to Elites and +25% to Marked enemies."
+        },
+        "explosive": {
+          "name": "Explosive Round",
+          "desc": "Piercing Shot explodes on the first enemy it hits instead of piercing, dealing 10% more damage in an area."
+        }
+      },
+      "pistol_barrage": {
+        "focused": {
+          "name": "Focused Fire",
+          "desc": "Pistol Barrage spread −60% and range +40%."
+        },
+        "incendiary": {
+          "name": "Incendiary Rounds",
+          "desc": "Pistol Barrage sets enemies on fire."
+        }
+      },
+      "holo_decoy": {
+        "volatile": {
+          "name": "Volatile Hologram",
+          "desc": "Holo Decoy explodes when it ends or is destroyed."
+        },
+        "hardlight": {
+          "name": "Hardlight",
+          "desc": "Holo Decoy has twice the life and taunts from 50% farther away."
+        }
+      },
+      "smoke_cloak": {
+        "ambush": {
+          "name": "Ambush",
+          "desc": "Your attacks from stealth deal x60% damage."
+        },
+        "regroup": {
+          "name": "Regroup",
+          "desc": "Smoke Cloak also heals 15% of your life."
+        }
+      },
+      "phase_shift": {
+        "slipstream": {
+          "name": "Slipstream",
+          "desc": "Phase Shift cooldown −35%."
+        },
+        "vanish": {
+          "name": "Vanish",
+          "desc": "Phase Shift makes you stealthed for 1.5 seconds."
+        }
+      },
+      "minefield": {
+        "cluster": {
+          "name": "Cluster Charges",
+          "desc": "Mine explosion radius +40%."
+        },
+        "shrapnel": {
+          "name": "Shrapnel",
+          "desc": "Mines make enemies Vulnerable for 4 seconds."
+        }
+      },
+      "cluster_grenade": {
+        "napalm": {
+          "name": "Napalm",
+          "desc": "Cluster Grenade leaves burning ground for 4 seconds."
+        },
+        "concussion": {
+          "name": "Concussion",
+          "desc": "Cluster Grenade stuns for 1.2 seconds."
+        }
+      },
+      "death_mark": {
+        "wide_net": {
+          "name": "Wide Net",
+          "desc": "Death Mark radius +50%."
+        },
+        "kill_order": {
+          "name": "Kill Order",
+          "desc": "Death Mark deals triple damage, and you deal x10% damage to Marked enemies."
+        }
       }
     },
     "p": {
@@ -504,6 +691,50 @@
       "killing_blow": {
         "name": "Killing Blow",
         "desc": "+8% damage to Elites per rank."
+      },
+      "steady_aim": {
+        "name": "Steady Aim",
+        "desc": "+2% critical strike chance per rank."
+      },
+      "marksmanship": {
+        "name": "Marksmanship",
+        "desc": "+4% damage per rank."
+      },
+      "precision": {
+        "name": "Precision",
+        "desc": "+10% critical strike damage per rank."
+      },
+      "exploit_weakness": {
+        "name": "Exploit Weakness",
+        "desc": "+6% damage to Vulnerable enemies per rank."
+      },
+      "kevlar_weave": {
+        "name": "Kevlar Weave",
+        "desc": "+15 armor per rank."
+      },
+      "survival_instinct": {
+        "name": "Survival Instinct",
+        "desc": "+12 maximum life per rank."
+      },
+      "quick_hands": {
+        "name": "Quick Hands",
+        "desc": "+3% cooldown reduction per rank."
+      },
+      "light_step": {
+        "name": "Light Step",
+        "desc": "+3% movement speed per rank."
+      },
+      "overwatch": {
+        "name": "Overwatch",
+        "desc": "+8% damage to Elites per rank."
+      },
+      "adrenaline": {
+        "name": "Adrenaline",
+        "desc": "+5% resource generation per rank."
+      },
+      "hunters_focus": {
+        "name": "Hunter's Focus",
+        "desc": "+2% critical strike chance per rank."
       }
     },
     "k": {
@@ -518,6 +749,18 @@
       "shockwave_engine": {
         "name": "Shockwave Engine",
         "desc": "Vulnerable enemies take x30% damage from you."
+      },
+      "deadeye": {
+        "name": "Deadeye",
+        "desc": "+10% critical strike chance, and your ranged attacks deal x20% damage."
+      },
+      "saboteur": {
+        "name": "Saboteur",
+        "desc": "Minefield and Cluster Grenade deal x40% damage. +10% cooldown reduction."
+      },
+      "ghost": {
+        "name": "Ghost",
+        "desc": "For 2.5 seconds after a dodge or Phase Shift you deal x35% damage. +8% movement speed."
       }
     }
   },
@@ -585,6 +828,42 @@
     "unbroken": {
       "name": "Unbroken",
       "desc": "+{value} damage reduction."
+    },
+    "ricochet": {
+      "name": "Ricocheting",
+      "desc": "Quick Shot passes through {value} more enemies."
+    },
+    "marksman": {
+      "name": "Marksman's",
+      "desc": "Piercing Shot deals {value} more damage."
+    },
+    "bullet_storm": {
+      "name": "Storming",
+      "desc": "Pistol Barrage fires {value} more rounds."
+    },
+    "trapper": {
+      "name": "Trapper's",
+      "desc": "Minefield places {value} more mines."
+    },
+    "demolition": {
+      "name": "Demolishing",
+      "desc": "Cluster Grenade has {value} larger radius and deals {value} more damage."
+    },
+    "phantom": {
+      "name": "Phantom",
+      "desc": "Phase Shift cooldown is {value} shorter."
+    },
+    "ambusher": {
+      "name": "Ambusher's",
+      "desc": "Your attacks from stealth deal x{value} damage."
+    },
+    "predator": {
+      "name": "Predator's",
+      "desc": "Deal x{value} damage to Marked enemies."
+    },
+    "blade_dancer": {
+      "name": "Dancing",
+      "desc": "Vibro Slash deals {value} more damage and has a {value} wider arc."
     }
   },
   "uniques": {
@@ -607,6 +886,43 @@
       "name": "Heart of Lumen",
       "effect": "Deal x35% damage. Overheating no longer damages you.",
       "flavor": "It beats. It is not yours."
+    },
+    "widowmaker": {
+      "name": "Widowmaker",
+      "effect": "Piercing Shot explodes on every enemy it passes through, but deals 30% less damage.",
+      "flavor": "Every bullet has a name. This one has a list."
+    },
+    "echo_holsters": {
+      "name": "Echo Holsters",
+      "effect": "Quick Shot fires three rounds in a spread, each dealing 40% less damage.",
+      "flavor": "Draw once. Hit thrice."
+    }
+  },
+  "select": {
+    "title": "Choose your character",
+    "new": "New character",
+    "corrupt": "Damaged save – create a new character",
+    "delete": "Delete character",
+    "deleteConfirm": "Delete {name} for good?",
+    "chooseClass": "Choose a class",
+    "namePlaceholder": "Name",
+    "create": "Begin",
+    "back": "Back",
+    "comingSoon": "Coming soon",
+    "resource": "Resource: {resource}",
+    "classes": {
+      "bastion": {
+        "tagline": "Heavy melee in a battered exoskeleton",
+        "desc": "A former security marine who stands in the middle of the fight. Bastion builds Heat by hitting and being hit, and spends it on crushing blows — but stay at max Heat too long and the suit overheats."
+      },
+      "spectre": {
+        "tagline": "Agile marksman and saboteur",
+        "desc": "A sniper and saboteur who fights with mobility, precision and traps. Focus refills on its own, and faster on critical hits and dodged attacks. Rifles, twin pistols and vibroblades."
+      },
+      "xenomant": {
+        "tagline": "Scientist who tamed the Lumen",
+        "desc": "A former biologist infected with Lumen who can command it. Biomass gathered from the dead raises servants and spreads spores. Forbidden power, with a price."
+      }
     }
   }
 }

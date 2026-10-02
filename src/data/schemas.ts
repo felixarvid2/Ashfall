@@ -9,7 +9,21 @@ export const DAMAGE_TYPES = ['physical', 'heat', 'cold', 'toxic', 'energy', 'voi
 export const DamageTypeSchema = z.enum(DAMAGE_TYPES);
 export type DamageType = z.infer<typeof DamageTypeSchema>;
 
-export const STATUS_IDS = ['burning', 'poisoned', 'chilled', 'frozen', 'stunned', 'vulnerable', 'barrier'] as const;
+export const STATUS_IDS = [
+  'burning',
+  'poisoned',
+  'chilled',
+  'frozen',
+  'stunned',
+  'vulnerable',
+  'barrier',
+  // Spectre: marked targets take more damage and refund resource on death.
+  'marked',
+  // Invisible to enemies; the next hit is a guaranteed crit.
+  'stealth',
+  // Short window after a dodge or blink (Ghost key passive).
+  'evasive',
+] as const;
 export const StatusIdSchema = z.enum(STATUS_IDS);
 export type StatusId = z.infer<typeof StatusIdSchema>;
 
@@ -23,9 +37,12 @@ export const CONDITIONS = [
   'elite',
   'melee',
   'ranged',
+  'marked',
   // Attacker-side conditions (evaluated on the one dealing damage).
   'highResource',
   'hasBarrier',
+  'evasive',
+  'stealthed',
 ] as const;
 export const ConditionSchema = z.enum(CONDITIONS);
 export type Condition = z.infer<typeof ConditionSchema>;
@@ -62,6 +79,10 @@ export const StatusDefSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('disable'), color: z.string() }),
   z.object({ kind: z.literal('vulnerable'), damageTakenMultiplier: z.number().min(1), color: z.string() }),
   z.object({ kind: z.literal('barrier'), color: z.string() }),
+  /** Takes more damage; the killer's owner gets `refund` resource when it dies marked. */
+  z.object({ kind: z.literal('mark'), damageTakenMultiplier: z.number().min(1), refund: z.number().nonnegative(), color: z.string() }),
+  /** Flag-like buff read by game logic (stealth, evasive). */
+  z.object({ kind: z.literal('buff'), color: z.string() }),
 ]);
 export type StatusDef = z.infer<typeof StatusDefSchema>;
 
@@ -89,6 +110,8 @@ const ImpactSchema = z.object({
   applies: z.array(StatusApplySchema).default([]),
   hitstopMs: z.number().nonnegative().default(0),
   shake: z.number().min(0).max(1).default(0),
+  /** Melee or ranged hit (for "+x% melee damage" style bonuses). */
+  delivery: z.enum(['melee', 'ranged']).default('melee'),
 });
 
 export type Impact = z.infer<typeof ImpactSchema>;
@@ -134,6 +157,64 @@ export const SkillEffectSchema = z.discriminatedUnion('kind', [
     radius: z.number().positive(),
     delay: z.number().positive(),
   }),
+  // Bullets/darts: `count` projectiles spread over `spreadDeg`, each passing through `pierce` enemies.
+  ImpactSchema.extend({
+    kind: z.literal('projectile'),
+    speed: z.number().positive(),
+    maxRange: z.number().positive(),
+    radius: z.number().positive(),
+    count: z.number().int().positive().default(1),
+    spreadDeg: z.number().nonnegative().default(0),
+    pierce: z.number().int().nonnegative().default(0),
+    /** Explode on impact, hitting everything in this radius instead of only the target. */
+    explodeRadius: z.number().nonnegative().default(0),
+    color: z.string().default('#9fe8ff'),
+  }),
+  // Thrown in an arc to the cursor, explodes on landing, optionally into bomblets.
+  ImpactSchema.extend({
+    kind: z.literal('grenade'),
+    maxRange: z.number().positive(),
+    radius: z.number().positive(),
+    flightTime: z.number().positive(),
+    bomblets: z
+      .object({ count: z.number().int().positive(), radius: z.number().positive(), coefficient: z.number().nonnegative(), spread: z.number().positive() })
+      .optional(),
+  }),
+  // Mines placed around the cursor: arm, then explode when an enemy steps close.
+  ImpactSchema.extend({
+    kind: z.literal('trap'),
+    maxRange: z.number().positive(),
+    count: z.number().int().positive(),
+    spacing: z.number().nonnegative(),
+    triggerRadius: z.number().positive(),
+    radius: z.number().positive(),
+    armTime: z.number().nonnegative(),
+    duration: z.number().positive(),
+  }),
+  // Instant teleport toward the cursor.
+  z.object({
+    kind: z.literal('blink'),
+    maxRange: z.number().positive(),
+    invulnerable: z.number().nonnegative().default(0),
+    applies: z.array(StatusApplySchema).default([]),
+  }),
+  // A hologram that draws enemy attention.
+  z.object({
+    kind: z.literal('decoy'),
+    maxRange: z.number().nonnegative(),
+    duration: z.number().positive(),
+    /** Decoy life as a fraction of the caster's max life. */
+    lifeFraction: z.number().positive(),
+    tauntRadius: z.number().positive(),
+    /** Explodes when it expires or dies (0 = no explosion). */
+    burst: ImpactSchema.extend({ radius: z.number().positive() }).optional(),
+  }),
+  // Instant area at the cursor (marks, bursts).
+  ImpactSchema.extend({
+    kind: z.literal('cursorBurst'),
+    maxRange: z.number().positive(),
+    radius: z.number().positive(),
+  }),
 ]);
 export type SkillEffect = z.infer<typeof SkillEffectSchema>;
 
@@ -154,6 +235,8 @@ export const SkillDefSchema = z.object({
   resourceBonus: z
     .object({ threshold: z.number().nonnegative(), applies: z.array(StatusApplySchema) })
     .optional(),
+  /** Animation for the cast; default: basic skills "attack", others "cast". */
+  anim: z.enum(['attack', 'attack2', 'cast']).optional(),
   effect: SkillEffectSchema,
 });
 export type SkillDef = z.infer<typeof SkillDefSchema>;
@@ -190,6 +273,12 @@ export const ClassDefSchema = z.object({
     idleDelay: z.number().nonnegative(),
     /** Resource gained per 1% of max life lost. */
     gainPerLifePercentLost: z.number().nonnegative().default(0),
+    /** Resource gained per critical hit dealt (Focus). */
+    onCrit: z.number().nonnegative().default(0),
+    /** Resource gained when an attack is avoided by dodging or stealth (Focus). */
+    onAvoid: z.number().nonnegative().default(0),
+    /** Resource gained when an enemy dies within `radius` metres (Biomass). */
+    onNearbyDeath: z.object({ radius: z.number().positive(), amount: z.number().nonnegative() }).optional(),
     overheat: z
       .object({
         /** Seconds at max before overheating starts. */

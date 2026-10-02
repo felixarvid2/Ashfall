@@ -1,5 +1,5 @@
 /** Core component definitions. Components are plain data — no methods, no Three.js objects. */
-import type { Bonus, ClassDef, DamageType, StatusId } from '../data/schemas';
+import type { Bonus, ClassDef, DamageType, Impact, StatusId } from '../data/schemas';
 import type { Item, Slot } from '../data/loot/schemas';
 import type { CompiledSkill } from '../systems/skillCompile';
 import type { TreeState } from '../systems/skillTree';
@@ -51,6 +51,8 @@ export interface Renderable {
   assetId: string;
   /** Uniform scale applied to the model (default 1). */
   scale?: number;
+  /** Draw as a translucent hologram (decoys). */
+  hologram?: boolean;
 }
 export const Renderable = defineComponent<Renderable>('Renderable');
 
@@ -241,10 +243,23 @@ export interface Projectile {
   vz: number;
   radius: number;
   remaining: number;
+  /** Enemy bolts: damage fixed at fire time. Ignored when `skill` is set. */
   damage: number;
   damageType: DamageType;
   attackerLevel: number;
   owner: Entity;
+  /** Player skill projectiles: the hit is computed on impact with the owner's stats. */
+  skill?: {
+    skillId: string;
+    impact: Impact;
+    /** Enemies it can still pass through. */
+    pierce: number;
+    explodeRadius: number;
+    /** Resource for the owner on the first hit of this cast. */
+    gain: number;
+    hit: Entity[];
+    color: string;
+  };
 }
 export const Projectile = defineComponent<Projectile>('Projectile');
 
@@ -350,11 +365,47 @@ export interface PickupTarget {
 }
 export const PickupTarget = defineComponent<PickupTarget>('PickupTarget');
 
-/** Ultimate: an orbital strike that lands after a delay. */
+/** An impact that lands after a delay: orbital strikes, grenades, bomblets. */
 export interface DelayedStrike {
   caster: Entity;
   skillId: string;
   remaining: number;
   radius: number;
+  /** Total delay, for arc visuals. */
+  duration: number;
+  /** Override the skill's own impact (bomblets); default: the skill effect. */
+  impact?: Impact;
+  vfx: 'orbital' | 'grenade' | 'bomblet';
+  /** Where the throw started (grenade arcs). */
+  fromX: number;
+  fromZ: number;
 }
 export const DelayedStrike = defineComponent<DelayedStrike>('DelayedStrike');
+
+/** A mine: arms, then explodes when an opposing entity comes within `triggerRadius`. */
+export interface Trap {
+  owner: Entity;
+  skillId: string;
+  team: Team;
+  arming: number;
+  remaining: number;
+  triggerRadius: number;
+  radius: number;
+}
+export const Trap = defineComponent<Trap>('Trap');
+
+/** Something the player created that expires (decoys, later minions and summons). */
+export interface Summon {
+  owner: Entity;
+  remaining: number;
+  /** Skill that created it (for its burst on expiry). */
+  skillId: string;
+  kind: 'decoy' | 'minion' | 'summon';
+}
+export const Summon = defineComponent<Summon>('Summon');
+
+/** Enemies within `radius` attack this entity instead of the player. */
+export interface Taunt {
+  radius: number;
+}
+export const Taunt = defineComponent<Taunt>('Taunt');

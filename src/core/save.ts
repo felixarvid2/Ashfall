@@ -7,7 +7,11 @@
 import { z } from 'zod';
 import { ItemSchema, SlotSchema } from '../data/loot/schemas';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
+
+/** Number of character slots on the select screen. */
+export const CHARACTER_SLOTS = 3;
+export const slotKey = (index: number): string => `slot${index}`;
 
 const Vec3Schema = z.object({ x: z.number(), y: z.number(), z: z.number() });
 
@@ -17,6 +21,8 @@ export const SaveDataSchema = z.object({
   seed: z.string(),
   rngState: z.tuple([z.number(), z.number(), z.number(), z.number()]),
   tick: z.number().int().nonnegative(),
+  /** Who this save belongs to (character select). */
+  character: z.object({ name: z.string().min(1).max(24), classId: z.string() }),
   player: z.object({
     position: Vec3Schema,
     facing: z.number(),
@@ -74,6 +80,8 @@ export const MIGRATIONS: Record<number, Migration> = {
       skills: { ranks: { 'n.hydraulic_strike': 1 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
     };
   },
+  // v4 (Phase 4): several characters and classes. Older saves were always a Bastion.
+  3: (d) => ({ ...d, version: 4, character: { name: 'Bastion', classId: 'bastion' } }),
 };
 
 export class SaveError extends Error {}

@@ -50,9 +50,25 @@ export function fieldAccess(def: SkillDef, field: SkillField): Getter | null {
     case 'arcDeg':
     case 'knockback':
     case 'maxRange':
+    case 'speed':
+    case 'spreadDeg':
+    case 'explodeRadius':
+    case 'duration':
+    case 'triggerRadius':
+    case 'tauntRadius':
+    case 'lifeFraction':
       return onEffect(field);
+    case 'count':
+    case 'pierce': {
+      // Counts stay whole numbers (bullets, mines, enemies pierced).
+      const acc = onEffect(field);
+      const min = field === 'count' ? 1 : 0;
+      return acc ? { get: acc.get, set: (v) => acc.set(Math.max(min, Math.round(v))) } : null;
+    }
     case 'landingRadius':
       return e.kind === 'leap' ? onEffect('radius', e.landing as Record<string, unknown>) : null;
+    case 'burstCoefficient':
+      return e.kind === 'decoy' && e.burst ? onEffect('coefficient', e.burst as Record<string, unknown>) : null;
     case 'landingCoefficient':
       return e.kind === 'leap' ? onEffect('coefficient', e.landing as Record<string, unknown>) : null;
     case 'heal':

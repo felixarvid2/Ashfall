@@ -14,9 +14,9 @@ import { defaultSettings } from '../../src/data/settings';
 import { collisionSystem, spatialSystem } from '../../src/systems/collision';
 import { generateItem, generateUnique } from '../../src/systems/loot/generate';
 import { movementSystem } from '../../src/systems/movement';
-import { hazardSystem } from '../../src/systems/projectiles';
 import { resourceSystem } from '../../src/systems/resource';
 import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from '../../src/systems/skills';
+import { hazardSystem, projectileSystem, summonSystem, trapSystem } from '../../src/systems/projectiles';
 import { recomputePlayer } from '../../src/systems/stats';
 import { statusSystem } from '../../src/systems/status';
 import { spawnEnemy, spawnPlayer } from '../../src/world/spawn';
@@ -31,6 +31,10 @@ export interface RotationEntry {
 
 export interface Build {
   name: string;
+  /** Default: bastion. */
+  classId?: string;
+  /** Distance to the dummy (melee ~1.9, ranged builds stand back). */
+  distance?: number;
   level: number;
   /** Tree ranks (the starting skill is added automatically). */
   nodes: Record<string, number>;
@@ -59,6 +63,9 @@ const SYSTEMS = [
   forcedMoveSystem,
   delayedStrikeSystem,
   collisionSystem,
+  projectileSystem,
+  trapSystem,
+  summonSystem,
   hazardSystem,
   resourceSystem,
 ];
@@ -86,7 +93,9 @@ function makeContext(seed: string): GameContext {
 export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
   const world = new World();
   const ctx = makeContext(seed);
-  const player = spawnPlayer(world, 'bastion', 0, 0);
+  const classId = build.classId ?? 'bastion';
+  const dist = build.distance ?? 1.9;
+  const player = spawnPlayer(world, classId, 0, 0);
   const user = world.req(player, SkillUser);
   world.req(player, Progression).level = build.level;
   Object.assign(user.tree.ranks, build.nodes);
@@ -97,7 +106,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
   const rng = new Rng(`${seed}-gear`);
   const itemPower = Math.round(PROGRESSION.itemPower.base + PROGRESSION.itemPower.perLevel * build.level);
   const inv = world.req(player, Inventory);
-  inv.equipped.mainHand = generateItem(rng, { itemPower, classId: 'bastion', uid: 'w', rarity: 'rare', type: 'weapon' });
+  inv.equipped.mainHand = generateItem(rng, { itemPower, classId, uid: 'w', rarity: 'rare', type: 'weapon' });
   for (const id of build.uniques ?? []) {
     const def = UNIQUE_DEFS.get(id);
     if (!def) throw new Error(`Unknown unique ${id}`);
@@ -106,7 +115,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
     if (slot) inv.equipped[slot] = item;
   }
   for (const [slot, id, value] of build.aspects ?? []) {
-    const item = inv.equipped[slot] ?? generateItem(rng, { itemPower, classId: 'bastion', uid: `a-${slot}`, rarity: 'rare', baseId: BASE_FOR_SLOT[slot] });
+    const item = inv.equipped[slot] ?? generateItem(rng, { itemPower, classId, uid: `a-${slot}`, rarity: 'rare', baseId: BASE_FOR_SLOT[slot] });
     item.aspect = { id, value };
     item.rarity = 'legendary';
     inv.equipped[slot] = item;
@@ -114,7 +123,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
   recomputePlayer(world, player);
   for (const id of bar) if (!user.compiled[id]) throw new Error(`${build.name}: ${id} is not learned`);
 
-  const dummy = spawnEnemy(world, 'spore_carrier', 0, 1.9, { level: build.level });
+  const dummy = spawnEnemy(world, 'spore_carrier', 0, dist, { level: build.level });
   const life = world.req(dummy, Health);
   life.max = life.current = 1e12;
   world.req(dummy, Collider).mass = 1e9;
@@ -133,7 +142,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
     }
     const dtr = world.req(dummy, Transform);
     dtr.x = 0;
-    dtr.z = 1.9;
+    dtr.z = dist;
     if (!user.cast && !user.request && !world.has(player, ForcedMove)) {
       const pick = build.rotation.find((r) => {
         const c = user.compiled[r.skill];
@@ -145,7 +154,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
         return true;
       });
       if (pick) {
-        user.request = { slot: bar.indexOf(pick.skill), aimX: 0, aimZ: 1.9, ttl: 0.25 };
+        user.request = { slot: bar.indexOf(pick.skill), aimX: 0, aimZ: dist, ttl: 0.25 };
         casts[pick.skill] = (casts[pick.skill] ?? 0) + 1;
       }
     }

@@ -49,13 +49,24 @@ export const BASES: Base[] = [
     implicits: [armor(36, 48), { stat: 'maxLife', min: 14, max: 20, scaling: 'linear' }],
     maxSockets: 1,
   },
-  // ---- Spectre (future class)
+  // ---- Spectre
   {
     id: 'marksman_rifle',
     type: 'weapon',
     classes: ['spectre'],
     icon: 'icon.marksman_rifle',
     implicits: [{ stat: 'weaponDamage', min: 30, max: 36, scaling: 'linear' }],
+    maxSockets: 2,
+  },
+  {
+    id: 'twin_pistols',
+    type: 'weapon',
+    classes: ['spectre'],
+    icon: 'icon.twin_pistols',
+    implicits: [
+      { stat: 'weaponDamage', min: 24, max: 29, scaling: 'linear' },
+      { stat: 'attackSpeed', min: 0.1, max: 0.1, scaling: 'none' },
+    ],
     maxSockets: 2,
   },
   {

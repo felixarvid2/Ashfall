@@ -3,29 +3,36 @@
  * cooldowns, resource costs, dodge, potions and forced moves (leap/dodge).
  */
 import {
+  Collider,
   CombatStats,
   Dead,
   DelayedStrike,
-  Hazard,
   makeTransform,
   Faction,
   ForcedMove,
   Health,
   Invulnerable,
   Mover,
+  Projectile,
+  Renderable,
   Resource,
   SkillUser,
   StatusEffects,
+  Summon,
+  Taunt,
   Transform,
+  Trap,
 } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, classDef, skill } from '../data/db';
-import type { Impact, StatusApply } from '../data/schemas';
+import type { Impact } from '../data/schemas';
 import type { CompiledSkill } from './skillCompile';
-import { angleDelta } from './movement';
-import { applyStatus, dealHit, gainResource, heal, removeStatuses } from './combat';
-import { livingInCircle, opposingTeam } from './targeting';
+import { applyStatus, gainResource, heal, removeStatuses } from './combat';
+import { impactArea, spawnHazards } from './impact';
+
+/** Seconds of the "evasive" window after a dodge or blink (Ghost key passive). */
+export const EVASIVE_WINDOW = 2.5;
 
 
 /** Effective skill for a caster: compiled (ranks + modifiers) if learned, else the base data. */
@@ -88,6 +95,7 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
           landingSkill: null,
         });
         world.add(e, Invulnerable, { remaining: cls.dodge.duration + 0.05 });
+        applyStatus(world, ctx, e, { status: 'evasive', duration: EVASIVE_WINDOW }, { team: world.get(e, Faction)?.team ?? 'player', level: 1 });
         user.dodgeCooldown = cls.dodge.cooldown;
         ctx.events.push({ type: 'vfx', kind: 'dodge', x: tr.x, z: tr.z, radius: 1, facing: Math.atan2(dir.x, dir.z) });
       }
@@ -245,7 +253,16 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
       const z = clamp(tr.z + dz, -lim, lim);
       const strike = world.create();
       world.add(strike, Transform, makeTransform(x, 0, z));
-      world.add(strike, DelayedStrike, { caster, skillId: def.id, remaining: effect.delay, radius: effect.radius });
+      world.add(strike, DelayedStrike, {
+        caster,
+        skillId: def.id,
+        remaining: effect.delay,
+        radius: effect.radius,
+        duration: effect.delay,
+        vfx: 'orbital',
+        fromX: x,
+        fromZ: z,
+      });
       ctx.events.push({
         type: 'telegraph',
         owner: strike,
@@ -280,6 +297,122 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
       if (resource) gainResource(resource, gain);
       break;
     }
+    case 'projectile': {
+      const base = Math.atan2(aimX - tr.x, aimZ - tr.z);
+      const spread = (effect.spreadDeg * Math.PI) / 180;
+      const team = world.get(caster, Faction)?.team ?? 'player';
+      const level = world.get(caster, CombatStats)?.level ?? 1;
+      for (let i = 0; i < effect.count; i++) {
+        const a = effect.count === 1 ? base : base - spread / 2 + (spread * i) / (effect.count - 1);
+        const dx = Math.sin(a);
+        const dz = Math.cos(a);
+        const p = world.create();
+        world.add(p, Transform, makeTransform(tr.x + dx * 0.7, 1.2, tr.z + dz * 0.7, a));
+        world.add(p, Projectile, {
+          team,
+          vx: dx * effect.speed,
+          vz: dz * effect.speed,
+          radius: effect.radius,
+          remaining: effect.maxRange / effect.speed,
+          damage: 0,
+          damageType: effect.damageType,
+          attackerLevel: level,
+          owner: caster,
+          skill: {
+            skillId: def.id,
+            impact: effect,
+            pierce: effect.pierce,
+            explodeRadius: effect.explodeRadius,
+            gain: gain / effect.count,
+            hit: [],
+            color: effect.color,
+          },
+        });
+      }
+      ctx.events.push({ type: 'vfx', kind: 'muzzle', x: tr.x + Math.sin(base) * 0.8, z: tr.z + Math.cos(base) * 0.8, radius: 0.5, facing: base });
+      break;
+    }
+    case 'grenade': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      const strike = world.create();
+      world.add(strike, Transform, makeTransform(at.x, 0, at.z));
+      world.add(strike, DelayedStrike, {
+        caster,
+        skillId: def.id,
+        remaining: effect.flightTime,
+        radius: effect.radius,
+        duration: effect.flightTime,
+        vfx: 'grenade',
+        fromX: tr.x,
+        fromZ: tr.z,
+      });
+      ctx.events.push({ type: 'telegraph', owner: strike, x: at.x, z: at.z, shape: { kind: 'circle', radius: effect.radius }, duration: effect.flightTime, color: '#ffb84a' });
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'trap': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      const team = world.get(caster, Faction)?.team ?? 'player';
+      const turn = ctx.rng.range(0, Math.PI * 2);
+      for (let i = 0; i < effect.count; i++) {
+        const a = turn + (Math.PI * 2 * i) / effect.count;
+        const r = effect.count > 1 ? effect.spacing : 0;
+        const trap = world.create();
+        world.add(trap, Transform, makeTransform(at.x + Math.sin(a) * r, 0, at.z + Math.cos(a) * r));
+        world.add(trap, Trap, {
+          owner: caster,
+          skillId: def.id,
+          team,
+          arming: effect.armTime,
+          remaining: effect.duration,
+          triggerRadius: effect.triggerRadius,
+          radius: effect.radius,
+        });
+      }
+      ctx.events.push({ type: 'vfx', kind: 'trapPlace', x: at.x, z: at.z, radius: effect.spacing + 0.6, facing: 0 });
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'blink': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      ctx.events.push({ type: 'vfx', kind: 'blink', x: tr.x, z: tr.z, radius: 1, facing: tr.facing });
+      // Teleport: no interpolation streak across the gap.
+      tr.x = tr.prevX = at.x;
+      tr.z = tr.prevZ = at.z;
+      if (effect.invulnerable > 0) world.add(caster, Invulnerable, { remaining: effect.invulnerable });
+      const team = world.get(caster, Faction)?.team ?? 'player';
+      for (const apply of [...effect.applies, { status: 'evasive' as const, duration: EVASIVE_WINDOW }]) {
+        applyStatus(world, ctx, caster, apply, { team, level: 1, attacker: caster });
+      }
+      ctx.events.push({ type: 'vfx', kind: 'blink', x: at.x, z: at.z, radius: 1.3, facing: tr.facing });
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'decoy': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      const team = world.get(caster, Faction)?.team ?? 'player';
+      const life = (world.get(caster, Health)?.max ?? 100) * effect.lifeFraction;
+      const d = world.create();
+      world.add(d, Transform, makeTransform(at.x, 0, at.z, tr.facing));
+      world.add(d, Renderable, { assetId: world.get(caster, Renderable)?.assetId ?? 'char.spectre', hologram: true });
+      world.add(d, Faction, { team });
+      world.add(d, Health, { current: life, max: life });
+      world.add(d, Collider, { radius: 0.4, mass: 2, layer: 'ground', isStatic: true });
+      world.add(d, StatusEffects, { list: [], canAct: true, dotTimer: 0 });
+      world.add(d, Taunt, { radius: effect.tauntRadius });
+      world.add(d, Summon, { owner: caster, remaining: effect.duration, skillId: def.id, kind: 'decoy' });
+      ctx.events.push({ type: 'vfx', kind: 'blink', x: at.x, z: at.z, radius: 1.3, facing: 0 });
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'cursorBurst': {
+      const at = clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize);
+      const hits = impactArea(world, ctx, caster, at.x, at.z, effect.radius, null, effect, [], bonuses);
+      ctx.events.push({ type: 'vfx', kind: 'mark', x: at.x, z: at.z, radius: effect.radius, facing: 0 });
+      if (resource && (hits > 0 || def.category !== 'basic')) gainResource(resource, gain);
+      spawnHazards(world, caster, at.x, at.z, compiled);
+      break;
+    }
     case 'selfBuff': {
       if (effect.cleanse) {
         removeStatuses(world, caster, (s) => {
@@ -294,34 +427,15 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
         if (health) heal(world, ctx, caster, health.max * effect.healFraction);
       }
       if (resource && effect.resourceDelta !== 0) gainResource(resource, effect.resourceDelta);
-      ctx.events.push({ type: 'vfx', kind: effect.resourceDelta < 0 ? 'coolant' : 'shield', x: tr.x, z: tr.z, radius: 1.2, facing: 0 });
+      const fx = effect.applies.some((a) => a.status === 'stealth') ? 'smoke' : effect.resourceDelta < 0 ? 'coolant' : 'shield';
+      ctx.events.push({ type: 'vfx', kind: fx, x: tr.x, z: tr.z, radius: 1.2, facing: 0 });
       if (resource) gainResource(resource, gain);
       break;
     }
   }
 }
 
-/** Burning/poison areas left by skill modifiers (Rupture, Crater, Fissure aspect…). */
-function spawnHazards(world: World, caster: Entity, x: number, z: number, compiled: CompiledSkill): void {
-  if (!compiled.hazards.length) return;
-  const stats = world.get(caster, CombatStats);
-  const team = world.get(caster, Faction)?.team ?? 'player';
-  for (const h of compiled.hazards) {
-    const e = world.create();
-    world.add(e, Transform, makeTransform(x, 0, z));
-    world.add(e, Hazard, {
-      team,
-      radius: h.radius,
-      remaining: h.duration,
-      duration: h.duration,
-      tickTimer: 0,
-      applies: [{ status: h.status, duration: 1.5, dps: h.dpsCoefficient * (stats?.weaponDamage ?? 10) * (1 + (stats?.mainStat ?? 0) * 0.001) }],
-      attackerLevel: stats?.level ?? 1,
-    });
-  }
-}
-
-/** Lands orbital strikes when their delay runs out. */
+/** Lands orbital strikes, grenades and bomblets when their delay runs out. */
 export function delayedStrikeSystem(world: World, dt: number, ctx: GameContext): void {
   for (const e of world.query(DelayedStrike, Transform)) {
     const strike = world.req(e, DelayedStrike);
@@ -332,57 +446,39 @@ export function delayedStrikeSystem(world: World, dt: number, ctx: GameContext):
     if (!world.isAlive(strike.caster)) continue;
     const compiled = skillOf(world.get(strike.caster, SkillUser), strike.skillId);
     const effect = compiled.def.effect;
-    if (effect.kind !== 'orbital') continue;
-    impactArea(world, ctx, strike.caster, tr.x, tr.z, effect.radius, null, effect, [], compiled.bonuses);
-    ctx.events.push({ type: 'vfx', kind: 'orbital', x: tr.x, z: tr.z, radius: effect.radius, facing: 0 });
-    ctx.events.push({ type: 'shake', trauma: effect.shake });
-    spawnHazards(world, strike.caster, tr.x, tr.z, compiled);
-  }
-}
-
-/**
- * Hit every opposing living entity in a circle (optionally limited to an arc).
- * Returns the number of targets hit and emits hit-stop/shake when anything was hit.
- */
-function impactArea(
-  world: World,
-  ctx: GameContext,
-  caster: Entity,
-  x: number,
-  z: number,
-  radius: number,
-  arc: { facing: number; arcDeg: number } | null,
-  impact: Impact,
-  extraApplies: readonly StatusApply[] = [],
-  bonuses?: CompiledSkill['bonuses'],
-): number {
-  const team = world.get(caster, Faction)?.team ?? 'player';
-  let hits = 0;
-  const halfArc = arc ? (arc.arcDeg * Math.PI) / 360 : Math.PI;
-  for (const target of livingInCircle(world, ctx, x, z, radius, opposingTeam(team))) {
-    if (target === caster) continue;
-    const tt = world.req(target, Transform);
-    if (arc && Math.hypot(tt.x - x, tt.z - z) > 0.3) {
-      const angle = Math.atan2(tt.x - x, tt.z - z);
-      if (Math.abs(angleDelta(arc.facing, angle)) > halfArc) continue;
-    }
-    const dealt = dealHit(world, ctx, caster, target, {
-      coefficient: impact.coefficient,
-      damageType: impact.damageType,
-      knockback: impact.knockback,
-      fromX: x,
-      fromZ: z,
-      applies: [...impact.applies, ...extraApplies],
-      range: 'melee',
-      ...(bonuses ? { bonuses } : {}),
-    });
-    if (dealt !== null) hits++;
-  }
-  if (hits > 0) {
-    if (impact.hitstopMs > 0) ctx.events.push({ type: 'hitstop', ms: impact.hitstopMs });
+    const impact: Impact | null = strike.impact ?? (effect.kind === 'orbital' || effect.kind === 'grenade' ? effect : null);
+    if (!impact) continue;
+    impactArea(world, ctx, strike.caster, tr.x, tr.z, strike.radius, null, impact, [], compiled.bonuses);
+    const kind = strike.vfx === 'orbital' ? 'orbital' : strike.vfx === 'grenade' ? 'explosion' : 'bomblet';
+    ctx.events.push({ type: 'vfx', kind, x: tr.x, z: tr.z, radius: strike.radius, facing: 0 });
     if (impact.shake > 0) ctx.events.push({ type: 'shake', trauma: impact.shake });
+    if (strike.vfx === 'bomblet') continue;
+    spawnHazards(world, strike.caster, tr.x, tr.z, compiled);
+    // Cluster grenades scatter bomblets that pop a moment later.
+    if (strike.vfx === 'grenade' && effect.kind === 'grenade' && effect.bomblets) {
+      const b = effect.bomblets;
+      for (let i = 0; i < b.count; i++) {
+        const a = ctx.rng.range(0, Math.PI * 2);
+        const r = ctx.rng.range(b.spread * 0.4, b.spread);
+        const bx = tr.x + Math.sin(a) * r;
+        const bz = tr.z + Math.cos(a) * r;
+        const bomb = world.create();
+        const delay = 0.25 + i * 0.07;
+        world.add(bomb, Transform, makeTransform(bx, 0, bz));
+        world.add(bomb, DelayedStrike, {
+          caster: strike.caster,
+          skillId: strike.skillId,
+          remaining: delay,
+          radius: b.radius,
+          duration: delay,
+          impact: { ...effect, coefficient: b.coefficient, hitstopMs: 0, shake: 0, knockback: 0 },
+          vfx: 'bomblet',
+          fromX: tr.x,
+          fromZ: tr.z,
+        });
+      }
+    }
   }
-  return hits;
 }
 
 /** Turn to face a point (no-op if the point is on top of us). */
@@ -390,6 +486,18 @@ function faceToward(tr: Transform, x: number, z: number): void {
   const dx = x - tr.x;
   const dz = z - tr.z;
   if (dx * dx + dz * dz > 1e-6) tr.facing = Math.atan2(dx, dz);
+}
+
+/** A point toward (x, z) at most `range` metres away, inside the world bounds. */
+function clampToRange(tr: Transform, x: number, z: number, range: number, lim: number): { x: number; z: number } {
+  let dx = x - tr.x;
+  let dz = z - tr.z;
+  const dist = Math.hypot(dx, dz);
+  if (dist > range) {
+    dx = dist > 0 ? (dx / dist) * range : 0;
+    dz = dist > 0 ? (dz / dist) * range : 0;
+  }
+  return { x: clamp(tr.x + dx, -lim, lim), z: clamp(tr.z + dz, -lim, lim) };
 }
 
 function clamp(v: number, min: number, max: number): number {

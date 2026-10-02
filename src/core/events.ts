@@ -25,7 +25,15 @@ export type VfxKind =
   | 'pull'
   | 'vent'
   | 'orbital'
-  | 'coolant';
+  | 'coolant'
+  | 'muzzle'
+  | 'shotHit'
+  | 'explosion'
+  | 'bomblet'
+  | 'trapPlace'
+  | 'blink'
+  | 'smoke'
+  | 'mark';
 
 export type GameEvent =
   | {

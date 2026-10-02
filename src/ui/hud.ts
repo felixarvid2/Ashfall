@@ -2,9 +2,9 @@
  * In-game HUD: life and resource orbs, action bar with cooldowns, wave tracker,
  * target frame and death screen. DOM is only touched when a value changes.
  */
+import { classDef, skill } from '../data/db';
 import { t } from '../data/i18n';
 import type { Action, MoveMode } from '../data/settings';
-import { skill } from '../data/db';
 import type { SkillDef } from '../data/schemas';
 
 /** "KeyW" → "W", "Digit1" → "1", "F3" → "F3". */
@@ -45,7 +45,10 @@ class Orb {
   private readonly text: HTMLDivElement;
   private last = '';
 
-  constructor(kind: 'life' | 'heat', label: string) {
+  private kind: string;
+
+  constructor(kind: string, label: string) {
+    this.kind = kind;
     this.el = document.createElement('div');
     this.el.className = `orb orb-${kind}`;
     this.el.title = label;
@@ -58,6 +61,14 @@ class Orb {
     const glass = document.createElement('div');
     glass.className = 'orb-glass';
     this.el.append(this.fill, this.shield, glass, this.text);
+  }
+
+  /** Switch colour scheme and label (Heat, Focus, Biomass). */
+  setKind(kind: string, label: string): void {
+    if (kind === this.kind) return;
+    this.el.classList.replace(`orb-${this.kind}`, `orb-${kind}`);
+    this.kind = kind;
+    this.el.title = label;
   }
 
   set(current: number, max: number, extra = 0, warn = false): void {
@@ -253,6 +264,7 @@ export class Hud {
 
   update(state: HudState, dt: number): void {
     this.lifeOrb.set(state.life.current, state.life.max, state.life.barrier, state.life.current / state.life.max < 0.3);
+    this.heatOrb.setKind(state.resource.kind, t(`resources.${state.resource.kind}`));
     this.heatOrb.set(state.resource.current, state.resource.max, 0, state.resource.overheating);
 
     state.slots.forEach((s, i) => {
@@ -322,7 +334,7 @@ export class Hud {
     }
     const def = this.resolveSkill(slot.skillId);
     const [cls, name] = def.id.split('.') as [string, string];
-    const resource = t('resources.heat');
+    const resource = t(`resources.${classDef(def.classId).resource.id}`);
     const lines = [`<strong>${t(`skills.${cls}.${name}.name`)}</strong>`, t(`skills.${cls}.${name}.desc`)];
     if (def.resourceCost > 0) lines.push(t('hud.cost', { amount: def.resourceCost, resource }));
     if (def.resourceGain > 0) lines.push(t('hud.generates', { amount: def.resourceGain, resource }));

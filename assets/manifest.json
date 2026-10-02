@@ -1073,6 +1073,323 @@
         "triangles": 0,
         "bytes": 2798
       }
+    },
+    {
+      "id": "char.spectre",
+      "category": "character",
+      "prompt": "lean agile sniper and saboteur in a dark hooded tactical stealth suit with light composite armor plates, tattered grey scarf, glowing cyan optical visor, utility belts with grenades, twin pistols holstered at the hips, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "lean agile sci-fi sniper and saboteur in a dark charcoal hooded tactical stealth suit with light composite armor plates, tattered grey scarf, glowing cyan optical visor covering the eyes, utility belts with small grenades, twin pistols holstered on the thighs, worn and dusty, standing in a T-pose with arms straight out to the sides",
+      "targetPolycount": 7000,
+      "heightMeters": 1.8,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "run",
+            "actionId": 673
+          },
+          {
+            "state": "attack",
+            "actionId": 232
+          },
+          {
+            "state": "attack2",
+            "actionId": 219
+          },
+          {
+            "state": "cast",
+            "actionId": 239
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd9d-cf04-777d-b01b-93f467e24668",
+        "refineTaskId": "01a0fd9f-5f7b-74d5-b456-90009816f766",
+        "rigTaskId": "01a0fda2-0be6-7525-bfc8-015f50e036cb",
+        "animationTaskId": "01a0fda2-5665-71c1-add1-053651ced642",
+        "previewApproved": true,
+        "creditsSpent": 62,
+        "clips": {
+          "idle": "idle",
+          "run": "run",
+          "attack": "attack",
+          "attack2": "attack2",
+          "cast": "cast",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "characters/spectre.glb",
+      "stats": {
+        "triangles": 7133,
+        "bytes": 561988,
+        "textures": 1
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4a5560",
+        "size": [
+          0.7,
+          1.8,
+          0.7
+        ],
+        "showFacing": true,
+        "facingColor": "#5ad2ff"
+      }
+    },
+    {
+      "id": "icon.skill_quick_shot",
+      "category": "icon",
+      "prompt": "a pistol firing a fast cyan tracer round with a bright muzzle flash",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda8-5379-7231-ad24-20e7541efb52",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_quick_shot.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 2908
+      }
+    },
+    {
+      "id": "icon.skill_vibro_slash",
+      "category": "icon",
+      "prompt": "a humming vibroblade dagger slashing in a wide arc of light",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda8-5517-70a6-83ed-819f02aef11b",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_vibro_slash.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4890
+      }
+    },
+    {
+      "id": "icon.skill_piercing_shot",
+      "category": "icon",
+      "prompt": "a single white-hot sniper round punching through a line of silhouettes",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda8-5567-7350-bf60-03db00efeae1",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_piercing_shot.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3726
+      }
+    },
+    {
+      "id": "icon.skill_pistol_barrage",
+      "category": "icon",
+      "prompt": "two pistols firing a fan of glowing rounds",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda8-5579-7437-880e-dbba7b001517",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_pistol_barrage.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5672
+      }
+    },
+    {
+      "id": "icon.skill_holo_decoy",
+      "category": "icon",
+      "prompt": "a translucent blue holographic copy of a hooded soldier",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda8-557f-72c3-a0d8-3848d1feed7e",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_holo_decoy.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3226
+      }
+    },
+    {
+      "id": "icon.skill_smoke_cloak",
+      "category": "icon",
+      "prompt": "a hooded figure dissolving into dark grey smoke",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda8-5557-7265-97a9-40eedff1ee17",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_smoke_cloak.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4060
+      }
+    },
+    {
+      "id": "icon.skill_phase_shift",
+      "category": "icon",
+      "prompt": "a hooded figure blinking forward leaving cyan afterimages",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda8-d314-7092-9c90-1b11df887dfc",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_phase_shift.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4230
+      }
+    },
+    {
+      "id": "icon.skill_minefield",
+      "category": "icon",
+      "prompt": "three proximity mines with blinking red lights on cracked ground",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda9-7859-7365-a7cd-5e0c1c4a8be3",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_minefield.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3132
+      }
+    },
+    {
+      "id": "icon.skill_cluster_grenade",
+      "category": "icon",
+      "prompt": "a grenade bursting into many smaller fiery bomblets",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda9-78ef-75cb-b9c8-252dceff4222",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_cluster_grenade.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4426
+      }
+    },
+    {
+      "id": "icon.skill_death_mark",
+      "category": "icon",
+      "prompt": "a glowing red crosshair skull mark over a target",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda9-b679-70da-b98a-d28cf2bc39e8",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_death_mark.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4128
+      }
+    },
+    {
+      "id": "icon.twin_pistols",
+      "category": "icon",
+      "prompt": "pair of compact sci-fi pistols with worn grips and cyan sights",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fda9-e458-77ca-9dc8-95bf2e84643a",
+        "creditsSpent": 3
+      },
+      "file": "icons/twin_pistols.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5404
+      }
+    },
+    {
+      "id": "icon.portrait_bastion",
+      "category": "icon",
+      "prompt": "heavy armored space marine in a bulky battered exoskeleton with a glowing orange visor",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdaa-6123-75fe-b0ec-71137c61cbf2",
+        "creditsSpent": 3
+      },
+      "file": "icons/portrait_bastion.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3248
+      }
+    },
+    {
+      "id": "icon.portrait_spectre",
+      "category": "icon",
+      "prompt": "hooded sniper and saboteur in a dark tactical stealth suit with a glowing cyan optical visor and a tattered scarf",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdaa-a8bc-730b-89be-644c7bbbd81f",
+        "creditsSpent": 3
+      },
+      "file": "icons/portrait_spectre.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3262
+      }
+    },
+    {
+      "id": "icon.portrait_xenomant",
+      "category": "icon",
+      "prompt": "gaunt rogue biologist in a torn lab coat, bioluminescent sickly green fungal-crystal growth spreading over one side of the face and shoulder",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fdaa-c842-7383-b9ab-a05bec94c79c",
+        "creditsSpent": 3
+      },
+      "file": "icons/portrait_xenomant.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3090
+      }
     }
   ]
 }

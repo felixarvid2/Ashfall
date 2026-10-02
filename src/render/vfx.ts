@@ -7,11 +7,13 @@ import * as THREE from 'three';
 import {
   Collider,
   Dead,
+  DelayedStrike,
   EnemyAI,
   Hazard,
   Projectile,
   StatusEffects,
   Transform,
+  Trap,
 } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import type { GameEvent, TelegraphShape, VfxKind } from '../core/events';
@@ -55,6 +57,20 @@ export class VfxSystem {
   private readonly projectilePool: THREE.Mesh[] = [];
   private readonly projectileGeo = new THREE.SphereGeometry(0.22, 10, 8).scale(1, 1, 2.2);
   private readonly projectileMat = new THREE.MeshBasicMaterial({ color: '#ff7a3a', fog: false });
+  /** Player shots: thin tracers, one material per colour. */
+  private readonly tracerGeo = new THREE.BoxGeometry(0.07, 0.07, 0.9);
+  private readonly tracerMats = new Map<string, THREE.MeshBasicMaterial>();
+
+  private readonly grenades = new Map<Entity, THREE.Mesh>();
+  private readonly grenadePool: THREE.Mesh[] = [];
+  private readonly grenadeGeo = new THREE.SphereGeometry(0.16, 10, 8);
+  private readonly grenadeMat = new THREE.MeshBasicMaterial({ color: '#ffd27a', fog: false });
+
+  private readonly traps = new Map<Entity, THREE.Group>();
+  private readonly trapPool: THREE.Group[] = [];
+  private readonly trapGeo = new THREE.CylinderGeometry(0.28, 0.32, 0.1, 12);
+  private readonly trapMat = new THREE.MeshStandardMaterial({ color: '#2a2e33', metalness: 0.7, roughness: 0.4 });
+  private readonly trapLightGeo = new THREE.SphereGeometry(0.07, 8, 6);
 
   private readonly hazards = new Map<Entity, TimedFx>();
   private readonly bubbles = new Map<Entity, THREE.Mesh>();
@@ -117,6 +133,8 @@ export class VfxSystem {
       }
     }
     this.syncProjectiles(world, alpha);
+    this.syncGrenades(world);
+    this.syncTraps(world);
     this.syncHazards(world);
     this.syncStatuses(world, alpha);
     this.sparks.update(dt);
@@ -284,6 +302,38 @@ export class VfxSystem {
       case 'boltHit':
         this.sparks.emit(x, 1.2, z, 10, '#ff7a3a', 4);
         break;
+      case 'muzzle':
+        this.spawnRing('ring:muzzle', '#bff4ff', x, z, 0.6, 0.12, 0.3, 1.2);
+        this.sparks.emit(x, 1.2, z, 5, '#bff4ff', 3);
+        break;
+      case 'shotHit':
+        this.sparks.emit(x, 1.2, z, 8, '#9fe8ff', 4);
+        break;
+      case 'explosion':
+        this.spawnRing('ring:explode', '#ff8a2a', x, z, radius, 0.4, 0.15);
+        this.spawnRing('ring:explode2', '#ffe0a0', x, z, radius * 0.6, 0.25, 0.1, 0.1);
+        this.sparks.emit(x, 0.4, z, 40, '#ff9a40', 9);
+        break;
+      case 'bomblet':
+        this.spawnRing('ring:bomblet', '#ffb060', x, z, radius, 0.25, 0.2);
+        this.sparks.emit(x, 0.3, z, 12, '#ffb060', 6);
+        break;
+      case 'trapPlace':
+        this.spawnRing('ring:trap', '#ff5a4a', x, z, radius, 0.35, 0.6);
+        break;
+      case 'blink':
+        this.spawnRing('ring:blink', '#5ad2ff', x, z, radius, 0.3, 0.2, 0.6);
+        this.sparks.emit(x, 1, z, 18, '#5ad2ff', 4);
+        break;
+      case 'smoke':
+        this.spawnRing('ring:smoke', '#8a96a8', x, z, 3.2, 0.9, 0.2, 0.4);
+        this.spawnRing('ring:smoke2', '#5a6678', x, z, 2.2, 1.2, 0.3, 0.8);
+        this.sparks.emit(x, 1, z, 30, '#6a7688', 2);
+        break;
+      case 'mark':
+        this.spawnRing('ring:mark', '#ff4a6a', x, z, radius, 0.5, 1, 0.08);
+        this.spawnRing('ring:mark2', '#ff4a6a', x, z, radius * 0.5, 0.5, 0.2);
+        break;
     }
   }
 
@@ -333,6 +383,14 @@ export class VfxSystem {
       let mesh = this.projectiles.get(e);
       if (!mesh) {
         mesh = this.projectilePool.pop() ?? new THREE.Mesh(this.projectileGeo, this.projectileMat);
+        const color = world.req(e, Projectile).skill?.color;
+        if (color) {
+          mesh.geometry = this.tracerGeo;
+          mesh.material = this.tracerMat(color);
+        } else {
+          mesh.geometry = this.projectileGeo;
+          mesh.material = this.projectileMat;
+        }
         mesh.visible = true;
         this.root.add(mesh);
         this.projectiles.set(e, mesh);
@@ -350,6 +408,75 @@ export class VfxSystem {
       mesh.visible = false;
       this.projectilePool.push(mesh);
       this.projectiles.delete(e);
+    }
+  }
+
+  private tracerMat(color: string): THREE.MeshBasicMaterial {
+    let m = this.tracerMats.get(color);
+    if (!m) {
+      m = new THREE.MeshBasicMaterial({ color, fog: false });
+      this.tracerMats.set(color, m);
+    }
+    return m;
+  }
+
+  /** Grenades fly in an arc from the thrower to where they will explode. */
+  private syncGrenades(world: World): void {
+    const seen = new Set<Entity>();
+    for (const e of world.query(DelayedStrike, Transform)) {
+      const strike = world.req(e, DelayedStrike);
+      if (strike.vfx !== 'grenade') continue;
+      seen.add(e);
+      let mesh = this.grenades.get(e);
+      if (!mesh) {
+        mesh = this.grenadePool.pop() ?? new THREE.Mesh(this.grenadeGeo, this.grenadeMat);
+        mesh.visible = true;
+        this.root.add(mesh);
+        this.grenades.set(e, mesh);
+      }
+      const tr = world.req(e, Transform);
+      const t = 1 - Math.max(0, strike.remaining) / strike.duration;
+      const dist = Math.hypot(tr.x - strike.fromX, tr.z - strike.fromZ);
+      mesh.position.set(
+        strike.fromX + (tr.x - strike.fromX) * t,
+        1.2 * (1 - t) + 0.15 + (1.5 + dist * 0.25) * 4 * t * (1 - t),
+        strike.fromZ + (tr.z - strike.fromZ) * t,
+      );
+    }
+    this.release(this.grenades, seen, this.grenadePool);
+  }
+
+  /** Mines: a small puck with a light that blinks while arming and glows red when armed. */
+  private syncTraps(world: World): void {
+    const seen = new Set<Entity>();
+    for (const e of world.query(Trap, Transform)) {
+      seen.add(e);
+      let group = this.traps.get(e);
+      if (!group) {
+        group = this.trapPool.pop();
+        if (!group) {
+          group = new THREE.Group();
+          const puck = new THREE.Mesh(this.trapGeo, this.trapMat);
+          puck.position.y = 0.05;
+          const light = new THREE.Mesh(this.trapLightGeo, additive('#ff3a2a'));
+          light.position.y = 0.13;
+          group.add(puck, light);
+        }
+        group.visible = true;
+        this.root.add(group);
+        this.traps.set(e, group);
+      }
+      const trap = world.req(e, Trap);
+      const tr = world.req(e, Transform);
+      group.position.set(tr.x, 0, tr.z);
+      const light = (group.children[1] as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      light.opacity = trap.arming > 0 ? (Math.sin(this.time * 18) > 0 ? 0.9 : 0.15) : 0.7 + 0.3 * Math.sin(this.time * 6);
+    }
+    for (const [e, group] of this.traps) {
+      if (seen.has(e)) continue;
+      group.visible = false;
+      this.trapPool.push(group);
+      this.traps.delete(e);
     }
   }
 

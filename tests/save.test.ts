@@ -38,6 +38,7 @@ const sample = (): SaveData => ({
   seed: 'abc123',
   rngState: [1, 2, 3, 4],
   tick: 600,
+  character: { name: 'Vex', classId: 'spectre' },
   player: { position: { x: 3.5, y: 0, z: -2 }, facing: 1.2 },
   progression: { level: 3, xp: 40, skillPoints: 2 },
   inventory: { gold: 120, grid: [null, null], equipped: {} },
@@ -86,7 +87,15 @@ describe('save migrations', () => {
     expect(() => migrate({ version: 1 }, { 1: (d) => ({ ...d, version: 5 }) }, 2)).toThrow(/did not produce/);
   });
 
-  it('upgrades a v2 save to v3, refunding a skill point per level', () => {
+  it('upgrades a v3 save to v4 as a Bastion character', () => {
+    const v3 = { ...sample(), version: 3 } as Record<string, unknown>;
+    delete v3.character;
+    const save = parseSave(JSON.stringify(v3));
+    expect(save.version).toBe(4);
+    expect(save.character).toEqual({ name: 'Bastion', classId: 'bastion' });
+  });
+
+  it('upgrades a v2 save, refunding a skill point per level', () => {
     const v2 = {
       version: 2,
       savedAt: 'x',
@@ -99,7 +108,7 @@ describe('save migrations', () => {
       loot: { seq: 0, rngState: [1, 2, 3, 4] },
     };
     const save = parseSave(JSON.stringify(v2));
-    expect(save.version).toBe(3);
+    expect(save.version).toBe(SAVE_VERSION);
     expect(save.progression.skillPoints).toBe(4);
     expect(save.skills.ranks).toEqual({ 'n.hydraulic_strike': 1 });
   });
@@ -114,7 +123,8 @@ describe('save migrations', () => {
       player: { position: { x: 1, y: 0, z: 2 }, facing: 0 },
     };
     const save = parseSave(JSON.stringify(v1));
-    expect(save.version).toBe(3);
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(save.character.classId).toBe('bastion');
     expect(save.progression).toEqual({ level: 1, xp: 0, skillPoints: 0 });
     expect(save.inventory).toBeNull();
     expect(save.loot.rngState).toEqual([1, 2, 3, 4]);

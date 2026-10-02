@@ -29,6 +29,7 @@ export interface DebugActions {
   setGraphics(quality: Settings['graphics']): void;
   addLevel(): void;
   spawnLoot(): void;
+  switchCharacter(): void;
 }
 
 export class DevTools {
@@ -149,6 +150,7 @@ export class DevTools {
     button(t('debug.export'), actions.exportSave, 'debug-export');
     button(t('debug.import'), () => fileInput.click(), 'debug-import');
     button(t('debug.deleteSave'), actions.deleteSave, 'debug-delete');
+    button(t('debug.switchCharacter'), actions.switchCharacter, 'debug-switch-character');
 
     this.panel.append(h2, dl, moveLabel, gfxLabel, godLabel, shakeLabel, combatRow, row, fileInput);
     root.append(this.fpsEl, this.panel);

@@ -28,7 +28,17 @@ import { EventQueue, type GameEvent } from './core/events';
 import { Input } from './core/input';
 import { GameLoop } from './core/loop';
 import { Rng, randomSeed } from './core/rng';
-import { SAVE_VERSION, SaveError, SaveStore, parseSave, safeLocalStorage, serializeSave, type SaveData } from './core/save';
+import {
+  CHARACTER_SLOTS,
+  SAVE_VERSION,
+  SaveError,
+  SaveStore,
+  parseSave,
+  safeLocalStorage,
+  serializeSave,
+  slotKey,
+  type SaveData,
+} from './core/save';
 import { SpatialHash } from './core/spatial';
 import { classDef, skill } from './data/db';
 import { t } from './data/i18n';
@@ -42,7 +52,7 @@ import { encounterSystem, startNextWave } from './systems/encounter';
 import { enemyAISystem } from './systems/enemyAI';
 import { movementSystem } from './systems/movement';
 import { playerControlSystem } from './systems/playerControl';
-import { hazardSystem, projectileSystem } from './systems/projectiles';
+import { hazardSystem, projectileSystem, summonSystem, trapSystem } from './systems/projectiles';
 import { resourceSystem } from './systems/resource';
 import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from './systems/skills';
 import { statusSystem } from './systems/status';
@@ -67,8 +77,10 @@ import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
 import { spawnEnemy, spawnPlayer } from './world/spawn';
 
-const SAVE_SLOT = 'slot0';
-const PLAYER_CLASS = 'bastion';
+/** Placeholder class for the player entity before a character is chosen. */
+const DEFAULT_CLASS = 'bastion';
+/** Seconds between automatic saves while playing. */
+const AUTOSAVE_INTERVAL = 60;
 /** How long the target frame keeps showing the last enemy you hit. */
 const TARGET_MEMORY = 4;
 
@@ -95,6 +107,10 @@ export class Game {
   private lastTarget: { entity: Entity; until: number } | null = null;
   private lastNotice = new Map<string, number>();
   private realTime = 0;
+  /** Character slot being played (null on the select screen). */
+  private slot: number | null = null;
+  private characterName = '';
+  private nextAutosave = AUTOSAVE_INTERVAL;
 
   constructor(canvas: HTMLCanvasElement, uiRoot: HTMLElement) {
     this.settings = loadSettings(this.storage);
@@ -138,6 +154,8 @@ export class Game {
       .add('delayedStrikes', delayedStrikeSystem)
       .add('collision', collisionSystem)
       .add('projectiles', projectileSystem)
+      .add('traps', trapSystem)
+      .add('summons', summonSystem)
       .add('hazards', hazardSystem)
       .add('resource', resourceSystem)
       .add('death', deathSystem)
@@ -207,7 +225,9 @@ export class Game {
         exportSave: () => this.exportSave(),
         importSave: (json) => this.importSave(json),
         deleteSave: () => {
-          this.saves.remove(SAVE_SLOT);
+          if (this.slot === null) return;
+          this.saves.remove(slotKey(this.slot));
+          this.slot = null;
           this.toasts.show(t('debug.saveDeleted'));
         },
         setMoveMode: (mode) => this.setMoveMode(mode),
@@ -227,6 +247,10 @@ export class Game {
             this.ctx.rewards.push({ table: 'dt.wave_reward', level, x: tr.x + 2, z: tr.z, xp: false, rarity });
           }
         },
+        switchCharacter: () => {
+          this.save(true);
+          location.reload();
+        },
         setScreenShake: (on) => {
           this.settings.screenShake = on;
           this.renderer.screenShake = on;
@@ -241,8 +265,7 @@ export class Game {
     this.refreshHint();
 
     spawnArenaProps(this.world, TEST_ARENA);
-    this.player = spawnPlayer(this.world, PLAYER_CLASS, TEST_ARENA.playerSpawn.x, TEST_ARENA.playerSpawn.z);
-    this.grantStarterKit();
+    this.player = spawnPlayer(this.world, DEFAULT_CLASS, TEST_ARENA.playerSpawn.x, TEST_ARENA.playerSpawn.z);
     const tr = this.playerTransform;
     this.renderer.rig.snapTo(tr.x, tr.y, tr.z);
 
@@ -269,6 +292,69 @@ export class Game {
 
   start(): void {
     this.loop.start();
+    window.addEventListener('beforeunload', () => this.autosave());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.autosave();
+    });
+  }
+
+  // ---- Characters -------------------------------------------------------------
+
+  /** What is in each character slot, for the select screen. */
+  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string } | null; corrupt?: boolean }[] {
+    return Array.from({ length: CHARACTER_SLOTS }, (_, index) => {
+      try {
+        const data = this.saves.read(slotKey(index));
+        if (!data) return { index, character: null };
+        return {
+          index,
+          character: { name: data.character.name, classId: data.character.classId, level: data.progression.level, savedAt: data.savedAt },
+        };
+      } catch {
+        return { index, character: null, corrupt: true };
+      }
+    });
+  }
+
+  /** Start a brand-new character in a slot (overwrites a corrupt slot). */
+  newCharacter(slot: number, classId: string, name: string): void {
+    this.respawnAs(classId);
+    this.slot = slot;
+    this.characterName = name;
+    const inv = this.world.req(this.player, Inventory);
+    Object.assign(inv, emptyInventory(PROGRESSION.inventorySize));
+    this.grantStarterKit();
+    this.inventoryPanel.refresh();
+    this.save(true);
+  }
+
+  /** Continue the character saved in a slot. Returns false if it could not be loaded. */
+  playCharacter(slot: number): boolean {
+    this.slot = slot;
+    return this.load();
+  }
+
+  deleteCharacter(slot: number): void {
+    this.saves.remove(slotKey(slot));
+  }
+
+  /** Replace the player entity with a fresh one of another class. */
+  private respawnAs(classId: string): void {
+    const old = this.player;
+    const spawn = TEST_ARENA.playerSpawn;
+    this.player = spawnPlayer(this.world, classId, spawn.x, spawn.z);
+    this.world.destroy(old);
+    this.renderer.rig.snapTo(spawn.x, 0, spawn.z);
+    this.refreshHint();
+  }
+
+  private autosave(): void {
+    if (this.slot === null || this.world.has(this.player, Dead)) return;
+    try {
+      this.saves.write(slotKey(this.slot), this.snapshot());
+    } catch {
+      // Storage full or blocked: the manual save shows the error.
+    }
   }
 
   setGraphics(quality: Settings['graphics']): void {
@@ -303,6 +389,10 @@ export class Game {
 
   private render(alpha: number, frameDt: number): void {
     this.realTime += frameDt;
+    if (this.realTime >= this.nextAutosave) {
+      this.nextAutosave = this.realTime + AUTOSAVE_INTERVAL;
+      this.autosave();
+    }
     const events = this.ctx.events.drain();
     this.handleEvents(events);
 
@@ -375,6 +465,7 @@ export class Game {
           this.toasts.show(t('ui.skillPoint'));
           this.characterPanel.refresh();
           this.skillTreePanel.refresh();
+          this.autosave();
           break;
         case 'overheat':
           this.notice('combat.overheat', 'error');
@@ -521,6 +612,7 @@ export class Game {
       seed: this.ctx.rng.seed,
       rngState: [...this.ctx.rng.getState()],
       tick: this.ctx.tick,
+      character: { name: this.characterName || t(`items.classes.${this.world.req(this.player, SkillUser).classId}`), classId: this.world.req(this.player, SkillUser).classId },
       player: { position: { x: tr.x, y: 0, z: tr.z }, facing: tr.facing },
       progression: { ...prog },
       inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped }),
@@ -533,6 +625,8 @@ export class Game {
   }
 
   applySave(data: SaveData): void {
+    if (this.world.req(this.player, SkillUser).classId !== data.character.classId) this.respawnAs(data.character.classId);
+    this.characterName = data.character.name;
     const rng = new Rng(data.seed);
     rng.setState(data.rngState);
     this.ctx.rng = rng;
@@ -693,7 +787,7 @@ export class Game {
     prog.skillPoints += resetTree(t, user.tree);
     recomputePlayer(this.world, this.player);
     user.slots = user.slots.map((s) => (s && user.compiled[s] ? s : null));
-    if (!user.slots.some(Boolean)) user.slots[0] = 'bastion.hydraulic_strike';
+    if (!user.slots.some(Boolean)) user.slots[0] = classDef(user.classId).actionBar[0] ?? null;
     this.skillTreePanel.refresh();
     this.inventoryPanel.refresh();
   }
@@ -713,27 +807,31 @@ export class Game {
     this.inventoryPanel.refresh();
   }
 
-  save(): void {
+  save(quiet = false): void {
+    if (this.slot === null) return;
     try {
-      this.saves.write(SAVE_SLOT, this.snapshot());
-      this.toasts.show(t('save.saved'));
+      this.saves.write(slotKey(this.slot), this.snapshot());
+      if (!quiet) this.toasts.show(t('save.saved'));
     } catch {
       this.toasts.show(t('save.storageUnavailable'), 'error');
     }
   }
 
-  load(): void {
+  load(): boolean {
+    if (this.slot === null) return false;
     try {
-      const data = this.saves.read(SAVE_SLOT);
+      const data = this.saves.read(slotKey(this.slot));
       if (!data) {
         this.toasts.show(t('save.noSave'), 'error');
-        return;
+        return false;
       }
       this.applySave(data);
       this.toasts.show(t('save.loaded'));
+      return true;
     } catch (err) {
       const reason = err instanceof SaveError ? err.message : String(err);
       this.toasts.show(t('save.loadFailed', { reason }), 'error');
+      return false;
     }
   }
 

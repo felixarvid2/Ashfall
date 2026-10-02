@@ -3,6 +3,7 @@
  * so schema defaults are applied and bad data fails loudly at startup.
  */
 import { BASTION } from './classes/bastion';
+import { SPECTRE } from './classes/spectre';
 import { ENEMIES } from './enemies';
 import { TEST_ARENA_WAVES } from './encounters';
 import {
@@ -19,9 +20,11 @@ import {
   type StatusId,
 } from './schemas';
 import { BASTION_SKILLS } from './skills/bastion';
+import { SPECTRE_SKILLS } from './skills/spectre';
 import { STATUSES } from './statuses';
 import { SkillTreeSchema, type SkillTree } from './skillTree/schema';
 import { BASTION_TREE } from './skillTree/bastion';
+import { SPECTRE_TREE } from './skillTree/spectre';
 
 function byId<T extends { id: string }>(items: T[], what: string): Map<string, T> {
   const map = new Map<string, T>();
@@ -33,10 +36,10 @@ function byId<T extends { id: string }>(items: T[], what: string): Map<string, T
 }
 
 export const SKILLS: ReadonlyMap<string, SkillDef> = byId(
-  BASTION_SKILLS.map((s) => SkillDefSchema.parse(s)),
+  [...BASTION_SKILLS, ...SPECTRE_SKILLS].map((s) => SkillDefSchema.parse(s)),
   'skill',
 );
-export const CLASSES: ReadonlyMap<string, ClassDef> = byId([ClassDefSchema.parse(BASTION)], 'class');
+export const CLASSES: ReadonlyMap<string, ClassDef> = byId([BASTION, SPECTRE].map((c) => ClassDefSchema.parse(c)), 'class');
 export const ENEMY_DEFS: ReadonlyMap<string, EnemyDef> = byId(
   ENEMIES.map((e) => EnemyDefSchema.parse(e)),
   'enemy',
@@ -47,7 +50,7 @@ export const STATUS_DEFS = Object.fromEntries(
 export const ENCOUNTERS: ReadonlyMap<string, Encounter> = byId([EncounterSchema.parse(TEST_ARENA_WAVES)], 'encounter');
 
 export const SKILL_TREES: ReadonlyMap<string, SkillTree> = new Map(
-  [SkillTreeSchema.parse(BASTION_TREE)].map((t) => [t.classId, t] as const),
+  [BASTION_TREE, SPECTRE_TREE].map((t) => SkillTreeSchema.parse(t)).map((t) => [t.classId, t] as const),
 );
 
 export function skill(id: string): SkillDef {
