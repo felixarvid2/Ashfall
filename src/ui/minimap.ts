@@ -77,6 +77,8 @@ export class MapUi {
     private readonly found: () => ReadonlySet<string>,
     /** Camera yaw (radians): both maps are rotated so their "up" is the screen's up. */
     private readonly yaw = Math.PI / 4,
+    /** Inside a dungeon: its rooms (centre, explored, kind), drawn instead of the zone. */
+    private readonly instance: () => { rooms: { x: number; z: number; size: number; explored: boolean; kind: string }[] } | undefined = () => undefined,
   ) {
     this.cos = Math.cos(yaw);
     this.sin = Math.sin(yaw);
@@ -117,8 +119,44 @@ export class MapUi {
     this.timer -= dt;
     if (this.timer > 0) return;
     this.timer = 0.15;
+    const inst = this.instance();
+    if (inst) {
+      this.drawInstance(inst.rooms);
+      if (this.open) this.toggle();
+      return;
+    }
     this.drawMini(zone);
     if (this.open) this.drawFull();
+  }
+
+  /** Dungeon minimap: explored rooms around the player. */
+  private drawInstance(rooms: { x: number; z: number; size: number; explored: boolean; kind: string }[]): void {
+    const c = this.miniCtx;
+    const p = this.player();
+    const v: View = { cx: MINI_SIZE / 2, cy: MINI_SIZE / 2, px: p.x, pz: p.z, scale: MINI_SIZE / 130, cos: this.cos, sin: this.sin };
+    c.clearRect(0, 0, MINI_SIZE, MINI_SIZE);
+    c.save();
+    c.beginPath();
+    c.arc(MINI_SIZE / 2, MINI_SIZE / 2, MINI_SIZE / 2 - 2, 0, Math.PI * 2);
+    c.clip();
+    c.fillStyle = 'rgba(8,7,6,0.85)';
+    c.fillRect(0, 0, MINI_SIZE, MINI_SIZE);
+    const a = v.scale * v.cos;
+    const b = v.scale * v.sin;
+    c.setTransform(a, b, -b, a, v.cx - (a * v.px - b * v.pz), v.cy - (b * v.px + a * v.pz));
+    for (const r of rooms) {
+      if (!r.explored) continue;
+      c.fillStyle = r.kind === 'boss' ? '#4a2622' : '#2e2a26';
+      c.fillRect(r.x - r.size / 2 + 1, r.z - r.size / 2 + 1, r.size - 2, r.size - 2);
+    }
+    c.restore();
+    for (const m of this.markers) this.mark(c, ...project(v, m.x, m.z), m.color, 4, 'dot');
+    this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);
+    c.strokeStyle = '#6a5a44';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.arc(MINI_SIZE / 2, MINI_SIZE / 2, MINI_SIZE / 2 - 2, 0, Math.PI * 2);
+    c.stroke();
   }
 
   private fullView(zone: ZoneRuntime): View {

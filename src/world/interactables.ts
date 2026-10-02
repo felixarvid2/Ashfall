@@ -41,6 +41,7 @@ import { recomputePlayer } from '../systems/stats';
 import { livingInCircle } from '../systems/targeting';
 import { revealAround, type ZoneRuntime } from './zone';
 import { signal } from '../systems/quests';
+import { instanceInteract } from './instance';
 
 const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: number; glow?: string; collider?: number }>> = {
   chest: { asset: 'prop.supply_chest', collider: 0.7 },
@@ -51,6 +52,8 @@ const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: numb
   lore: { asset: 'prop.control_terminal', scale: 0.8, glow: '#2a6a8a', collider: 0.45 },
   signalTower: { asset: 'prop.signal_tower', scale: 1.1, collider: 1 },
   teleporter: { asset: 'prop.teleporter', scale: 0.38, glow: '#2a8aff' },
+  dungeon: { asset: 'prop.teleporter', scale: 0.3, glow: '#ff8a3a' },
+  bunker: { asset: 'prop.teleporter', scale: 0.26, glow: '#c8a060' },
   stash: { asset: 'prop.supply_chest', scale: 1.1, glow: '#7dd8a0', collider: 0.8 },
 };
 
@@ -240,8 +243,15 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
     case 'teleporter':
     case 'npc':
     case 'stash':
+    case 'dungeon':
+    case 'bunker':
       emit();
       return true;
+    case 'generator':
+    case 'instanceKey':
+    case 'cache':
+    case 'portal':
+      return instanceInteract(world, ctx, target, it);
     case 'questObject':
       // Quest objects vanish when used; the quest log decides what they mean.
       it.used = true;

@@ -55,7 +55,7 @@ export function rareAffixes(rng: Rng, level: number): EliteAffix[] {
 }
 
 /** Give an enemy its elite affixes (stats and glow come from makeElite). */
-export function applyAffixes(world: World, e: Entity, kind: 'champion' | 'rare', affixes: EliteAffix[], rng: Rng): void {
+export function applyAffixes(world: World, e: Entity, kind: 'champion' | 'rare' | 'named', affixes: EliteAffix[], rng: Rng): void {
   world.add(e, Elite, { kind, affixes, timers: {}, shieldUsed: false, mirrored: false, copy: false });
   if (affixes.includes('fast')) {
     const m = world.get(e, Mover);

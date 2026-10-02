@@ -73,7 +73,9 @@ export type GameEvent =
   | { type: 'hub'; id: string; entered: boolean }
   /** The player used a point of interest (UI shows toasts, the lore reader, buff banners). */
   | { type: 'interact'; kind: string; id: string; detail?: string }
-  | { type: 'quest'; id: string; state: 'started' | 'progress' | 'step' | 'completed' | 'failed' };
+  | { type: 'quest'; id: string; state: 'started' | 'progress' | 'step' | 'completed' | 'failed' }
+  /** Big centred message from game logic (boss phases, instance objectives). */
+  | { type: 'banner'; key: string; params?: Record<string, string | number>; seconds?: number };
 
 export class EventQueue {
   private events: GameEvent[] = [];

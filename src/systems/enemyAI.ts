@@ -68,12 +68,14 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
   return best;
 }
 
-export function enemyAISystem(world: World, dt: number, ctx: GameContext): void {
+export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): void {
   const candidates = targetCandidates(world, ctx);
 
   for (const e of world.query(EnemyAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
     const ai = world.req(e, EnemyAI);
+    // Enraged bosses run their wind-ups and cooldowns faster.
+    const dt = frameDt * (ai.tempo ?? 1);
     const def = enemyDef(ai.defId);
     const tr = world.req(e, Transform);
     const mover = world.req(e, Mover);

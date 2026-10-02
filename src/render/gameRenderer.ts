@@ -72,8 +72,10 @@ export class GameRenderer {
     const s = this.scene;
     s.background = new THREE.Color(arena.fog.color);
     s.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
-    s.add(new THREE.AmbientLight(arena.ambient.color, arena.ambient.intensity));
-    s.add(new THREE.HemisphereLight('#4a5466', '#2a2018', arena.ambient.intensity * 1.6));
+    this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
+    this.ambientLight = new THREE.AmbientLight(arena.ambient.color, arena.ambient.intensity);
+    this.hemiLight = new THREE.HemisphereLight('#4a5466', '#2a2018', arena.ambient.intensity * 1.6);
+    s.add(this.ambientLight, this.hemiLight);
     const pl = arena.playerLight;
     this.playerLight.color.set(pl.color);
     this.playerLight.intensity = pl.intensity;
@@ -164,6 +166,68 @@ export class GameRenderer {
   }
 
   private lightSpots: { x: number; z: number; color: string; intensity: number; distance: number; height: number }[] = [];
+  private zoneLook: { fog: { color: string; density: number }; ambient: { color: string; intensity: number } } | null = null;
+  private ambientLight: THREE.AmbientLight | null = null;
+  private hemiLight: THREE.HemisphereLight | null = null;
+  private instanceRoot: THREE.Group | null = null;
+  private zoneLightSpots: typeof this.lightSpots | null = null;
+
+  /** Dungeon interiors: their own floor, fog, ambient light and lamps (the zone stays loaded). */
+  enterInstance(
+    bounds: { minX: number; maxX: number; minZ: number; maxZ: number },
+    theme: { floor: string; fog: { color: string; density: number }; ambient: { color: string; intensity: number } },
+    lights: typeof this.lightSpots,
+  ): void {
+    this.exitInstance();
+    const root = new THREE.Group();
+    const w = bounds.maxX - bounds.minX;
+    const d = bounds.maxZ - bounds.minZ;
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, d),
+      new THREE.MeshStandardMaterial({ map: makeGroundTexture(), color: theme.floor, roughness: 1, metalness: 0.1 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set((bounds.minX + bounds.maxX) / 2, 0.01, (bounds.minZ + bounds.maxZ) / 2);
+    floor.receiveShadow = true;
+    root.add(floor);
+    this.scene.add(root);
+    this.instanceRoot = root;
+    this.setLook(theme.fog, theme.ambient);
+    this.zoneLightSpots = this.lightSpots;
+    this.lightSpots = lights;
+    this.lightTimer = 0;
+  }
+
+  /** Lamps lit while inside (generators that come online). */
+  setInstanceLights(lights: typeof this.lightSpots): void {
+    if (this.instanceRoot) this.lightSpots = lights;
+  }
+
+  exitInstance(): void {
+    if (!this.instanceRoot) return;
+    this.scene.remove(this.instanceRoot);
+    this.instanceRoot.traverse((o) => {
+      const m = o as THREE.Mesh;
+      m.geometry?.dispose();
+      (m.material as THREE.Material | undefined)?.dispose();
+    });
+    this.instanceRoot = null;
+    if (this.zoneLightSpots) this.lightSpots = this.zoneLightSpots;
+    this.zoneLightSpots = null;
+    this.lightTimer = 0;
+    if (this.zoneLook) this.setLook(this.zoneLook.fog, this.zoneLook.ambient);
+  }
+
+  /** Fog and ambient light (Ash Storms thicken the fog; instances have their own). */
+  setLook(fog: { color: string; density: number }, ambient?: { color: string; intensity: number }): void {
+    this.scene.background = new THREE.Color(fog.color);
+    this.scene.fog = new THREE.FogExp2(fog.color, fog.density);
+    if (ambient && this.ambientLight && this.hemiLight) {
+      this.ambientLight.color.set(ambient.color);
+      this.ambientLight.intensity = ambient.intensity;
+      this.hemiLight.intensity = ambient.intensity * 1.6;
+    }
+  }
   private readonly lightPool: THREE.PointLight[] = [];
   private lightTimer = 0;
 

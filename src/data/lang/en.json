@@ -214,8 +214,16 @@
     "sergeant": "Contaminated Sergeant",
     "named": {
       "lena": "Lena Reyes",
-      "rook": "Rook"
-    }
+      "rook": "Rook",
+      "hold_warden": "The Hold Warden",
+      "vos": "Sergeant Vos",
+      "brood_mother": "The Brood Mother",
+      "hale": "Commandant Hale",
+      "the_first": "The First"
+    },
+    "brood_mother": "Brood Mother",
+    "commandant_hale": "Commandant Hale",
+    "the_first": "The First"
   },
   "resources": {
     "heat": "Heat",
@@ -1273,7 +1281,13 @@
       "teleporter": "Open Map",
       "npc": "Talk",
       "questObject": "Examine",
-      "stash": "Open Stash"
+      "stash": "Open Stash",
+      "dungeon": "Enter",
+      "bunker": "Enter Bunker",
+      "portal": "Leave",
+      "generator": "Start Generator",
+      "instanceKey": "Take Keycard",
+      "cache": "Open Cache"
     },
     "needKeycard": "Locked. A keycard should be lying somewhere nearby.",
     "keycard": "Keycard taken. A locked chest is close by.",
@@ -1693,5 +1707,51 @@
     },
     "named": "{first} {epithet}, {title}",
     "champion": "Champion"
+  },
+  "bosses": {
+    "brood_mother": {
+      "phase2": "The Brood Mother splits open"
+    },
+    "hale": {
+      "phase2": "Hale drops the shield. Lumen floods his veins."
+    },
+    "the_first": {
+      "intro": "The First",
+      "introSub": "Elias Brandt. Patient zero.",
+      "phase2": "The First tears the ground apart",
+      "phase3": "The First collapses into something faster"
+    },
+    "defeated": "{name} defeated",
+    "reset": "The fight resets."
+  },
+  "instances": {
+    "names": {
+      "meridians_hold": "Meridian's Hold",
+      "bunker_sierra4": "Bunker Sierra-4",
+      "drainage_tunnels": "The Drainage Tunnels",
+      "bunker_0": "Maintenance Bunker K-2",
+      "bunker_1": "Survey Bunker 11",
+      "bunker_2": "Pump Station Bunker",
+      "bunker_3": "Storm Shelter Ash-3",
+      "bunker_4": "Relay Bunker East",
+      "bunker_5": "Quarry Bunker"
+    },
+    "objective": {
+      "activate": "Restore power: generators {n}/{count}",
+      "collect": "Find keycards: {n}/{count}",
+      "destroy": "Destroy spore nests: {n}/{count}",
+      "clear": "Clear the bunker",
+      "boss": "Defeat {name}",
+      "done": "Cleared. Take what you earned and leave."
+    },
+    "progress": {
+      "activate": "Generator online ({n}/{count})",
+      "collect": "Keycard found ({n}/{count})",
+      "destroy": "Spore nest destroyed ({n}/{count})"
+    },
+    "charging": "Generator charging. Hold the line!",
+    "gateOpen": "The way to the boss is open",
+    "cleared": "Bunker cleared",
+    "complete": "Instance complete"
   }
 }

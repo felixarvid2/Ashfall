@@ -41,6 +41,8 @@ export interface GameContext {
   zoneLevels: [number, number];
   /** Open-world zone state (absent in the test arena and headless sims). */
   zone?: ZoneRuntime;
+  /** The dungeon or bunker the player is in, if any. */
+  instance?: import('../world/instance').InstanceRuntime;
   /** Quest log and the signals systems send it (kills, interactions, objectives). */
   quests?: import('../systems/quests').QuestRuntime;
   /** Account-wide progress (Echo Relics, Restoration); absent in headless sims. */

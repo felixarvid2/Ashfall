@@ -5,6 +5,8 @@ import {
   Renderable,
   DisplayName,
   Elite,
+  Boss,
+  Targetable,
   Npc,
   AccountBonuses,
   Interactable,
@@ -120,6 +122,9 @@ import {
 } from './systems/hub/services';
 import { VENDOR } from './data/services';
 import { championAffixes, eliteSystem } from './systems/elites';
+import { bossSystem, resetBoss } from './systems/boss';
+import { buildInstance, clearInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
+import { ROOM_CELL } from './data/instances';
 import { ELITE_COLORS } from './data/elites';
 
 const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
@@ -217,6 +222,7 @@ export class Game {
       .add('skills', skillSystem)
       .add('enemyAI', enemyAISystem)
       .add('elites', eliteSystem)
+      .add('boss', bossSystem)
       .add('minions', minionSystem)
       .add('status', statusSystem)
       .add('movement', movementSystem)
@@ -236,7 +242,8 @@ export class Game {
       .add('rewards', rewardSystem)
       .add('pickup', pickupSystem)
       .add('interact', interactSystem)
-      .add('quests', questSystem);
+      .add('quests', questSystem)
+      .add('instance', instanceSystem);
 
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
@@ -261,6 +268,11 @@ export class Game {
       (id) => this.teleportTo(id),
       () => this.zone?.found ?? new Set<string>(),
       this.renderer.rig.yaw,
+      () => {
+        const inst = this.ctx.instance;
+        if (!inst) return undefined;
+        return { rooms: inst.layout.rooms.map((r) => ({ ...roomCenter(r), size: ROOM_CELL, explored: r.explored, kind: r.kind })) };
+      },
     );
     this.inventoryPanel = new InventoryPanel(
       uiRoot,
@@ -586,7 +598,9 @@ export class Game {
       this.characterPanel.refresh();
     }
     this.hud.update(this.hudState(), frameDt);
-    this.mapUi.markers = questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
+    this.mapUi.markers = this.ctx.instance
+      ? this.instanceMarkers()
+      : questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
     this.mapUi.update(frameDt);
     this.updateInteractPrompt(px, pz);
     this.updateQuestUi(px, pz);
@@ -662,6 +676,9 @@ export class Game {
           break;
         case 'quest':
           this.onQuestEvent(event.id, event.state);
+          break;
+        case 'banner':
+          this.hud.showBanner(t(event.key, event.params), event.seconds ?? 2);
           break;
         default:
           break;
@@ -930,6 +947,13 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       case 'stash':
         this.openService('stash');
         break;
+      case 'dungeon':
+      case 'bunker':
+        if (id) this.enterInstance(id);
+        break;
+      case 'portal':
+        this.exitInstance();
+        break;
       default:
         break;
     }
@@ -950,6 +974,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
 
   /** Region and subzone (or hub) under the player, for the HUD. */
   private locationLabel(): { title: string; sub: string } {
+    const inst = this.ctx.instance;
+    if (inst) return { title: t(`instances.names.${inst.def.id === 'bunker' ? inst.poi.replace('.', '_') : inst.def.id}`), sub: objectiveText(inst, t) };
     const zone = this.zone!;
     const tr = this.playerTransform;
     const key = zone.def.key;
@@ -1057,7 +1083,9 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     user.request = null;
     // Back at the nearest discovered teleporter (docs/world-and-gameplay.md §13).
     const tr = this.playerTransform;
-    const tp = this.zone ? nearestTeleporter(this.zone, tr.x, tr.z) : ZONE.playerSpawn;
+    // Inside a dungeon you come back at its entrance; bosses reset (docs/world-and-gameplay.md §13).
+    for (const b of w.query(Boss)) resetBoss(w, b);
+    const tp = this.ctx.instance ? { x: this.ctx.instance.start.x - 2, z: this.ctx.instance.start.z - 2 } : this.zone ? nearestTeleporter(this.zone, tr.x, tr.z) : ZONE.playerSpawn;
     const spawn = { x: tp.x + 2, z: tp.z + 2 };
     Object.assign(this.playerTransform, makeTransform(spawn.x, 0, spawn.z, Math.PI));
     w.add(p, Invulnerable, { remaining: 2 });
@@ -1066,6 +1094,86 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
 
   get zone(): ZoneRuntime | undefined {
     return this.ctx.zone;
+  }
+
+  // ---- Dungeons and bunkers ----------------------------------------------------
+
+  private instanceCount = 0;
+
+  enterInstance(poiId: string): void {
+    const zone = this.zone;
+    const poi = zone?.def.pois.find((p) => p.id === poiId);
+    if (!zone || !poi || this.ctx.instance) return;
+    const defId = poi.kind === 'dungeon' ? String(poi.data?.dungeon ?? '') : 'bunker';
+    // Wake-up packs far away would only sit there: put them back to sleep.
+    for (const st of zone.packs.values()) {
+      if (st.state !== 'active') continue;
+      for (const m of st.members) this.world.destroyDeferred(m);
+      st.members = [];
+      st.state = 'dormant';
+    }
+    this.world.flushDestroyed();
+    const level = monsterLevel(this.world, this.ctx) + (poi.kind === 'dungeon' ? 1 : 0);
+    const rt = buildInstance(this.world, this.ctx, defId, poiId, `${this.ctx.rng.seed}-${this.instanceCount++}`, Math.min(level, this.ctx.zoneLevels[1] + 1), {
+      x: poi.x + 3,
+      z: poi.z + 3,
+    });
+    this.ctx.instance = rt;
+    this.ctx.worldHalfSize = 2600;
+    const xs = rt.layout.rooms.map((r) => roomCenter(r));
+    const pad = ROOM_CELL;
+    this.renderer.enterInstance(
+      {
+        minX: Math.min(...xs.map((p) => p.x)) - pad,
+        maxX: Math.max(...xs.map((p) => p.x)) + pad,
+        minZ: Math.min(...xs.map((p) => p.z)) - pad,
+        maxZ: Math.max(...xs.map((p) => p.z)) + pad,
+      },
+      rt.def.theme,
+      rt.lights,
+    );
+    this.placePlayer(rt.start.x, rt.start.z);
+    this.closeDialogue();
+    this.servicePanel.close();
+    this.hud.showBanner(this.locationLabel().title, 2.4);
+  }
+
+  exitInstance(): void {
+    const rt = this.ctx.instance;
+    if (!rt) return;
+    clearInstance(this.world);
+    this.ctx.instance = undefined;
+    this.ctx.worldHalfSize = ZONE.halfSize;
+    this.renderer.exitInstance();
+    this.placePlayer(rt.exit.x, rt.exit.z);
+    this.autosave();
+  }
+
+  /** Objective objects, the cache and the exit on the dungeon minimap. */
+  private instanceMarkers(): { x: number; z: number; color: string }[] {
+    const out: { x: number; z: number; color: string }[] = [];
+    for (const e of this.world.query(Interactable, Transform)) {
+      const it = this.world.req(e, Interactable);
+      if (it.used) continue;
+      const tr = this.world.req(e, Transform);
+      if (tr.x < 1400) continue;
+      const color = it.kind === 'portal' ? '#5ad2ff' : it.kind === 'cache' ? '#ffb43a' : '#ffd23a';
+      out.push({ x: tr.x, z: tr.z, color });
+    }
+    for (const e of this.world.query(Targetable, Transform)) {
+      if (this.world.has(e, Dead)) continue;
+      const tr = this.world.req(e, Transform);
+      if (tr.x > 1400) out.push({ x: tr.x, z: tr.z, color: '#7dff5a' });
+    }
+    return out;
+  }
+
+  private placePlayer(x: number, z: number): void {
+    Object.assign(this.playerTransform, makeTransform(x, 0, z, Math.PI));
+    this.world.remove(this.player, MoveTarget);
+    this.world.remove(this.player, ForcedMove);
+    this.world.add(this.player, Invulnerable, { remaining: 1.5 });
+    this.renderer.rig.snapTo(x, 0, z);
   }
 
   /** Travel to a discovered teleporter (map). */
@@ -1137,7 +1245,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       rngState: [...this.ctx.rng.getState()],
       tick: this.ctx.tick,
       character: { name: this.characterName || t(`items.classes.${this.world.req(this.player, SkillUser).classId}`), classId: this.world.req(this.player, SkillUser).classId },
-      player: { position: { x: tr.x, y: 0, z: tr.z }, facing: tr.facing },
+      // Saving inside a dungeon puts you back at its entrance.
+      player: { position: this.ctx.instance ? { x: this.ctx.instance.exit.x, y: 0, z: this.ctx.instance.exit.z } : { x: tr.x, y: 0, z: tr.z }, facing: tr.facing },
       progression: { ...prog },
       inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped, aspects: inv.aspects ?? [] }),
       loot: { seq: this.ctx.loot.seq, rngState: [...this.ctx.loot.rng.getState()] },

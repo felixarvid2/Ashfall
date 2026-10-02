@@ -242,6 +242,8 @@ export interface EnemyAI {
   burstFired?: number;
   /** Open-world pack this enemy belongs to (pack spawner). */
   pack?: string;
+  /** Attack tempo multiplier (boss phases): >1 = faster wind-ups and cooldowns. */
+  tempo?: number;
 }
 export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
 
@@ -473,7 +475,7 @@ export const Turret = defineComponent<Turret>('Turret');
 export interface Interactable {
   /** Point-of-interest id (or teleporter id). */
   poi: string;
-  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash';
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache';
   /** Use radius (m). */
   radius: number;
   /** Spent for good (opened, read, claimed). */
@@ -544,7 +546,7 @@ export const Npc = defineComponent<Npc>('Npc');
 
 /** Champion or rare elite: its affixes and their timers. */
 export interface Elite {
-  kind: 'champion' | 'rare';
+  kind: 'champion' | 'rare' | 'named';
   affixes: import('../data/elites').EliteAffix[];
   /** Seconds until each timed affix fires again. */
   timers: Partial<Record<import('../data/elites').EliteAffix, number>>;
@@ -561,3 +563,26 @@ export interface PendingHazard {
   hazard: Hazard;
 }
 export const PendingHazard = defineComponent<PendingHazard>('PendingHazard');
+
+/** Non-enemy things the player can click to attack (spore nests, Spore Feeders). */
+export interface Targetable {
+  /** Spawns adds every `every` seconds while the player is near (nests). */
+  spawn?: { enemy: string; count: number; every: number; timer: number };
+}
+export const Targetable = defineComponent<Targetable>('Targetable');
+
+/** A boss: its phase script, timers and the adds it summoned. */
+export interface Boss {
+  script: string | null;
+  phase: number;
+  timers: { adds: number; plates: number; spores: number };
+  engaged: boolean;
+  /** Arena centre and radius (spore fields, resets). */
+  arena: { x: number; z: number; radius: number };
+  adds: Entity[];
+  /** Cover plates thrown in phase 2 (removed on reset). */
+  plates: Entity[];
+  pending: { x: number; z: number; t: number }[];
+  baseSpeed: number;
+}
+export const Boss = defineComponent<Boss>('Boss');

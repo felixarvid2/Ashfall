@@ -196,7 +196,8 @@ export function makeElite(world: World, e: Entity, kind: 'champion' | 'rare', rn
 
 export function zoneSystem(world: World, dt: number, ctx: GameContext): void {
   const zone = ctx.zone;
-  if (!zone) return;
+  // Inside a dungeon the open world waits.
+  if (!zone || ctx.instance) return;
   zone.timer -= dt;
   if (zone.timer > 0) return;
   zone.timer = TICK;

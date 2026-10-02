@@ -1,5 +1,5 @@
 /** Helpers for finding entities in areas, used by skills, AI and the cursor. */
-import { Collider, Dead, EnemyAI, Faction, Health, Transform, type Team } from '../core/components';
+import { Collider, Dead, EnemyAI, Faction, Health, Targetable, Transform, type Team } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 
@@ -25,7 +25,7 @@ export function enemyNear(world: World, ctx: GameContext, x: number, z: number, 
   let best: Entity | null = null;
   let bestDist = Infinity;
   for (const e of livingInCircle(world, ctx, x, z, tolerance, 'enemy')) {
-    if (!world.has(e, EnemyAI)) continue;
+    if (!world.has(e, EnemyAI) && !world.has(e, Targetable)) continue;
     const tr = world.req(e, Transform);
     const d = Math.hypot(tr.x - x, tr.z - z) - (world.get(e, Collider)?.radius ?? 0);
     if (d < bestDist) {
