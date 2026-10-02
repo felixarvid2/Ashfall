@@ -13,6 +13,7 @@ import {
   Dead,
   MoveTarget,
   Mover,
+  PickupTarget,
   PlayerControlled,
   SkillUser,
   Transform,
@@ -70,8 +71,11 @@ export function playerControlSystem(world: World, _dt: number, ctx: GameContext)
     }
 
     // ---- WASD mode ----
-    world.remove(e, MoveTarget);
     world.remove(e, AttackTarget);
+    // Clicking a ground item walks to it until a movement key is pressed.
+    if (world.has(e, PickupTarget) && !moveDir) continue;
+    world.remove(e, PickupTarget);
+    world.remove(e, MoveTarget);
     if (user && input.isMouseDown(0)) request(user, 0, aim);
     if (!moveDir) {
       mover.vx = 0;

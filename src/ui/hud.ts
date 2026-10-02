@@ -32,6 +32,7 @@ export interface HudState {
   wave: { wave: number; alive: number; phase: 'intermission' | 'active'; timer: number } | null;
   target: { name: string; current: number; max: number; statuses: string[] } | null;
   dead: boolean;
+  xp: { level: number; current: number; next: number; skillPoints: number };
 }
 
 const SLOT_LABELS = ['LMB', 'RMB', '1', '2', '3', '4'];
@@ -127,6 +128,9 @@ export class Hud {
   private readonly death: HTMLDivElement;
   private readonly deathHint: HTMLDivElement;
   private readonly tooltip: HTMLDivElement;
+  private readonly xpFill: HTMLDivElement;
+  private readonly xpText: HTMLDivElement;
+  private lastXp = '';
   private bannerTimer = 0;
   private lastWave = '';
   private lastTarget = '';
@@ -153,7 +157,17 @@ export class Hud {
     this.dodgeSlot.el.classList.add('slot-small');
     this.potionSlot.el.classList.add('slot-small');
     slotRow.append(...this.slots.map((s) => s.el), this.dodgeSlot.el, this.potionSlot.el);
-    bar.append(this.lifeOrb.el, slotRow, this.heatOrb.el);
+    const middle = document.createElement('div');
+    middle.className = 'bar-middle';
+    const xp = document.createElement('div');
+    xp.className = 'xp-bar';
+    this.xpFill = document.createElement('div');
+    this.xpFill.className = 'xp-fill';
+    this.xpText = document.createElement('div');
+    this.xpText.className = 'xp-text';
+    xp.append(this.xpFill, this.xpText);
+    middle.append(slotRow, xp);
+    bar.append(this.lifeOrb.el, middle, this.heatOrb.el);
 
     const wave = document.createElement('div');
     wave.className = 'wave-tracker';
@@ -208,6 +222,8 @@ export class Hud {
       rmb: 'RMB',
       dodge: first('dodge'),
       potion: first('potion'),
+      inv: first('inventory'),
+      pickup: first('pickup'),
       debug: first('toggleDebug'),
     });
     this.respawnKey = first('respawn');
@@ -267,6 +283,17 @@ export class Hud {
     }
 
     this.death.hidden = !state.dead;
+
+    const xpKey = `${state.xp.level}|${Math.floor(state.xp.current)}|${state.xp.next}|${state.xp.skillPoints}`;
+    if (xpKey !== this.lastXp) {
+      this.lastXp = xpKey;
+      this.xpFill.style.width = `${Math.min(100, (state.xp.current / Math.max(1, state.xp.next)) * 100)}%`;
+      const points = state.xp.skillPoints > 0 ? ` · ${state.xp.skillPoints} SP` : '';
+      this.xpText.textContent = `${t('ui.level', { level: state.xp.level })} · ${t('ui.xp', {
+        xp: Math.floor(state.xp.current),
+        next: state.xp.next,
+      })}${points}`;
+    }
 
     if (this.bannerTimer > 0) {
       this.bannerTimer -= dt;

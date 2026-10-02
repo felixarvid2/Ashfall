@@ -13,7 +13,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import manifestJson from '../../assets/manifest.json';
 import { AssetManifestSchema, type AssetEntry } from '../data/assetManifest';
 
-type Placeholder = AssetEntry['placeholder'];
+type Placeholder = NonNullable<AssetEntry['placeholder']>;
 
 /** Per-mesh material state used for hit flashes and status tints. */
 export interface TintSlot {
@@ -58,7 +58,7 @@ export class AssetLibrary {
   /** Load every optimized model listed in the manifest. Missing files fall back to placeholders. */
   async preload(baseUrl: string, onProgress?: (done: number, total: number) => void): Promise<void> {
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-    const todo = [...this.entries.values()].filter((e) => e.status === 'optimized' && e.file);
+    const todo = [...this.entries.values()].filter((e) => e.status === 'optimized' && e.file && e.category !== 'icon');
     let done = 0;
     await Promise.all(
       todo.map(async (entry) => {
@@ -99,6 +99,12 @@ export class AssetLibrary {
     );
   }
 
+  /** URL of an optimized 2D icon (category "icon"), or null if it hasn't been generated yet. */
+  iconUrl(id: string, baseUrl: string): string | null {
+    const entry = this.entries.get(id);
+    return entry && entry.status === 'optimized' && entry.file ? `${baseUrl}assets/${entry.file}` : null;
+  }
+
   /** True once a real (Meshy) model is loaded for this id. */
   hasModel(id: string): boolean {
     return this.models.has(id);
@@ -136,7 +142,9 @@ export class AssetLibrary {
       }
       obj.name = id;
     } else {
-      obj = this.buildPlaceholder(id, this.entry(id).placeholder);
+      const placeholder = this.entry(id).placeholder;
+      if (!placeholder) throw new Error(`Asset ${id} has no placeholder`);
+      obj = this.buildPlaceholder(id, placeholder);
     }
     if (uniqueMaterial) {
       const tint: TintSlot[] = [];
@@ -173,6 +181,7 @@ export class AssetLibrary {
       if (found) return found;
     }
     const p = this.entry(id).placeholder;
+    if (!p) throw new Error(`Asset ${id} has no placeholder`);
     return { geometry: this.geometry(p), material: this.material(p) };
   }
 

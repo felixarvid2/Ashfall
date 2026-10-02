@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import type { Entity, World } from '../core/ecs';
-import { Dead, EnemyAI, ForcedMove, Mover, Renderable, SkillUser, StatusEffects, Transform } from '../core/components';
+import { CombatStats, Dead, EnemyAI, ForcedMove, Mover, Renderable, SkillUser, StatusEffects, Transform } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CharacterAnimator, type PlayRequest } from './animator';
@@ -16,6 +16,7 @@ import { AshFall } from './ash';
 import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
 import { VfxSystem } from './vfx';
+import { LootVisuals } from './lootVisuals';
 import { PostFx, type GraphicsQuality } from './postfx';
 
 export class GameRenderer {
@@ -25,6 +26,7 @@ export class GameRenderer {
   readonly assets = new AssetLibrary();
   private readonly ash = new AshFall();
   readonly vfx = new VfxSystem();
+  readonly loot = new LootVisuals();
   private readonly postfx: PostFx;
   private readonly objects = new Map<Entity, THREE.Object3D>();
   /** Seconds of white hit-flash left per entity. */
@@ -60,7 +62,7 @@ export class GameRenderer {
     this.rig = new CameraRig(1);
     this.postfx = new PostFx(this.renderer, this.scene, this.rig.camera);
     this.moon = new THREE.DirectionalLight();
-    this.scene.add(this.ash.points, this.vfx.root);
+    this.scene.add(this.ash.points, this.vfx.root, this.loot.root);
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -220,6 +222,7 @@ export class GameRenderer {
       }
     }
     this.vfx.update(world, frameDt, alpha);
+    this.loot.update(world, frameDt);
   }
 
   /** Pick the animation for what the entity is doing this frame. */
@@ -232,7 +235,8 @@ export class GameRenderer {
     if (user?.cast) {
       const def = skill(user.cast.skillId);
       const state = def.category === 'basic' ? 'attack' : 'cast';
-      return { state, loop: false, fit: def.castTime + def.recovery, token: user.cast };
+      const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0);
+      return { state, loop: false, fit: (def.castTime + def.recovery) / speed, token: user.cast };
     }
     const ai = world.get(e, EnemyAI);
     if (ai && (ai.state === 'windup' || ai.state === 'recover')) {

@@ -135,8 +135,17 @@ export const ClassDefSchema = z.object({
   life: z.number().positive(),
   armor: z.number().nonnegative(),
   resist: ResistancesSchema,
+  /** Damage with no weapon equipped. */
   weaponDamage: z.number().positive(),
-  mainStat: z.number().nonnegative(),
+  /** Attributes at level 1 and gained per level; `primary` scales damage (+0.1 % per point). */
+  attributes: z.object({
+    primary: z.enum(['strength', 'dexterity', 'intelligence']),
+    base: z.object({ strength: z.number(), dexterity: z.number(), intelligence: z.number(), willpower: z.number() }),
+    perLevel: z.object({ strength: z.number(), dexterity: z.number(), intelligence: z.number(), willpower: z.number() }),
+  }),
+  lifePerLevel: z.number().nonnegative(),
+  /** Common items a new character starts with (base ids). */
+  starterKit: z.array(z.string()).default([]),
   critChance: z.number().min(0).max(1),
   critDamage: z.number().nonnegative(),
   moveSpeed: z.number().positive(),
@@ -214,6 +223,8 @@ export const EnemyDefSchema = z.object({
   /** Hover height for flying enemies (metres). */
   hover: z.number().nonnegative().default(0),
   collider: z.object({ radius: z.number().positive(), mass: z.number().positive() }),
+  /** Drop table id in src/data/loot/tables.ts (defaults to "dt.<enemy id>"). */
+  dropTable: z.string().optional(),
   attack: EnemyAttackSchema,
   onDeath: z
     .object({

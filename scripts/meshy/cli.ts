@@ -11,6 +11,7 @@
  *   approve <ids|all>              Final approval of refined assets → status `approved`
  *   optimize [--ids a,b]           Simplify/LOD/compress into public/assets → status `optimized`
  *   sheet [preview|refined]        Contact sheet of all thumbnails (assets/source/contact-*.png)
+ *   icons [--ids a,b]              Generate 2D item/skill icons (category "icon") → public/assets/icons
  *
  * Options
  *   --dry-run      Show what would be sent and the estimated cost; send nothing
@@ -25,12 +26,15 @@ import { MeshyClient, MeshyError, download, type MeshyTask } from './api';
 import { DEFAULT_AI_MODEL, DEFAULT_BUDGET_CREDITS, FALLBACK_AI_MODEL, MAX_CONCURRENT_TASKS, TEXTURE_RESOLUTION } from './config';
 import { stageCost, type Stage } from './costs';
 import { loadApiKey } from './env';
-import { loadManifest, saveManifest, selectAssets, sourcePath } from './manifest';
+import { PUBLIC_ASSETS_DIR, loadManifest, saveManifest, selectAssets, sourcePath } from './manifest';
 import { applyReview } from './actions';
 import { contactSheet } from './contactSheet';
 import { optimizeAssets } from './optimize';
-import { buildConceptPrompt, buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
-import { CONCEPT_IMAGE_MODEL } from './costs';
+import { buildConceptPrompt, buildIconPrompt, buildNegativePrompt, buildPrompt, buildTexturePrompt } from './style';
+import { CONCEPT_IMAGE_MODEL, ICON_IMAGE_MODEL } from './costs';
+import sharp from 'sharp';
+import { mkdirSync, statSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { copyFileSync, readFileSync } from 'node:fs';
 
 interface Options {
@@ -187,6 +191,38 @@ async function runImageTo3D(client: MeshyClient, manifest: AssetManifest, entry:
   log(`✓ ${entry.id}: textured model downloaded`);
 }
 
+/** 2D icon: text-to-image with a transparent background, resized to 128 px WebP for the UI. */
+async function runIcon(client: MeshyClient, manifest: AssetManifest, entry: AssetEntry, opts: Options): Promise<void> {
+  if (!entry.meshy.previewTaskId || opts.force) {
+    const id = await client.create('text-to-image', {
+      ai_model: ICON_IMAGE_MODEL,
+      prompt: buildIconPrompt(entry),
+      aspect_ratio: '1:1',
+      remove_background: true,
+    });
+    entry.meshy = { ...entry.meshy, previewTaskId: id, lastError: undefined };
+    saveManifest(manifest);
+    log(`${entry.id}: icon task ${id}`);
+  }
+  const task = await client.wait('text-to-image', entry.meshy.previewTaskId!, `${entry.id} icon`);
+  if (task.status !== 'SUCCEEDED' || !task.image_urls?.[0]) {
+    entry.meshy.previewTaskId = undefined;
+    return fail(entry, manifest, `icon ${task.status}: ${task.task_error?.message ?? ''}`);
+  }
+  spent(entry, task);
+  await download(task.image_urls[0], sourcePath(entry, 'preview.png'));
+  const name = entry.id.split('.').slice(1).join('_');
+  const rel = `icons/${name}.webp`;
+  const out = resolve(PUBLIC_ASSETS_DIR, rel);
+  mkdirSync(dirname(out), { recursive: true });
+  await sharp(sourcePath(entry, 'preview.png')).trim().resize(128, 128, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).webp({ quality: 86 }).toFile(out);
+  entry.file = rel;
+  entry.stats = { triangles: 0, bytes: statSync(out).size };
+  entry.status = 'optimized';
+  saveManifest(manifest);
+  log(`✓ ${entry.id}: icon → ${rel}`);
+}
+
 async function runPreview(client: MeshyClient, manifest: AssetManifest, entry: AssetEntry, opts: Options): Promise<void> {
   if (entry.source === 'image') return runConcept(client, manifest, entry, opts);
   if (!entry.meshy.previewTaskId || opts.force) {
@@ -326,7 +362,7 @@ function printStatus(manifest: AssetManifest): void {
 async function main(): Promise<void> {
   const opts = parseArgs(process.argv.slice(2));
   const manifest = loadManifest();
-  const needsApi = ['preview', 'refine', 'rig', 'status'].includes(opts.command) && !opts.dryRun;
+  const needsApi = ['preview', 'refine', 'rig', 'status', 'icons'].includes(opts.command) && !opts.dryRun;
   const client = needsApi ? new MeshyClient(loadApiKey(), log) : null;
 
   switch (opts.command) {
@@ -385,6 +421,12 @@ async function main(): Promise<void> {
       }
       await optimizeAssets(manifest, todo, log);
       saveManifest(manifest);
+      break;
+    }
+    case 'icons': {
+      const todo = selectAssets(manifest, opts.ids).filter((a) => a.category === 'icon' && (opts.force || a.status === 'planned'));
+      if (!(await confirmBatch(client, 'preview', todo, opts))) break;
+      await pool(todo, MAX_CONCURRENT_TASKS, (a) => runIcon(client!, manifest, a, opts).catch((e) => fail(a, manifest, String(e))));
       break;
     }
     case 'sheet': {

@@ -31,4 +31,19 @@ export interface GameContext {
   spatial: SpatialHash;
   debug: { godMode: boolean };
   stats: { kills: number };
+  /** Loot randomness lives in its own stream so combat rolls don't reshuffle drops. */
+  loot: { rng: Rng; seq: number };
+  /** Rewards to hand out this tick (kills, wave caches); consumed by the reward system. */
+  rewards: RewardRequest[];
+  /** Monster level range of the current zone. */
+  zoneLevels: [number, number];
+}
+
+export interface RewardRequest {
+  table: string;
+  level: number;
+  x: number;
+  z: number;
+  /** Grant XP (kills) or only loot (caches). */
+  xp: boolean;
 }

@@ -8,9 +8,15 @@ export const BASTION: z.input<typeof ClassDefSchema> = {
   life: 220,
   armor: 60,
   resist: { heat: 0.1, cold: 0.1, toxic: 0.1, energy: 0.1, void: 0.1 },
-  // Until items exist (Phase 3), the class carries a fixed starter weapon.
-  weaponDamage: 14,
-  mainStat: 20,
+  // Fists; the starter hammer replaces this.
+  weaponDamage: 5,
+  attributes: {
+    primary: 'strength',
+    base: { strength: 20, dexterity: 8, intelligence: 8, willpower: 12 },
+    perLevel: { strength: 3, dexterity: 1, intelligence: 1, willpower: 2 },
+  },
+  lifePerLevel: 14,
+  starterKit: ['hydraulic_hammer', 'plated_vest', 'mag_boots'],
   critChance: 0.05,
   critDamage: 0.5,
   moveSpeed: 5.5,

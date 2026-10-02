@@ -33,6 +33,8 @@ export interface TargetState {
   /** Extra multiplier from the vulnerable status definition (1.2 by default). */
   vulnerableMultiplier: number;
   conditions: ReadonlySet<Condition>;
+  /** Multiplier on damage taken from gear (1 − damage reduction). Defaults to 1. */
+  damageTakenMultiplier?: number;
 }
 
 export interface DamageBreakdown {
@@ -106,7 +108,8 @@ export function computeTaken(
 ): { vulnerableMul: number; mitigation: number; final: number } {
   const vulnerableMul = target.vulnerable ? target.vulnerableMultiplier : 1;
   const mit = mitigation(type, target, attackerLevel);
-  return { vulnerableMul, mitigation: mit, final: outgoing * vulnerableMul * (1 - mit) };
+  const taken = target.damageTakenMultiplier ?? 1;
+  return { vulnerableMul, mitigation: mit, final: outgoing * vulnerableMul * (1 - mit) * taken };
 }
 
 /** Full hit: outgoing then taken, with a crit roll from the seeded RNG. */

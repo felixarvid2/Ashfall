@@ -25,7 +25,7 @@ function setup() {
   const world = new World();
   const ctx = makeCtx();
   const player = spawnPlayer(world, 'bastion', 0, 0);
-  world.req(player, CombatStats).critChance = 0;
+  Object.assign(world.req(player, CombatStats), { critChance: 0, weaponDamage: 14, mainStat: 20, resourceGen: 0 });
   return { world, ctx, player };
 }
 

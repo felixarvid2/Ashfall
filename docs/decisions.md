@@ -94,3 +94,26 @@ level: their polycount is already low (4–12k) and swapping skinned LODs mid-an
 `assets/source/**/*.glb` is git-ignored (tens of MB). Thumbnails, contact sheets, the manifest (with all
 task ids) and the optimized `public/assets` files are committed. Meshy keeps task outputs for 3 days, so
 raw files can be re-downloaded in that window; after that, regenerate from the manifest prompts.
+
+### 2026-10-02 — Phase 3 split into 3a (loot core) and 3b (skill tree, aspects, uniques)
+Legendary, unique and mythic rarities exist in data but are disabled (`enabled: false`) until aspects and
+unique effects are implemented in 3b, so no item drops with a promised power it can't deliver.
+
+### 2026-10-02 — Diablo 4-style inventory (one cell per item)
+Approved by the owner. Simpler UI, no inventory Tetris; 40 cells.
+
+### 2026-10-02 — Separate loot RNG stream
+`ctx.loot.rng` is forked from the game seed. Combat crit rolls no longer shift which items drop, and the
+loot stream's state is saved so a loaded game continues the same sequence.
+
+### 2026-10-02 — Rewards are queued, not handled inside `kill()`
+`kill()` pushes a reward request (table, level, position); `rewardSystem` turns it into XP and ground loot.
+Keeps combat code free of loot logic and lets wave caches reuse the same path.
+
+### 2026-10-02 — Item icons from Meshy text-to-image
+18 icons with `nano-banana` (3 credits each, transparent background), trimmed and resized to 128 px WebP
+by `npm run meshy -- icons`. Consistent painted style via a shared icon prompt.
+
+### 2026-10-02 — Loot sounds are synthesised (WebAudio)
+Each rarity has its own procedural sound (brief §5.6) until the Howler.js audio system and recorded/
+generated sound files arrive in Phase 8.

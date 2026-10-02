@@ -4,8 +4,9 @@
 
 ## Current phase
 
-**Phase 2 – Meshy pipeline: ✅ done, except the 60 FPS check** (needs a measurement on real hardware).
-Next up: **Phase 3 – Loot and progression** (plan to be approved first).
+**Phase 3 – Loot and progression: 3a ✅ done** (levels, items, loot, inventory). Next: **3b** — Bastion skill
+tree, legendary aspects, uniques, mythic, balance simulator.
+Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 
 ## Done
 
@@ -72,6 +73,23 @@ Next up: **Phase 3 – Loot and progression** (plan to be approved first).
   clip playback, approve/reject.
 - Credits used: **615** of 3100 (2485 left). See the per-asset numbers with `npm run meshy -- status`.
 
+### Phase 3a – Levels, items and loot (see docs/loot.md)
+- Levels 1–50 with an XP curve, skill points per level, attribute growth, full heal on level-up, XP bar.
+- Monsters scale to the player's level within the zone range (Cinder Flats 1–10).
+- Items: 10 slots, 17 bases (incl. future Spectre/Xenomant gear for the 85 % own-class rule), 29 affixes
+  with per-type pools, greater affixes, item power scaling, sockets and 3 crystals with 3 tiers.
+- Rarities common/magic/rare drop now; legendary/unique/mythic are defined but switched on in 3b.
+- Data-driven drop tables per enemy plus a reward cache when a wave is cleared; separate seeded loot RNG.
+- Ground loot with rarity colours, light beams, pop-out animation, clickable labels (Alt shows all),
+  synthesised drop sounds per rarity, gold auto-pickup, `E` picks up the nearest item.
+- Inventory (I): paper doll + 40-cell backpack, Meshy icons, right-click equip, Shift+click salvage,
+  crystal socketing, tooltips with ▲/▼ comparison. Character panel (C) with all stats.
+- Player stats aggregate class + level + gear into the damage model (attack speed, CDR, resource gen,
+  barrier/potion bonuses, damage reduction, life on kill).
+- Save format v2 with automatic migration from v1.
+- 18 item icons generated with Meshy (54 credits). Credits used in total: ~669 of 3100.
+- 135 unit tests.
+
 ## How to run
 
 ```bash
@@ -90,6 +108,15 @@ Controls: **WASD** move · **LMB** Hydraulic Strike · **RMB** Seismic Shock · 
 **F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
+
+## What to test (Phase 3a)
+1. Fight waves: enemies drop items and gold; clearing a wave drops a reward cache next to you.
+2. Hold **Alt** to see all labels; click a label to walk there and pick it up (or press **E** nearby).
+3. **I** opens the inventory: hover to compare, right-click to equip, Shift+click to salvage.
+   Click a crystal, then an item with an empty socket.
+4. **C** shows your stats — equip items and watch them change. Level up and check the XP bar.
+5. F5 / reload / F9: inventory, gold and level should survive. An old save (v1) should still load.
+6. Debug (F3): "+1 level" and "Drop loot" speed testing up.
 
 ## What to test (Phase 2)
 1. `npm run dev` — the arena should show the real models: Bastion, colonists, drones, spore carriers and
@@ -129,5 +156,6 @@ Shift + left-click to attack in place.
 ## Next steps
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
-- Phase 3 – Loot and progression: rarities, affixes, aspects, item power, drop tables, inventory, levels,
-  Bastion skill tree, stats/damage model integration (plan to be approved first).
+- Phase 3b: Bastion skill tree (branches, ranks, enhancements, modifiers, passives, key passives, respec),
+  new skills (Heat Vent, Orbital Strike, +1 per branch), ~12 legendary aspects, 3 uniques, 1 mythic,
+  skill icons (Meshy), `npm run sim` balance simulator.

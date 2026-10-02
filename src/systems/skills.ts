@@ -3,6 +3,7 @@
  * cooldowns, resource costs, dodge, potions and forced moves (leap/dodge).
  */
 import {
+  CombatStats,
   Dead,
   Faction,
   ForcedMove,
@@ -52,7 +53,8 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       if (user.potionCharges > 0 && health && health.current < health.max) {
         if (user.potionCharges === cls.potion.charges) user.potionRecharge = cls.potion.recharge;
         user.potionCharges--;
-        heal(world, ctx, e, health.max * cls.potion.heal);
+        const potionBonus = 1 + (world.get(e, CombatStats)?.potionHealing ?? 0);
+        heal(world, ctx, e, health.max * cls.potion.heal * potionBonus);
         ctx.events.push({ type: 'vfx', kind: 'heal', x: tr.x, z: tr.z, radius: 1, facing: 0 });
       }
     }
@@ -87,10 +89,12 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       if (user.request.ttl <= 0) user.request = null;
     }
 
+    const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0);
     if (user.cast) {
       const cast = user.cast;
       const def = skill(cast.skillId);
-      cast.elapsed += dt;
+      // Attack speed shortens wind-up and recovery.
+      cast.elapsed += dt * speed;
       if (mover) {
         mover.vx = 0;
         mover.vz = 0;
@@ -118,7 +122,7 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
         continue;
       }
       if (resource && def.resourceCost > 0) resource.current -= def.resourceCost;
-      user.cooldowns[id] = def.cooldown;
+      user.cooldowns[id] = def.cooldown * (1 - (world.get(e, CombatStats)?.cooldownReduction ?? 0));
       user.cast = { skillId: id, elapsed: 0, fired: false, aimX: user.request.aimX, aimZ: user.request.aimZ };
       user.request = null;
       if (mover) {
@@ -168,6 +172,7 @@ export function forcedMoveSystem(world: World, dt: number, ctx: GameContext): vo
 function fireSkill(world: World, ctx: GameContext, caster: Entity, def: SkillDef, aimX: number, aimZ: number): void {
   const tr = world.req(caster, Transform);
   const resource = world.get(caster, Resource);
+  const gain = def.resourceGain * (1 + (world.get(caster, CombatStats)?.resourceGen ?? 0));
   const effect = def.effect;
   const bonusApplies =
     def.resourceBonus && resource && resource.current >= def.resourceBonus.threshold ? def.resourceBonus.applies : [];
@@ -176,14 +181,14 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, def: SkillDef
     case 'meleeArc': {
       const hits = impactArea(world, ctx, caster, tr.x, tr.z, effect.range, { facing: tr.facing, arcDeg: effect.arcDeg }, effect, bonusApplies);
       ctx.events.push({ type: 'vfx', kind: 'slash', x: tr.x, z: tr.z, radius: effect.range, facing: tr.facing, arcDeg: effect.arcDeg });
-      if (hits > 0 && resource) gainResource(resource, def.resourceGain);
+      if (hits > 0 && resource) gainResource(resource, gain);
       break;
     }
     case 'nova': {
       const hits = impactArea(world, ctx, caster, tr.x, tr.z, effect.radius, null, effect, bonusApplies);
       ctx.events.push({ type: 'vfx', kind: 'shockwave', x: tr.x, z: tr.z, radius: effect.radius, facing: 0 });
       if (effect.shake > 0 && hits === 0) ctx.events.push({ type: 'shake', trauma: effect.shake * 0.5 });
-      if (hits > 0 && resource) gainResource(resource, def.resourceGain);
+      if (hits > 0 && resource) gainResource(resource, gain);
       break;
     }
     case 'leap': {
@@ -205,7 +210,7 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, def: SkillDef
         height: effect.height,
         landingSkill: def.id,
       });
-      if (resource) gainResource(resource, def.resourceGain);
+      if (resource) gainResource(resource, gain);
       break;
     }
     case 'selfBuff': {
@@ -218,7 +223,7 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, def: SkillDef
       const team = world.get(caster, Faction)?.team ?? 'player';
       for (const apply of effect.applies) applyStatus(world, ctx, caster, apply, { team, level: 1, attacker: caster });
       ctx.events.push({ type: 'vfx', kind: 'shield', x: tr.x, z: tr.z, radius: 1.2, facing: 0 });
-      if (resource) gainResource(resource, def.resourceGain);
+      if (resource) gainResource(resource, gain);
       break;
     }
   }

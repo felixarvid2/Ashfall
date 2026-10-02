@@ -1,5 +1,5 @@
 /** Wave encounter for the test arena: spawn a wave, wait until it is cleared, repeat. */
-import { Dead, EncounterState, PlayerControlled, Transform, WaveMember } from '../core/components';
+import { Dead, EncounterState, PlayerControlled, Progression, Transform, WaveMember } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { World } from '../core/ecs';
 import { ENCOUNTERS } from '../data/db';
@@ -17,6 +17,12 @@ export function encounterSystem(world: World, dt: number, ctx: GameContext): voi
   if (state.phase === 'active') {
     if (alive === 0) {
       ctx.events.push({ type: 'waveCleared', wave: state.wave });
+      // A reward cache drops next to the player.
+      const player = world.first(PlayerControlled, Transform);
+      if (player !== undefined) {
+        const tr = world.req(player, Transform);
+        ctx.rewards.push({ table: 'dt.wave_reward', level: monsterLevel(world, ctx), x: tr.x + 1.5, z: tr.z + 1.5, xp: false });
+      }
       const enc = ENCOUNTERS.get(state.encounterId);
       state.phase = 'intermission';
       state.timer = enc?.intermission ?? 3;
@@ -54,13 +60,20 @@ export function startNextWave(world: World, ctx: GameContext): void {
     for (let i = 0; i < group.count; i++) {
       const x = clamp(cx + rng.range(-enc.groupSpread, enc.groupSpread), -lim, lim);
       const z = clamp(cz + rng.range(-enc.groupSpread, enc.groupSpread), -lim, lim);
-      spawnEnemy(world, group.enemy, x, z, { lifeMul, aggro: true, wave: state.wave });
+      spawnEnemy(world, group.enemy, x, z, { lifeMul, aggro: true, wave: state.wave, level: monsterLevel(world, ctx) });
       count++;
     }
   }
   state.phase = 'active';
   state.alive = count;
   ctx.events.push({ type: 'wave', wave: state.wave, enemies: count });
+}
+
+/** Monsters match the player's level within the zone's range (Diablo 4-style scaling). */
+export function monsterLevel(world: World, ctx: GameContext): number {
+  const player = world.first(PlayerControlled, Progression);
+  const level = player !== undefined ? world.req(player, Progression).level : 1;
+  return clamp(level, ctx.zoneLevels[0], ctx.zoneLevels[1]);
 }
 
 function clamp(v: number, min: number, max: number): number {

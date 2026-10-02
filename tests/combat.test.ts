@@ -23,6 +23,8 @@ function setup() {
   const world = new World();
   const ctx = makeCtx();
   const player = spawnPlayer(world, 'bastion', 0, 0);
+  // Fixed numbers so expectations don't depend on starter gear or attributes.
+  Object.assign(world.req(player, CombatStats), { weaponDamage: 14, mainStat: 20, resourceGen: 0 });
   const enemy = spawnEnemy(world, 'infected_colonist', 2, 0);
   return { world, ctx, player, enemy };
 }

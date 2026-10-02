@@ -27,6 +27,8 @@ export interface DebugActions {
   setGodMode(on: boolean): void;
   setScreenShake(on: boolean): void;
   setGraphics(quality: Settings['graphics']): void;
+  addLevel(): void;
+  spawnLoot(): void;
 }
 
 export class DevTools {
@@ -139,6 +141,8 @@ export class DevTools {
     button(t('debug.nextWave'), actions.nextWave, 'debug-next-wave');
     button(t('debug.killAll'), actions.killAll, 'debug-kill-all');
     button(t('debug.spawnHorde'), actions.spawnHorde, 'debug-spawn-horde');
+    button(t('debug.addLevel'), actions.addLevel, 'debug-add-level');
+    button(t('debug.spawnLoot'), actions.spawnLoot, 'debug-spawn-loot');
     target = row;
     button(t('debug.save'), actions.save, 'debug-save');
     button(t('debug.load'), actions.load, 'debug-load');

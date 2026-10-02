@@ -5,6 +5,10 @@ import {
   EnemyAI,
   Faction,
   Health,
+  Inventory,
+  Level,
+  NO_EXTRA_STATS,
+  Progression,
   Mover,
   PlayerControlled,
   Renderable,
@@ -17,6 +21,9 @@ import {
 } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import { classDef, enemyDef } from '../data/db';
+import { PROGRESSION } from '../data/loot/db';
+import { emptyInventory } from '../systems/loot/inventory';
+import { recomputePlayer } from '../systems/stats';
 
 export function spawnPlayer(world: World, classId: string, x: number, z: number): Entity {
   const cls = classDef(classId);
@@ -31,7 +38,7 @@ export function spawnPlayer(world: World, classId: string, x: number, z: number)
   world.add(e, CombatStats, {
     level: 1,
     weaponDamage: cls.weaponDamage,
-    mainStat: cls.mainStat,
+    mainStat: cls.attributes.base[cls.attributes.primary],
     critChance: cls.critChance,
     critDamage: cls.critDamage,
     armor: cls.armor,
@@ -39,7 +46,10 @@ export function spawnPlayer(world: World, classId: string, x: number, z: number)
     additive: [],
     multiplicative: [],
     tags: [],
+    ...NO_EXTRA_STATS,
   });
+  world.add(e, Progression, { level: 1, xp: 0, skillPoints: 0 });
+  world.add(e, Inventory, emptyInventory(PROGRESSION.inventorySize));
   world.add(e, StatusEffects, { list: [], canAct: true, dotTimer: 0 });
   world.add(e, Resource, {
     kind: cls.resource.id,
@@ -62,6 +72,7 @@ export function spawnPlayer(world: World, classId: string, x: number, z: number)
     potionRecharge: cls.potion.recharge,
     potionRequested: false,
   });
+  recomputePlayer(world, e);
   return e;
 }
 
@@ -74,7 +85,9 @@ export interface EnemySpawnOptions {
 
 export function spawnEnemy(world: World, defId: string, x: number, z: number, opts: EnemySpawnOptions = {}): Entity {
   const def = enemyDef(defId);
-  const life = def.life * (opts.lifeMul ?? 1);
+  const level = Math.max(1, opts.level ?? 1);
+  const life = def.life * (opts.lifeMul ?? 1) * (1 + PROGRESSION.enemyLifePerLevel * (level - 1));
+  const damage = def.damage * (1 + PROGRESSION.enemyDamagePerLevel * (level - 1));
   const e = world.create();
   world.add(e, Transform, makeTransform(x, def.hover, z, 0));
   world.add(e, Mover, { speed: def.moveSpeed, speedMul: 1, turnRate: def.turnRate, vx: 0, vz: 0 });
@@ -88,8 +101,8 @@ export function spawnEnemy(world: World, defId: string, x: number, z: number, op
     isStatic: false,
   });
   world.add(e, CombatStats, {
-    level: opts.level ?? 1,
-    weaponDamage: def.damage,
+    level,
+    weaponDamage: damage,
     mainStat: 0,
     critChance: 0,
     critDamage: 0.5,
@@ -98,7 +111,9 @@ export function spawnEnemy(world: World, defId: string, x: number, z: number, op
     additive: [],
     multiplicative: [],
     tags: [def.family],
+    ...NO_EXTRA_STATS,
   });
+  world.add(e, Level, { value: level });
   world.add(e, StatusEffects, { list: [], canAct: true, dotTimer: 0 });
   world.add(e, EnemyAI, {
     defId,

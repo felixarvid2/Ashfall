@@ -13,6 +13,7 @@ import {
   Health,
   Invulnerable,
   Knockback,
+  Level,
   Mover,
   PlayerControlled,
   Resource,
@@ -60,6 +61,7 @@ export function targetState(world: World, e: Entity, attackRange: 'melee' | 'ran
     vulnerable: hasStatus(world, e, 'vulnerable'),
     vulnerableMultiplier: vulnDef.kind === 'vulnerable' ? vulnDef.damageTakenMultiplier : 1.2,
     conditions: conditionsOf(world, e, attackRange),
+    damageTakenMultiplier: 1 - (stats?.damageReduction ?? 0),
   };
 }
 
@@ -254,7 +256,8 @@ export function applyStatus(world: World, ctx: GameContext, target: Entity, appl
     }
   } else if (def.kind === 'barrier') {
     const max = world.get(target, Health)?.max ?? 0;
-    instance.amount = (apply.amount ?? 0) + (apply.lifeFraction ?? 0) * max;
+    const bonus = 1 + (world.get(target, CombatStats)?.barrierBonus ?? 0);
+    instance.amount = ((apply.amount ?? 0) + (apply.lifeFraction ?? 0) * max) * bonus;
   } else {
     // Slows, disables, vulnerable: one instance, longest duration wins.
     const existing = effects.list.find((s) => s.id === apply.status);
@@ -302,6 +305,15 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
   const ai = world.get(target, EnemyAI);
   if (ai) {
     const def = enemyDef(ai.defId);
+    if (tr) {
+      ctx.rewards.push({
+        table: def.dropTable ?? `dt.${def.id}`,
+        level: world.get(target, Level)?.value ?? 1,
+        x: tr.x,
+        z: tr.z,
+        xp: true,
+      });
+    }
     if (def.onDeath && tr) {
       const hz = world.create();
       world.add(hz, Transform, makeTransform(tr.x, 0, tr.z));

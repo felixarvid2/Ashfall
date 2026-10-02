@@ -4,7 +4,7 @@
  */
 import en from './lang/en.json';
 
-type Dict = { [key: string]: string | Dict };
+type Dict = { [key: string]: string | Dict | string[] };
 
 const languages: Record<string, Dict> = { en };
 let active: Dict = en;
@@ -21,10 +21,10 @@ export function registerLanguage(code: string, dict: Dict): void {
 }
 
 function lookup(dict: Dict, key: string): string | undefined {
-  let node: string | Dict | undefined = dict;
+  let node: string | Dict | string[] | undefined = dict;
   for (const part of key.split('.')) {
     if (typeof node !== 'object' || node === null) return undefined;
-    node = node[part];
+    node = (node as Record<string, string | Dict | string[]>)[part];
   }
   return typeof node === 'string' ? node : undefined;
 }

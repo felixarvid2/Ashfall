@@ -5,7 +5,7 @@
     "loading": "Loading assets… {done}/{total}"
   },
   "hud": {
-    "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {debug} debug",
+    "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {inv} inventory · {pickup} pick up · {debug} debug",
     "life": "Life",
     "heat": "Heat",
     "overheating": "OVERHEATING",
@@ -67,7 +67,9 @@
       "low": "Low",
       "medium": "Medium",
       "high": "High"
-    }
+    },
+    "addLevel": "+1 level",
+    "spawnLoot": "Drop loot"
   },
   "combat": {
     "notEnoughResource": "Not enough Heat",
@@ -111,5 +113,147 @@
     "stunned": "Stunned",
     "vulnerable": "Vulnerable",
     "barrier": "Barrier"
+  },
+  "items": {
+    "bases": {
+      "hydraulic_hammer": "Hydraulic Hammer",
+      "power_sword": "Power Sword",
+      "hydraulic_knuckles": "Hydraulic Knuckles",
+      "riot_shield": "Riot Shield",
+      "marksman_rifle": "Marksman Rifle",
+      "vibroblade": "Vibroblade",
+      "bio_focus": "Bio-Focus",
+      "injector_rig": "Injector Rig",
+      "combat_helm": "Combat Helm",
+      "plated_vest": "Plated Vest",
+      "servo_gauntlets": "Servo Gauntlets",
+      "armored_greaves": "Armored Greaves",
+      "mag_boots": "Mag Boots",
+      "signal_pendant": "Signal Pendant",
+      "conduit_ring": "Conduit Ring",
+      "crystal": "Crystal"
+    },
+    "types": {
+      "helm": "Helm",
+      "chest": "Chest Armor",
+      "gloves": "Gloves",
+      "pants": "Pants",
+      "boots": "Boots",
+      "amulet": "Amulet",
+      "ring": "Ring",
+      "weapon": "Weapon",
+      "offHand": "Off-Hand",
+      "crystal": "Crystal"
+    },
+    "slots": {
+      "helm": "Helm",
+      "chest": "Chest",
+      "gloves": "Gloves",
+      "pants": "Pants",
+      "boots": "Boots",
+      "amulet": "Amulet",
+      "ring1": "Ring",
+      "ring2": "Ring",
+      "mainHand": "Weapon",
+      "offHand": "Off-Hand"
+    },
+    "rarity": {
+      "common": "Common",
+      "magic": "Magic",
+      "rare": "Rare",
+      "legendary": "Legendary",
+      "unique": "Unique",
+      "mythic": "Mythic"
+    },
+    "crystals": {
+      "ember": "Ember Crystal",
+      "lumen": "Lumen Crystal",
+      "void": "Void Crystal"
+    },
+    "crystalTier": [
+      "Chipped",
+      "",
+      "Flawless"
+    ],
+    "crystalWhere": {
+      "weapon": "Weapon / Off-Hand",
+      "armor": "Armor",
+      "jewelry": "Jewelry"
+    },
+    "itemPower": "{power} Item Power",
+    "greater": "Greater affix",
+    "emptySocket": "Empty socket",
+    "requiresClass": "Requires {cls}",
+    "classes": {
+      "bastion": "Bastion",
+      "spectre": "Spectre",
+      "xenomant": "Xenomant"
+    },
+    "salvageFor": "Salvage: {gold} gold",
+    "equipped": "Equipped",
+    "compare": "Compared to equipped",
+    "hint": "Right-click: equip · Shift+click: salvage · Click a crystal, then an item: socket",
+    "damageEstimate": "Damage"
+  },
+  "stats": {
+    "strength": "Strength",
+    "dexterity": "Dexterity",
+    "intelligence": "Intelligence",
+    "willpower": "Willpower",
+    "allAttributes": "All Attributes",
+    "maxLife": "Maximum Life",
+    "armor": "Armor",
+    "resistAll": "All Resistances",
+    "resistHeat": "Heat Resistance",
+    "resistCold": "Cold Resistance",
+    "resistToxic": "Toxic Resistance",
+    "resistEnergy": "Energy Resistance",
+    "resistVoid": "Void Resistance",
+    "lifeOnKill": "Life on Kill",
+    "weaponDamage": "Weapon Damage",
+    "critChance": "Critical Strike Chance",
+    "critDamage": "Critical Strike Damage",
+    "attackSpeed": "Attack Speed",
+    "damage": "Damage",
+    "damageVsVulnerable": "Damage to Vulnerable",
+    "damageVsElite": "Damage to Elites",
+    "damageVsStunned": "Damage to Stunned",
+    "damageVsBurning": "Damage to Burning",
+    "meleeDamage": "Melee Damage",
+    "cooldownReduction": "Cooldown Reduction",
+    "resourceGen": "Resource Generation",
+    "moveSpeed": "Movement Speed",
+    "barrierBonus": "Barrier Strength",
+    "potionHealing": "Stim Pack Healing",
+    "damageReduction": "Damage Reduction"
+  },
+  "loot": {
+    "inventoryFull": "Inventory full",
+    "salvaged": "Salvaged for {gold} gold",
+    "cannot": {
+      "full": "Inventory full",
+      "class": "Your class cannot use this",
+      "notEquippable": "Cannot be equipped",
+      "noSocket": "No free socket",
+      "notCrystal": "Select a crystal first",
+      "empty": "Nothing there"
+    }
+  },
+  "ui": {
+    "inventory": "Inventory",
+    "character": "Character",
+    "gold": "{gold} gold",
+    "level": "Level {level}",
+    "levelUp": "Level {level}",
+    "skillPoint": "+1 skill point",
+    "xp": "{xp} / {next} XP",
+    "sections": {
+      "attributes": "Attributes",
+      "offense": "Offense",
+      "defense": "Defense",
+      "utility": "Utility"
+    },
+    "armorReduction": "Physical damage reduction",
+    "close": "Close"
   }
 }

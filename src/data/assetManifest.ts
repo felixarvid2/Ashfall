@@ -85,7 +85,8 @@ export const AssetEntrySchema = z.object({
   stats: z
     .object({ triangles: z.number().int(), bytes: z.number().int(), textures: z.number().int().optional() })
     .optional(),
-  placeholder: PlaceholderSchema,
+  /** Shape shown until the model exists. Required for 3D assets, absent for icons. */
+  placeholder: PlaceholderSchema.optional(),
 });
 
 export const AssetManifestSchema = z.object({

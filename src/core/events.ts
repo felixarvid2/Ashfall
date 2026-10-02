@@ -5,6 +5,7 @@
  */
 import type { Entity } from './ecs';
 import type { DamageType, StatusId } from '../data/schemas';
+import type { Rarity } from '../data/loot/schemas';
 
 export type TelegraphShape =
   | { kind: 'circle'; radius: number }
@@ -37,6 +38,11 @@ export type GameEvent =
   | { type: 'wave'; wave: number; enemies: number }
   | { type: 'waveCleared'; wave: number }
   | { type: 'overheat' }
+  | { type: 'levelUp'; level: number }
+  | { type: 'xp'; amount: number }
+  | { type: 'loot'; entity: Entity; rarity: Rarity; x: number; z: number }
+  | { type: 'pickup'; kind: 'gold'; amount: number }
+  | { type: 'pickup'; kind: 'item'; rarity: Rarity; name: string }
   | { type: 'notice'; key: string };
 
 export class EventQueue {

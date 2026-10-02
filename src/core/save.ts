@@ -5,8 +5,9 @@
  * from the previous version to MIGRATIONS so older saves keep loading.
  */
 import { z } from 'zod';
+import { ItemSchema, SlotSchema } from '../data/loot/schemas';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 const Vec3Schema = z.object({ x: z.number(), y: z.number(), z: z.number() });
 
@@ -20,6 +21,23 @@ export const SaveDataSchema = z.object({
     position: Vec3Schema,
     facing: z.number(),
   }),
+  progression: z.object({
+    level: z.number().int().min(1),
+    xp: z.number().nonnegative(),
+    skillPoints: z.number().int().nonnegative(),
+  }),
+  /** null = a character that has never received its starter kit (saves migrated from v1). */
+  inventory: z
+    .object({
+      gold: z.number().int().nonnegative(),
+      grid: z.array(ItemSchema.nullable()),
+      equipped: z.partialRecord(SlotSchema, ItemSchema),
+    })
+    .nullable(),
+  loot: z.object({
+    seq: z.number().int().nonnegative(),
+    rngState: z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  }),
 });
 
 export type SaveData = z.infer<typeof SaveDataSchema>;
@@ -32,7 +50,16 @@ export type Migration = (data: RawSave) => RawSave;
  * Migration chain. Example for a future v2:
  *   1: (d) => ({ ...d, version: 2, gold: 0 }),
  */
-export const MIGRATIONS: Record<number, Migration> = {};
+export const MIGRATIONS: Record<number, Migration> = {
+  // v2 (Phase 3): levels, inventory and a separate loot RNG stream.
+  1: (d) => ({
+    ...d,
+    version: 2,
+    progression: { level: 1, xp: 0, skillPoints: 0 },
+    inventory: null,
+    loot: { seq: 0, rngState: d.rngState },
+  }),
+};
 
 export class SaveError extends Error {}
 

@@ -2,13 +2,20 @@
  * Top-level game: wires ECS, systems, input, rendering, UI and saving together.
  */
 import {
+  CombatStats,
   Dead,
+  DerivedStats,
   EncounterState,
   EnemyAI,
   ForcedMove,
+  GroundItem,
   Health,
+  Inventory,
   Invulnerable,
+  MoveTarget,
   Mover,
+  PickupTarget,
+  Progression,
   Resource,
   SkillUser,
   StatusEffects,
@@ -41,6 +48,17 @@ import { forcedMoveSystem, skillSystem } from './systems/skills';
 import { statusSystem } from './systems/status';
 import { enemyNear } from './systems/targeting';
 import { DamageNumbers } from './ui/damageNumbers';
+import { CharacterPanel } from './ui/characterPanel';
+import { InventoryPanel } from './ui/inventoryPanel';
+import { LootLabels } from './ui/lootLabels';
+import { playDropSound, playGoldSound, playPickupSound, unlockAudio } from './audio/lootSounds';
+import { PROGRESSION, BASE_ITEMS } from './data/loot/db';
+import { slotsFor, type Item, type Slot } from './data/loot/schemas';
+import { generateItem, itemPowerFor, xpToNext } from './systems/loot/generate';
+import { addToGrid, emptyInventory, equipFromGrid, salvage, socketCrystal, targetSlot, unequip } from './systems/loot/inventory';
+import { PICKUP_KEY_RADIUS, grantXp, nextItemUid, pickUp, pickupSystem, rewardSystem, setItemNamer } from './systems/loot/rewards';
+import { computePlayerStats, recomputePlayer, sumItemStats } from './systems/stats';
+import { monsterLevel } from './systems/encounter';
 import { DevTools } from './ui/devtools';
 import { Hud, type HudState } from './ui/hud';
 import { Toasts } from './ui/toast';
@@ -66,6 +84,9 @@ export class Game {
   private readonly toasts: Toasts;
   private readonly devtools: DevTools;
   private readonly damageNumbers: DamageNumbers;
+  private readonly inventoryPanel: InventoryPanel;
+  private readonly characterPanel: CharacterPanel;
+  private readonly lootLabels: LootLabels;
   private player!: Entity;
   private hitstop = 0;
   private lastTarget: { entity: Entity; until: number } | null = null;
@@ -82,10 +103,11 @@ export class Game {
     this.renderer.setQuality(this.settings.graphics);
     this.input = new Input(canvas, resolveKeybindings(this.settings));
 
+    const seed = randomSeed();
     this.ctx = {
       input: this.input,
       settings: this.settings,
-      rng: new Rng(randomSeed()),
+      rng: new Rng(seed),
       tick: 0,
       time: 0,
       cameraYaw: this.renderer.rig.yaw,
@@ -96,7 +118,11 @@ export class Game {
       spatial: new SpatialHash(4),
       debug: { godMode: false },
       stats: { kills: 0 },
+      loot: { rng: new Rng(seed).fork('loot'), seq: 0 },
+      rewards: [],
+      zoneLevels: TEST_ARENA.levels,
     };
+    setItemNamer((baseId) => t(`items.bases.${baseId}`));
 
     this.scheduler
       .add('spatial', spatialSystem)
@@ -111,11 +137,37 @@ export class Game {
       .add('hazards', hazardSystem)
       .add('resource', resourceSystem)
       .add('death', deathSystem)
-      .add('encounter', encounterSystem);
+      .add('encounter', encounterSystem)
+      .add('rewards', rewardSystem)
+      .add('pickup', pickupSystem);
 
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
     this.hud = new Hud(uiRoot, () => this.respawn());
+    this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
+    this.inventoryPanel = new InventoryPanel(
+      uiRoot,
+      () => this.world.req(this.player, Inventory),
+      () => this.world.req(this.player, SkillUser).classId,
+      {
+        equip: (i) => this.equipItem(i),
+        unequip: (slot) => this.unequipItem(slot),
+        salvage: (i) => this.salvageItem(i),
+        socket: (c, target) => this.socketItem(c, target),
+        compare: (item) => this.compare(item),
+        iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
+      },
+    );
+    this.characterPanel = new CharacterPanel(uiRoot, () => ({
+      className: t(`items.classes.${this.world.req(this.player, SkillUser).classId}`),
+      progression: this.world.req(this.player, Progression),
+      combat: this.world.req(this.player, CombatStats),
+      derived: this.world.req(this.player, DerivedStats),
+      health: this.world.req(this.player, Health),
+      resourceMax: this.world.req(this.player, Resource).max,
+    }));
+    canvas.addEventListener('mousedown', unlockAudio, { once: true });
+    window.addEventListener('keydown', unlockAudio, { once: true });
     this.devtools = new DevTools(
       uiRoot,
       {
@@ -133,6 +185,16 @@ export class Game {
         spawnHorde: () => this.spawnHorde(100),
         setGodMode: (on) => (this.ctx.debug.godMode = on),
         setGraphics: (q) => this.setGraphics(q),
+        addLevel: () => {
+          const prog = this.world.req(this.player, Progression);
+          grantXp(this.world, this.ctx, this.player, xpToNext(prog.level) - prog.xp);
+        },
+        spawnLoot: () => {
+          const tr = this.playerTransform;
+          for (let i = 0; i < 3; i++) {
+            this.ctx.rewards.push({ table: 'dt.wave_reward', level: monsterLevel(this.world, this.ctx), x: tr.x + 2, z: tr.z, xp: false });
+          }
+        },
         setScreenShake: (on) => {
           this.settings.screenShake = on;
           this.renderer.screenShake = on;
@@ -148,6 +210,7 @@ export class Game {
 
     spawnArenaProps(this.world, TEST_ARENA);
     this.player = spawnPlayer(this.world, PLAYER_CLASS, TEST_ARENA.playerSpawn.x, TEST_ARENA.playerSpawn.z);
+    this.grantStarterKit();
     const tr = this.playerTransform;
     this.renderer.rig.snapTo(tr.x, tr.y, tr.z);
 
@@ -196,6 +259,8 @@ export class Game {
     if (input.wasPressed('quickSave')) this.save();
     if (input.wasPressed('quickLoad')) this.load();
     if (input.wasPressed('respawn') && this.world.has(this.player, Dead)) this.respawn();
+    if (input.wasPressed('inventory')) this.inventoryPanel.toggle();
+    if (input.wasPressed('character')) this.characterPanel.toggle();
 
     this.scheduler.tick(this.world, dt, this.ctx);
     this.ctx.tick++;
@@ -224,6 +289,12 @@ export class Game {
     const pz = tr.prevZ + (tr.z - tr.prevZ) * alpha;
     this.renderer.render(frameDt, px, 0, pz);
     this.damageNumbers.update(frameDt, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
+    this.lootLabels.update(this.world, px, pz, this.input.isDown('showLabels'), (x, y, z, out) =>
+      this.renderer.toScreen(x, y, z, out),
+    );
+    if (this.characterPanel.open && Math.floor(this.realTime * 4) !== Math.floor((this.realTime - frameDt) * 4)) {
+      this.characterPanel.refresh();
+    }
     this.hud.update(this.hudState(), frameDt);
 
     this.devtools.frame(frameDt, () => ({
@@ -257,6 +328,19 @@ export class Game {
           break;
         case 'waveCleared':
           this.hud.showBanner(t('hud.waveCleared', { wave: event.wave }));
+          break;
+        case 'loot':
+          playDropSound(event.rarity);
+          break;
+        case 'pickup':
+          if (event.kind === 'gold') playGoldSound();
+          else playPickupSound();
+          this.inventoryPanel.refresh();
+          break;
+        case 'levelUp':
+          this.hud.showBanner(t('ui.levelUp', { level: event.level }), 2.5);
+          this.toasts.show(t('ui.skillPoint'));
+          this.characterPanel.refresh();
           break;
         case 'overheat':
           this.notice('combat.overheat', 'error');
@@ -334,6 +418,10 @@ export class Game {
       wave: enc && enc.wave > 0 ? { wave: enc.wave, alive: enc.alive, phase: enc.phase, timer: enc.timer } : null,
       target,
       dead: w.has(p, Dead),
+      xp: (() => {
+        const prog = w.req(p, Progression);
+        return { level: prog.level, current: prog.xp, next: xpToNext(prog.level), skillPoints: prog.skillPoints };
+      })(),
     };
   }
 
@@ -391,6 +479,8 @@ export class Game {
 
   snapshot(): SaveData {
     const tr = this.playerTransform;
+    const prog = this.world.req(this.player, Progression);
+    const inv = this.world.req(this.player, Inventory);
     return {
       version: SAVE_VERSION,
       savedAt: new Date().toISOString(),
@@ -398,6 +488,9 @@ export class Game {
       rngState: [...this.ctx.rng.getState()],
       tick: this.ctx.tick,
       player: { position: { x: tr.x, y: 0, z: tr.z }, facing: tr.facing },
+      progression: { ...prog },
+      inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped }),
+      loot: { seq: this.ctx.loot.seq, rngState: [...this.ctx.loot.rng.getState()] },
     };
   }
 
@@ -406,13 +499,122 @@ export class Game {
     rng.setState(data.rngState);
     this.ctx.rng = rng;
     this.ctx.tick = data.tick;
+    const lootRng = new Rng(data.seed).fork('loot');
+    lootRng.setState(data.loot.rngState);
+    this.ctx.loot = { rng: lootRng, seq: data.loot.seq };
+
     const tr = this.playerTransform;
     const { x, y, z } = data.player.position;
     Object.assign(tr, makeTransform(x, y, z, data.player.facing));
     this.world.remove(this.player, ForcedMove);
     const mover = this.world.req(this.player, Mover);
     mover.vx = mover.vz = 0;
+
+    Object.assign(this.world.req(this.player, Progression), data.progression);
+    const inv = this.world.req(this.player, Inventory);
+    if (data.inventory) {
+      const grid = structuredClone(data.inventory.grid);
+      // Older saves may have a smaller backpack; pad to the current size.
+      while (grid.length < PROGRESSION.inventorySize) grid.push(null);
+      Object.assign(inv, { gold: data.inventory.gold, grid, equipped: structuredClone(data.inventory.equipped) });
+    } else {
+      Object.assign(inv, emptyInventory(PROGRESSION.inventorySize));
+      this.grantStarterKit();
+    }
+    recomputePlayer(this.world, this.player);
+    const health = this.world.req(this.player, Health);
+    health.current = health.max;
     this.renderer.rig.snapTo(x, y, z);
+    this.inventoryPanel.refresh();
+  }
+
+  /** Give a new character its common starter gear (class data), equipped. */
+  private grantStarterKit(): void {
+    const user = this.world.req(this.player, SkillUser);
+    const inv = this.world.req(this.player, Inventory);
+    const cls = classDef(user.classId);
+    for (const baseId of cls.starterKit) {
+      const item = generateItem(this.ctx.loot.rng, {
+        itemPower: itemPowerFor(1, this.ctx.loot.rng),
+        classId: user.classId,
+        uid: nextItemUid(this.ctx),
+        rarity: 'common',
+        baseId,
+        nameOf: (id) => t(`items.bases.${id}`),
+      });
+      addToGrid(inv, item);
+      equipFromGrid(inv, inv.grid.indexOf(item), user.classId);
+    }
+    recomputePlayer(this.world, this.player);
+  }
+
+  // ---- Inventory actions (called by the UI) ---------------------------------
+
+  equipItem(index: number): void {
+    const user = this.world.req(this.player, SkillUser);
+    const r = equipFromGrid(this.world.req(this.player, Inventory), index, user.classId);
+    if (!r.ok) this.notice(`loot.cannot.${r.reason}`, 'error');
+    this.afterInventoryChange();
+  }
+
+  unequipItem(slot: Slot): void {
+    const r = unequip(this.world.req(this.player, Inventory), slot);
+    if (!r.ok) this.notice(`loot.cannot.${r.reason}`, 'error');
+    this.afterInventoryChange();
+  }
+
+  salvageItem(index: number): void {
+    const gold = salvage(this.world.req(this.player, Inventory), index);
+    if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
+    this.afterInventoryChange();
+  }
+
+  socketItem(crystalIndex: number, target: { grid: number } | { slot: Slot }): void {
+    const r = socketCrystal(this.world.req(this.player, Inventory), crystalIndex, target);
+    if (!r.ok) this.notice(`loot.cannot.${r.reason}`, 'error');
+    this.afterInventoryChange();
+  }
+
+  /** Walk to a ground item (clicked label) and pick it up. */
+  requestPickup(item: Entity): void {
+    if (this.world.has(this.player, Dead) || !this.world.has(item, GroundItem)) return;
+    const tr = this.world.req(item, Transform);
+    const ptr = this.playerTransform;
+    if (Math.hypot(tr.x - ptr.x, tr.z - ptr.z) <= PICKUP_KEY_RADIUS) {
+      pickUp(this.world, this.ctx, this.player, item);
+      this.world.flushDestroyed();
+      return;
+    }
+    this.world.add(this.player, PickupTarget, { target: item });
+    this.world.add(this.player, MoveTarget, { x: tr.x, z: tr.z });
+  }
+
+  /** Compare a backpack item with what is equipped in the slot it would go to. */
+  private compare(item: Item): { stats: { stat: import('./data/loot/schemas').StatKey; delta: number }[]; damagePct: number; life: number } | null {
+    const inv = this.world.req(this.player, Inventory);
+    const user = this.world.req(this.player, SkillUser);
+    const base = BASE_ITEMS.get(item.base);
+    if (!base || slotsFor(base.type).length === 0) return null;
+    const slot: Slot | null = slotsFor(base.type).length > 1 ? (targetSlot(inv, item) ?? null) : (slotsFor(base.type)[0] ?? null);
+    if (!slot) return null;
+    const current = inv.equipped[slot];
+    const prog = this.world.req(this.player, Progression);
+    const cls = classDef(user.classId);
+    const before = computePlayerStats(cls, prog.level, inv.equipped);
+    const after = computePlayerStats(cls, prog.level, { ...inv.equipped, [slot]: item });
+    const a = sumItemStats([item]);
+    const b = sumItemStats(current ? [current] : []);
+    const keys = new Set([...a.keys(), ...b.keys()]);
+    return {
+      stats: [...keys].map((stat) => ({ stat, delta: (a.get(stat) ?? 0) - (b.get(stat) ?? 0) })),
+      damagePct: before.damageEstimate > 0 ? after.damageEstimate / before.damageEstimate - 1 : 0,
+      life: after.maxLife - before.maxLife,
+    };
+  }
+
+  private afterInventoryChange(): void {
+    recomputePlayer(this.world, this.player);
+    this.inventoryPanel.refresh();
   }
 
   save(): void {

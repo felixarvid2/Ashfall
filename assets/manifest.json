@@ -597,6 +597,312 @@
           1.6
         ]
       }
+    },
+    {
+      "id": "icon.hydraulic_hammer",
+      "category": "icon",
+      "prompt": "heavy industrial hydraulic sledgehammer with pistons and hazard stripes",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd06-ce10-75d5-ae7f-753f556c26af",
+        "creditsSpent": 3
+      },
+      "file": "icons/hydraulic_hammer.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5158
+      }
+    },
+    {
+      "id": "icon.power_sword",
+      "category": "icon",
+      "prompt": "sci-fi power sword with a glowing orange energized blade edge and a heavy grip",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd06-d045-7001-913c-d7fe54ed4a53",
+        "creditsSpent": 3
+      },
+      "file": "icons/power_sword.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4320
+      }
+    },
+    {
+      "id": "icon.hydraulic_knuckles",
+      "category": "icon",
+      "prompt": "massive armored hydraulic gauntlet fist with pistons, single glove",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd06-d04b-7245-9ce5-c38257ceb3de",
+        "creditsSpent": 3
+      },
+      "file": "icons/hydraulic_knuckles.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 7792
+      }
+    },
+    {
+      "id": "icon.riot_shield",
+      "category": "icon",
+      "prompt": "battered heavy riot shield with a vision slit and scorch marks",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd06-cfc8-7686-81a0-c3f49f930277",
+        "creditsSpent": 3
+      },
+      "file": "icons/riot_shield.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3170
+      }
+    },
+    {
+      "id": "icon.marksman_rifle",
+      "category": "icon",
+      "prompt": "long sci-fi marksman rifle with a scope, gunmetal and worn grip",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd06-d04c-72f6-adaa-498aedb24382",
+        "creditsSpent": 3
+      },
+      "file": "icons/marksman_rifle.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4732
+      }
+    },
+    {
+      "id": "icon.vibroblade",
+      "category": "icon",
+      "prompt": "slim vibrating combat dagger with a faint blue edge glow",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd06-d08c-774a-bdd4-5633d95a749f",
+        "creditsSpent": 3
+      },
+      "file": "icons/vibroblade.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5984
+      }
+    },
+    {
+      "id": "icon.bio_focus",
+      "category": "icon",
+      "prompt": "organic bio-tech focus orb in a metal cage with green bioluminescent fluid",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd07-13a6-75fb-bcb9-024daf48b647",
+        "creditsSpent": 3
+      },
+      "file": "icons/bio_focus.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 7922
+      }
+    },
+    {
+      "id": "icon.injector_rig",
+      "category": "icon",
+      "prompt": "wrist-mounted injector rig with vials of glowing green serum",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd07-2776-731b-bfe9-48966a435825",
+        "creditsSpent": 3
+      },
+      "file": "icons/injector_rig.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5002
+      }
+    },
+    {
+      "id": "icon.combat_helm",
+      "category": "icon",
+      "prompt": "scratched sci-fi combat helmet with an orange visor",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd07-4785-7250-8291-dd27a69771c6",
+        "creditsSpent": 3
+      },
+      "file": "icons/combat_helm.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 6744
+      }
+    },
+    {
+      "id": "icon.plated_vest",
+      "category": "icon",
+      "prompt": "heavy plated armored vest with rust and dents",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd07-4ea7-765f-aaa5-9dd041444a13",
+        "creditsSpent": 3
+      },
+      "file": "icons/plated_vest.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 6504
+      }
+    },
+    {
+      "id": "icon.servo_gauntlets",
+      "category": "icon",
+      "prompt": "pair of servo-assisted armored gloves with exposed cables",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd07-5802-700f-abe1-3c1c71b97e2c",
+        "creditsSpent": 3
+      },
+      "file": "icons/servo_gauntlets.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 8590
+      }
+    },
+    {
+      "id": "icon.armored_greaves",
+      "category": "icon",
+      "prompt": "pair of armored leg greaves with knee plates",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd07-a649-7613-ad4a-221f0db98396",
+        "creditsSpent": 3
+      },
+      "file": "icons/armored_greaves.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5468
+      }
+    },
+    {
+      "id": "icon.mag_boots",
+      "category": "icon",
+      "prompt": "heavy magnetic boots with glowing soles",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd08-d4ca-72be-a989-e829490994ae",
+        "creditsSpent": 3
+      },
+      "file": "icons/mag_boots.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 6372
+      }
+    },
+    {
+      "id": "icon.signal_pendant",
+      "category": "icon",
+      "prompt": "small sci-fi pendant amulet with a glowing signal crystal on a chain",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd08-e4bb-71ca-b971-e458f92686a4",
+        "creditsSpent": 3
+      },
+      "file": "icons/signal_pendant.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5624
+      }
+    },
+    {
+      "id": "icon.conduit_ring",
+      "category": "icon",
+      "prompt": "heavy metal ring with a tiny glowing energy conduit",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd09-02aa-74e4-b9a9-ccc6d7d6c669",
+        "creditsSpent": 3
+      },
+      "file": "icons/conduit_ring.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 6788
+      }
+    },
+    {
+      "id": "icon.crystal_ember",
+      "category": "icon",
+      "prompt": "faceted glowing orange ember crystal gem",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd09-07a2-762a-88b8-96764f1ec154",
+        "creditsSpent": 3
+      },
+      "file": "icons/crystal_ember.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5250
+      }
+    },
+    {
+      "id": "icon.crystal_lumen",
+      "category": "icon",
+      "prompt": "faceted bioluminescent sickly green crystal gem",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd09-1f8b-731c-8537-02e371fffd87",
+        "creditsSpent": 3
+      },
+      "file": "icons/crystal_lumen.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5180
+      }
+    },
+    {
+      "id": "icon.crystal_void",
+      "category": "icon",
+      "prompt": "faceted dark purple void crystal gem with inner swirl",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a0fd09-5ae9-7369-8764-a69b55dd0366",
+        "creditsSpent": 3
+      },
+      "file": "icons/crystal_void.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 7334
+      }
     }
   ]
 }

@@ -29,6 +29,9 @@ export function makeCtx(overrides: Partial<GameContext> = {}): GameContext {
     spatial: new SpatialHash(4),
     debug: { godMode: false },
     stats: { kills: 0 },
+    loot: { rng: new Rng('test-loot'), seq: 0 },
+    rewards: [],
+    zoneLevels: [1, 10],
     ...overrides,
   };
 }

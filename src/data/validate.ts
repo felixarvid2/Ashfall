@@ -22,6 +22,7 @@ export function validateGameData(): string[] {
     if (ids.has(asset.id)) errors.push(`manifest: duplicate asset id ${asset.id}`);
     ids.add(asset.id);
     if (asset.status === 'optimized' && !asset.file) errors.push(`manifest: ${asset.id} is optimized but has no file`);
+    if (asset.category !== 'icon' && !asset.placeholder) errors.push(`manifest: ${asset.id} needs a placeholder`);
   }
 
   const arenas: ArenaDef[] = [TEST_ARENA];

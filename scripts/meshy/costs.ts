@@ -19,11 +19,14 @@ export const COSTS = {
 export type Stage = 'preview' | 'refine' | 'rig';
 
 export const CONCEPT_IMAGE_MODEL = 'nano-banana-2';
+/** Icons are small; the cheapest image model is plenty. */
+export const ICON_IMAGE_MODEL = 'nano-banana';
 
 export function stageCost(entry: AssetEntry, stage: Stage, aiModel: string): number {
   const image = entry.source === 'image';
   switch (stage) {
     case 'preview':
+      if (entry.category === 'icon') return COSTS.textToImage[ICON_IMAGE_MODEL] ?? 3;
       return image ? (COSTS.textToImage[CONCEPT_IMAGE_MODEL] ?? 6) : (COSTS.preview[aiModel] ?? 20);
     case 'refine':
       return image ? COSTS.imageTo3dTextured : COSTS.refine2k4k;

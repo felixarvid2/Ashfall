@@ -16,6 +16,8 @@ export interface PropPlacement {
 export interface ArenaDef {
   id: string;
   halfSize: number;
+  /** Monster level range (Cinder Flats: 1–10). */
+  levels: [number, number];
   playerSpawn: { x: number; z: number };
   ambient: { color: string; intensity: number };
   moon: { color: string; intensity: number };
@@ -49,6 +51,7 @@ const growth = (x: number, z: number, scale = 1): PropPlacement => ({
 export const TEST_ARENA: ArenaDef = {
   id: 'zone.test_arena',
   halfSize: 40,
+  levels: [1, 10],
   playerSpawn: { x: 0, z: 0 },
   ambient: { color: '#5a6170', intensity: 0.45 },
   moon: { color: '#8fa3c0', intensity: 1.1 },

@@ -71,3 +71,19 @@ armor: 20 / (20 + 50 + 15) = 23.5 % → 12.85 × 0.765 = 9.83 damage
 ```
 
 If the colonist is Vulnerable (after Seismic Shock): `9.83 × 1.2 = 11.8`.
+
+## Attributes and item stats (Phase 3a)
+
+Implemented in `src/systems/stats.ts`.
+
+- **Primary attribute** (Strength for Bastion) is `mainStat`: +0.1 % damage per point (its own multiplier).
+- **Dexterity**: +0.02 % crit chance per point. **Intelligence**: +0.05 % all resistances per point.
+  **Willpower**: +0.1 % resource generation per point. Non-primary Strength: +0.5 armor per point.
+- **Weapon damage** comes from the equipped weapon's implicit; with no weapon the class "fist" value (5) is used.
+- Item damage affixes go into the **additive bucket**: "+x % Damage" always, and conditional ones
+  (to Vulnerable / Elites / Stunned / Burning, Melee) only when the condition holds for the hit.
+- **Attack speed** shortens skill wind-up and recovery: time ÷ (1 + attack speed).
+- **Cooldown reduction** (cap 50 %), **resource generation**, **barrier strength**, **stim pack healing**,
+  **life on kill** apply where their names say.
+- **Damage reduction** (cap 50 %) multiplies damage taken: `taken × (1 − DR)` after armor/resistance.
+- Crit chance is capped at 80 %.
