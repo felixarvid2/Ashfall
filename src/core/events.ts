@@ -72,7 +72,8 @@ export type GameEvent =
   | { type: 'discover'; id: string }
   | { type: 'hub'; id: string; entered: boolean }
   /** The player used a point of interest (UI shows toasts, the lore reader, buff banners). */
-  | { type: 'interact'; kind: string; id: string; detail?: string };
+  | { type: 'interact'; kind: string; id: string; detail?: string }
+  | { type: 'quest'; id: string; state: 'started' | 'progress' | 'step' | 'completed' | 'failed' };
 
 export class EventQueue {
   private events: GameEvent[] = [];

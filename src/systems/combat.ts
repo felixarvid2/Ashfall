@@ -18,6 +18,7 @@ import {
   Level,
   Mover,
   PlayerControlled,
+  QuestTag,
   Resource,
   SkillUser,
   StatusEffects,
@@ -32,6 +33,7 @@ import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, enemyDef } from '../data/db';
 import type { Bonus, Condition, DamageType, StatusApply, StatusId } from '../data/schemas';
 import { computeHit, computeOutgoing, computeTaken, type TargetState } from './damage';
+import { signal } from './quests';
 
 export function hasStatus(world: World, e: Entity, id: StatusId): boolean {
   return world.get(e, StatusEffects)?.list.some((s) => s.id === id) ?? false;
@@ -415,6 +417,10 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
       });
     }
     ctx.stats.kills++;
+    if (tr) {
+      const quest = world.get(target, QuestTag)?.quest;
+      signal(ctx, { type: 'kill', defId: ai.defId, x: tr.x, z: tr.z, ...(quest ? { quest } : {}) });
+    }
     onEnemyDeath(world, ctx, target, wasMarked);
   }
   ctx.events.push({ type: 'death', target, x: tr?.x ?? 0, z: tr?.z ?? 0, isPlayer });

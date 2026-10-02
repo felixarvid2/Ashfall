@@ -40,8 +40,9 @@ import { PICKUP_KEY_RADIUS, grantXp, nearestGroundItem } from '../systems/loot/r
 import { recomputePlayer } from '../systems/stats';
 import { livingInCircle } from '../systems/targeting';
 import { revealAround, type ZoneRuntime } from './zone';
+import { signal } from '../systems/quests';
 
-const VISUAL: Partial<Record<PoiDef['kind'] | 'teleporter', { asset: string; scale?: number; glow?: string; collider?: number }>> = {
+const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: number; glow?: string; collider?: number }>> = {
   chest: { asset: 'prop.supply_chest', collider: 0.7 },
   lockedChest: { asset: 'prop.supply_chest', scale: 1.25, glow: '#ffb43a', collider: 0.85 },
   keycard: { asset: 'prop.cargo_crate', scale: 0.3, glow: '#3ad2ff' },
@@ -50,10 +51,11 @@ const VISUAL: Partial<Record<PoiDef['kind'] | 'teleporter', { asset: string; sca
   lore: { asset: 'prop.control_terminal', scale: 0.8, glow: '#2a6a8a', collider: 0.45 },
   signalTower: { asset: 'prop.signal_tower', scale: 1.1, collider: 1 },
   teleporter: { asset: 'prop.teleporter', glow: '#2a8aff' },
+  stash: { asset: 'prop.supply_chest', scale: 1.1, glow: '#7dd8a0', collider: 0.8 },
 };
 
 /** Spawn the zone's interactable objects (once, when the zone loads). */
-export function spawnInteractables(world: World, zone: ZoneRuntime): void {
+export function spawnInteractables(world: World, zone: ZoneRuntime, extras: { poi: string; kind: Interactable['kind']; x: number; z: number }[] = []): void {
   const add = (poi: string, kind: Interactable['kind'], x: number, z: number, glow?: string) => {
     const v = VISUAL[kind];
     if (!v) return;
@@ -75,6 +77,7 @@ export function spawnInteractables(world: World, zone: ZoneRuntime): void {
     add(poi.id, poi.kind, poi.x, poi.z, glow);
   }
   for (const tp of zone.def.teleporters) add(tp.id, 'teleporter', tp.x, tp.z);
+  for (const x of extras) add(x.poi, x.kind, x.x, x.z);
   syncInteractables(world, zone);
 }
 
@@ -165,7 +168,10 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
   if (!zone || !it || !tr || !usable(it, ctx.time)) return false;
   const poi = zone.def.pois.find((p) => p.id === it.poi);
   const level = monsterLevel(world, ctx);
-  const emit = (detail?: string) => ctx.events.push({ type: 'interact', kind: it.kind, id: it.poi, ...(detail !== undefined ? { detail } : {}) });
+  const emit = (detail?: string) => {
+    ctx.events.push({ type: 'interact', kind: it.kind, id: it.poi, ...(detail !== undefined ? { detail } : {}) });
+    if (it.kind !== 'questObject') signal(ctx, { type: 'interact', kind: it.kind, id: it.poi });
+  };
   const spend = () => {
     it.used = true;
     zone.found.add(it.poi);
@@ -232,6 +238,16 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
       emit();
       return true;
     case 'teleporter':
+    case 'npc':
+    case 'stash':
+      emit();
+      return true;
+    case 'questObject':
+      // Quest objects vanish when used; the quest log decides what they mean.
+      it.used = true;
+      world.destroyDeferred(target);
+      ctx.events.push({ type: 'vfx', kind: 'heal', x: tr.x, z: tr.z, radius: 1.2, facing: 0 });
+      signal(ctx, { type: 'interact', kind: it.kind, id: it.poi });
       emit();
       return true;
     default:

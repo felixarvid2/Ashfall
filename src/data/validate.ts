@@ -11,6 +11,8 @@ import { ASPECT_DEFS, BASE_ITEMS, UNIQUE_DEFS } from './loot/db';
 import en from './lang/en.json';
 import { SettingsSchema } from './settings';
 import { TEST_ARENA, type ArenaDef } from './zones/testArena';
+import { CINDER_FLATS } from './zones/cinderFlats';
+import { NPCS, QUESTS } from './quests/db';
 
 export function validateGameData(): string[] {
   const errors: string[] = [];
@@ -28,15 +30,32 @@ export function validateGameData(): string[] {
     if (asset.category !== 'icon' && !asset.placeholder) errors.push(`manifest: ${asset.id} needs a placeholder`);
   }
 
-  const arenas: ArenaDef[] = [TEST_ARENA];
+  const arenas: ArenaDef[] = [TEST_ARENA, CINDER_FLATS];
   for (const arena of arenas) {
     for (const prop of arena.props) {
       if (!ids.has(prop.asset)) errors.push(`${arena.id}: unknown asset ${prop.asset}`);
-      if (Math.abs(prop.x) > arena.halfSize || Math.abs(prop.z) > arena.halfSize) {
+      if (!prop.landmark && (Math.abs(prop.x) > arena.halfSize || Math.abs(prop.z) > arena.halfSize)) {
         errors.push(`${arena.id}: ${prop.asset} at (${prop.x}, ${prop.z}) is outside the arena`);
       }
     }
     for (const s of arena.scatter) if (!ids.has(s.asset)) errors.push(`${arena.id}: unknown scatter asset ${s.asset}`);
+  }
+
+  // Quests and NPCs: models, enemies and people they mention must exist.
+  for (const npc of NPCS.values()) if (!ids.has(npc.asset)) errors.push(`npc ${npc.id}: unknown asset ${npc.asset}`);
+  for (const q of QUESTS.values()) {
+    if (q.giver && !NPCS.has(q.giver)) errors.push(`quest ${q.id}: unknown giver ${q.giver}`);
+    for (const a of q.after) if (!QUESTS.has(a)) errors.push(`quest ${q.id}: unknown prerequisite ${a}`);
+    const objects = q.trigger && 'object' in q.trigger ? [q.trigger.object] : [];
+    for (const step of q.steps) {
+      if (step.kind === 'interact') objects.push(...step.objects);
+      if (step.kind === 'escort' && !ids.has(step.asset)) errors.push(`quest ${q.id}: unknown asset ${step.asset}`);
+      if ((step.kind === 'talk' || step.kind === 'choice') && !NPCS.has(step.npc)) errors.push(`quest ${q.id}: unknown npc ${step.npc}`);
+      if (step.kind === 'kill') {
+        for (const enemy of [step.enemy, step.spawn?.enemy]) if (enemy && !ENEMY_DEFS.has(enemy)) errors.push(`quest ${q.id}: unknown enemy ${enemy}`);
+      }
+    }
+    for (const o of objects) if (!ids.has(o.asset)) errors.push(`quest ${q.id}: unknown asset ${o.asset}`);
   }
 
   // Combat data (schemas are enforced when db.ts loads; these are cross-references).
@@ -66,7 +85,7 @@ export function validateGameData(): string[] {
     if (!strings?.[cls!]?.[name!]) errors.push(`lang/en.json: missing strings for skill ${def.id}`);
   }
   for (const enemy of ENEMY_DEFS.values()) {
-    const names = (en as { enemies?: Record<string, string> }).enemies;
+    const names = (en as unknown as { enemies?: Record<string, unknown> }).enemies;
     if (!names?.[enemy.id]) errors.push(`lang/en.json: missing name for enemy ${enemy.id}`);
   }
 

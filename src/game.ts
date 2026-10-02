@@ -85,6 +85,8 @@ import { loadAccount, relicEffects, saveAccount } from './core/account';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { keyLabel } from './ui/hud';
 import { LORE_XP_PER_LEVEL, PYLONS } from './data/interactables';
+import { createQuestRuntime, questMarkers, questSystem, restoreQuests, saveQuests, spawnQuestWorld } from './systems/quests';
+import { STASH_POSITION } from './data/quests/cinderFlats';
 
 const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
 import { spawnEnemy, spawnPlayer } from './world/spawn';
@@ -159,6 +161,7 @@ export class Game {
       zoneLevels: ZONE.levels,
       zone: createZoneRuntime(ZONE),
       account: loadAccount(this.storage),
+      quests: createQuestRuntime(),
     };
     setItemNamer((baseId) => t(`items.bases.${baseId}`));
 
@@ -186,7 +189,8 @@ export class Game {
       .add('encounter', encounterSystem)
       .add('rewards', rewardSystem)
       .add('pickup', pickupSystem)
-      .add('interact', interactSystem);
+      .add('interact', interactSystem)
+      .add('quests', questSystem);
 
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
@@ -303,7 +307,10 @@ export class Game {
     this.refreshHint();
 
     spawnArenaProps(this.world, ZONE);
-    if (this.ctx.zone) spawnInteractables(this.world, this.ctx.zone);
+    if (this.ctx.zone) {
+      spawnInteractables(this.world, this.ctx.zone, [{ poi: 'stash', kind: 'stash', ...STASH_POSITION }]);
+      spawnQuestWorld(this.world, this.ctx);
+    }
     this.player = spawnPlayer(this.world, DEFAULT_CLASS, ZONE.playerSpawn.x, ZONE.playerSpawn.z);
     this.applyAccountBonuses();
     const tr = this.playerTransform;
@@ -399,6 +406,7 @@ export class Game {
     zone.found.clear();
     zone.keycards.clear();
     syncInteractables(this.world, zone);
+    restoreQuests(this.world, this.ctx, { active: {}, done: {}, tracked: null });
   }
 
   private autosave(): void {
@@ -474,6 +482,7 @@ export class Game {
       this.characterPanel.refresh();
     }
     this.hud.update(this.hudState(), frameDt);
+    this.mapUi.markers = questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
     this.mapUi.update(frameDt);
     this.updateInteractPrompt(px, pz);
 
@@ -790,6 +799,7 @@ export class Game {
             keycards: [...this.zone.keycards],
           }
         : { zone: ZONE.id, discovered: [], revealed: '', found: [], keycards: [] },
+      quests: saveQuests(this.ctx.quests!),
     };
   }
 
@@ -838,6 +848,7 @@ export class Game {
       for (const id of data.world.keycards) this.zone.keycards.add(id);
       syncInteractables(this.world, this.zone);
     }
+    restoreQuests(this.world, this.ctx, data.quests);
     this.renderer.rig.snapTo(x, y, z);
     this.inventoryPanel.refresh();
   }

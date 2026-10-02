@@ -45,6 +45,7 @@ const sample = (): SaveData => ({
   loot: { seq: 7, rngState: [5, 6, 7, 8] },
   skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
   world: { zone: 'zone.cinder_flats', discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=', found: [], keycards: [] },
+  quests: { active: { 'mq.fuel': { step: 2, progress: 3 } }, done: { 'mq.wake_up': '' }, tracked: 'mq.fuel' },
 });
 
 describe('save serialization', () => {

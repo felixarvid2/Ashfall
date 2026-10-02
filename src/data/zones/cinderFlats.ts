@@ -159,7 +159,7 @@ function buildProps(): PropPlacement[] {
     const d = rng.range(25, 110);
     const x = -250 + Math.sin(a) * d;
     const z = -200 + Math.cos(a) * d;
-    if (distanceToRoad(x, z) < 8) continue;
+    if (distanceToRoad(x, z) < 8 || Math.abs(x) > HALF - 4 || Math.abs(z) > HALF - 4) continue;
     if (i % 3 === 0) props.push({ asset: 'prop.crashed_lander', x, z, rot: rng.range(0, 6.28), colliders: line(5, 1.5, 4) });
     else if (i % 3 === 1) props.push(fire(x, z, rng.range(0.7, 1.2)));
     else props.push(growth(x, z, rng.range(0.8, 1.6)));

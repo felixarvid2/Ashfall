@@ -58,6 +58,14 @@ export const SaveDataSchema = z.object({
     found: z.array(z.string()).default([]),
     keycards: z.array(z.string()).default([]),
   }),
+  /** Quest log: active quests (step, progress, choice), finished quests (→ choice) and the tracked one. */
+  quests: z
+    .object({
+      active: z.record(z.string(), z.object({ step: z.number().int().nonnegative(), progress: z.number().int().nonnegative(), choice: z.string().optional() })),
+      done: z.record(z.string(), z.string()),
+      tracked: z.string().nullable(),
+    })
+    .default({ active: {}, done: {}, tracked: null }),
 });
 
 export type SaveData = z.infer<typeof SaveDataSchema>;

@@ -469,7 +469,7 @@ export const Turret = defineComponent<Turret>('Turret');
 export interface Interactable {
   /** Point-of-interest id (or teleporter id). */
   poi: string;
-  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter';
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash';
   /** Use radius (m). */
   radius: number;
   /** Spent for good (opened, read, claimed). */
@@ -507,3 +507,32 @@ export interface AccountBonuses {
   effects: import('../data/effects').Effect[];
 }
 export const AccountBonuses = defineComponent<AccountBonuses>('AccountBonuses');
+
+/** Spawned for a quest step (named targets, objects, the escorted tanker, quest-only NPCs). */
+export interface QuestTag {
+  quest: string;
+  step: number;
+}
+export const QuestTag = defineComponent<QuestTag>('QuestTag');
+
+/** Shown instead of the enemy type's name (named quest targets, rare elites). */
+export interface DisplayName {
+  /** Language key, or a literal name when `literal` is set. */
+  key: string;
+  literal?: boolean;
+}
+export const DisplayName = defineComponent<DisplayName>('DisplayName');
+
+/** A vehicle the player escorts along a path (it waits when the player falls behind). */
+export interface Escort {
+  path: [number, number][];
+  next: number;
+  leash: number;
+}
+export const Escort = defineComponent<Escort>('Escort');
+
+/** A hub NPC (talked to with the interact key). */
+export interface Npc {
+  id: string;
+}
+export const Npc = defineComponent<Npc>('Npc');

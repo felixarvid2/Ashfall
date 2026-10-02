@@ -52,6 +52,8 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   // Open-world containers: supply crates along the roads, locked chests (keycard) and bunker caches.
   { id: 'dt.supply_crate', itemChance: 0.7, goldChance: 1, gold: [3, 8], crystalChance: 0.06, rarityBias: { magic: 1.5 }, xp: 0 },
   { id: 'dt.locked_chest', itemChance: 1, extraItems: 2, goldChance: 1, gold: [12, 24], crystalChance: 0.35, rarityBias: { rare: 3, legendary: 2.5 }, minRarity: 'magic', xp: 0 },
+  // Quest rewards: only the guaranteed item of the quest's rarity (gold and XP are paid directly).
+  { id: 'dt.quest_reward', itemChance: 0, goldChance: 0, gold: [0, 0], crystalChance: 0, xp: 0 },
   // Reward cache that drops when a wave is cleared.
   {
     id: 'dt.wave_reward',

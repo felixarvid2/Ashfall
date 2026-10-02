@@ -211,7 +211,11 @@
     "spore_carrier": "Spore Carrier",
     "bloater": "Bloater",
     "spore_hound": "Spore Hound",
-    "sergeant": "Contaminated Sergeant"
+    "sergeant": "Contaminated Sergeant",
+    "named": {
+      "lena": "Lena Reyes",
+      "rook": "Rook"
+    }
   },
   "resources": {
     "heat": "Heat",
@@ -1266,7 +1270,10 @@
       "relic": "Claim Echo Relic",
       "lore": "Read Log",
       "signalTower": "Activate Signal Tower",
-      "teleporter": "Open Map"
+      "teleporter": "Open Map",
+      "npc": "Talk",
+      "questObject": "Examine",
+      "stash": "Open Stash"
     },
     "needKeycard": "Locked. A keycard should be lying somewhere nearby.",
     "keycard": "Keycard taken. A locked chest is close by.",
@@ -1362,5 +1369,264 @@
         "body": "They're coming for my notes. If someone finds this: the Governor knew. He had my reports a full month before the first evacuation order, and he kept the drills running. The mine isn't a mine anymore. It's a door. Don't let them open it wider."
       }
     }
+  },
+  "npcs": {
+    "benny": {
+      "name": "Benny Rusk",
+      "title": "Cook · Trader",
+      "greeting": "Sit down before you fall down. There's soup. Don't ask what's in it.",
+      "service": "Trade"
+    },
+    "hekla": {
+      "name": "Hekla Strand",
+      "title": "Former miner · Blacksmith",
+      "greeting": "If it's broken, I can fix it. If it's rotten, I can't. Which is it?",
+      "service": "Blacksmith"
+    },
+    "pell": {
+      "name": "Pell Varga",
+      "title": "Data engineer · Technician",
+      "greeting": "Careful with the cables. Half the outpost runs through this desk.",
+      "service": "Aspects"
+    },
+    "tomas": {
+      "name": "Tomas Reyes",
+      "title": "Survivor",
+      "greeting": "Have you seen a girl out there? Sixteen. Red jacket. Her name is Lena."
+    },
+    "danner": {
+      "name": "Pvt. Danner",
+      "title": "Deserter",
+      "greeting": "Don't shoot. Please. I'm not one of them. Not yet."
+    }
+  },
+  "quests": {
+    "mq.wake_up": {
+      "title": "Wake Up",
+      "summary": "The pod came down hard in the Impact Fields. Get out of the crater and find a way forward.",
+      "steps": {
+        "0": "Climb out of the crater and reach the road",
+        "1": "Kill Ash Walkers ({n}/{count})",
+        "2": "Activate the teleporter at the edge of the Impact Fields"
+      },
+      "done": "The teleporter hums awake. Somewhere east, a light is burning."
+    },
+    "mq.signal": {
+      "title": "Signal in the Ash",
+      "summary": "A light burns to the east along Route 7. Someone kept a fire going.",
+      "steps": {
+        "0": "Follow Route 7 to the light",
+        "1": "Talk to Benny Rusk"
+      },
+      "talk1": "You came down in that pod? Then you're the answer to the Governor's distress call. Funny. Nobody here sent it.\nThis is Outpost Ember. A fuel station, nine survivors, and a generator that keeps the dark at arm's length.\nRest. Then make yourself useful. Everyone here does.",
+      "done": "Outpost Ember. Small, cold, alive."
+    },
+    "mq.fuel": {
+      "title": "Fuel for the Living",
+      "summary": "The generator is running dry. Without light, Ember falls in a night.",
+      "steps": {
+        "0": "Talk to Hekla Strand",
+        "1": "Find the stranded convoy on Route 7",
+        "2": "Clear the infected around the convoy ({n}/{count})",
+        "3": "Recover fuel canisters ({n}/{count})",
+        "4": "Bring the fuel to Hekla"
+      },
+      "offer": "The generator's got two days of fuel. Maybe three if we sit in the dark.\nA convoy got stuck on Route 7 when the quarantine started. Tankers full of it.\nTalk to Hekla. She knows what we need and how to carry it.",
+      "talk0": "Benny sent you? Good. My hands are better at fixing than fighting these days.\nThe convoy's east on Route 7, past the overpass. It'll be crawling. Bring me three canisters, sealed.",
+      "talk4": "Sealed and full. That's three more weeks of light.\nYou fight like someone who's done it before. Don't tell me where. Pell wants a word, by the way. Something on the radio.",
+      "done": "The generator roars back to life. For now, Ember stays lit."
+    },
+    "mq.orders": {
+      "title": "The Governor's Orders",
+      "summary": "Pell has decrypted traffic from Checkpoint Sierra. The soldiers there were following orders long after they stopped being human.",
+      "steps": {
+        "0": "Reach the approach to Checkpoint Sierra",
+        "1": "Retake Checkpoint Sierra",
+        "2": "Return to Pell"
+      },
+      "offer": "I've been listening to the military band. Checkpoint Sierra is still broadcasting. Same orders, every hour, signed by Governor Kade.\nNo civilian traffic. Detain the infected. Keep the drills running.\nWhoever's still there isn't taking orders from anyone alive. Take the checkpoint back and we get the archive. Then we know what he knew.",
+      "talk2": "Hale. Commandant Hale. I went to school with his son.\nThe archive's intact. The orders are real. Kade knew about the infection a month before the first evacuation call, and he kept the drills going.\nThere's more in the Meridian's flight data. If the black box survived, it'll show us what he was shipping.",
+      "done": "The checkpoint is quiet. The archive is not."
+    },
+    "mq.black_box": {
+      "title": "Black Box",
+      "summary": "The freighter Meridian went down near the elevator foundation. Its black box may show what the Governor was shipping out.",
+      "steps": {
+        "0": "Reach the wreck of the Meridian",
+        "1": "Recover the black box from Meridian's Hold",
+        "2": "Bring the black box to Pell"
+      },
+      "offer": "The Meridian was the last ship off the surface. It never made orbit.\nIts black box logs cargo manifests. If Kade was moving something out of the mine, it's in there.\nThe hold has no power. Get the generators running and bring me that box.",
+      "talk2": "Cargo bay two: one sealed container, Consortium priority, origin Shaft 1. No contents listed.\nShaft 1 is where it started. Where they put the first one. Elias Brandt.\nThey didn't kill him. They sealed him in a pit north of the checkpoint. Locals call it the Maw. Whatever's growing there... it's what they were trying to ship.",
+      "done": "The box goes quiet. Its last word was a destination: the Maw."
+    },
+    "mq.the_first": {
+      "title": "The First",
+      "summary": "Patient zero still lives in the Maw. Everything the infection knows, it learned from him.",
+      "steps": {
+        "0": "Reach the Maw",
+        "1": "Defeat The First",
+        "2": "Tell Benny it is done"
+      },
+      "offer": "Every infected thing out there moves like it's listening to something. Okafor called it a network.\nIf the first node goes dark, maybe the rest go deaf. Maybe not.\nIt's the only idea we've got. Go to the Maw.",
+      "talk2": "You're back. That means it's dead. Or you are, and this is the soup talking.\nPell read me the rest of the logs. Kade knew. He kept the drills running because the Consortium paid by the ton, and the dead don't file complaints.\nThe refinery's still burning out east. If he's anywhere, he's there. Eat first.",
+      "done": "The Maw is silent. The refinery fire still lights the horizon."
+    },
+    "sq.daughter": {
+      "title": "A Daughter Lost",
+      "summary": "Tomas Reyes lost his daughter Lena in Ash Valley when the storms began.",
+      "steps": {
+        "0": "Search Ash Valley where Lena was last seen",
+        "1": "Find Lena",
+        "2": "Take what she carried",
+        "3": "Return to Tomas"
+      },
+      "offer": "She went out for water. Ash Valley. The storm came in and she didn't come back.\nThat was eleven days ago. I know what that means. I'm asking anyway.\nPlease. Just... find out.",
+      "talk3": "That's her locket. Her mother's picture.\nWas she... was it quick? No. Don't answer. Thank you for not lying to me.\nI'll put it with her mother's things. Leave me a while.",
+      "done": "Some answers are only kindness because the questions were worse."
+    },
+    "sq.logs": {
+      "title": "The Scientist's Logs",
+      "summary": "Dr. Ines Okafor warned the Governor months before the fall. Her logs are scattered across Cinder Flats.",
+      "steps": {
+        "0": "Find Dr. Okafor's logs ({n}/{count})",
+        "1": "Bring the logs to Pell"
+      },
+      "talk1": "Okafor. She used to come in for coffee and leave her samples on my desk. I complained.\nShe saw all of it coming, and they buried her reports. I'll copy these to every channel we still have.\nShe left something with me before she disappeared. Said to give it to whoever finished reading. Here.",
+      "done": "Dr. Okafor's warnings are finally heard. Too late, but heard."
+    },
+    "sq.water": {
+      "title": "Water for Ember",
+      "summary": "A water tanker sits abandoned on Route 7, half full. Ember is rationing every cup.",
+      "steps": {
+        "0": "Find the water tanker on Route 7",
+        "1": "Escort the tanker to Outpost Ember",
+        "2": "Talk to Benny"
+      },
+      "offer": "There's a tanker on Route 7, west of the overpass. Half full, last I saw it.\nIt still drives. Barely. Walk it back here and keep the infected off it.\nIt only moves if somebody's with it. The autopilot's scared of the dark too.",
+      "talk2": "Clean water. Well. Cleaner water.\nThat's soup for a month. And tea, if Hekla stops hoarding the leaves.",
+      "done": "Ember drinks tonight.",
+      "escortName": "Water Tanker"
+    },
+    "sq.spices": {
+      "title": "Cook's Spices",
+      "summary": "Benny swears the glands of Spore Carriers taste like pepper, if you boil them long enough.",
+      "steps": {
+        "0": "Harvest glands from Spore Carriers ({n}/{count})",
+        "1": "Bring the glands to Benny"
+      },
+      "offer": "Everything tastes like ash. Everything.\nThe Spore Carriers... the glands on their backs. Boiled for six hours, they taste like black pepper. Don't look at me like that.\nBring me three. People need a reason to come to dinner.",
+      "talk1": "Perfect. Disgusting. Perfect.\nTonight nobody's eating ash. Tonight it's pepper and ash.",
+      "done": "For one evening, Ember eats something that tastes like home."
+    },
+    "sq.old_dog": {
+      "title": "Old Dog",
+      "summary": "Hekla had a mining dog named Rook. It ran when the tunnels went dark.",
+      "steps": {
+        "0": "Search the old kennels in the Impact Fields",
+        "1": "Find Rook",
+        "2": "Take Rook's collar",
+        "3": "Return to Hekla"
+      },
+      "offer": "I had a dog. Rook. Best tunnel dog in Shaft 4, he could smell gas before the sensors.\nHe ran when it started. Somebody saw a hound like him by the old kennels in the Impact Fields. Glowing.\nIf it's him... don't let him stay like that. Bring me his collar.",
+      "talk3": "That's his. I stamped the tag myself.\nHe'd have hated being one of them. Thank you. I mean it.\nGo on. I'm fine. I've got work.",
+      "done": "Rook's collar hangs on a nail above Hekla's anvil."
+    },
+    "sq.radio": {
+      "title": "Radio Silence",
+      "summary": "Pell needs three relay masts repaired to hear the rest of the planet.",
+      "steps": {
+        "0": "Reset the relay terminals ({n}/{count})",
+        "1": "Return to Pell"
+      },
+      "offer": "Three relay masts around Route 7 went dark in the first week.\nGet them running and I can hear the whole basin. Survivors. Soldiers. Whatever's left.\nThe terminals just need a reset. Power cycle. Hit them if you have to.",
+      "talk1": "I've got signal. Static mostly. And... a woman counting numbers in the refinery band. Over and over.\nI'll keep listening. Thank you. It's less quiet now.",
+      "done": "The radio crackles with voices again, few and far between."
+    },
+    "sq.rations": {
+      "title": "Rations Run",
+      "summary": "The convoys left supply crates all along Route 7.",
+      "steps": {
+        "0": "Open supply crates in the wild ({n}/{count})",
+        "1": "Talk to Benny"
+      },
+      "offer": "The convoys left crates up and down Route 7. Ration packs, med gel, whatever.\nCrack open three of them and bring me back word of what's out there. Keep whatever you find.",
+      "talk1": "Good. The road still feeds us, then. For now.",
+      "done": "The road still has something left to give."
+    },
+    "sq.deserter": {
+      "title": "The Deserter",
+      "summary": "A soldier fled Checkpoint Sierra before it fell. Hekla heard he hides near the southern bunker.",
+      "steps": {
+        "0": "Find the deserter near the southern bunker",
+        "1": "Decide what to do with Pvt. Danner"
+      },
+      "offer": "There's a soldier hiding near the bunker south of the road. Deserted from Sierra before it went bad.\nSome here want him hanged for what the soldiers did. Some want his rifle.\nFind him. What happens after is your call.",
+      "done": "Pvt. Danner made his choice. So did you.",
+      "choice1": {
+        "prompt": "I ran when they started shooting civilians. I'm not proud of it. I'm not sorry either.\nSend me to Ember and I'll pull my weight. Or take the rifle and leave me. Your call.",
+        "spare": "Go to Ember. Earn your place.",
+        "rifle": "Leave the rifle. Then go."
+      },
+      "result": {
+        "spare": "Danner heads toward the light of Ember, rifle slung, head down.",
+        "rifle": "Danner leaves the rifle in the ash and walks into the dark without looking back."
+      }
+    },
+    "sq.lights": {
+      "title": "Lights Out",
+      "summary": "The beacons on the Sierra road went out. Without them, nobody finds their way back at night.",
+      "steps": {
+        "0": "Light the road beacons ({n}/{count})",
+        "1": "Return to Hekla"
+      },
+      "offer": "The road beacons toward Sierra are dark. Four of them.\nThey're on a separate circuit, so they just need the switch thrown. Light them and people can find Ember after dark again.",
+      "talk1": "I can see them from the roof. Four little stars on the road.\nSomebody's going to make it home tonight because of that.",
+      "done": "Four beacons burn on the Sierra road."
+    },
+    "sq.letter": {
+      "title": "Last Letter",
+      "summary": "A body in Ash Valley clutches a letter addressed to Outpost Ember.",
+      "steps": {
+        "0": "Deliver the letter to Benny"
+      },
+      "talk0": "This is my brother's hand. Martin.\nHe says he's sorry about the restaurant. That he's going to walk to Ember. That I should keep a bowl warm.\nI kept a bowl warm. Eleven days. Thank you for bringing him the rest of the way.",
+      "done": "Benny keeps the letter in his apron pocket."
+    },
+    "my.whistle": {
+      "title": "The Whistle in the Ash",
+      "summary": "A tin whistle lies in the ash. When the wind passes through it, something whistles back.",
+      "steps": {
+        "0": "Follow the whistle north",
+        "1": "Follow the whistle further",
+        "2": "Follow the whistle to its end",
+        "3": "Open what the whistle was guarding"
+      },
+      "done": "Whoever left the whistle wanted someone to follow it."
+    }
+  },
+  "questUi": {
+    "accept": "Accept",
+    "decline": "Not now",
+    "goodbye": "Goodbye",
+    "continue": "Continue",
+    "offerTag": "New quest",
+    "talkTag": "Quest",
+    "started": "Quest started: {title}",
+    "completed": "Quest complete: {title}",
+    "failed": "{title}: the tanker was destroyed. Starting over.",
+    "progress": "{title}: {step}",
+    "log": "Quests",
+    "tracked": "Tracked",
+    "track": "Track",
+    "noQuests": "No active quests.",
+    "kinds": {
+      "main": "Main quest",
+      "side": "Side quest",
+      "mystery": "Mystery"
+    },
+    "rewards": "Rewards: {xp} XP · {gold} gold",
+    "level": "Level {level}",
+    "completedList": "Completed"
   }
 }
