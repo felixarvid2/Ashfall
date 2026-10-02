@@ -6,7 +6,7 @@
       "category": "character",
       "prompt": "heavy armored space marine in a bulky battered exoskeleton, oversized hydraulic gauntlets, hydraulic joints, scorched gunmetal paint, glowing orange visor, full body, T-pose",
       "source": "text",
-      "targetPolycount": 12000,
+      "targetPolycount": 8000,
       "heightMeters": 1.95,
       "pose": "t-pose",
       "rig": {
@@ -39,12 +39,28 @@
           }
         ]
       },
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb1-1862-7037-a4e1-9a720fb5653f",
         "refineTaskId": "01a0fcc6-264d-772a-b3a1-6acf72b18da9",
+        "rigTaskId": "01a0fcd0-f854-7007-847d-65ccd88f5f89",
+        "animationTaskId": "01a0fcd1-db4d-73da-8bbe-1204905c67a7",
         "previewApproved": true,
-        "creditsSpent": 30
+        "creditsSpent": 53,
+        "clips": {
+          "idle": "idle",
+          "run": "run",
+          "attack": "attack",
+          "cast": "cast",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "characters/bastion.glb",
+      "stats": {
+        "triangles": 7990,
+        "bytes": 484296,
+        "textures": 1
       },
       "placeholder": {
         "shape": "capsule",
@@ -64,7 +80,7 @@
       "prompt": "infected colonist zombie, gaunt hunched human miner in a torn and stained mining jumpsuit, large clusters of bioluminescent sickly green fungal-crystal growth bursting out of both shoulders and the back, crystal shards growing from one forearm, sunken diseased face, full body, T-pose",
       "source": "image",
       "conceptPrompt": "infected human colonist zombie, gaunt hunched miner in a torn stained orange mining jumpsuit, large clusters of glowing sickly green fungal crystals bursting out of both shoulders and the upper back, crystal shards growing along one forearm, pale diseased skin, standing in a T-pose with arms straight out to the sides",
-      "targetPolycount": 5000,
+      "targetPolycount": 3000,
       "heightMeters": 1.75,
       "pose": "t-pose",
       "rig": {
@@ -93,12 +109,27 @@
           }
         ]
       },
-      "status": "preview",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcca-835e-761b-89f8-68669002d3b6",
         "refineTaskId": "01a0fcce-2f81-700e-b27d-5cad384e35b3",
+        "rigTaskId": "01a0fcd0-fa12-7357-b2d0-58986ce40ab4",
+        "animationTaskId": "01a0fcd1-963c-72d4-90b0-111246cb4c85",
         "previewApproved": true,
-        "creditsSpent": 46
+        "creditsSpent": 96,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/infected_colonist.glb",
+      "stats": {
+        "triangles": 2986,
+        "bytes": 445276,
+        "textures": 1
       },
       "placeholder": {
         "shape": "capsule",
@@ -117,14 +148,24 @@
       "category": "enemy",
       "prompt": "compact spherical hovering security drone, armored ball-shaped shell about 70 cm wide, single large red sensor eye on the front, small vector thrusters underneath, short antenna, cracked armor plates, dangling cables, no rotors, no propellers, no wings, not a helicopter",
       "source": "text",
-      "targetPolycount": 3000,
+      "targetPolycount": 1800,
       "heightMeters": 0.7,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcc7-d4e9-73a8-8e1a-ee88984b1839",
         "refineTaskId": "01a0fccc-7beb-750a-b142-a65447e8bedb",
         "previewApproved": true,
         "creditsSpent": 50
+      },
+      "file": "enemies/security_drone.glb",
+      "lods": [
+        "enemies/security_drone_lod1.glb",
+        "enemies/security_drone_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1793,
+        "bytes": 204304,
+        "textures": 3
       },
       "placeholder": {
         "shape": "sphere",
@@ -144,7 +185,7 @@
       "prompt": "grotesquely bloated mutated colonist, swollen oversized torso and arms, torn hazard suit split open, back and shoulders covered in large pulsing round spore sacs, bioluminescent sickly green fungal-crystal growth spreading over the body, heavy hunched posture, full body, T-pose",
       "source": "image",
       "conceptPrompt": "grotesquely bloated mutated colonist, enormous swollen belly and torso, thick swollen arms, torn yellow hazard suit split open, back and shoulders covered in big round pulsing spore sacs, bioluminescent sickly green fungal-crystal growth spreading over the skin, standing in a T-pose with arms straight out to the sides",
-      "targetPolycount": 6000,
+      "targetPolycount": 4000,
       "heightMeters": 1.9,
       "pose": "t-pose",
       "rig": {
@@ -173,12 +214,27 @@
           }
         ]
       },
-      "status": "preview",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcca-8536-744b-bc96-52ed7291acc4",
         "refineTaskId": "01a0fcce-315c-7296-8752-b68ef32a0b42",
+        "rigTaskId": "01a0fcd0-fa27-7449-997d-74e6940e4b1c",
+        "animationTaskId": "01a0fcd1-ced0-731e-8372-d2894eb4da2b",
         "previewApproved": true,
-        "creditsSpent": 46
+        "creditsSpent": 96,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "cast": "cast",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/spore_carrier.glb",
+      "stats": {
+        "triangles": 3994,
+        "bytes": 471964,
+        "textures": 1
       },
       "placeholder": {
         "shape": "sphere",
@@ -201,12 +257,22 @@
       "source": "text",
       "targetPolycount": 1500,
       "heightMeters": 1.1,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcc7-d48d-752d-a693-c650ab7a7915",
         "refineTaskId": "01a0fccc-7e0c-7192-864e-6aed49b9beaa",
         "previewApproved": true,
         "creditsSpent": 50
+      },
+      "file": "props/cargo_crate.glb",
+      "lods": [
+        "props/cargo_crate_lod1.glb",
+        "props/cargo_crate_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1462,
+        "bytes": 152016,
+        "textures": 3
       },
       "placeholder": {
         "shape": "box",
@@ -225,12 +291,22 @@
       "source": "text",
       "targetPolycount": 1200,
       "heightMeters": 3.2,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb2-c4e0-7490-9bbd-d9dec4d745cd",
         "refineTaskId": "01a0fcc6-2877-73f5-ba90-4e166f6d735e",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "props/emergency_light.glb",
+      "lods": [
+        "props/emergency_light_lod1.glb",
+        "props/emergency_light_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1080,
+        "bytes": 69944,
+        "textures": 3
       },
       "placeholder": {
         "shape": "cylinder",
@@ -252,14 +328,24 @@
       "heightMeters": 0.9,
       "glow": {
         "color": "#5dff6a",
-        "intensity": 0.9
+        "intensity": 0.45
       },
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb2-c4d7-7148-bfef-aefa784e96cb",
         "refineTaskId": "01a0fcc6-2867-712b-8faa-813ef8158252",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "props/lumen_growth.glb",
+      "lods": [
+        "props/lumen_growth_lod1.glb",
+        "props/lumen_growth_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2036,
+        "bytes": 169476,
+        "textures": 3
       },
       "placeholder": {
         "shape": "sphere",
@@ -279,12 +365,22 @@
       "source": "text",
       "targetPolycount": 600,
       "heightMeters": 0.4,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb2-c4e6-7448-9341-16af71d524d5",
         "refineTaskId": "01a0fcc6-285e-72e0-b099-b665f9e509e0",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "environment/debris_rock.glb",
+      "lods": [
+        "environment/debris_rock_lod1.glb",
+        "environment/debris_rock_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 592,
+        "bytes": 64620,
+        "textures": 3
       },
       "placeholder": {
         "shape": "box",
@@ -303,12 +399,22 @@
       "source": "text",
       "targetPolycount": 6000,
       "heightMeters": 3,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb3-7c63-7128-91d7-0dbd4b0ca67a",
         "refineTaskId": "01a0fcc6-2865-7196-90ce-c117a3d7b929",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "props/crashed_lander.glb",
+      "lods": [
+        "props/crashed_lander_lod1.glb",
+        "props/crashed_lander_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 5679,
+        "bytes": 151340,
+        "textures": 3
       },
       "placeholder": {
         "shape": "box",
@@ -327,12 +433,22 @@
       "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 3,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb3-b18b-76e5-bebf-bc364a0f3452",
         "refineTaskId": "01a0fcc6-2901-71b9-a5a5-93997e4c355e",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "environment/wall_segment.glb",
+      "lods": [
+        "environment/wall_segment_lod1.glb",
+        "environment/wall_segment_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2366,
+        "bytes": 149064,
+        "textures": 3
       },
       "placeholder": {
         "shape": "box",
@@ -351,12 +467,22 @@
       "source": "text",
       "targetPolycount": 2000,
       "heightMeters": 1.2,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb3-b203-7007-a530-70be17b383ba",
         "refineTaskId": "01a0fcc6-d0ce-7627-a13d-240d9bf44bd0",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "props/pipe_section.glb",
+      "lods": [
+        "props/pipe_section_lod1.glb",
+        "props/pipe_section_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2036,
+        "bytes": 267172,
+        "textures": 3
       },
       "placeholder": {
         "shape": "cylinder",
@@ -375,12 +501,22 @@
       "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 1.3,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb3-b210-746f-b316-d151664d5445",
         "refineTaskId": "01a0fcc6-e747-70cc-a618-e6d5b52752ca",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "props/barricade.glb",
+      "lods": [
+        "props/barricade_lod1.glb",
+        "props/barricade_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2192,
+        "bytes": 177168,
+        "textures": 3
       },
       "placeholder": {
         "shape": "box",
@@ -399,12 +535,22 @@
       "source": "text",
       "targetPolycount": 2000,
       "heightMeters": 1.6,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb3-bf64-74c8-9586-57be1ac858eb",
         "refineTaskId": "01a0fcc6-f9b5-70a7-83ca-873081a8db6f",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "props/control_terminal.glb",
+      "lods": [
+        "props/control_terminal_lod1.glb",
+        "props/control_terminal_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1826,
+        "bytes": 185048,
+        "textures": 3
       },
       "placeholder": {
         "shape": "box",
@@ -425,12 +571,22 @@
       "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 2.2,
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a0fcb4-2795-7002-83d2-356866650c17",
         "refineTaskId": "01a0fcc7-0f9d-721b-b283-c8d257f1320d",
         "previewApproved": true,
         "creditsSpent": 30
+      },
+      "file": "props/fuel_tank.glb",
+      "lods": [
+        "props/fuel_tank_lod1.glb",
+        "props/fuel_tank_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2379,
+        "bytes": 239128,
+        "textures": 3
       },
       "placeholder": {
         "shape": "cylinder",

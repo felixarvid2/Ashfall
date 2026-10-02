@@ -4,8 +4,8 @@
 
 ## Current phase
 
-**Phase 1 – Core combat: ✅ done** (pending your playtest verdict on "is it fun?").
-Next up: **Phase 2 – Meshy pipeline** (needs a Meshy API key; plan to be approved first).
+**Phase 2 – Meshy pipeline: ✅ done, except the 60 FPS check** (needs a measurement on real hardware).
+Next up: **Phase 3 – Loot and progression** (plan to be approved first).
 
 ## Done
 
@@ -52,6 +52,26 @@ Next up: **Phase 2 – Meshy pipeline** (needs a Meshy API key; plan to be appro
 - 103 unit tests (damage formula, statuses, DoTs, heat/overheat, every skill, dodge/potion, buffering,
   all three AIs, collision, spatial hash, waves).
 
+### Phase 2 – Meshy pipeline and real assets
+- `npm run meshy -- <command>` (scripts/meshy): `status`, `preview`, `approve-preview`, `reject`, `refine`,
+  `rig`, `approve`, `optimize`, `sheet`. Manifest-driven, asks before batches over **800 credits**,
+  `--dry-run`, saves every task id immediately (crash-safe, resumable), honours rate limits, downloads
+  results at once (Meshy deletes them after 3 days).
+- Two generation paths: text-to-3D (preview → refine) and, for creatures, concept image → image-to-3D.
+- Rigging + library animations for humanoids (Bastion: idle/run/attack/cast/hit/death; colonist and spore
+  carrier: idle/walk/attack-or-cast/hit/death). The drone is animated procedurally (hover bob).
+- Optimizer (gltf-transform + meshoptimizer): polycount budget, scale/pivot normalisation, clips renamed to
+  game states, WebP textures at 1024 px, meshopt compression, LOD1/LOD2 for props.
+- **14 assets in game** (6.3 MB total): Bastion, 3 enemies, and a Cinder Flats kit (crate, emergency light,
+  Lumen growth, debris, crashed lander, wall segment, pipe, barricade, terminal, fuel tank). The test arena
+  now uses them, with multi-circle colliders for long props.
+- Game: GLB loading with placeholder fallback, `THREE.LOD` for props, character animator (cross-fades,
+  attack clips fitted to skill timings, hit reactions, death clips), loading screen.
+- Post-processing: bloom, vignette and a cold desaturated grade; graphics presets Low/Medium/High (F3).
+- Dev-only **asset viewer** at `/asset-viewer`: thumbnails, triangles, file size, 3D view of every version,
+  clip playback, approve/reject.
+- Credits used: **615** of 3100 (2485 left). See the per-asset numbers with `npm run meshy -- status`.
+
 ## How to run
 
 ```bash
@@ -62,11 +82,22 @@ npm test           # unit tests
 npm run build      # typecheck + production build into dist/
 ```
 
+Meshy pipeline (needs `MESHY_API_KEY` in `ashfall/.env`): `npm run meshy -- status`.
+Behind a proxy (cloud sessions) prefix with `NODE_USE_ENV_PROXY=1`.
+
 Controls: **WASD** move · **LMB** Hydraulic Strike · **RMB** Seismic Shock · **1** Rocket Leap ·
 **2** Energy Shield · **Space** dodge · **Q** stim pack · **mouse wheel** zoom · **F3** debug panel ·
 **F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
+
+## What to test (Phase 2)
+1. `npm run dev` — the arena should show the real models: Bastion, colonists, drones, spore carriers and
+   the Cinder Flats props. Characters should animate (idle, run, attack, hit, death).
+2. **FPS:** F3 → "Spawn 100" and read the FPS meter (target 60 on a laptop with integrated graphics).
+   If it is low, try Graphics → Medium/Low and tell me the numbers.
+3. Open http://localhost:5173/asset-viewer, look through the models and approve or reject them.
+4. Tell me if anything faces the wrong way, looks too big/small, or the lighting is too dark/bright.
 
 ## What to test (Phase 1)
 1. Fight the waves. Hold LMB to swing, build Heat, spend it on RMB (Seismic Shock) when surrounded.
@@ -81,20 +112,22 @@ Shift + left-click to attack in place.
 
 ## Known issues / limitations
 - No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
-- No post-processing (bloom, vignette, colour grading) yet — planned for Phase 2 alongside real assets.
 - Enemies have no pathfinding around crates (they slide along them via collision); fine for the open arena,
   needs a nav grid when dungeons arrive (Phase 5).
-- Performance has only been measured in a headless CPU-rendered browser (4–6 FPS there with 130 enemies,
-  ~450–530 draw calls — not representative). Placeholder enemies are individual meshes; instancing/LOD comes
-  with the real models in Phase 2. Please report real FPS from a laptop with integrated graphics.
+- **60 FPS not verified**: only measured in a headless CPU-rendered browser (4–6 FPS there — not
+  representative). Skinned enemies are not instanced (one draw call each + shadows); if 100 enemies is too
+  slow, next steps are GPU-instanced crowd animation (vertex-baked) and shadow LOD.
+- Rigged models keep only the base-colour texture (Meshy's rig/animation output drops the PBR maps);
+  static props keep full PBR.
+- Textures are WebP, not KTX2 (no `toktx` binary here) — see docs/decisions.md.
+- The drone was asked for "no rotors" but has small ones; acceptable for now.
+- Raw Meshy downloads (`assets/source/**/*.glb`) are not in git; re-download within 3 days or regenerate.
 - Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 - Skill icons are text labels until icons are generated (brief §9.5).
 
 ## Next steps
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
-- Phase 2 – Meshy pipeline: read current docs.meshy.ai, manifest-driven generation that asks before any batch
-  over **800 credits** (`scripts/meshy/config.ts`, override with `--budget`) and has `--dry-run`, gltf-transform post-processing, `/asset-viewer`, then real models for Bastion, the 3 enemies
-  and a Cinder Flats kit; bloom/vignette post-processing. Needs a Meshy API key in `ashfall/.env`
-  (or as the `MESHY_API_KEY` environment variable — the owner has added it to the cloud environment settings;
-  it is picked up by new sessions).
+- FPS measurement on real hardware (closes Phase 2).
+- Phase 3 – Loot and progression: rarities, affixes, aspects, item power, drop tables, inventory, levels,
+  Bastion skill tree, stats/damage model integration (plan to be approved first).

@@ -170,7 +170,9 @@ export async function optimizeAssets(manifest: AssetManifest, entries: AssetEntr
 
     await doc.transform(dedup(), weld(), prune());
     await simplifyTo(doc, entry.targetPolycount);
-    normalise(doc, entry.heightMeters);
+    // Rigged models are already sized by Meshy (height_meters); their bind-pose bounds ignore the
+    // skeleton (centimetre bones under a 0.01-scaled armature), so measuring them would be wrong.
+    if (!skinned) normalise(doc, entry.heightMeters);
     const clips = renameClips(doc, entry, log);
     if (doc.getRoot().listAnimations().length) await doc.transform(resample());
     await doc.transform(

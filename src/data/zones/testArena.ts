@@ -43,7 +43,7 @@ const growth = (x: number, z: number, scale = 1): PropPlacement => ({
   z,
   scale,
   collider: 0.55 * scale,
-  light: { color: '#5dff6a', intensity: 30, distance: 9, height: 0.8 },
+  light: { color: '#5dff6a', intensity: 14, distance: 9, height: 1.6 },
 });
 
 export const TEST_ARENA: ArenaDef = {

@@ -54,6 +54,8 @@ export class GameRenderer {
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    // Post-processing renders several passes per frame; count them all for the debug stats.
+    this.renderer.info.autoReset = false;
 
     this.rig = new CameraRig(1);
     this.postfx = new PostFx(this.renderer, this.scene, this.rig.camera);
@@ -115,7 +117,8 @@ export class GameRenderer {
         }),
       );
       glow.position.copy(light.position);
-      glow.scale.setScalar(prop.asset === 'prop.lumen_growth' ? 2.2 : 1.1);
+      glow.scale.setScalar(prop.asset === 'prop.lumen_growth' ? 1.2 : 1.1);
+      glow.material.opacity = prop.asset === 'prop.lumen_growth' ? 0.35 : 0.9;
       s.add(glow);
     }
 
@@ -297,10 +300,11 @@ export class GameRenderer {
     this.rig.update(followX, followY, followZ, frameDt);
     const f = this.rig.focusPoint;
     // Keep the shadow frustum centred on the action.
-    this.playerLight.position.set(followX, 3.2, followZ);
+    this.playerLight.position.set(followX, 4.5, followZ);
     this.moon.position.set(f.x - 12, 30, f.z + 6);
     this.moon.target.position.set(f.x, 0, f.z);
     this.ash.update(frameDt, f);
+    this.renderer.info.reset();
     this.postfx.render(this.scene, this.rig.camera);
   }
 
