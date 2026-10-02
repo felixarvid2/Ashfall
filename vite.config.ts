@@ -1,8 +1,10 @@
 import { defineConfig } from 'vitest/config';
+import { assetViewerPlugin } from './tools/assetViewerPlugin';
 
 export default defineConfig({
   // Relative base so the build can be served from any sub-path (e.g. GitHub Pages).
   base: './',
+  plugins: [assetViewerPlugin()],
   server: { host: true },
   // three.js alone is ~600 kB minified; code-splitting comes with streaming zones (Phase 5).
   build: { target: 'es2022', sourcemap: true, chunkSizeWarningLimit: 900 },

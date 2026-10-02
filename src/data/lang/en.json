@@ -1,7 +1,8 @@
 {
   "game": {
     "title": "Ashfall",
-    "subtitle": "Kharos IV — one year after the fall"
+    "subtitle": "Kharos IV — one year after the fall",
+    "loading": "Loading assets… {done}/{total}"
   },
   "hud": {
     "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {debug} debug",
@@ -60,7 +61,13 @@
     "killAll": "Kill all",
     "spawnHorde": "Spawn 100",
     "godMode": "God mode",
-    "screenShake": "Screen shake"
+    "screenShake": "Screen shake",
+    "graphics": "Graphics",
+    "quality": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
   },
   "combat": {
     "notEnoughResource": "Not enough Heat",

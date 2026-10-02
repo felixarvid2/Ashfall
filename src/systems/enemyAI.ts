@@ -164,6 +164,7 @@ function rusher(
   face(tr, ptr.x, ptr.z, def.turnRate, dt);
   if (dist <= atk.range + playerRadius * 0.5 && ai.cooldown <= 0) {
     ai.state = 'windup';
+    ai.attackSeq++;
     ai.timer = atk.windup;
     ai.aimX = ptr.x;
     ai.aimZ = ptr.z;
@@ -220,6 +221,7 @@ function ranged(
   if (ai.cooldown <= 0 && dist <= Math.min(atk.maxRange, maxR + 2)) {
     // Lock the aim at wind-up start so moving sideways dodges the shot.
     ai.state = 'windup';
+    ai.attackSeq++;
     ai.timer = atk.windup;
     ai.aimX = ptr.x;
     ai.aimZ = ptr.z;
@@ -330,6 +332,7 @@ function support(
   });
   if (ai.cooldown <= 0 && alliesInRange.length > 0) {
     ai.state = 'windup';
+    ai.attackSeq++;
     ai.timer = atk.windup;
     ctx.events.push({
       type: 'telegraph',

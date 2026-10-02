@@ -4,3 +4,7 @@ dist/
 .env.*
 !.env.example
 *.log
+# Raw Meshy downloads are large and re-downloadable for 3 days via the task ids in the manifest;
+# only thumbnails and the optimized files in public/assets are committed.
+assets/source/**/*.glb
+assets/source/**/*.fbx

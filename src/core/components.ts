@@ -198,6 +198,8 @@ export interface EnemyAI {
   strafeTimer: number;
   wanderX: number;
   wanderZ: number;
+  /** Increments every time an attack wind-up starts (lets visuals restart the attack clip). */
+  attackSeq: number;
 }
 export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
 

@@ -3,22 +3,29 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "description": "Ashfall — a dark sci-fi action RPG for the browser.",
+  "description": "Ashfall \u2014 a dark sci-fi action RPG for the browser.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "meshy": "tsx scripts/meshy/cli.ts"
   },
   "dependencies": {
     "three": "^0.186.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@types/node": "^26.6.4",
     "@types/three": "^0.186.0",
+    "meshoptimizer": "^1.3.0",
+    "sharp": "^0.35.5",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"

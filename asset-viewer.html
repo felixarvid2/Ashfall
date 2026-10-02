@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ashfall Asset Viewer</title>
+    <link rel="stylesheet" href="./src/devtools/assetViewer.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Ashfall · Asset Viewer</h1>
+      <span id="summary"></span>
+    </header>
+    <main>
+      <section id="list"></section>
+      <section id="detail">
+        <div id="viewport"><canvas id="view"></canvas><div id="empty">Select an asset</div></div>
+        <div id="info"></div>
+      </section>
+    </main>
+    <script type="module" src="./src/devtools/assetViewer.ts"></script>
+  </body>
+</html>

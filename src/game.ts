@@ -79,6 +79,7 @@ export class Game {
 
     this.renderer = new GameRenderer(canvas);
     this.renderer.screenShake = this.settings.screenShake;
+    this.renderer.setQuality(this.settings.graphics);
     this.input = new Input(canvas, resolveKeybindings(this.settings));
 
     this.ctx = {
@@ -131,6 +132,7 @@ export class Game {
         killAll: () => this.killAllEnemies(),
         spawnHorde: () => this.spawnHorde(100),
         setGodMode: (on) => (this.ctx.debug.godMode = on),
+        setGraphics: (q) => this.setGraphics(q),
         setScreenShake: (on) => {
           this.settings.screenShake = on;
           this.renderer.screenShake = on;
@@ -139,11 +141,11 @@ export class Game {
       },
       this.settings.showFps,
       this.settings.screenShake,
+      this.settings.graphics,
     );
     this.devtools.setMoveMode(this.settings.moveMode);
     this.refreshHint();
 
-    this.renderer.buildArena(TEST_ARENA);
     spawnArenaProps(this.world, TEST_ARENA);
     this.player = spawnPlayer(this.world, PLAYER_CLASS, TEST_ARENA.playerSpawn.x, TEST_ARENA.playerSpawn.z);
     const tr = this.playerTransform;
@@ -164,8 +166,20 @@ export class Game {
     });
   }
 
+  /** Load 3D models (falls back to placeholders) and build the static environment. */
+  async loadAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
+    await this.renderer.assets.preload(import.meta.env.BASE_URL, onProgress);
+    this.renderer.buildArena(TEST_ARENA);
+  }
+
   start(): void {
     this.loop.start();
+  }
+
+  setGraphics(quality: Settings['graphics']): void {
+    this.settings.graphics = quality;
+    this.renderer.setQuality(quality);
+    saveSettings(this.storage, this.settings);
   }
 
   get playerEntity(): Entity {
@@ -199,6 +213,7 @@ export class Game {
       this.hitstop -= frameDt;
       this.loop.timeScale = this.hitstop > 0 ? 0 : 1;
     }
+    this.renderer.animationTimeScale = this.loop.timeScale;
 
     const zoom = this.input.consumeWheel();
     if (zoom !== 0) this.renderer.rig.zoom(zoom);

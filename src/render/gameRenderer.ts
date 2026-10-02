@@ -4,17 +4,19 @@
  */
 import * as THREE from 'three';
 import type { Entity, World } from '../core/ecs';
-import { Dead, EnemyAI, Renderable, StatusEffects, Transform } from '../core/components';
+import { Dead, EnemyAI, ForcedMove, Mover, Renderable, SkillUser, StatusEffects, Transform } from '../core/components';
 import type { GameEvent } from '../core/events';
-import { STATUS_DEFS } from '../data/db';
+import { STATUS_DEFS, enemyDef, skill } from '../data/db';
+import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef } from '../data/zones/testArena';
 import { scatterInstances } from '../world/arena';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
-import { AssetLibrary } from './assets';
+import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
 import { VfxSystem } from './vfx';
+import { PostFx, type GraphicsQuality } from './postfx';
 
 export class GameRenderer {
   readonly renderer: THREE.WebGLRenderer;
@@ -23,9 +25,15 @@ export class GameRenderer {
   readonly assets = new AssetLibrary();
   private readonly ash = new AshFall();
   readonly vfx = new VfxSystem();
+  private readonly postfx: PostFx;
   private readonly objects = new Map<Entity, THREE.Object3D>();
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
+  private readonly animators = new Map<Entity, CharacterAnimator>();
+  /** Last time each entity played its hit reaction (seconds), to avoid stutter under constant hits. */
+  private readonly lastHitAnim = new Map<Entity, number>();
+  /** Simulation speed (0 during hit-stop) so animations freeze with the world. */
+  animationTimeScale = 1;
   private readonly tint = new THREE.Color();
   private time = 0;
   screenShake = true;
@@ -48,6 +56,7 @@ export class GameRenderer {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     this.rig = new CameraRig(1);
+    this.postfx = new PostFx(this.renderer, this.scene, this.rig.camera);
     this.moon = new THREE.DirectionalLight();
     this.scene.add(this.ash.points, this.vfx.root);
     this.resize();
@@ -149,6 +158,8 @@ export class GameRenderer {
         obj.scale.setScalar(r.scale ?? 1);
         this.objects.set(e, obj);
         this.scene.add(obj);
+        const clips = this.assets.clips(r.assetId);
+        if (clips.size > 0) this.animators.set(e, new CharacterAnimator(obj, clips));
       }
       obj.position.set(
         tr.prevX + (tr.x - tr.prevX) * alpha,
@@ -159,8 +170,17 @@ export class GameRenderer {
       // Hovering machines bob gently (procedural animation, brief §9.4).
       if (tr.y > 0.5 && world.has(e, EnemyAI)) obj.position.y += Math.sin(this.time * 3 + e) * 0.08;
 
+      const animator = this.animators.get(e);
+      if (animator) {
+        animator.play(this.animationFor(world, e, animator));
+        animator.update(frameDt * this.animationTimeScale);
+      }
+
       const dead = world.get(e, Dead);
-      if (dead) {
+      if (dead && animator?.has('death')) {
+        // The death clip handles the fall; just sink the body afterwards.
+        if (dead.elapsed > 1.6) obj.position.y -= (dead.elapsed - 1.6) * 0.8;
+      } else if (dead) {
         // Topple over, then sink into the ash.
         const fall = Math.min(1, dead.elapsed / 0.3);
         obj.rotation.set(0, dead.fallDir, 0);
@@ -177,36 +197,74 @@ export class GameRenderer {
         this.scene.remove(obj);
         this.objects.delete(e);
         this.flashes.delete(e);
+        this.animators.delete(e);
+        this.lastHitAnim.delete(e);
       }
     }
     this.vfx.update(world, frameDt, alpha);
   }
 
-  /** Hit flash and status colours via the body material's emissive channel. */
+  /** Pick the animation for what the entity is doing this frame. */
+  private animationFor(world: World, e: Entity, animator: CharacterAnimator): PlayRequest {
+    if (world.has(e, Dead)) return { state: 'death', loop: false, token: 'death' };
+
+    const user = world.get(e, SkillUser);
+    const fm = world.get(e, ForcedMove);
+    if (fm && fm.height > 0) return { state: 'cast', loop: false, fit: fm.duration, token: fm };
+    if (user?.cast) {
+      const def = skill(user.cast.skillId);
+      const state = def.category === 'basic' ? 'attack' : 'cast';
+      return { state, loop: false, fit: def.castTime + def.recovery, token: user.cast };
+    }
+    const ai = world.get(e, EnemyAI);
+    if (ai && (ai.state === 'windup' || ai.state === 'recover')) {
+      const def = enemyDef(ai.defId);
+      const atk = def.attack;
+      const fit = atk.windup + (atk.kind === 'melee' ? atk.recovery : 0.3);
+      return { state: atk.kind === 'buffAllies' ? 'cast' : 'attack', loop: false, fit, token: ai.attackSeq };
+    }
+
+    const flash = this.flashes.get(e) ?? 0;
+    const lastHit = this.lastHitAnim.get(e) ?? -10;
+    if (flash > 0.05 && this.time - lastHit > 0.8 && animator.has('hit')) {
+      this.lastHitAnim.set(e, this.time);
+      return { state: 'hit', loop: false, fit: 0.45, token: this.time };
+    }
+    if (animator.state === 'hit' && this.time - lastHit < 0.45) return { state: 'hit', loop: false, token: lastHit };
+
+    const mover = world.get(e, Mover);
+    const speed = mover ? Math.hypot(mover.vx, mover.vz) * mover.speedMul : 0;
+    if (speed > 0.2 && mover) {
+      const ratio = speed / mover.speed;
+      return { state: 'run', loop: true, speed: THREE.MathUtils.clamp(ratio * 1.1, 0.6, 1.6) };
+    }
+    return { state: 'idle', loop: true, speed: 1 };
+  }
+
+  /** Hit flash and status colours via the materials' emissive channel. */
   private applyTint(world: World, e: Entity, obj: THREE.Object3D, dt: number): void {
-    const body = obj.children[0];
-    if (!(body instanceof THREE.Mesh) || body.userData.baseEmissive === undefined) return;
-    const mat = body.material as THREE.MeshStandardMaterial;
+    const slots = obj.userData.tint as TintSlot[] | undefined;
+    if (!slots || slots.length === 0) return;
     let flash = this.flashes.get(e) ?? 0;
     if (flash > 0) {
       flash -= dt;
       this.flashes.set(e, flash);
     }
-    if (flash > 0) {
-      mat.emissive.set('#ffffff');
-      mat.emissiveIntensity = 1.2;
-      return;
-    }
     const effects = world.get(e, StatusEffects);
     const priority = ['burning', 'poisoned', 'chilled', 'frozen', 'vulnerable'] as const;
-    const active = effects ? priority.find((id) => effects.list.some((s) => s.id === id)) : undefined;
-    if (active && !world.has(e, Dead)) {
-      this.tint.set(STATUS_DEFS[active].color);
-      mat.emissive.copy(this.tint);
-      mat.emissiveIntensity = 0.16 + 0.1 * Math.sin(this.time * 10);
-    } else {
-      mat.emissive.copy(body.userData.baseEmissive as THREE.Color);
-      mat.emissiveIntensity = body.userData.baseEmissiveIntensity as number;
+    const active = effects && !world.has(e, Dead) ? priority.find((id) => effects.list.some((s) => s.id === id)) : undefined;
+    if (active) this.tint.set(STATUS_DEFS[active].color);
+    for (const slot of slots) {
+      if (flash > 0) {
+        slot.material.emissive.set('#ffffff');
+        slot.material.emissiveIntensity = 1.2;
+      } else if (active) {
+        slot.material.emissive.copy(this.tint);
+        slot.material.emissiveIntensity = 0.16 + 0.1 * Math.sin(this.time * 10);
+      } else {
+        slot.material.emissive.copy(slot.baseEmissive);
+        slot.material.emissiveIntensity = slot.baseIntensity;
+      }
     }
   }
 
@@ -228,7 +286,21 @@ export class GameRenderer {
     this.moon.position.set(f.x - 12, 30, f.z + 6);
     this.moon.target.position.set(f.x, 0, f.z);
     this.ash.update(frameDt, f);
-    this.renderer.render(this.scene, this.rig.camera);
+    this.postfx.render(this.scene, this.rig.camera);
+  }
+
+  /** Apply a graphics preset: post-processing, shadow resolution and pixel ratio. */
+  setQuality(quality: GraphicsQuality): void {
+    this.postfx.setQuality(quality);
+    this.renderer.shadowMap.enabled = quality !== 'low';
+    const size = quality === 'high' ? 2048 : 1024;
+    if (this.moon.shadow.mapSize.x !== size) {
+      this.moon.shadow.mapSize.set(size, size);
+      this.moon.shadow.map?.dispose();
+      this.moon.shadow.map = null;
+    }
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality === 'high' ? 2 : 1));
+    this.resize();
   }
 
   get stats(): { drawCalls: number; triangles: number } {
@@ -240,6 +312,7 @@ export class GameRenderer {
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
+    this.postfx?.setSize(w, h);
     this.rig.setAspect(w / h);
   }
 }

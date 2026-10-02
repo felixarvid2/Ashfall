@@ -1,0 +1,29 @@
+:root { --bg: #111012; --panel: #19171a; --border: #332e2a; --text: #ddd4c8; --muted: #8c8378; --accent: #ff8a2a; --ok: #6bdc7a; --bad: #e0574a; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+header { display: flex; align-items: baseline; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+h1 { margin: 0; font-size: 16px; letter-spacing: 0.15em; text-transform: uppercase; }
+#summary { color: var(--muted); }
+main { flex: 1; display: grid; grid-template-columns: minmax(320px, 440px) 1fr; min-height: 0; }
+#list { overflow-y: auto; border-right: 1px solid var(--border); }
+.row { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #221f1d; cursor: pointer; }
+.row:hover, .row.sel { background: var(--panel); }
+.row img, .row .noimg { width: 56px; height: 56px; object-fit: cover; background: #000; border: 1px solid var(--border); }
+.row .id { font-weight: 600; }
+.row .meta { color: var(--muted); font-size: 12px; }
+.badge { font-size: 11px; padding: 2px 6px; border: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+.badge.planned { color: var(--muted); }
+.badge.preview { color: #e8c86a; border-color: #6a5a2a; }
+.badge.refined { color: #8ac8ff; border-color: #2a4a6a; }
+.badge.approved, .badge.optimized { color: var(--ok); border-color: #2a5a32; }
+#detail { display: flex; flex-direction: column; min-height: 0; }
+#viewport { position: relative; flex: 1; min-height: 300px; }
+#view { width: 100%; height: 100%; display: block; }
+#empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; }
+#info { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+#info .prompt { flex-basis: 100%; color: var(--muted); font-size: 12px; }
+button, select { font: inherit; color: var(--text); background: #24201c; border: 1px solid var(--border); padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.ok { border-color: #2a5a32; color: var(--ok); }
+button.bad { border-color: #6a2a24; color: var(--bad); }
+.msg { color: var(--accent); }

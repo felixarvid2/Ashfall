@@ -112,6 +112,7 @@ export function spawnEnemy(world: World, defId: string, x: number, z: number, op
     strafeTimer: 0,
     wanderX: x,
     wanderZ: z,
+    attackSeq: 0,
   });
   if (opts.wave !== undefined) world.add(e, WaveMember, { wave: opts.wave });
   return e;

@@ -1,6 +1,6 @@
 /** Developer tools: FPS meter and a toggleable debug panel (F3). */
 import { t } from '../data/i18n';
-import type { MoveMode } from '../data/settings';
+import type { MoveMode, Settings } from '../data/settings';
 
 export interface DebugInfo {
   entities: number;
@@ -26,6 +26,7 @@ export interface DebugActions {
   spawnHorde(): void;
   setGodMode(on: boolean): void;
   setScreenShake(on: boolean): void;
+  setGraphics(quality: Settings['graphics']): void;
 }
 
 export class DevTools {
@@ -39,7 +40,13 @@ export class DevTools {
   fps = 0;
   frameMs = 0;
 
-  constructor(root: HTMLElement, actions: DebugActions, showFps: boolean, screenShake: boolean) {
+  constructor(
+    root: HTMLElement,
+    actions: DebugActions,
+    showFps: boolean,
+    screenShake: boolean,
+    graphics: Settings['graphics'],
+  ) {
     this.fpsEl = document.createElement('div');
     this.fpsEl.className = 'fps-meter';
     this.fpsEl.hidden = !showFps;
@@ -98,6 +105,18 @@ export class DevTools {
       l.appendChild(box);
       return l;
     };
+    const gfxLabel = document.createElement('label');
+    gfxLabel.textContent = t('debug.graphics');
+    const gfx = document.createElement('select');
+    for (const q of ['low', 'medium', 'high'] as const) {
+      gfx.appendChild(Object.assign(document.createElement('option'), { value: q, textContent: t(`debug.quality.${q}`) }));
+    }
+    gfx.value = graphics;
+    gfx.addEventListener('change', () => {
+      actions.setGraphics(gfx.value as Settings['graphics']);
+      gfx.blur();
+    });
+    gfxLabel.appendChild(gfx);
     const godLabel = checkbox(t('debug.godMode'), false, actions.setGodMode);
     const shakeLabel = checkbox(t('debug.screenShake'), screenShake, actions.setScreenShake);
 
@@ -127,7 +146,7 @@ export class DevTools {
     button(t('debug.import'), () => fileInput.click(), 'debug-import');
     button(t('debug.deleteSave'), actions.deleteSave, 'debug-delete');
 
-    this.panel.append(h2, dl, moveLabel, godLabel, shakeLabel, combatRow, row, fileInput);
+    this.panel.append(h2, dl, moveLabel, gfxLabel, godLabel, shakeLabel, combatRow, row, fileInput);
     root.append(this.fpsEl, this.panel);
   }
 

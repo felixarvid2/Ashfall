@@ -23,23 +23,57 @@ export const PlaceholderSchema = z.object({
   facingColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
 });
 
+/** Character animation: which Meshy library action plays for which game state. */
+export const AnimStateSchema = z.enum(['idle', 'walk', 'run', 'attack', 'attack2', 'cast', 'hit', 'death']);
+export type AnimState = z.infer<typeof AnimStateSchema>;
+
+export const RigSpecSchema = z.object({
+  type: z.enum(['biped', 'quadruped']).default('biped'),
+  heightMeters: z.number().positive(),
+  /** Meshy animation library action ids (GET /v1/animations/library), one clip each. */
+  actions: z.array(z.object({ state: AnimStateSchema, actionId: z.number().int().nonnegative() })).max(10),
+});
+
+export const MeshyStateSchema = z
+  .object({
+    previewTaskId: z.string().optional(),
+    refineTaskId: z.string().optional(),
+    rigTaskId: z.string().optional(),
+    animationTaskId: z.string().optional(),
+    /** Set when the owner approves the untextured preview; only then is it refined. */
+    previewApproved: z.boolean().optional(),
+    /** Model actually used (e.g. "meshy-7.1"), recorded from the task. */
+    aiModel: z.string().optional(),
+    creditsSpent: z.number().nonnegative().optional(),
+    lastError: z.string().optional(),
+    /** Animation clip name in the final GLB for each game state. */
+    clips: z.record(z.string(), z.string()).optional(),
+  })
+  .default({});
+
 export const AssetEntrySchema = z.object({
   id: z.string().regex(/^[a-z]+(\.[a-z0-9_]+)+$/),
   category: z.enum(['character', 'enemy', 'prop', 'environment', 'icon']),
   prompt: z.string(),
   negativePrompt: z.string().optional(),
+  /** Overrides the shared texture style for the refine step. */
+  texturePrompt: z.string().optional(),
   targetPolycount: z.number().int().positive(),
+  /** Real-world height after normalisation (metres). Characters: standing height. */
+  heightMeters: z.number().positive().optional(),
+  /** Apply the T-pose prompt/parameter (characters that will be rigged). */
+  pose: z.enum(['t-pose', 'a-pose']).optional(),
+  rig: RigSpecSchema.optional(),
   status: AssetStatusSchema,
-  /** Meshy task ids, recorded so nothing is lost if the pipeline crashes. */
-  meshy: z
-    .object({
-      previewTaskId: z.string().optional(),
-      refineTaskId: z.string().optional(),
-      rigTaskId: z.string().optional(),
-    })
-    .default({}),
+  meshy: MeshyStateSchema,
   /** Path under public/assets once optimized, e.g. "characters/bastion.glb". */
   file: z.string().optional(),
+  /** Lower-detail versions (same folder), highest detail first. */
+  lods: z.array(z.string()).optional(),
+  /** Filled by the optimizer, shown in the asset viewer. */
+  stats: z
+    .object({ triangles: z.number().int(), bytes: z.number().int(), textures: z.number().int().optional() })
+    .optional(),
   placeholder: PlaceholderSchema,
 });
 

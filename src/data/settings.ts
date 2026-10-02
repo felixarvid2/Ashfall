@@ -55,6 +55,7 @@ export const SettingsSchema = z.object({
   moveMode: MoveModeSchema.default('wasd'),
   screenShake: z.boolean().default(true),
   showFps: z.boolean().default(true),
+  graphics: z.enum(['low', 'medium', 'high']).default('high'),
   textScale: z.number().min(0.75).max(2).default(1),
   language: z.string().default('en'),
   keybindings: z.object(actionShape).partial().default({}),
