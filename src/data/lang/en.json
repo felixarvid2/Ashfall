@@ -143,7 +143,7 @@
       },
       "smoke_cloak": {
         "name": "Smoke Cloak",
-        "desc": "Vanish in smoke for 4 seconds: enemies lose track of you and your next hit is a guaranteed critical strike. Removes stuns and slows."
+        "desc": "Vanish in smoke for 4 seconds: enemies lose track of you and your next hit is a guaranteed critical strike. Heals 10% of your life and removes stuns and slows."
       },
       "phase_shift": {
         "name": "Phase Shift",
@@ -689,7 +689,7 @@
         },
         "regroup": {
           "name": "Regroup",
-          "desc": "Smoke Cloak also heals 15% of your life."
+          "desc": "Smoke Cloak heals 15% more of your life."
         }
       },
       "phase_shift": {

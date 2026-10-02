@@ -179,3 +179,8 @@ the first zone. Colonist 30 → 10 %, Spore Carrier 50 → 25 %. The simulator d
 ### 2026-10-02 — One Meshy CLI run at a time
 A background icon job saved its stale copy of the manifest after models were approved, reverting them.
 The CLI now takes `assets/.manifest.lock` (pid; stale locks from crashed runs are taken over).
+
+### 2026-10-02 — Balance by bot playthroughs, not only DPS
+A training dummy cannot show survivability, chasing or ranged pressure. `npm run play` runs the real
+waves with a deliberately average bot; numbers are tuned so all nine builds reach level 10 in a
+similar time band. The bot's limits (no pathfinding, 35 % dodges) are documented in docs/balance.md.

@@ -278,7 +278,8 @@ function ranged(
   if (dist > maxR) {
     steer(mover, tr, nx, nz, mover.speed, 0);
   } else if (dist < minR) {
-    steer(mover, tr, -nx, -nz, mover.speed, 0);
+    // Back away slowly: melee classes can still catch a drone that crowds them.
+    steer(mover, tr, -nx, -nz, mover.speed * 0.5, 0);
   } else {
     ai.strafeTimer -= dt;
     if (ai.strafeTimer <= 0) {

@@ -11,6 +11,7 @@ import {
 } from '../src/core/components';
 import { World, type Entity } from '../src/core/ecs';
 import type { GameContext } from '../src/core/context';
+import { skill } from '../src/data/db';
 import { applyStatus, hasStatus } from '../src/systems/combat';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
 import { movementSystem } from '../src/systems/movement';
@@ -193,7 +194,8 @@ describe('input buffering', () => {
     run(world, ctx, SYSTEMS, 10); // first swing fired, now recovering
     user.request = { slot: 0, aimX: 0, aimZ: 5, ttl: 0.25 };
     run(world, ctx, SYSTEMS, 30);
-    // Exactly two hits landed: 14 × 0.9 × 1.02 × (1 − 30/95 armor) ≈ 8.79 each.
-    expect(world.req(enemy, Health).current).toBeCloseTo(70 - 2 * 14 * 0.9 * 1.02 * (65 / 95), 3);
+    // Exactly two hits landed: 14 × coefficient × 1.02 × (1 − 30/95 armor) each.
+    const coef = (skill('bastion.hydraulic_strike').effect as { coefficient: number }).coefficient;
+    expect(world.req(enemy, Health).current).toBeCloseTo(70 - 2 * 14 * coef * 1.02 * (65 / 95), 3);
   });
 });

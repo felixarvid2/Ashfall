@@ -3,6 +3,7 @@ import { CombatStats, Hazard, Health, Inventory, Resource, SkillUser, Transform 
 import { World, type Entity } from '../src/core/ecs';
 import type { GameContext } from '../src/core/context';
 import { Rng } from '../src/core/rng';
+import { skill } from '../src/data/db';
 import { resolveEffects, type Effect } from '../src/data/effects';
 import { ASPECT_DEFS, UNIQUE_DEFS, baseItem } from '../src/data/loot/db';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
@@ -113,9 +114,10 @@ describe('skill tree rules', () => {
 
 describe('skill compilation', () => {
   it('ranks raise damage by 10% per rank above 1', () => {
+    const base = (skill('bastion.furnace_cleave').effect as { coefficient: number }).coefficient;
     const c = compileSkill('bastion.furnace_cleave', 3, []);
     const e = c.def.effect as { coefficient: number };
-    expect(e.coefficient).toBeCloseTo(2.4 * (1 + 2 * RANK_DAMAGE));
+    expect(e.coefficient).toBeCloseTo(base * (1 + 2 * RANK_DAMAGE));
   });
 
   it('applies (base + add) × (1 + mul), then set', () => {

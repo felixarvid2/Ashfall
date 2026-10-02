@@ -4,8 +4,8 @@
 
 ## Current phase
 
-**Phase 4 – All classes: 4a ✅ 4b ✅** (character select, Spectre, Xenomant). Next: **4c** — level 1–10
-balance pass for all three classes against real waves.
+**Phase 4 – All classes ✅ done** (4a character select + Spectre, 4b Xenomant, 4c balance to level 10).
+Next: **Phase 5 – Region 1: Cinder Flats**, following docs/world-and-gameplay.md (one region at a time).
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 
 ## Done
@@ -144,6 +144,15 @@ Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 - The Meshy CLI now refuses to run twice at once (a parallel run had silently undone an approval).
 - 186 unit tests.
 
+### Phase 4c – Balance to level 10 (see docs/balance.md)
+- `npm run play`: a bot plays the real waves from level 1 to 10 with 9 builds (3 per class) while
+  enemies fight back; reports time per level, deaths, life and damage taken by type.
+- Tuned until every build reaches level 10 in about 7–13 minutes; melee builds of the ranged classes
+  are riskier (2–9 deaths for the bot), everything else 0–2.
+- Found and fixed: Seismic Shock knockback made melee chase enemies; drones out-ranged ranged
+  classes; Bastion too slow, Spectre too fragile, Xenomant ranged too fast (details in docs/balance.md).
+- 187 unit tests.
+
 ## How to run
 
 ```bash
@@ -153,6 +162,7 @@ npm run dev        # http://localhost:5173
 npm test           # unit tests
 npm run build      # typecheck + production build into dist/
 npm run sim        # balance simulator (DPS of sample builds, all classes)
+npm run play       # bot playthrough level 1→10 for every class and build
 ```
 
 Meshy pipeline (needs `MESHY_API_KEY` in `ashfall/.env`): `npm run meshy -- status`.

@@ -39,7 +39,7 @@ export const ENEMIES: EnemyInput[] = [
     life: 30,
     armor: 60,
     resist: { energy: 0.3 },
-    damage: 12,
+    damage: 10,
     moveSpeed: 3.0,
     turnRate: 6,
     aggroRange: 18,

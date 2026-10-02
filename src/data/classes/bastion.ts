@@ -19,7 +19,7 @@ export const BASTION: z.input<typeof ClassDefSchema> = {
   starterKit: ['hydraulic_hammer', 'plated_vest', 'mag_boots'],
   critChance: 0.05,
   critDamage: 0.5,
-  moveSpeed: 5.5,
+  moveSpeed: 5.8,
   collider: { radius: 0.45, mass: 4 },
   resource: {
     id: 'heat',
