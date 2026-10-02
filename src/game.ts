@@ -2,7 +2,9 @@
  * Top-level game: wires ECS, systems, input, rendering, UI and saving together.
  */
 import {
+  Renderable,
   DisplayName,
+  Elite,
   Npc,
   AccountBonuses,
   Interactable,
@@ -48,7 +50,7 @@ import { STATUS_DEFS, classDef, skill } from './data/db';
 import { t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
 import { CINDER_FLATS } from './data/zones/cinderFlats';
-import { createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, zoneSystem, type ZoneRuntime } from './world/zone';
+import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
 import { isAlive, kill } from './systems/combat';
@@ -117,6 +119,8 @@ import {
   toStash,
 } from './systems/hub/services';
 import { VENDOR } from './data/services';
+import { championAffixes, eliteSystem } from './systems/elites';
+import { ELITE_COLORS } from './data/elites';
 
 const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
 import { spawnEnemy, spawnPlayer } from './world/spawn';
@@ -153,6 +157,7 @@ export class Game {
   private readonly loreReader: LoreReader;
   private readonly dialogue: DialoguePanel;
   private readonly npcPlates: NpcPlates;
+  private readonly elitePlates: NpcPlates;
   private readonly questTracker: QuestTracker;
   private readonly questLog: QuestLog;
   /** NPC the open conversation is with. */
@@ -211,6 +216,7 @@ export class Game {
       .add('playerControl', playerControlSystem)
       .add('skills', skillSystem)
       .add('enemyAI', enemyAISystem)
+      .add('elites', eliteSystem)
       .add('minions', minionSystem)
       .add('status', statusSystem)
       .add('movement', movementSystem)
@@ -240,6 +246,7 @@ export class Game {
     this.loreReader = new LoreReader(uiRoot);
     this.dialogue = new DialoguePanel(uiRoot);
     this.npcPlates = new NpcPlates(uiRoot);
+    this.elitePlates = new NpcPlates(uiRoot);
     this.questTracker = new QuestTracker(uiRoot);
     this.questLog = new QuestLog(uiRoot, () => this.questLogEntries(), (id) => {
       if (this.ctx.quests) this.ctx.quests.tracked = id;
@@ -724,6 +731,19 @@ export class Game {
       plates.push({ id, x: tr.x, z: tr.z, name: t(`npcs.${id}.name`), marker });
     }
     this.npcPlates.update(plates, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
+    // Elite names float over them (blue champions, yellow rares, named quest targets).
+    const elites: { id: string; x: number; z: number; name: string; marker: ''; color: string; y: number }[] = [];
+    for (const e of this.world.query(Elite, Transform)) {
+      if (this.world.has(e, Dead)) continue;
+      const tr = this.world.req(e, Transform);
+      if (Math.hypot(tr.x - px, tr.z - pz) > 26) continue;
+      const el = this.world.req(e, Elite);
+      const dn = this.world.get(e, DisplayName);
+      const ai = this.world.get(e, EnemyAI);
+      const name = dn ? (dn.literal ? dn.key : t(dn.key)) : `${t('elites.champion')} ${t(`enemies.${ai?.defId ?? ''}`)}`;
+      elites.push({ id: String(e), x: tr.x, z: tr.z, name, marker: '', color: ELITE_COLORS[el.kind], y: tr.y + 2.6 * (this.world.get(e, Renderable)?.scale ?? 1) });
+    }
+    this.elitePlates.update(elites, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
     // Leaving the hub closes its services.
     if (this.servicePanel.open && !this.zone?.inHub) this.servicePanel.close();
     // Walking away ends the conversation.
@@ -980,8 +1000,15 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       const th = w.req(te, Health);
       const statuses = [...new Set(w.get(te, StatusEffects)?.list.map((s) => s.id) ?? [])];
       const dn = w.get(te, DisplayName);
+      const elite = w.get(te, Elite);
       const name = dn ? (dn.literal ? dn.key : t(dn.key)) : t(`enemies.${ai.defId}`);
-      target = { name, current: th.current, max: th.max, statuses };
+      target = {
+        name,
+        current: th.current,
+        max: th.max,
+        statuses,
+        ...(elite ? { color: ELITE_COLORS[elite.kind], affixes: elite.affixes.map((a) => t(`elites.affixes.${a}`)) } : {}),
+      };
     }
 
     const enc = this.encounter;
@@ -1062,6 +1089,19 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   killAllEnemies(): void {
     for (const e of this.world.query(EnemyAI)) {
       if (!this.world.has(e, Dead)) kill(this.world, this.ctx, e, 0);
+    }
+  }
+
+  /** Debug: a champion pack or rare elite next to the player. */
+  spawnElite(kind: 'champion' | 'rare', enemy = 'infected_colonist'): void {
+    const tr = this.playerTransform;
+    const rng = this.ctx.rng.fork(`elite-${this.ctx.tick}`);
+    const level = this.world.req(this.player, Progression).level;
+    const n = kind === 'champion' ? 3 : 1;
+    const shared = kind === 'champion' ? championAffixes(rng) : undefined;
+    for (let i = 0; i < n; i++) {
+      const e = spawnEnemy(this.world, enemy, tr.x + 6 + i * 1.5, tr.z + 4, { level });
+      makeElite(this.world, e, kind, rng, shared);
     }
   }
 

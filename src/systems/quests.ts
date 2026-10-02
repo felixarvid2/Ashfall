@@ -189,8 +189,8 @@ function enterStep(world: World, ctx: GameContext, id: string): void {
     const rng = new Rng(`${id}-${st.step}`);
     const boss = tag(world, spawnEnemy(world, s.enemy, s.x, s.z, { level }), id, st.step);
     world.add(boss, DisplayName, { key: s.name });
-    if (s.elite) makeElite(world, boss, s.elite, rng);
     spawned.push(boss);
+    if (s.elite) spawned.push(...makeElite(world, boss, s.elite, rng));
     for (let i = 0; i < s.escorts; i++) {
       const a = (i / Math.max(1, s.escorts)) * Math.PI * 2;
       spawned.push(spawnEnemy(world, s.enemy, s.x + Math.sin(a) * 3, s.z + Math.cos(a) * 3, { level }));

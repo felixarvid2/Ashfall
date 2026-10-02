@@ -33,7 +33,7 @@ export interface HudState {
   wave: { wave: number; alive: number; phase: 'intermission' | 'active'; timer: number } | null;
   /** Open world: region and subzone name, shown where the wave tracker sits in the arena. */
   location?: { title: string; sub: string };
-  target: { name: string; current: number; max: number; statuses: string[] } | null;
+  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[] } | null;
   /** Timed buffs on the player (Stim Pylons). */
   buffs?: { id: string; remaining: number; color: string }[];
   dead: boolean;
@@ -332,8 +332,12 @@ export class Hud {
       this.target.hidden = !state.target;
       if (state.target) {
         this.targetName.textContent = state.target.name;
+        this.targetName.style.color = state.target.color ?? '';
         this.targetFill.style.width = `${Math.max(0, state.target.current / state.target.max) * 100}%`;
-        this.targetStatus.textContent = state.target.statuses.map((s) => t(`statuses.${s}`)).join(' · ');
+        // Elite affixes first (in the elite's colour), then statuses.
+        const affixes = state.target.affixes?.join(' · ') ?? '';
+        const statuses = state.target.statuses.map((s) => t(`statuses.${s}`)).join(' · ');
+        this.targetStatus.textContent = [affixes, statuses].filter(Boolean).join('  |  ');
       }
     }
 

@@ -275,6 +275,8 @@ export const Projectile = defineComponent<Projectile>('Projectile');
 export interface Hazard {
   team: Team;
   radius: number;
+  /** Ground colour (default: toxic green). */
+  color?: string;
   remaining: number;
   duration: number;
   tickTimer: number;
@@ -490,7 +492,7 @@ export interface Destructible {
 }
 export const Destructible = defineComponent<Destructible>('Destructible');
 
-/** A pending explosion: barrels caught in a blast, Chain Reaction corpses. */
+/** A pending explosion: barrels caught in a blast, Chain Reaction corpses, exploding elites. */
 export interface Blast {
   fuse: number;
   radius: number;
@@ -499,8 +501,9 @@ export interface Blast {
   coefficient: number;
   /** Environmental damage to enemies (before mitigation). */
   flat: number;
-  /** Explosive barrels hurt the player too. */
-  hurtsPlayer: boolean;
+  hurtsEnemies: boolean;
+  /** Damage to players caught in it: a fraction of their max life and/or a flat amount. */
+  player: { fraction: number; damage: number; level: number } | null;
 }
 export const Blast = defineComponent<Blast>('Blast');
 
@@ -538,3 +541,23 @@ export interface Npc {
   id: string;
 }
 export const Npc = defineComponent<Npc>('Npc');
+
+/** Champion or rare elite: its affixes and their timers. */
+export interface Elite {
+  kind: 'champion' | 'rare';
+  affixes: import('../data/elites').EliteAffix[];
+  /** Seconds until each timed affix fires again. */
+  timers: Partial<Record<import('../data/elites').EliteAffix, number>>;
+  shieldUsed: boolean;
+  mirrored: boolean;
+  /** Mirror copies drop nothing. */
+  copy: boolean;
+}
+export const Elite = defineComponent<Elite>('Elite');
+
+/** A hazard that appears after a warning (snaring fields). */
+export interface PendingHazard {
+  fuse: number;
+  hazard: Hazard;
+}
+export const PendingHazard = defineComponent<PendingHazard>('PendingHazard');

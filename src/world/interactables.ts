@@ -275,7 +275,15 @@ function breakDestructible(world: World, e: Entity, fuse: number): void {
   if (!d) return;
   world.remove(e, Destructible);
   if (d.blast) {
-    world.add(e, Blast, { fuse, radius: d.blast.radius, owner: null, coefficient: 0, flat: d.blast.flat, hurtsPlayer: true });
+    world.add(e, Blast, {
+      fuse,
+      radius: d.blast.radius,
+      owner: null,
+      coefficient: 0,
+      flat: d.blast.flat,
+      hurtsEnemies: true,
+      player: { fraction: BARREL.playerFraction, damage: 0, level: 1 },
+    });
   } else {
     world.destroyDeferred(e);
   }
@@ -301,20 +309,23 @@ export function blastSystem(world: World, dt: number, ctx: GameContext): void {
     world.remove(e, Blast);
     world.destroyDeferred(e);
     const level = monsterLevel(world, ctx);
-    for (const target of livingInCircle(world, ctx, tr.x, tr.z, b.radius, 'enemy')) {
-      if (b.owner !== null && isAlive(world, b.owner)) {
-        hitOne(world, ctx, b.owner, target, tr.x, tr.z, { ...BLAST_IMPACT, coefficient: b.coefficient });
-      } else {
-        const raw = b.flat + BARREL.perLevel * level;
-        const taken = computeTaken(raw, 'heat', targetState(world, target, 'ranged'), level).final;
-        applyDamage(world, ctx, target, taken, { crit: false, damageType: 'heat', dot: false, sourceTeam: 'player' });
+    if (b.hurtsEnemies) {
+      for (const target of livingInCircle(world, ctx, tr.x, tr.z, b.radius, 'enemy')) {
+        if (b.owner !== null && isAlive(world, b.owner)) {
+          hitOne(world, ctx, b.owner, target, tr.x, tr.z, { ...BLAST_IMPACT, coefficient: b.coefficient });
+        } else {
+          const raw = b.flat + BARREL.perLevel * level;
+          const taken = computeTaken(raw, 'heat', targetState(world, target, 'ranged'), level).final;
+          applyDamage(world, ctx, target, taken, { crit: false, damageType: 'heat', dot: false, sourceTeam: 'player' });
+        }
       }
     }
-    if (b.hurtsPlayer) {
+    if (b.player) {
       for (const p of livingInCircle(world, ctx, tr.x, tr.z, b.radius, 'player')) {
         if (!world.has(p, PlayerControlled)) continue;
-        const max = world.get(p, Health)?.max ?? 0;
-        applyDamage(world, ctx, p, max * BARREL.playerFraction, { crit: false, damageType: 'heat', dot: false, sourceTeam: 'enemy' });
+        const fromLife = (world.get(p, Health)?.max ?? 0) * b.player.fraction;
+        const flat = b.player.damage > 0 ? computeTaken(b.player.damage, 'heat', targetState(world, p, 'ranged'), b.player.level).final : 0;
+        applyDamage(world, ctx, p, fromLife + flat, { crit: false, damageType: 'heat', dot: false, sourceTeam: 'enemy' });
       }
     }
     // Other barrels in the blast go off a moment later.
@@ -323,6 +334,6 @@ export function blastSystem(world: World, dt: number, ctx: GameContext): void {
       if (Math.hypot(ot.x - tr.x, ot.z - tr.z) <= b.radius) breakDestructible(world, other, BARREL.chainDelay);
     }
     ctx.events.push({ type: 'vfx', kind: 'explosion', x: tr.x, z: tr.z, radius: b.radius, facing: 0 });
-    ctx.events.push({ type: 'shake', trauma: b.hurtsPlayer ? 0.45 : 0.2 });
+    ctx.events.push({ type: 'shake', trauma: b.player ? 0.45 : 0.2 });
   }
 }

@@ -10,6 +10,8 @@ import { packTemplate } from '../data/packs';
 import type { HubDef, ZoneDef } from '../data/zones/zoneTypes';
 import { monsterLevel } from '../systems/encounter';
 import { spawnEnemy } from './spawn';
+import { applyAffixes, championAffixes, rareAffixes } from '../systems/elites';
+import type { EliteAffix } from '../data/elites';
 
 /** A pack wakes up when the player is this close… */
 export const PACK_WAKE = 55;
@@ -141,6 +143,8 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
   }
   const champion = rng.chance(template.championChance);
   const rareIndex = !champion && rng.chance(template.rareChance) ? rng.int(0, ids.length - 1) : -1;
+  const shared = champion ? championAffixes(rng) : [];
+  const extra: Entity[] = [];
   state.members = ids.map((enemy, i) => {
     const a = rng.range(0, Math.PI * 2);
     const d = rng.range(0, 3.5);
@@ -149,15 +153,19 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
     const z = Math.max(-lim, Math.min(lim, spawn.z + Math.cos(a) * d));
     const e = spawnEnemy(world, enemy, x, z, { level });
     world.req(e, EnemyAI).pack = id;
-    if (champion && i < 4) makeElite(world, e, 'champion', rng);
-    if (i === rareIndex) makeElite(world, e, 'rare', rng);
+    if (champion && i < 4) makeElite(world, e, 'champion', rng, shared);
+    if (i === rareIndex) extra.push(...makeElite(world, e, 'rare', rng));
     return e;
   });
+  state.members.push(...extra);
   state.state = 'active';
 }
 
-/** Champions (blue) and rare elites (yellow): tougher, hit harder, better loot (affixes: elites.ts). */
-export function makeElite(world: World, e: Entity, kind: 'champion' | 'rare', rng: Rng): void {
+/**
+ * Champions (blue) and rare elites (yellow): tougher, hit harder, carry affixes and better loot.
+ * Champions in a pack share `affixes`; rares roll their own, get a generated name and minions.
+ */
+export function makeElite(world: World, e: Entity, kind: 'champion' | 'rare', rng: Rng, affixes?: EliteAffix[]): Entity[] {
   const health = world.req(e, Health);
   const stats = world.req(e, CombatStats);
   const mul = kind === 'rare' ? 4 : 2;
@@ -170,7 +178,20 @@ export function makeElite(world: World, e: Entity, kind: 'champion' | 'rare', rn
     r.glow = kind === 'rare' ? '#ffd23a' : '#4a8aff';
     r.scale = (r.scale ?? 1) * (kind === 'rare' ? 1.25 : 1.1);
   }
-  void rng;
+  applyAffixes(world, e, kind, affixes ?? (kind === 'rare' ? rareAffixes(rng, stats.level) : championAffixes(rng)), rng);
+  if (kind !== 'rare') return [];
+  // Rare elites bring a few ordinary minions of their own kind.
+  const ai = world.req(e, EnemyAI);
+  const tr = world.req(e, Transform);
+  const minions: Entity[] = [];
+  const n = rng.int(2, 3);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const m = spawnEnemy(world, ai.defId, tr.x + Math.sin(a) * 2.5, tr.z + Math.cos(a) * 2.5, { level: stats.level });
+    if (ai.pack) world.req(m, EnemyAI).pack = ai.pack;
+    minions.push(m);
+  }
+  return minions;
 }
 
 export function zoneSystem(world: World, dt: number, ctx: GameContext): void {

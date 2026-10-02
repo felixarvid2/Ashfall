@@ -541,9 +541,11 @@ export class VfxSystem {
       const mine = hz.team === 'player';
       if (!fx) {
         // Enemy clouds are bright green (danger); the player's own are a paler yellow-green.
-        fx = this.acquire(mine ? 'hazard:player' : 'hazard', () => {
-          const mat = additive(mine ? '#c8ff6a' : '#5dff6a', 0.3);
-          const ringMat = additive(mine ? '#e8ffb0' : '#9dff7a', 0.5);
+        // Elite fire and snare fields bring their own colour.
+        const color = hz.color ?? (mine ? '#c8ff6a' : '#5dff6a');
+        fx = this.acquire(`hazard:${color}`, () => {
+          const mat = additive(color, 0.3);
+          const ringMat = additive(hz.color ?? (mine ? '#e8ffb0' : '#9dff7a'), 0.5);
           const group = new THREE.Group();
           group.add(new THREE.Mesh(this.discGeo, mat), new THREE.Mesh(this.ringGeo, ringMat));
           return { group, materials: [mat, ringMat] };

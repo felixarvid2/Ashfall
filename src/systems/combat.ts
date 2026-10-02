@@ -8,6 +8,7 @@ import {
   Collider,
   CombatStats,
   Dead,
+  Elite,
   EnemyAI,
   Faction,
   ForcedMove,
@@ -34,6 +35,7 @@ import { STATUS_DEFS, enemyDef } from '../data/db';
 import type { Bonus, Condition, DamageType, StatusApply, StatusId } from '../data/schemas';
 import { computeHit, computeOutgoing, computeTaken, type TargetState } from './damage';
 import { signal } from './quests';
+import { eliteDeath, onEliteHit } from './elites';
 
 export function hasStatus(world: World, e: Entity, id: StatusId): boolean {
   return world.get(e, StatusEffects)?.list.some((s) => s.id === id) ?? false;
@@ -131,6 +133,7 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   });
   if (dealt === null) return null;
   if (stealthed) removeStatuses(world, attacker, (st) => st.id === 'stealth');
+  onEliteHit(world, ctx, attacker, target, dealt);
   // Chitin thorns: melee attackers take damage back.
   const wardDef = STATUS_DEFS.chitin;
   if (hit.range === 'melee' && wardDef.kind === 'ward' && hasStatus(world, target, 'chitin') && isAlive(world, attacker)) {
@@ -395,7 +398,8 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
     if (tr) {
       const tags = world.get(target, CombatStats)?.tags ?? [];
       const eliteTable = tags.includes('rare') ? 'dt.rare_elite' : tags.includes('champion') ? 'dt.champion' : null;
-      ctx.rewards.push({
+      // Mirror copies drop nothing.
+      if (!world.get(target, Elite)?.copy) ctx.rewards.push({
         table: eliteTable ?? def.dropTable ?? `dt.${def.id}`,
         level: world.get(target, Level)?.value ?? 1,
         x: tr.x,
@@ -416,6 +420,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
         attackerLevel: world.get(target, CombatStats)?.level ?? 1,
       });
     }
+    eliteDeath(world, ctx, target);
     ctx.stats.kills++;
     if (tr) {
       const quest = world.get(target, QuestTag)?.quest;
@@ -447,7 +452,8 @@ function onEnemyDeath(world: World, ctx: GameContext, target: Entity, wasMarked:
         owner: e,
         coefficient: PYLON_EFFECTS.chainCoefficient,
         flat: 0,
-        hurtsPlayer: false,
+        hurtsEnemies: true,
+        player: null,
       });
     }
   }

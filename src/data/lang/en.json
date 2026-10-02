@@ -1672,5 +1672,26 @@
       "cacheFull": "Your aspect cache is full.",
       "type": "That aspect doesn't fit this item."
     }
+  },
+  "elites": {
+    "affixes": {
+      "shielded": "Shielded",
+      "burning": "Burning",
+      "teleporting": "Teleporting",
+      "snaring": "Snaring",
+      "sporeSpreader": "Spore Spreader",
+      "explodesOnDeath": "Explodes on Death",
+      "vampiric": "Vampiric",
+      "fast": "Fast",
+      "freezing": "Freezing",
+      "mirroring": "Mirroring"
+    },
+    "names": {
+      "first": "Kaal|Vesh|Morrow|Grell|Oskar|Ruta|Dain|Hessa|Brakk|Ilya|Tamsin|Corvo|Neve|Saul|Petra|Joss",
+      "epithet": "the Rotting|the Hollow|the Burned|the Glowing|the Patient|the Unburied|the Hungry|the Broken|the Silent|the Blistered|the Forgotten|the Last",
+      "title": "Warden of Ash|Keeper of the Flats|Voice of the Spores|Shepherd of the Dead|Herald of the Maw|Heir of Shaft 1|Breaker of Convoys|Lord of the Crater|Mother of Hounds|Watcher of Route 7"
+    },
+    "named": "{first} {epithet}, {title}",
+    "champion": "Champion"
   }
 }

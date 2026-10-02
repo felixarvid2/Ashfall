@@ -85,10 +85,10 @@ export class NpcPlates {
     root.appendChild(this.layer);
   }
 
-  update(npcs: { id: string; x: number; z: number; name: string; marker: '!' | '?' | '' }[], project: Project): void {
+  update(npcs: { id: string; x: number; z: number; name: string; marker: '!' | '?' | ''; color?: string; y?: number }[], project: Project): void {
     const seen = new Set<string>();
     for (const n of npcs) {
-      if (!project(n.x, 2.5, n.z, this.screen)) continue;
+      if (!project(n.x, n.y ?? 2.5, n.z, this.screen)) continue;
       seen.add(n.id);
       let plate = this.plates.get(n.id);
       if (!plate) {
@@ -98,12 +98,14 @@ export class NpcPlates {
         this.layer.appendChild(plate);
         this.plates.set(n.id, plate);
       }
-      const key = `${n.name}|${n.marker}`;
+      const key = `${n.name}|${n.marker}|${n.color ?? ''}`;
       if (plate.dataset.key !== key) {
         plate.dataset.key = key;
         plate.replaceChildren();
         if (n.marker) plate.appendChild(Object.assign(document.createElement('div'), { className: 'npc-marker', textContent: n.marker }));
-        plate.appendChild(Object.assign(document.createElement('div'), { className: 'npc-name', textContent: n.name }));
+        const name = Object.assign(document.createElement('div'), { className: 'npc-name', textContent: n.name });
+        if (n.color) name.style.color = n.color;
+        plate.appendChild(name);
       }
       plate.style.transform = `translate(${this.screen.x}px, ${this.screen.y}px) translate(-50%, -100%)`;
     }
