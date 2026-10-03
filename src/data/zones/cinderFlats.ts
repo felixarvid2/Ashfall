@@ -4,6 +4,7 @@
  * the roads and inside each subzone, so the layout is identical every time.
  */
 import { Rng } from '../../core/rng';
+import type { GroundDef, GroundPatch } from './testArena';
 import type { PoiDef, PackSpawn, PropPlacement, Road, ZoneDef } from './zoneTypes';
 import { alongRoad, clearOfProps, distanceToRoad as roadDistance, line } from './layout';
 
@@ -324,6 +325,31 @@ function buildPois(): PoiDef[] {
 
 const PROPS = buildProps();
 
+/**
+ * Ground textures: ash everywhere, scorched earth over the Impact Fields and under every fire and
+ * wreck, Lumen-infested ground in Ash Valley, at The Maw and under each growth, concrete inside
+ * Outpost Ember and Checkpoint Sierra, and cracked asphalt on the roads.
+ */
+function buildGround(): GroundDef {
+  const SCORCHED = 0;
+  const LUMEN = 1;
+  const CONCRETE = 2;
+  const patches: GroundPatch[] = [
+    { layer: SCORCHED, x: -250 * S, z: -200 * S, radius: 105 * S, strength: 0.75 },
+    { layer: LUMEN, x: -40 * S, z: 210 * S, radius: 120 * S, strength: 0.55 },
+    { layer: LUMEN, x: 292 * S, z: 196 * S, radius: 24 },
+    { layer: CONCRETE, x: CINDER_FLATS_HUB.x, z: CINDER_FLATS_HUB.z, radius: CINDER_FLATS_HUB.radius - 5 },
+    { layer: CONCRETE, x: 232 * S, z: -132 * S, radius: 25 },
+  ];
+  for (const p of PROPS) {
+    const scale = p.scale ?? 1;
+    if (p.asset === 'prop.fuel_tank') patches.push({ layer: SCORCHED, x: p.x, z: p.z, radius: 6 * scale });
+    else if (p.asset === 'prop.crashed_lander') patches.push({ layer: SCORCHED, x: p.x, z: p.z, radius: 7 * scale, strength: 0.8 });
+    else if (p.asset === 'prop.lumen_growth') patches.push({ layer: LUMEN, x: p.x, z: p.z, radius: 3.5 * scale, strength: 0.9 });
+  }
+  return { base: 'ash_plain', tile: 9, layers: ['scorched_ground', 'lumen_infested', 'military_concrete'], patches, road: 'cracked_asphalt' };
+}
+
 export const CINDER_FLATS: ZoneDef = {
   id: 'zone.cinder_flats',
   key: 'cinderFlats',
@@ -336,6 +362,7 @@ export const CINDER_FLATS: ZoneDef = {
   playerLight: { color: '#ffd2a1', intensity: 45, distance: 12 },
   props: PROPS,
   scatter: [{ asset: 'env.debris_rock', count: 30000, seed: 'cinder-debris', minScale: 0.4, maxScale: 2.2 }],
+  ground: buildGround(),
   subzones: [
     { id: 'impactFields', center: at(-250, -200), radius: 120 * S },
     { id: 'route7', center: [0, 0], radius: 0 },

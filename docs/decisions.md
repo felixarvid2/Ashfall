@@ -220,3 +220,13 @@ appear through `requires` (a found point of interest).
 ### 2026-10-03 — District ids are prefixed `rd.`
 Relics, logs and restoration points are stored by id across the account; prefixing every Refinery
 District point of interest and pack avoids collisions with Cinder Flats (validated at startup).
+
+### 2026-10-03 — Painted ground textures blended by a splat map
+Cinder Flats' ground uses five tileable textures (`public/assets/textures/ground/`, generated outside
+Meshy): ash everywhere, and scorched earth, Lumen-infested ground and military concrete painted in soft
+patches with ragged edges. A zone's `ground` lists the patches (subzones plus one per fire, wreck and
+growth); the renderer turns them into a 1024² splat map and blends in one shader. The base is sampled
+twice at different scales and angles, mixed by slow noise, so its 9 m repeat doesn't show. Roads use
+cracked asphalt with alpha-faded edges. The road ribbons used to face down and were culled, so roads had
+never shown before this change. The Refinery District keeps its procedural ground for now and shares the
+asphalt.

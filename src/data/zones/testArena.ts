@@ -27,6 +27,37 @@ export interface ArenaDef {
   playerLight: { color: string; intensity: number; distance: number };
   props: PropPlacement[];
   scatter: { asset: string; count: number; seed: string; minScale: number; maxScale: number }[];
+  /** Painted ground textures (zones without one keep the procedural ash ground). */
+  ground?: GroundDef;
+}
+
+/** A ground texture in public/assets/textures/ground/ (file name without .webp). */
+export type GroundTexture = 'ash_plain' | 'scorched_ground' | 'lumen_infested' | 'military_concrete' | 'cracked_asphalt';
+
+/**
+ * Ground textures for an open-world zone: a base that covers everything, up to three overlay
+ * textures painted in soft patches with ragged edges, and a road surface.
+ */
+export interface GroundDef {
+  /** Covers the whole zone; omit to keep the procedural ground under the overlays and roads. */
+  base?: GroundTexture;
+  /** Metres one repeat of a texture covers. */
+  tile: number;
+  /** Overlay textures (at most three); patches pick one by index. */
+  layers: GroundTexture[];
+  patches: GroundPatch[];
+  /** Road ribbons use this texture, one repeat across the road's width. */
+  road?: GroundTexture;
+}
+
+export interface GroundPatch {
+  /** Index into GroundDef.layers. */
+  layer: number;
+  x: number;
+  z: number;
+  radius: number;
+  /** 0–1: how much the overlay covers at the centre (default 1). */
+  strength?: number;
 }
 
 const emergency = (x: number, z: number): PropPlacement => ({

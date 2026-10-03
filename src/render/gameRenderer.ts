@@ -10,7 +10,8 @@ import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CLASS_WEAPONS } from '../data/weapons';
 import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
-import type { ArenaDef } from '../data/zones/testArena';
+import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena';
+import { buildGroundSplat } from './groundSplat';
 import type { EnvFeature } from '../data/zones/zoneTypes';
 import { scatterInstances } from '../world/arena';
 import { angleDelta } from '../systems/movement';
@@ -107,18 +108,46 @@ export class GameRenderer {
     this.moon.shadow.bias = -0.0005;
 
     const size = arena.halfSize * 2 + 40;
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(size, size),
-      new THREE.MeshStandardMaterial({ map: makeGroundTexture(), color: 0x8a847c, roughness: 1, metalness: 0 }),
-    );
+    const groundDef = arena.ground;
+    const geometry = new THREE.PlaneGeometry(size, size);
+    let groundMat: THREE.MeshStandardMaterial;
+    if (groundDef?.base) {
+      // One repeat of each texture per groundDef.tile metres: scale the UVs instead of the shared textures.
+      const reps = size / groundDef.tile;
+      const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * reps, uv.getY(i) * reps);
+      groundMat = this.texturedGroundMaterial(groundDef, size, reps, arena.id);
+    } else {
+      groundMat = new THREE.MeshStandardMaterial({ map: makeGroundTexture(), color: 0x8a847c, roughness: 1, metalness: 0 });
+    }
+    const ground = new THREE.Mesh(geometry, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     s.add(ground);
 
-    // Roads (open-world zones): flat dark ribbons along each polyline.
+    // Roads (open-world zones): ribbons along each polyline, textured when the zone has a road surface.
     const roads = (arena as { roads?: { width: number; points: [number, number][] }[] }).roads ?? [];
     if (roads.length) {
-      const roadMat = new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 });
+      let roadMat: THREE.MeshStandardMaterial;
+      if (groundDef?.road) {
+        // Ash drifts over the ragged edges: an alpha map fades both sides of the ribbon.
+        const edges = makeRoadEdgeTexture();
+        edges.repeat.set(1, 1 / 8);
+        this.zoneTextures.push(edges);
+        roadMat = new THREE.MeshStandardMaterial({
+          map: this.groundTexture(groundDef.road),
+          alphaMap: edges,
+          transparent: true,
+          depthWrite: false,
+          color: GROUND_TINT,
+          roughness: 0.95,
+          metalness: 0,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+        });
+      } else {
+        roadMat = new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 });
+      }
       for (const road of roads) s.add(roadMesh(road.points, road.width, roadMat));
     }
 
@@ -287,6 +316,99 @@ export class GameRenderer {
     m.hot.instanceMatrix.needsUpdate = true;
   }
 
+  private readonly groundTextures = new Map<GroundTexture, { texture: THREE.Texture; loaded: Promise<void> }>();
+  /** Per-zone textures that aren't a material's map (the ground splat, road edges). */
+  private zoneTextures: THREE.Texture[] = [];
+
+  /** A painted ground texture, loaded once and shared by every zone that uses it. */
+  private groundTexture(name: GroundTexture): THREE.Texture {
+    let entry = this.groundTextures.get(name);
+    if (!entry) {
+      let done!: () => void;
+      const loaded = new Promise<void>((resolve) => (done = resolve));
+      const url = `${import.meta.env.BASE_URL}assets/textures/ground/${name}.webp`;
+      const texture = new THREE.TextureLoader().load(url, () => done(), undefined, () => {
+        console.warn(`[ground] ${name}: failed to load`);
+        done();
+      });
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+      texture.userData.shared = true;
+      entry = { texture, loaded };
+      this.groundTextures.set(name, entry);
+    }
+    return entry.texture;
+  }
+
+  /** Load the ground textures of these zones before the first frame, so the ground doesn't pop in. */
+  async preloadGround(defs: (GroundDef | undefined)[]): Promise<void> {
+    const names = new Set<GroundTexture>();
+    for (const def of defs) {
+      if (!def) continue;
+      if (def.base) names.add(def.base);
+      if (def.road) names.add(def.road);
+      for (const layer of def.layers) names.add(layer);
+    }
+    for (const name of names) this.groundTexture(name);
+    await Promise.all([...names].map((name) => this.groundTextures.get(name)!.loaded));
+  }
+
+  /**
+   * The base texture everywhere, two samples at different scales and angles mixed by slow noise so
+   * its repeat doesn't show, then up to three overlays blended in by a splat map built from the
+   * zone's patches. Bright green Lumen spots in an overlay glow faintly.
+   */
+  private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string): THREE.MeshStandardMaterial {
+    const res = 1024;
+    const splat = new THREE.DataTexture(buildGroundSplat(def.patches, size, res, seed), res, res, THREE.RGBAFormat);
+    splat.magFilter = THREE.LinearFilter;
+    splat.minFilter = THREE.LinearFilter;
+    splat.needsUpdate = true;
+    this.zoneTextures.push(splat);
+    const base = this.groundTexture(def.base!);
+    const layers = [0, 1, 2].map((i) => (def.layers[i] ? this.groundTexture(def.layers[i]!) : base));
+    const mat = new THREE.MeshStandardMaterial({ map: base, bumpMap: base, bumpScale: 0.8, color: GROUND_TINT, roughness: 1, metalness: 0 });
+    mat.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, {
+        groundSplat: { value: splat },
+        groundLayer0: { value: layers[0] },
+        groundLayer1: { value: layers[1] },
+        groundLayer2: { value: layers[2] },
+        groundReps: { value: reps },
+      });
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          'void main() {',
+          'uniform sampler2D groundSplat, groundLayer0, groundLayer1, groundLayer2;\nuniform float groundReps;\nvoid main() {',
+        )
+        .replace(
+          '#include <map_fragment>',
+          `
+          // The plane's v runs from +z to -z; the splat's rows run from -z.
+          vec4 splat = texture2D(groundSplat, vec2(vMapUv.x, groundReps - vMapUv.y) / groundReps);
+          vec3 ground = mix(
+            texture2D(map, vMapUv).rgb,
+            texture2D(map, mat2(0.8, -0.6, 0.6, 0.8) * vMapUv * 0.43 + 0.37).rgb,
+            splat.a);
+          vec3 lumen = texture2D(groundLayer1, vMapUv * 0.9 + 0.21).rgb;
+          // The scorched texture is dark and blotchy: lift it and soften its contrast.
+          vec3 scorched = texture2D(groundLayer0, vMapUv * 0.6 + 0.53).rgb;
+          ground = mix(ground, mix(vec3(0.045, 0.038, 0.034), scorched, 0.7) * 1.6, splat.r);
+          ground = mix(ground, lumen, splat.g);
+          ground = mix(ground, texture2D(groundLayer2, vMapUv * 0.75).rgb, splat.b);
+          diffuseColor.rgb *= ground;
+          float groundGlow = splat.g * smoothstep(0.2, 0.6, lumen.g - max(lumen.r, lumen.b));
+          `,
+        )
+        .replace(
+          '#include <emissivemap_fragment>',
+          '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(0.36, 1.0, 0.42) * groundGlow * 1.5;',
+        );
+    };
+    return mat;
+  }
+
   /** Drop the current zone's ground, roads, lamp glows and scatter (shared model assets stay). */
   private disposeZone(): void {
     const root = this.zoneRoot;
@@ -302,9 +424,11 @@ export class GameRenderer {
       // Sprites share one geometry across the whole scene.
       if (!(o as THREE.Sprite).isSprite) m.geometry?.dispose();
       const mat = m.material as (THREE.Material & { map?: THREE.Texture | null }) | undefined;
-      mat?.map?.dispose();
+      if (!mat?.map?.userData.shared) mat?.map?.dispose();
       mat?.dispose();
     });
+    for (const tex of this.zoneTextures) tex.dispose();
+    this.zoneTextures = [];
     this.zoneRoot = null;
   }
 
@@ -836,7 +960,8 @@ function roadMesh(points: [number, number][], width: number, material: THREE.Mat
     uv.push(0, dist / width, 1, dist / width);
     if (i > 0) {
       const a = (i - 1) * 2;
-      idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      // Counter-clockwise seen from above, so the ribbon faces up.
+      idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
     }
   });
   const g = new THREE.BufferGeometry();
@@ -866,7 +991,52 @@ function makeGlowTexture(): THREE.Texture {
   return tex;
 }
 
-/** Procedural ash-and-cinder ground texture (deterministic). */
+/** Multiplies the painted ground textures down to the dark night look of the procedural ground. */
+const GROUND_TINT = 0xd8d0c8;
+
+/**
+ * Road edge alpha: opaque in the middle, fading out over ragged, uneven margins (u runs across the
+ * road, v along it).
+ */
+function makeRoadEdgeTexture(): THREE.Texture {
+  const w = 64;
+  const h = 64;
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(w, h);
+  const rng = new Rng('road-edges');
+  // A smooth random margin per side, wrapped along v so the pattern repeats without seams.
+  const knots = (n: number) => Array.from({ length: n }, () => rng.range(0.06, 0.2));
+  const left = knots(8);
+  const right = knots(8);
+  const sample = (k: number[], v: number) => {
+    const f = (v / h) * k.length;
+    const i = Math.floor(f);
+    const t = f - i;
+    const a = k[i % k.length]!;
+    const b = k[(i + 1) % k.length]!;
+    return a + (b - a) * t * t * (3 - 2 * t);
+  };
+  for (let y = 0; y < h; y++) {
+    const l = sample(left, y);
+    const r = sample(right, y);
+    for (let x = 0; x < w; x++) {
+      const u = (x + 0.5) / w;
+      const a = Math.min(1, Math.max(0, Math.min(u / l, (1 - u) / r) - rng.range(0, 0.25)));
+      const k = (y * w + x) * 4;
+      img.data[k] = img.data[k + 1] = img.data[k + 2] = Math.round(a * 255);
+      img.data[k + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
 /** Bright molten metal with darker cooling crust plates (tiles seamlessly). */
 function makeLavaTexture(): THREE.Texture {
   const n = 128;
@@ -923,6 +1093,7 @@ function makeBeltTexture(): THREE.Texture {
   return tex;
 }
 
+/** Procedural ash-and-cinder ground texture (deterministic). */
 function makeGroundTexture(): THREE.Texture {
   const size = 512;
   const canvas = document.createElement('canvas');

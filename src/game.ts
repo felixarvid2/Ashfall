@@ -53,7 +53,7 @@ import { SpatialHash } from './core/spatial';
 import { STATUS_DEFS, classDef, skill } from './data/db';
 import { t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
-import { START_ZONE, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
+import { START_ZONE, ZONES, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
 import type { ZoneDef } from './data/zones/zoneTypes';
 import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
@@ -502,7 +502,10 @@ export class Game {
 
   /** Load 3D models (falls back to placeholders) and build the static environment. */
   async loadAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
-    await this.renderer.assets.preload(import.meta.env.BASE_URL, onProgress);
+    await Promise.all([
+      this.renderer.assets.preload(import.meta.env.BASE_URL, onProgress),
+      this.renderer.preloadGround(ZONES.map((z) => z.ground)),
+    ]);
     this.renderer.buildArena(this.zoneDef);
     this.builtZone = this.zoneDef.id;
   }

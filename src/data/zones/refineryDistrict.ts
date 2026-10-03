@@ -422,6 +422,8 @@ export const REFINERY_DISTRICT: ZoneDef = {
   playerLight: { color: '#ffc890', intensity: 45, distance: 12 },
   props: PROPS,
   scatter: [{ asset: 'env.debris_rock', count: 26000, seed: 'refinery-debris', minScale: 0.4, maxScale: 2 }],
+  // The district keeps its procedural ground for now; its roads share Cinder Flats' asphalt.
+  ground: { tile: 9, layers: [], patches: [], road: 'cracked_asphalt' },
   subzones: [
     { id: 'foundryRoad', center: [0, 0], radius: 0 },
     { id: 'conveyorLines', center: SUBZONES.conveyor.c, radius: SUBZONES.conveyor.r },
