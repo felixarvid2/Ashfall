@@ -203,3 +203,20 @@ character once (`progression.restorationGranted`).
 ### 2026-10-03 — Quests listen to signals, not to the event queue
 Kills, interactions and objectives push small signals that the quest system consumes every tick, so
 quest logic stays deterministic and testable without the presentation event queue.
+
+### 2026-10-03 — Zones swap behind a fade instead of streaming
+The brief asks for regions connected without loading screens. Each region is ~1 500 m across with
+thousands of props, so both are never live at once: walking into the border gate at the end of Route 7
+fades to black for 0.35 s, clears everything but the player and their minions, rebuilds the scene and
+drops you at the paired gate. Each zone keeps its own runtime (map, teleporters, found objects,
+set pieces); save v7 stores them per zone. Teleporting to another region's teleporter uses the same
+swap.
+
+### 2026-10-03 — Quests and NPCs carry a zone
+Steps happen in their quest's zone unless a step says otherwise; steps elsewhere spawn nothing and their
+map marker points at the border gate. NPCs only exist in their zone, and a reclaimed stronghold's people
+appear through `requires` (a found point of interest).
+
+### 2026-10-03 — District ids are prefixed `rd.`
+Relics, logs and restoration points are stored by id across the account; prefixing every Refinery
+District point of interest and pack avoids collisions with Cinder Flats (validated at startup).

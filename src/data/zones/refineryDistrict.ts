@@ -41,6 +41,8 @@ export const DELTA = { id: 'rd.stronghold.delta', x: -90 * S, z: -190 * S, radiu
 export const CATHEDRAL = { id: 'rd.boss.vire', x: 220 * S, z: 262 * S, radius: 28 };
 export const PILLAR = { x: 10 * S, z: 165 * S };
 export const CRANE = { x: 150 * S, z: -60 * S };
+/** The Smelters' shrine in the Smokestack Forest (main quest "The Faithful"): a clearing among the stacks. */
+export const SHRINE = { x: -205 * S, z: 262 * S, radius: 16 };
 
 /** The border crossing at the south-west corner, back to Cinder Flats. */
 export const DISTRICT_GATE = {
@@ -138,7 +140,8 @@ const stack = (x: number, z: number, scale: number): PropPlacement => ({
   z,
   scale,
   collider: 1.7 * scale,
-  ...(scale > 1.15 ? { light: { color: '#ff5a1a', intensity: 40, distance: 12, height: 1.2 } } : {}),
+  // Embers glow at every stack's base (the forest is otherwise pitch dark).
+  light: { color: '#ff5a1a', intensity: scale > 1.15 ? 45 : 26, distance: scale > 1.15 ? 13 : 9, height: 1.2 },
 });
 const furnace = (x: number, z: number, rot: number): PropPlacement => ({
   asset: 'env.furnace_block',
@@ -221,6 +224,7 @@ function buildProps(): PropPlacement[] {
       const pz = z + rng.range(-7, 7);
       if (!inSub(px, pz, st) || Math.abs(px) > HALF - 6 || Math.abs(pz) > HALF - 6) continue;
       if (distanceToRoad(px, pz) < 6 || onEnv(px, pz, 2)) continue;
+      if (Math.hypot(px - SHRINE.x, pz - SHRINE.z) < SHRINE.radius) continue;
       if (rng.chance(0.7)) props.push(stack(px, pz, rng.range(0.8, 1.3)));
       else props.push({ asset: 'env.pipe_cluster', x: px, z: pz, rot: rng.range(0, 6.28), colliders: line(4, 1, 3) });
     }
@@ -412,8 +416,8 @@ export const REFINERY_DISTRICT: ZoneDef = {
   levels: [10, 20],
   playerSpawn: DISTRICT_GATE.arrive,
   // Warmer, smokier air: the glow of the furnaces in the haze.
-  ambient: { color: '#6a5248', intensity: 0.5 },
-  moon: { color: '#c09070', intensity: 1.05 },
+  ambient: { color: '#6a5248', intensity: 0.62 },
+  moon: { color: '#c09070', intensity: 1.2 },
   fog: { color: '#1c1410', density: 0.021 },
   playerLight: { color: '#ffc890', intensity: 45, distance: 12 },
   props: PROPS,

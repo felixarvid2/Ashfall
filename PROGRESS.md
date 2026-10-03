@@ -4,27 +4,20 @@
 
 ## Current phase
 
-**Phase 6 – Region 2: The Refinery District 🚧 in progress.** Plan: docs/regions/refinery-district.md.
-- ✅ Player characters remodelled (HD models, 10 animations each, weapons in hand).
-- ✅ Several zones: Route 7 continues past The Maw to a border gate; crossing loads the district behind a
+**Phase 6 – Region 2: The Refinery District ✅ built — waiting for your playtest feedback** before
+Region 3. Plan: docs/regions/refinery-district.md, measurements and checklist:
+docs/regions/refinery-district-playtest.md.
+- Player characters remodelled (HD models, 10 animations each, weapons in hand).
+- Several zones: Route 7 continues past The Maw to a border gate; crossing loads the district behind a
   short fade (and back). Each zone keeps its own map, teleporters and found objects (save v7); the map
   (M) has a tab per visited region and travels to any discovered teleporter, in either zone.
-- ✅ District greybox: roads, Coolant Works hub (stash), 4 subzones, landmarks, 6 teleporters, packs,
-  chests, relics, logs, towers, pylons, bunkers; conveyor belts, molten metal rivers and vents.
-  Models are placeholders until the Region 2 Meshy batch; the packs use region 1 enemies for now.
-- ✅ Region 2 enemies: fire variants of region 1 enemies (Scorched Walker, Slag Hound, Flame Drone, Fire
-  Bloater) and new ones — Smelter (flamethrower, fire shield), Welder (telegraphed lunge), Slagborn
-  (burning trail), Cargo Loader (every third swing grabs and throws), Smelter Priest (empowers, revives).
-  Fix: heavy melee bosses in region 1 (Brood Mother, The First) now actually close in and attack.
-- ✅ Region 2 content: Coolant Works NPCs (trader, blacksmith, technician, a Smelter defector), 6 main
-  quests (starting after The First, across the border), 10 side quests and the mystery *The Fireproof
-  Man*; Pump Station Delta (defend 3 technicians through 4 waves, then Brother Ash; becomes a hub with a
-  teleporter and its engineer); High Priestess Vire (guards and fireballs → the floor collapses in three
-  steps → infected form with tentacles); 4 dungeons with new objectives (pumps in order with a heat
-  meter, follow the robot, free the prisoners before the pyres, defend the compressor with frost vents)
-  and 6 district bunkers; 4 new world events; The Crane and coolant valves; the motorbike (B, unlocked
-  by *Spare Parts*). Cinder Flats' autocannon and fuel depot now work too (they were map markers only).
-- Next: the Region 2 Meshy batch (models are placeholders), playtest report and checklist.
+- The district: Coolant Works hub, 4 subzones, The Pillar, the giant crane and the Smelters' Cathedral,
+  conveyor belts, molten metal rivers and vents; 9 new enemy types (4 fire variants of region 1 enemies),
+  6 main + 10 side quests + a mystery, Pump Station Delta, High Priestess Vire, 4 dungeons with new
+  objectives, 6 bunkers, 6 events, The Crane, coolant valves and the motorbike (B).
+- 23 new Meshy assets for 808 credits (balance 311).
+- Fixes found on the way: heavy melee bosses in region 1 (Brood Mother, The First) now attack; Cinder
+  Flats' autocannon and fuel depot work (they were map markers only).
 
 Region 1 (Cinder Flats) is built; measurements and checklist: docs/regions/cinder-flats-playtest.md.
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
@@ -205,6 +198,7 @@ npm run sim        # balance simulator (DPS of sample builds, all classes)
 npm run play       # bot playthrough level 1→10 for every class and build
 npm run assets:check   # orphan / missing Meshy assets
 npm run region:report  # Cinder Flats pacing estimates (docs/regions/cinder-flats-playtest.md)
+npm run region:report -- district   # Refinery District (docs/regions/refinery-district-playtest.md)
 ```
 
 Meshy pipeline (needs `MESHY_API_KEY` in `ashfall/.env`): `npm run meshy -- status`.
@@ -213,10 +207,27 @@ Behind a proxy (cloud sessions) prefix with `NODE_USE_ENV_PROXY=1`.
 Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them in the skill tree) ·
 **K** skill tree · **I** inventory · **C** character · **M** map · **J** quests ·
 **E** pick up / interact / talk · **Alt** show loot labels ·
-**Space** dodge · **Q** stim pack · **mouse wheel** zoom · **F3** debug panel ·
+**Space** dodge · **Q** stim pack · **B** motorbike (once unlocked) · **mouse wheel** zoom · **F3** debug panel ·
 **F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
+
+## What to test (Phase 6 – The Refinery District)
+1. Finish Cinder Flats' story (or use F3 → skip quest step) and follow *The Burning Road*: Route 7 past
+   The Maw to the border gate in the north-east corner. The screen fades and you are in the district.
+2. Open the map (M): one tab per region; click a teleporter in either region to travel.
+3. At the Coolant Works: Mara (aspects), Gus (trade), Ines (blacksmith), Tobin. *Cold Comfort* teaches the
+   vents — step off a glowing grate.
+4. Ride a conveyor belt; cross a slag river on a bridge, or open a coolant valve and walk through the
+   steam. Watch enemies step out of molten metal.
+5. New enemies: Smelters raise fire shields when you close in (hit them from the side), Welders dash
+   along a yellow line, Cargo Loaders throw you every third swing, Priests revive fallen Smelters.
+6. Pump Station Delta (keep the technicians alive), the four dungeons (pumps in the order the objective
+   line shows; follow the robot; free the prisoners before the pyres; defend the compressor and lure
+   enemies into the frost vents), and High Priestess Vire in the Cathedral.
+7. *Spare Parts* (Ines) unlocks the motorbike: B in the open world. *The Crane Operator* unlocks the crane.
+8. **Tell me:** is the district readable (too dark?), are the new enemies fair, do the dungeon
+   objectives make sense, and how is the FPS?
 
 ## What to test (Phase 5 – Cinder Flats)
 1. Make a new character: you wake by the escape pod. Follow the quest tracker (right) — *Wake Up*,
@@ -300,6 +311,10 @@ Shift + left-click to attack in place.
 - Region 1: no sound or music yet (Phase 8); no durability on death (§13); Codex unlocks, tempering and
   masterworking come with Phase 7; Force Wall and Laser Grid elite affixes come later.
 - Region 1: dungeons are a bit short (~6 min) and road packs a bit dense — see the playtest report.
+- Region 2: the bot's balance playthrough covers levels 1–10 only, so district difficulty (levels 10–20)
+  is untested beyond unit tests; leaving the district mid-escort or mid-event restarts it next time;
+  the zone change destroys loot left on the ground in the zone you leave.
+- Region 2 boss arenas (and The Maw) are rings of wall segments with gaps; you can step out of them.
 - Enemies still have no pathfinding; in dungeons they slide along walls toward you.
 - No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
 - Enemies have no pathfinding around crates (they slide along them via collision); fine for the open arena,
@@ -317,8 +332,8 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 
 ## Next steps
-- Region 2 (The Refinery District): enemies, content, Meshy assets, playtest report — then your feedback.
-- Your playtest feedback on Cinder Flats.
+- **Your playtest feedback on the Refinery District** (and Cinder Flats) → then Region 3 (The Hydroponic
+  Vaults) with the same process.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
 - Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).

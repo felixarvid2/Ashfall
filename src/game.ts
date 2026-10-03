@@ -456,8 +456,8 @@ export class Game {
             id: 'debug-dungeon',
             run: () => {
               if (this.ctx.instance) return this.exitInstance();
-              const ids = ['dungeon.meridian', 'dungeon.sierra4', 'dungeon.drainage'];
-              this.enterInstance(ids[this.instanceCount % ids.length]!);
+              const ids = this.zoneDef.pois.filter((p) => p.kind === 'dungeon').map((p) => p.id);
+              if (ids.length) this.enterInstance(ids[this.instanceCount % ids.length]!);
             },
           },
           {

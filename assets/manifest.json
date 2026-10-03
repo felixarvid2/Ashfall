@@ -2707,8 +2707,23 @@
       "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 16,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1008f-35c5-756c-afa4-f8e2f582decf",
+        "refineTaskId": "01a10170-6d75-73aa-91bc-7630b83a57b3",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "environment/smokestack.glb",
+      "lods": [
+        "environment/smokestack_lod1.glb",
+        "environment/smokestack_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2528,
+        "bytes": 265500,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "cylinder",
         "color": "#6a5a4c",
@@ -2728,8 +2743,23 @@
       "source": "text",
       "targetPolycount": 2500,
       "heightMeters": 3,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1008f-3762-729f-acad-9403d388e496",
+        "refineTaskId": "01a10170-6f39-7381-bbec-8d589c3998fa",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "environment/pipe_cluster.glb",
+      "lods": [
+        "environment/pipe_cluster_lod1.glb",
+        "environment/pipe_cluster_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2484,
+        "bytes": 190800,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#6a5848",
@@ -2747,8 +2777,23 @@
       "source": "text",
       "targetPolycount": 1500,
       "heightMeters": 2.2,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1008f-3759-717e-bf94-e7cbed1a3343",
+        "refineTaskId": "01a10170-6f18-719f-bdb2-feb0b8957ee7",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "environment/slag_rock.glb",
+      "lods": [
+        "environment/slag_rock_lod1.glb",
+        "environment/slag_rock_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1554,
+        "bytes": 176140,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "sphere",
         "color": "#3a3430",
@@ -2768,8 +2813,23 @@
       "source": "text",
       "targetPolycount": 3000,
       "heightMeters": 6,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1008f-377b-727e-be62-42b39cdeac6d",
+        "refineTaskId": "01a10170-6f7d-757d-bb94-72e1345c5735",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "environment/furnace_block.glb",
+      "lods": [
+        "environment/furnace_block_lod1.glb",
+        "environment/furnace_block_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2789,
+        "bytes": 257392,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#3a2a22",
@@ -2789,8 +2849,23 @@
       "source": "text",
       "targetPolycount": 2000,
       "heightMeters": 4,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1008f-3742-73ec-9393-ddcc1844509c",
+        "refineTaskId": "01a10170-6f2a-7632-bdea-717b9d1c1de7",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "environment/catwalk.glb",
+      "lods": [
+        "environment/catwalk_lod1.glb",
+        "environment/catwalk_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1776,
+        "bytes": 127328,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#3a3a38",
@@ -2808,8 +2883,23 @@
       "source": "text",
       "targetPolycount": 1500,
       "heightMeters": 4,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1008f-37e0-75c4-9f84-d86176cb30e8",
+        "refineTaskId": "01a10170-6f3c-76ec-903c-953ea262dd64",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "environment/industrial_wall.glb",
+      "lods": [
+        "environment/industrial_wall_lod1.glb",
+        "environment/industrial_wall_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1078,
+        "bytes": 100216,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#4a4440",
@@ -2827,8 +2917,23 @@
       "source": "text",
       "targetPolycount": 3500,
       "heightMeters": 7,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10090-0167-74f4-a152-bcff66d51987",
+        "refineTaskId": "01a10171-6ad9-748e-a6f4-44980cc6d76a",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "environment/pump_house.glb",
+      "lods": [
+        "environment/pump_house_lod1.glb",
+        "environment/pump_house_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2942,
+        "bytes": 172012,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#3a4450",
@@ -2848,8 +2953,23 @@
       "source": "text",
       "targetPolycount": 5000,
       "heightMeters": 70,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10090-4942-7519-82f9-70cd6107a08a",
+        "refineTaskId": "01a10171-9169-72fe-a936-a4f17347137a",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/the_pillar.glb",
+      "lods": [
+        "props/the_pillar_lod1.glb",
+        "props/the_pillar_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 4429,
+        "bytes": 259224,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "cylinder",
         "color": "#2a2420",
@@ -2869,8 +2989,23 @@
       "source": "text",
       "targetPolycount": 5000,
       "heightMeters": 35,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10090-4b92-70ec-af20-5fe506a835ef",
+        "refineTaskId": "01a10171-a03c-743c-aff5-73463330716b",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/giant_crane.glb",
+      "lods": [
+        "props/giant_crane_lod1.glb",
+        "props/giant_crane_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 4254,
+        "bytes": 320204,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#5a4a30",
@@ -2888,8 +3023,23 @@
       "source": "text",
       "targetPolycount": 6000,
       "heightMeters": 30,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10090-5600-7205-8a8f-726a2ac3199b",
+        "refineTaskId": "01a10171-a7da-75ea-907f-caa8ddc59b65",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/smelters_cathedral.glb",
+      "lods": [
+        "props/smelters_cathedral_lod1.glb",
+        "props/smelters_cathedral_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 5454,
+        "bytes": 343436,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#3a2a24",
@@ -2909,8 +3059,23 @@
       "source": "text",
       "targetPolycount": 1000,
       "heightMeters": 0.4,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10090-7dc0-75a4-9406-a28ff83e99a0",
+        "refineTaskId": "01a10171-b4a0-70b2-b649-55a06e958a12",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/vent.glb",
+      "lods": [
+        "props/vent_lod1.glb",
+        "props/vent_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 614,
+        "bytes": 116364,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "cylinder",
         "color": "#2a2422",
@@ -2928,10 +3093,63 @@
       "category": "enemy",
       "prompt": "fanatic fire cultist survivor in a scorched heavy protective suit and long ash-grey robe, welding mask with a burning cross symbol, fuel tanks on the back, empty hands, T-pose",
       "source": "image",
-      "targetPolycount": 20000,
+      "conceptPrompt": "full body concept art, front view, T-pose, fanatic fire cultist in a scorched heavy protective suit and long ash-grey robe, welding mask with a burning cross symbol, fuel tanks on the back, dark sci-fi industrial, plain background",
+      "targetPolycount": 8000,
       "heightMeters": 1.8,
-      "status": "planned",
-      "meshy": {},
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "cast",
+            "actionId": 125
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10089-3ffa-74c5-ad3c-53b0d2314ed7",
+        "refineTaskId": "01a10089-d30a-74a8-8c0c-382321d96884",
+        "rigTaskId": "01a1008e-1878-76bc-8b26-82bc05e38cea",
+        "animationTaskId": "01a1008e-79fa-7511-bb0c-96440212678f",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "cast": "cast",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/smelter.glb",
+      "stats": {
+        "triangles": 8187,
+        "bytes": 873704,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#6a4a3a",
@@ -2942,19 +3160,70 @@
         ],
         "showFacing": true,
         "facingColor": "#ff7a1a"
-      },
-      "pose": "t-pose",
-      "conceptPrompt": "full body concept art, front view, T-pose, fanatic fire cultist in a scorched heavy protective suit and long ash-grey robe, welding mask with a burning cross symbol, fuel tanks on the back, dark sci-fi industrial, plain background"
+      }
     },
     {
       "id": "enemy.welder",
       "category": "enemy",
       "prompt": "lean industrial welder in a leather apron and dark welding goggles, glowing cutting torch strapped to the right forearm, burn scars, empty hands, T-pose",
       "source": "image",
-      "targetPolycount": 20000,
+      "conceptPrompt": "full body concept art, front view, T-pose, lean industrial welder in a leather apron and dark welding goggles, glowing cutting torch strapped to the forearm, burn scars, dark sci-fi industrial, plain background",
+      "targetPolycount": 8000,
       "heightMeters": 1.8,
-      "status": "planned",
-      "meshy": {},
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "run",
+            "actionId": 673
+          },
+          {
+            "state": "attack",
+            "actionId": 128
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10089-41ad-70a5-8a10-6c838721e095",
+        "refineTaskId": "01a10089-d4a3-7343-9ca4-851ed4fe2011",
+        "rigTaskId": "01a1008e-1a19-77db-aa5e-7a01a28711dc",
+        "animationTaskId": "01a1008e-7795-7120-91d3-06b1059af4f2",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "run": "run",
+          "attack": "attack",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/welder.glb",
+      "stats": {
+        "triangles": 8264,
+        "bytes": 858572,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#5a4a3a",
@@ -2965,9 +3234,7 @@
         ],
         "showFacing": true,
         "facingColor": "#ffb03a"
-      },
-      "pose": "t-pose",
-      "conceptPrompt": "full body concept art, front view, T-pose, lean industrial welder in a leather apron and dark welding goggles, glowing cutting torch strapped to the forearm, burn scars, dark sci-fi industrial, plain background"
+      }
     },
     {
       "id": "enemy.slagborn",
@@ -2976,8 +3243,23 @@
       "source": "text",
       "targetPolycount": 8000,
       "heightMeters": 2.6,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10091-4058-771d-92a8-951fdad2af28",
+        "refineTaskId": "01a10171-c1bf-77e9-896e-490d61084801",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "enemies/slagborn.glb",
+      "lods": [
+        "enemies/slagborn_lod1.glb",
+        "enemies/slagborn_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 8287,
+        "bytes": 433280,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#3a2a22",
@@ -2999,8 +3281,23 @@
       "source": "text",
       "targetPolycount": 8000,
       "heightMeters": 3.2,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10091-42b2-7049-8598-47a7814f49ed",
+        "refineTaskId": "01a10172-94f8-730a-a2ee-f9d4a47f70c0",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "enemies/cargo_loader.glb",
+      "lods": [
+        "enemies/cargo_loader_lod1.glb",
+        "enemies/cargo_loader_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 7836,
+        "bytes": 447124,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#6a5a28",
@@ -3019,11 +3316,67 @@
       "prompt": "tall high priestess of a fire cult in a long crimson and ash-grey robe with a burning halo-shaped headdress, ornate metal mask, green bioluminescent veins creeping up her neck, empty hands, T-pose",
       "source": "image",
       "conceptPrompt": "full body concept art, front view, T-pose, tall high priestess of a fire cult in a long crimson and ash-grey robe, burning halo-shaped headdress, ornate metal mask, faint green bioluminescent veins on her neck, dark sci-fi industrial, plain background",
-      "targetPolycount": 20000,
+      "targetPolycount": 15000,
       "heightMeters": 2.1,
       "pose": "t-pose",
-      "status": "planned",
-      "meshy": {},
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2.1,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 232
+          },
+          {
+            "state": "cast",
+            "actionId": 125
+          },
+          {
+            "state": "cast2",
+            "actionId": 131
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10089-4197-76bc-9c5e-623108b0264c",
+        "refineTaskId": "01a10089-d4c0-7006-b85c-eaa3300076f6",
+        "rigTaskId": "01a1008e-1a35-77f6-a7fc-95410d7b419d",
+        "animationTaskId": "01a1008e-7258-72a1-a0c9-fd8af58a34d2",
+        "previewApproved": true,
+        "creditsSpent": 62,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "cast": "cast",
+          "cast2": "cast2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/vire.glb",
+      "stats": {
+        "triangles": 15523,
+        "bytes": 1093684,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#8a2a22",
@@ -3045,8 +3398,23 @@
       "source": "text",
       "targetPolycount": 5000,
       "heightMeters": 3,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10091-7035-74f4-b87b-a6affe515a29",
+        "refineTaskId": "01a10172-a8f4-72b1-9c57-f7370ec72b48",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "enemies/lumen_tentacle.glb",
+      "lods": [
+        "enemies/lumen_tentacle_lod1.glb",
+        "enemies/lumen_tentacle_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 5206,
+        "bytes": 172536,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "cylinder",
         "color": "#2a3a22",
@@ -3066,8 +3434,23 @@
       "source": "text",
       "targetPolycount": 1500,
       "heightMeters": 1.4,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10091-85bd-71ee-84b6-78aaab5b0c68",
+        "refineTaskId": "01a10172-e191-70fb-b981-05cec388e291",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/coolant_valve.glb",
+      "lods": [
+        "props/coolant_valve_lod1.glb",
+        "props/coolant_valve_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1532,
+        "bytes": 278952,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "cylinder",
         "color": "#3a5a7a",
@@ -3087,8 +3470,23 @@
       "source": "text",
       "targetPolycount": 3000,
       "heightMeters": 2.4,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10091-b3d4-75a5-ae71-97ca2139131f",
+        "refineTaskId": "01a10172-ed43-776c-8752-4ab1124e3c0e",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/prisoner_cage.glb",
+      "lods": [
+        "props/prisoner_cage_lod1.glb",
+        "props/prisoner_cage_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2382,
+        "bytes": 240028,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#4a3a2a",
@@ -3108,8 +3506,23 @@
       "source": "text",
       "targetPolycount": 3000,
       "heightMeters": 2.2,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10091-c7db-723c-a9fd-a4d78d966002",
+        "refineTaskId": "01a10172-f184-74ce-82fb-13bfb6175703",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/compressor.glb",
+      "lods": [
+        "props/compressor_lod1.glb",
+        "props/compressor_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2737,
+        "bytes": 175816,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#5a6a7a",
@@ -3128,11 +3541,37 @@
       "prompt": "middle-aged woman pump engineer in a frost-stained insulated work jacket and overalls, tool belt, goggles pushed up on her head, tired determined face, empty hands, T-pose",
       "source": "image",
       "conceptPrompt": "full body concept art, front view, T-pose, middle-aged woman industrial pump engineer in a frost-stained insulated work jacket and overalls, tool belt, goggles pushed up, dark sci-fi, plain background",
-      "targetPolycount": 15000,
+      "targetPolycount": 8000,
       "heightMeters": 1.72,
       "pose": "t-pose",
-      "status": "planned",
-      "meshy": {},
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.72,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 11
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10089-41a4-7140-afe9-4c164c1928b8",
+        "refineTaskId": "01a10089-d46b-774e-be15-948db15dca27",
+        "rigTaskId": "01a1008e-1a71-73a6-9a18-38df799b99a4",
+        "animationTaskId": "01a1008e-67f6-73c3-851d-13080749b03f",
+        "previewApproved": true,
+        "creditsSpent": 44,
+        "clips": {
+          "idle": "idle"
+        }
+      },
+      "file": "characters/pump_engineer.glb",
+      "stats": {
+        "triangles": 8136,
+        "bytes": 720456,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#4a6a8a",
@@ -3151,11 +3590,37 @@
       "prompt": "young man in a torn ash-grey cult robe over refinery work clothes, burned welding mask hanging from his belt, bandaged hands, nervous, empty hands, T-pose",
       "source": "image",
       "conceptPrompt": "full body concept art, front view, T-pose, young man in a torn ash-grey cult robe over refinery work clothes, burned welding mask hanging from his belt, bandaged hands, dark sci-fi, plain background",
-      "targetPolycount": 15000,
+      "targetPolycount": 8000,
       "heightMeters": 1.78,
       "pose": "t-pose",
-      "status": "planned",
-      "meshy": {},
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.78,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 11
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10089-4181-75ba-a944-30c14c18d8bc",
+        "refineTaskId": "01a10089-d4aa-729d-af1b-b4208d687e57",
+        "rigTaskId": "01a1008e-19e2-7699-888c-b26075f3e21c",
+        "animationTaskId": "01a1008e-7bc1-708b-af4c-f63ba2ad87a1",
+        "previewApproved": true,
+        "creditsSpent": 44,
+        "clips": {
+          "idle": "idle"
+        }
+      },
+      "file": "characters/defector.glb",
+      "stats": {
+        "triangles": 8143,
+        "bytes": 721128,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#6a6460",
@@ -3175,8 +3640,23 @@
       "source": "text",
       "targetPolycount": 4000,
       "heightMeters": 1.1,
-      "status": "planned",
-      "meshy": {},
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10092-8942-7008-9c1a-8e60a5a4a434",
+        "refineTaskId": "01a10172-f29b-72dd-b6dc-693811fb595a",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/motorbike.glb",
+      "lods": [
+        "props/motorbike_lod1.glb",
+        "props/motorbike_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 3781,
+        "bytes": 331024,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "box",
         "color": "#5a4a3a",

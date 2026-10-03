@@ -5,7 +5,7 @@
 import type { z } from 'zod';
 import type { NpcDefSchema, QuestDefSchema } from './schema';
 import { CINDER_GATE } from '../zones/cinderFlats';
-import { CATHEDRAL, COOLANT_WORKS as HUB, CRANE, DELTA, rd } from '../zones/refineryDistrict';
+import { CATHEDRAL, COOLANT_WORKS as HUB, CRANE, DELTA, SHRINE, rd } from '../zones/refineryDistrict';
 
 type NpcInput = z.input<typeof NpcDefSchema>;
 type QuestInput = z.input<typeof QuestDefSchema>;
@@ -16,7 +16,7 @@ const p = (x: number, z: number) => {
   return { x: a, z: b };
 };
 
-const SHRINE = p(-205, 262);
+
 const DEFECTOR = p(-128, 150);
 const PREACHER = p(-70, 62);
 const DEN = p(122, -128);
@@ -86,7 +86,7 @@ export const REFINERY_QUESTS: QuestInput[] = [
     level: 13,
     steps: [
       { kind: 'talk', npc: 'tobin' },
-      { kind: 'reach', ...SHRINE, radius: 14 },
+      { kind: 'reach', x: SHRINE.x, z: SHRINE.z, radius: 14 },
       { kind: 'kill', count: 1, spawn: { enemy: 'smelter_priest', x: SHRINE.x + 4, z: SHRINE.z + 6, name: 'enemies.named.hask', elite: 'rare', escorts: 3 } },
       { kind: 'interact', count: 1, objects: [{ id: 'sermon', x: SHRINE.x - 3, z: SHRINE.z + 3, asset: 'prop.control_terminal', scale: 0.9 }] },
       { kind: 'talk', npc: 'tobin' },

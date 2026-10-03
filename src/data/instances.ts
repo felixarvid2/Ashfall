@@ -152,8 +152,8 @@ export const INSTANCES: InstanceDef[] = [
   {
     id: 'smelter_3',
     kind: 'dungeon',
-    main: [7, 8],
-    branches: [3, 4],
+    main: [8, 9],
+    branches: [4, 5],
     packs: ['rd_road', 'rd_conveyor'],
     packsPerRoom: [1, 2],
     objective: { kind: 'valves', count: 3, wave: 5 },
@@ -165,8 +165,8 @@ export const INSTANCES: InstanceDef[] = [
   {
     id: 'pipe_alleys',
     kind: 'dungeon',
-    main: [8, 9],
-    branches: [2, 3],
+    main: [9, 10],
+    branches: [3, 4],
     packs: ['rd_stacks', 'rd_slag'],
     packsPerRoom: [1, 2],
     objective: { kind: 'follow', life: 900, speed: 2.6, stopRadius: 10 },
@@ -177,8 +177,8 @@ export const INSTANCES: InstanceDef[] = [
   {
     id: 'cathedral_crypt',
     kind: 'dungeon',
-    main: [7, 8],
-    branches: [3, 4],
+    main: [8, 9],
+    branches: [4, 5],
     packs: ['rd_cathedral', 'rd_road'],
     packsPerRoom: [1, 2],
     objective: { kind: 'rescue', count: 4, time: 70 },
@@ -189,8 +189,8 @@ export const INSTANCES: InstanceDef[] = [
   {
     id: 'cold_hall',
     kind: 'dungeon',
-    main: [7, 8],
-    branches: [3, 4],
+    main: [8, 9],
+    branches: [4, 5],
     packs: ['rd_conveyor', 'rd_road'],
     packsPerRoom: [1, 2],
     objective: { kind: 'defend', time: 60, life: 900, waveEvery: 9, wave: 4 },
