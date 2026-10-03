@@ -794,6 +794,7 @@ export class Game {
     if (zoom !== 0) this.renderer.rig.zoom(zoom);
 
     this.updateStormLook();
+    if (this.ctx.instance?.extra.drained) this.renderer.updateInstanceWater(this.ctx.instance.extra.drained);
     if (this.zone) {
       const zone = this.zone;
       this.renderer.updateCooled(zone.cooled, this.ctx.time);
@@ -1409,6 +1410,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       },
       rt.def.theme,
       rt.lights,
+      (rt.extra.env ?? []).flatMap((f) => (f.kind === 'water' ? [{ id: f.id, x: f.x, z: f.z, r: f.radius }] : [])),
     );
     this.placePlayer(rt.start.x, rt.start.z);
     this.closeDialogue();

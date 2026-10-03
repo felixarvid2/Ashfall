@@ -5,6 +5,7 @@
 import { PYLON_EFFECTS } from '../data/interactables';
 import {
   Blast,
+  Boss,
   Collider,
   CombatStats,
   Dead,
@@ -199,7 +200,8 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
   const tr = world.get(target, Transform);
   const isPlayer = world.has(target, PlayerControlled);
 
-  let remaining = Math.max(0, amount);
+  // Armoured or rooted bosses (the Warden) take less or nothing.
+  let remaining = Math.max(0, amount) * (world.get(target, Boss)?.damageTaken ?? 1);
   let absorbed = 0;
   const effects = world.get(target, StatusEffects);
   if (effects) {

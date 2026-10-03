@@ -40,7 +40,11 @@ export type EventType =
   | 'runawayBelt'
   | 'slagTide'
   | 'purgeFurnace'
-  | 'smelterRaid';
+  | 'smelterRaid'
+  // Hydroponic Vaults
+  | 'sporeBloom'
+  | 'swarmMigration'
+  | 'rootEruption';
 export type Tier = 'gold' | 'silver' | 'bronze';
 
 export const EVENT_TUNING = {
@@ -61,6 +65,12 @@ export const EVENT_TUNING = {
   purgeFurnace: { igniters: 3, life: 520, time: 75, gold: 35, silver: 55 },
   /** Hold the pump against a Smelter raid. */
   smelterRaid: { time: 60, life: 700, waveEvery: 8 },
+  /** Giant spore pods are about to burst: cut them down while their spores cloud the field. */
+  sporeBloom: { pods: 3, life: 600, time: 70, gold: 35, silver: 55, cloudEvery: 4, cloudRadius: 3.2, cloudDuration: 8 },
+  /** A swarm migrates through: thin it out before it moves on. */
+  swarmMigration: { kills: 20, time: 70, gold: 40, silver: 58, waveEvery: 5 },
+  /** Roots erupt from the floor; tear them all out before the patch is overgrown. */
+  rootEruption: { roots: 5, time: 75, gold: 40, silver: 60, waveEvery: 10 },
   /** XP per tier, × monster level. */
   xp: { gold: 40, silver: 28, bronze: 18 } as Record<Tier, number>,
 };
@@ -117,6 +127,12 @@ const WAVE_ROSTER: Record<string, { item: string; weight: number }[]> = {
     { item: 'smelter', weight: 1 },
     { item: 'welder', weight: 1 },
     { item: 'fire_bloater', weight: 1 },
+  ],
+  'zone.hydroponic_vaults': [
+    { item: 'overgrown_walker', weight: 5 },
+    { item: 'spore_swarm', weight: 2 },
+    { item: 'mossborn', weight: 2 },
+    { item: 'swarm_bloater', weight: 1 },
   ],
   default: [
     { item: 'infected_colonist', weight: 6 },
@@ -207,7 +223,7 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
       break;
     }
     case 'eliteHunt': {
-      const prey = ctx.zone?.def.id === 'zone.refinery_district' ? 'welder' : 'spore_hound';
+      const prey = ({ 'zone.refinery_district': 'welder', 'zone.hydroponic_vaults': 'vine_weaver' } as Record<string, string>)[ctx.zone?.def.id ?? ''] ?? 'spore_hound';
       const e = spawnEnemy(world, prey, ev.x, ev.z, { level: level + 1 });
       makeElite(world, e, 'rare', new Rng(`${id}-${ctx.tick}`));
       world.req(e, EnemyAI).aggro = true;
@@ -240,6 +256,31 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
     case 'smelterRaid':
       ev.objects.push(target(world, ev.x, ev.z, 'env.pump_house', 'player', T.smelterRaid.life, 0.35, '#7ad8ff'));
       break;
+    case 'sporeBloom': {
+      const B = T.sporeBloom;
+      const life = B.life * (1 + 0.15 * (level - 1));
+      for (let i = 0; i < B.pods; i++) {
+        const a = (i / B.pods) * Math.PI * 2 + 0.5;
+        ev.objects.push(target(world, ev.x + Math.sin(a) * 10, ev.z + Math.cos(a) * 10, 'prop.spore_nest', 'enemy', life, 1.6, '#c8ff3a'));
+      }
+      wave(world, ctx, ev.x, ev.z, 3, level, 8, [{ item: 'spore_swarm', weight: 2 }, { item: 'mossborn', weight: 1 }]);
+      break;
+    }
+    case 'swarmMigration':
+      ev.waveTimer = 0;
+      break;
+    case 'rootEruption': {
+      for (let i = 0; i < T.rootEruption.roots; i++) {
+        const a = ctx.rng.range(0, Math.PI * 2);
+        const r = ctx.rng.range(5, 14);
+        const e = spawnEnemy(world, 'mother_root', ev.x + Math.sin(a) * r, ev.z + Math.cos(a) * r, { level });
+        world.req(e, EnemyAI).aggro = true;
+        ev.objects.push(e);
+      }
+      ctx.events.push({ type: 'vfx', kind: 'raise', x: ev.x, z: ev.z, radius: 10, facing: 0 });
+      ctx.events.push({ type: 'shake', trauma: 0.4 });
+      break;
+    }
   }
   ctx.events.push({ type: 'banner', key: `worldEvents.${ev.type}.title`, seconds: 2.4 });
 }
@@ -444,6 +485,57 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
         }
         break;
       }
+      case 'sporeBloom': {
+        const B = T.sporeBloom;
+        const pods = ev.objects.filter((o) => alive(world, o));
+        ev.progress = B.pods - pods.length;
+        if ((ev.waveTimer -= dt) <= 0 && pods.length) {
+          // Each standing pod puffs a poison cloud somewhere near it.
+          ev.waveTimer = B.cloudEvery;
+          const pod = world.req(pods[Math.floor(ctx.rng.next() * pods.length)]!, Transform);
+          const a = ctx.rng.range(0, Math.PI * 2);
+          spawnSporeCloud(world, pod.x + Math.sin(a) * 4, pod.z + Math.cos(a) * 4, B, level);
+        }
+        if (!pods.length) finish(world, ctx, zone, id, ev, ev.elapsed < B.gold ? 'gold' : ev.elapsed < B.silver ? 'silver' : 'bronze');
+        else if (ev.elapsed >= B.time) {
+          for (const p of pods) spawnSporeCloud(world, world.req(p, Transform).x, world.req(p, Transform).z, { ...B, cloudRadius: 7 }, level);
+          finish(world, ctx, zone, id, ev, 'failed');
+        }
+        break;
+      }
+      case 'swarmMigration': {
+        const M = T.swarmMigration;
+        if ((ev.waveTimer -= dt) <= 0) {
+          ev.waveTimer = M.waveEvery;
+          ev.objects.push(...wave(world, ctx, ev.x, ev.z, 3, level, 20, [{ item: 'spore_swarm', weight: 4 }, { item: 'swarm_bloater', weight: 1 }]));
+        }
+        ev.progress = countKills(world, ev);
+        if (ev.progress >= M.kills) {
+          ev.banked = 0;
+          finish(world, ctx, zone, id, ev, ev.elapsed < M.gold ? 'gold' : ev.elapsed < M.silver ? 'silver' : 'bronze');
+        } else if (ev.elapsed >= M.time) {
+          ev.banked = 0;
+          finish(world, ctx, zone, id, ev, 'failed');
+        }
+        break;
+      }
+      case 'rootEruption': {
+        const R = T.rootEruption;
+        const roots = ev.objects.filter((o) => alive(world, o));
+        ev.progress = R.roots - roots.length;
+        if ((ev.waveTimer -= dt) <= 0 && roots.length) {
+          ev.waveTimer = R.waveEvery;
+          wave(world, ctx, ev.x, ev.z, 3, level, 16, [{ item: 'overgrown_walker', weight: 3 }, { item: 'mossborn', weight: 1 }]);
+        }
+        if (!roots.length) finish(world, ctx, zone, id, ev, ev.elapsed < R.gold ? 'gold' : ev.elapsed < R.silver ? 'silver' : 'bronze');
+        else if (ev.elapsed >= R.time) {
+          // Failed: the roots sink back into the soil.
+          for (const r of roots) world.destroyDeferred(r);
+          ev.objects = [];
+          finish(world, ctx, zone, id, ev, 'failed');
+        }
+        break;
+      }
       case 'supplyDrop': {
         if (ev.progress === 0 && ev.elapsed >= T.supplyDrop.land) {
           ev.progress = 1;
@@ -533,6 +625,12 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
       return { type: best.type, text: 'worldEvents.purgeFurnace.objective', params: { s: left(T.purgeFurnace.time) } };
     case 'smelterRaid':
       return { type: best.type, text: 'worldEvents.smelterRaid.objective', params: { s: left(T.smelterRaid.time) } };
+    case 'sporeBloom':
+      return { type: best.type, text: 'worldEvents.sporeBloom.objective', params: { n: best.progress, count: T.sporeBloom.pods, s: left(T.sporeBloom.time) } };
+    case 'swarmMigration':
+      return { type: best.type, text: 'worldEvents.swarmMigration.objective', params: { n: best.progress, count: T.swarmMigration.kills, s: left(T.swarmMigration.time) } };
+    case 'rootEruption':
+      return { type: best.type, text: 'worldEvents.rootEruption.objective', params: { n: best.progress, count: T.rootEruption.roots, s: left(T.rootEruption.time) } };
   }
 }
 
@@ -548,6 +646,32 @@ function spawnTidePool(world: World, x: number, z: number, S: { poolRadius: numb
     tickTimer: 0.5,
     color: '#ff6a1a',
     applies: [{ status: 'burning', duration: 1.5, dps: 6 + 3 * level }],
+    attackerLevel: level,
+  });
+}
+
+/** Kills among the event's enemies, banking those whose corpses have already vanished. */
+function countKills(world: World, ev: EventState): number {
+  const gone = ev.objects.filter((o) => !world.isAlive(o));
+  if (gone.length) {
+    ev.banked = (ev.banked ?? 0) + gone.length;
+    ev.objects = ev.objects.filter((o) => world.isAlive(o));
+  }
+  return ev.objects.filter((o) => world.has(o, Dead)).length + (ev.banked ?? 0);
+}
+
+/** A drifting poison cloud from a blooming pod. */
+function spawnSporeCloud(world: World, x: number, z: number, B: { cloudRadius: number; cloudDuration: number }, level: number): void {
+  const hz = world.create();
+  world.add(hz, Transform, makeTransform(x, 0, z));
+  world.add(hz, Hazard, {
+    team: 'enemy',
+    radius: B.cloudRadius,
+    remaining: B.cloudDuration,
+    duration: B.cloudDuration,
+    tickTimer: 0.5,
+    color: '#9aff3a',
+    applies: [{ status: 'poisoned', duration: 1.5, dps: 5 + 3 * level }],
     attackerLevel: level,
   });
 }

@@ -517,7 +517,7 @@ export const Turret = defineComponent<Turret>('Turret');
 export interface Interactable {
   /** Point-of-interest id (or teleporter id). */
   poi: string;
-  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject' | 'valve' | 'cage' | 'compressor';
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject' | 'valve' | 'cage' | 'compressor' | 'lever';
   /** Use radius (m). */
   radius: number;
   /** Spent for good (opened, read, claimed). */
@@ -622,20 +622,28 @@ export const Targetable = defineComponent<Targetable>('Targetable');
 export interface Boss {
   script: string | null;
   phase: number;
-  timers: { adds: number; plates: number; spores: number; fireballs?: number; shrink?: number; tentacles?: number };
+  timers: { adds: number; plates: number; spores: number; fireballs?: number; shrink?: number; tentacles?: number; beams?: number };
   engaged: boolean;
   /** Arena centre and radius (spore fields, resets). */
   arena: { x: number; z: number; radius: number };
   adds: Entity[];
   /** Cover plates thrown in phase 2, and other arena changes (the collapsing floor); removed on reset. */
   plates: Entity[];
-  /** Warned impacts: plates (leave cover), fireballs (don't), or the next floor collapse. */
-  pending: { x: number; z: number; t: number; kind?: 'plate' | 'fireball' | 'shrink' }[];
+  /** Warned impacts: plates (leave cover), fireballs (don't), the next floor collapse, or a spore beam along `facing`. */
+  pending: { x: number; z: number; t: number; kind?: 'plate' | 'fireball' | 'shrink' | 'beam'; facing?: number }[];
   baseSpeed: number;
   /** Collapse steps taken (shrinking arena). */
   shrinkStep?: number;
   /** Renderable look before a transformation. */
   baseLook?: { scale: number; glow?: string | undefined };
+  // ---- The Warden of the Mother Tree ----
+  /** Damage taken multiplier (armour plates still on: less; rooted: none). */
+  damageTaken?: number;
+  /** Armour plates (separate targets that ride on the boss). */
+  parts?: Entity[];
+  /** Root Nodes that hold a rooted boss, and the vines that cover the floor meanwhile. */
+  nodes?: Entity[];
+  vines?: Entity[];
 }
 export const Boss = defineComponent<Boss>('Boss');
 

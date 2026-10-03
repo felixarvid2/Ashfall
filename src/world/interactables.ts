@@ -341,6 +341,7 @@ function breakDestructible(world: World, e: Entity, fuse: number, ctx?: GameCont
       for (const enemy of livingInCircle(world, ctx, tr.x, tr.z, d.blind.radius, 'enemy')) {
         if (!world.has(enemy, EnemyAI)) continue;
         applyStatus(world, ctx, enemy, { status: 'stunned', duration: d.blind.duration }, { team: 'player', level });
+        signal(ctx, { type: 'interact', kind: 'blinded', id: 'blinded' });
       }
       ctx.events.push({ type: 'vfx', kind: 'flash', x: tr.x, z: tr.z, radius: d.blind.radius, facing: 0 });
       ctx.events.push({ type: 'interact', kind: 'crystal', id: 'crystal' });

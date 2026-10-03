@@ -79,7 +79,9 @@ export const QuestStepSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('choice'),
     npc: z.string(),
-    options: z.array(z.object({ id: z.string(), gold: z.number().int().default(0), xp: z.number().int().default(0), item: RaritySchema.optional() })).min(2),
+    options: z
+      .array(z.object({ id: z.string(), gold: z.number().int().default(0), xp: z.number().int().default(0), item: RaritySchema.optional(), unique: z.string().optional() }))
+      .min(2),
     ...StepBase,
   }),
 ]);

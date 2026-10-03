@@ -70,4 +70,6 @@ export interface RewardRequest {
   xp: boolean;
   /** Also drop one guaranteed item of this rarity (debug, boss chests). */
   rarity?: Rarity;
+  /** Also drop this specific unique (quest choices). */
+  unique?: string;
 }

@@ -550,9 +550,26 @@ export class GameRenderer {
     bounds: { minX: number; maxX: number; minZ: number; maxZ: number },
     theme: { floor: string; fog: { color: string; density: number }; ambient: { color: string; intensity: number } },
     lights: typeof this.lightSpots,
+    water: { id: string; x: number; z: number; r: number }[] = [],
   ): void {
     this.exitInstance();
     const root = new THREE.Group();
+    // Flooded tunnels (The Irrigation System): water discs that vanish as levers drain them.
+    this.instanceWater = null;
+    if (water.length) {
+      const disc = new THREE.CircleGeometry(1, 28);
+      disc.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshStandardMaterial({ color: '#3a7a92', emissive: '#0e3442', roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.8, polygonOffset: true, polygonOffsetFactor: -3 });
+      const mesh = new THREE.InstancedMesh(disc, mat, water.length);
+      const m = new THREE.Matrix4();
+      water.forEach((w, i) => {
+        m.makeScale(w.r, 1, w.r).setPosition(w.x, 0.06, w.z);
+        mesh.setMatrixAt(i, m);
+      });
+      mesh.computeBoundingSphere();
+      root.add(mesh);
+      this.instanceWater = { mesh, water, drained: 0 };
+    }
     const w = bounds.maxX - bounds.minX;
     const d = bounds.maxZ - bounds.minZ;
     const floor = new THREE.Mesh(
@@ -571,6 +588,22 @@ export class GameRenderer {
     this.lightTimer = 0;
   }
 
+  private instanceWater: { mesh: THREE.InstancedMesh; water: { id: string; x: number; z: number; r: number }[]; drained: number } | null = null;
+
+  /** Drained water disappears. */
+  updateInstanceWater(drained: ReadonlySet<string>): void {
+    const iw = this.instanceWater;
+    if (!iw || iw.drained === drained.size) return;
+    iw.drained = drained.size;
+    const m = new THREE.Matrix4();
+    iw.water.forEach((w, i) => {
+      const r = drained.has(w.id) ? 0.0001 : w.r;
+      m.makeScale(r, 1, r).setPosition(w.x, 0.06, w.z);
+      iw.mesh.setMatrixAt(i, m);
+    });
+    iw.mesh.instanceMatrix.needsUpdate = true;
+  }
+
   /** Lamps lit while inside (generators that come online). */
   setInstanceLights(lights: typeof this.lightSpots): void {
     if (this.instanceRoot) this.lightSpots = lights;
@@ -585,6 +618,7 @@ export class GameRenderer {
       (m.material as THREE.Material | undefined)?.dispose();
     });
     this.instanceRoot = null;
+    this.instanceWater = null;
     if (this.zoneLightSpots) this.lightSpots = this.zoneLightSpots;
     this.zoneLightSpots = null;
     this.lightTimer = 0;

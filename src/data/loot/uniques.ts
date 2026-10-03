@@ -162,4 +162,29 @@ export const UNIQUES: Unique[] = [
       },
     ],
   },
+  // ---- Hydroponic Vaults: the Mother Tree choice (any class) ----
+  {
+    // Burned: the tree's charred heartwood, still warm.
+    id: 'ashen_heartwood',
+    base: 'signal_pendant',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'damageVsBurning', min: 0.2, max: 0.28, scaling: 'sqrt' },
+      { stat: 'resistHeat', min: 0.08, max: 0.12, scaling: 'sqrt' },
+      { stat: 'maxLife', min: 20, max: 30, scaling: 'linear' },
+    ],
+    effects: [{ kind: 'damage', value: 0.08 }],
+  },
+  {
+    // Spared: a seed the tree let fall into your hand.
+    id: 'seed_of_accord',
+    base: 'conduit_ring',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'resistToxic', min: 0.12, max: 0.16, scaling: 'sqrt' },
+      { stat: 'potionHealing', min: 0.15, max: 0.2, scaling: 'none' },
+      { stat: 'lifeOnKill', min: 6, max: 9, scaling: 'linear' },
+    ],
+    effects: [{ kind: 'stat', stat: 'damageReduction', value: 0.06 }],
+  },
 ];

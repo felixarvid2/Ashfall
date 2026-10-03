@@ -11,15 +11,19 @@ import {
   Dead,
   DisplayName,
   EnemyAI,
+  Faction,
   Hazard,
   Health,
   Mover,
   PlayerControlled,
   Renderable,
   StatusEffects,
+  Targetable,
   Transform,
   makeTransform,
 } from '../core/components';
+import { applyDamage, targetState } from './combat';
+import { computeTaken } from './damage';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { Rng } from '../core/rng';
@@ -75,9 +79,12 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
   for (const e of world.query(Boss, EnemyAI, Transform)) {
     const boss = world.req(e, Boss);
     if (world.has(e, Dead)) {
-      // Thrown plates crumble when the boss dies.
-      for (const p of boss.plates) world.destroyDeferred(p);
+      // Thrown plates crumble when the boss dies (and armour, Root Nodes and vines go with it).
+      for (const p of [...boss.plates, ...(boss.parts ?? []), ...(boss.nodes ?? []), ...(boss.vines ?? [])]) if (world.isAlive(p)) world.destroyDeferred(p);
       boss.plates = [];
+      boss.parts = [];
+      boss.nodes = [];
+      boss.vines = [];
       continue;
     }
     const ai = world.req(e, EnemyAI);
@@ -109,6 +116,7 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
     }
     const ph = list[boss.phase];
     if (!ph) continue;
+    wardenParts(world, ctx, e, boss, tr);
     if (ph.fireballs && (boss.timers.fireballs = (boss.timers.fireballs ?? 2) - dt) <= 0) {
       const f = ph.fireballs;
       boss.timers.fireballs = f.every;
@@ -119,8 +127,16 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
         const x = ptr.x + Math.sin(a) * d;
         const z = ptr.z + Math.cos(a) * d;
         boss.pending.push({ x, z, t: f.warning, kind: 'fireball' });
-        ctx.events.push({ type: 'telegraph', owner: null, x, z, shape: { kind: 'circle', radius: f.radius }, duration: f.warning, color: '#ff7a1a' });
+        ctx.events.push({ type: 'telegraph', owner: null, x, z, shape: { kind: 'circle', radius: f.radius }, duration: f.warning, color: f.color ?? '#ff7a1a' });
       }
+    }
+    // Spore beams: a line from the boss toward where the player stands now.
+    if (ph.beams && (boss.timers.beams = (boss.timers.beams ?? 2.5) - dt) <= 0) {
+      const b = ph.beams;
+      boss.timers.beams = b.every;
+      const facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
+      boss.pending.push({ x: tr.x, z: tr.z, t: b.warning, kind: 'beam', facing });
+      ctx.events.push({ type: 'telegraph', owner: null, x: tr.x, z: tr.z, shape: { kind: 'line', length: b.length, width: b.width, facing }, duration: b.warning, color: b.color ?? '#7dff5a' });
     }
     if (ph.shrink && (boss.shrinkStep ?? 0) < ph.shrink.steps.length && (boss.timers.shrink = (boss.timers.shrink ?? 0) - dt) <= 0) {
       boss.timers.shrink = Infinity;
@@ -158,7 +174,13 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
         const blast = world.create();
         world.add(blast, Transform, makeTransform(p.x, 0, p.z));
         world.add(blast, Blast, { fuse: 0, radius: f.radius, owner: null, coefficient: 0, flat: 0, hurtsEnemies: false, player: { fraction: 0, damage: weapon * f.damageOfWeapon, level } });
-        ctx.events.push({ type: 'vfx', kind: 'vent', x: p.x, z: p.z, radius: f.radius, facing: 0 });
+        ctx.events.push({ type: 'vfx', kind: f.vfx ?? 'vent', x: p.x, z: p.z, radius: f.radius, facing: 0 });
+        continue;
+      }
+      if (p.kind === 'beam') {
+        const b = ph.beams ?? list.find((x) => x.beams)?.beams;
+        if (!b) continue;
+        beam(world, ctx, p.x, p.z, p.facing ?? 0, b, weapon, level);
         continue;
       }
       if (p.kind === 'shrink') {
@@ -226,6 +248,103 @@ function phaseStart(world: World, ctx: GameContext, e: Entity, boss: Boss, index
   }
   if (ph.tentacles) boss.timers.tentacles = 1.5;
   if (ph.shrink) boss.timers.shrink = 1;
+  if (ph.armor) {
+    // Armour plates ride on the boss as separate targets.
+    boss.parts = [];
+    for (let i = 0; i < ph.armor.plates; i++) {
+      const p = world.create();
+      world.add(p, Transform, makeTransform(tr.x, 0, tr.z, 0));
+      world.add(p, Renderable, { assetId: 'env.wall_segment', scale: 0.45, glow: '#c8ff7a' });
+      world.add(p, Faction, { team: 'enemy' });
+      const life = ph.armor.plateLife * (1 + 0.15 * (level - 1));
+      world.add(p, Health, { current: life, max: life });
+      world.add(p, Collider, { radius: 0.8, mass: Infinity, layer: 'air', isStatic: true });
+      world.add(p, Targetable, {});
+      world.add(p, DisplayName, { key: 'enemies.armorPlate' });
+      boss.parts.push(p);
+    }
+  }
+  if (ph.rooted) {
+    // It takes root: Root Nodes around the arena hold it, vines slow the floor.
+    const r = ph.rooted;
+    world.req(e, Mover).speed = 0;
+    boss.nodes = [];
+    boss.vines = [];
+    for (let i = 0; i < r.nodes; i++) {
+      const a = (i / r.nodes) * Math.PI * 2 + 0.4;
+      const n = world.create();
+      world.add(n, Transform, makeTransform(boss.arena.x + Math.sin(a) * boss.arena.radius * r.ring, 0, boss.arena.z + Math.cos(a) * boss.arena.radius * r.ring, a));
+      world.add(n, Renderable, { assetId: 'prop.spore_nest', scale: 1.4, glow: '#7dff5a' });
+      world.add(n, Faction, { team: 'enemy' });
+      const life = r.nodeLife * (1 + 0.15 * (level - 1));
+      world.add(n, Health, { current: life, max: life });
+      world.add(n, Collider, { radius: 1.5, mass: Infinity, layer: 'ground', isStatic: true });
+      world.add(n, Targetable, {});
+      world.add(n, DisplayName, { key: 'enemies.rootNode' });
+      boss.nodes.push(n);
+    }
+    for (let i = 0; i < r.vines; i++) {
+      const a = ctx.rng.range(0, Math.PI * 2);
+      const d = ctx.rng.range(4, boss.arena.radius - 4);
+      const v = world.create();
+      world.add(v, Transform, makeTransform(boss.arena.x + Math.sin(a) * d, 0, boss.arena.z + Math.cos(a) * d));
+      world.add(v, Hazard, { team: 'enemy', radius: r.vineRadius, remaining: 1e9, duration: 1e9, tickTimer: 0, color: '#3a8a30', applies: [{ status: 'wading', duration: 0.6 }], attackerLevel: level });
+      boss.vines.push(v);
+    }
+    ctx.events.push({ type: 'vfx', kind: 'raise', x: tr.x, z: tr.z, radius: 4, facing: 0 });
+  }
+}
+
+/** Armour plates follow the boss; a rooted boss is freed once its Root Nodes are gone. */
+function wardenParts(world: World, ctx: GameContext, e: Entity, boss: Boss, tr: Transform): void {
+  const up = (x: Entity) => world.isAlive(x) && !world.has(x, Dead);
+  const parts = (boss.parts ?? []).filter(up);
+  const collider = world.get(e, Collider)?.radius ?? 1;
+  parts.forEach((p, i) => {
+    const a = tr.facing + ((i - (parts.length - 1) / 2) * Math.PI) / 3;
+    const pt = world.req(p, Transform);
+    pt.prevX = pt.x;
+    pt.prevZ = pt.z;
+    pt.x = tr.x + Math.sin(a) * (collider + 0.6);
+    pt.z = tr.z + Math.cos(a) * (collider + 0.6);
+    pt.y = 1.6;
+    pt.facing = a;
+  });
+  if (boss.parts && boss.parts.length && !parts.length) ctx.events.push({ type: 'banner', key: 'bosses.armorBroken', seconds: 2 });
+  boss.parts = parts;
+  const list = phases(boss);
+  const armor = list.find((p) => p.armor)?.armor;
+  let taken = parts.length && armor ? 1 - armor.reduction : 1;
+  if (boss.nodes && boss.nodes.length) {
+    boss.nodes = boss.nodes.filter(up);
+    if (boss.nodes.length) taken = 0;
+    else {
+      // Free: the vines wither and it moves again.
+      for (const v of boss.vines ?? []) if (world.isAlive(v)) world.destroyDeferred(v);
+      boss.vines = [];
+      const ph = list[boss.phase];
+      world.req(e, Mover).speed = boss.baseSpeed * (ph?.speedMul ?? 1);
+      ctx.events.push({ type: 'banner', key: 'bosses.warden.freed', seconds: 2.2 });
+      ctx.events.push({ type: 'shake', trauma: 0.5 });
+    }
+  }
+  boss.damageTaken = taken;
+}
+
+/** A spore beam lands: everything on the player's side along the line is hit. */
+function beam(world: World, ctx: GameContext, x: number, z: number, facing: number, b: NonNullable<BossPhase['beams']>, weapon: number, level: number): void {
+  const dx = Math.sin(facing);
+  const dz = Math.cos(facing);
+  for (let k = 1; k <= 4; k++) ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: x + dx * (b.length * k) / 4, z: z + dz * (b.length * k) / 4, radius: b.width, facing: 0 });
+  for (const p of world.query(PlayerControlled, Transform)) {
+    if (world.has(p, Dead)) continue;
+    const pt = world.req(p, Transform);
+    const along = (pt.x - x) * dx + (pt.z - z) * dz;
+    const across = Math.abs((pt.x - x) * dz - (pt.z - z) * dx);
+    if (along < 0 || along > b.length || across > b.width / 2 + 0.4) continue;
+    const taken = computeTaken(weapon * b.damageOfWeapon, 'toxic', targetState(world, p, 'ranged'), level).final;
+    applyDamage(world, ctx, p, taken, { crit: false, damageType: 'toxic', dot: false, sourceTeam: 'enemy' });
+  }
 }
 
 /** Lumen tentacles burst up around the player, inside the arena. */
@@ -283,8 +402,13 @@ export function resetBoss(world: World, e: Entity): void {
   if (!boss || world.has(e, Dead)) return;
   for (const a of boss.adds) if (world.isAlive(a)) world.destroyDeferred(a);
   for (const p of boss.plates) world.destroyDeferred(p);
+  for (const p of [...(boss.parts ?? []), ...(boss.nodes ?? []), ...(boss.vines ?? [])]) if (world.isAlive(p)) world.destroyDeferred(p);
   boss.adds = [];
   boss.plates = [];
+  boss.parts = [];
+  boss.nodes = [];
+  boss.vines = [];
+  delete boss.damageTaken;
   boss.pending = [];
   boss.phase = 0;
   boss.engaged = false;

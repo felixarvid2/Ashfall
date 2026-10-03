@@ -15,8 +15,14 @@ export interface BossPhase {
   plates?: { every: number; radius: number; warning: number; damageOfWeapon: number };
   /** Spore fields around the arena (burning spore fields in the Cathedral). */
   sporeFields?: { every: number; count: number; radius: number; duration: number; dpsOfWeapon: number; status?: 'poisoned' | 'burning'; color?: string };
-  /** Warned fireballs at and around the player (no cover left behind). */
-  fireballs?: { every: number; count: number; radius: number; warning: number; damageOfWeapon: number };
+  /** Warned fireballs at and around the player (no cover left behind); root slams are green ones. */
+  fireballs?: { every: number; count: number; radius: number; warning: number; damageOfWeapon: number; color?: string; vfx?: 'vent' | 'slam' };
+  /** A telegraphed spore beam: a line from the boss toward the player, hitting all along it. */
+  beams?: { every: number; length: number; width: number; warning: number; damageOfWeapon: number; color?: string };
+  /** Armour plates: separate targets on the boss; until all are broken it takes `reduction` less damage. */
+  armor?: { plates: number; reduction: number; plateLife: number };
+  /** It takes root and cannot be hurt or move until `nodes` Root Nodes around the arena are destroyed; vines slow the floor. */
+  rooted?: { nodes: number; nodeLife: number; ring: number; vines: number; vineRadius: number };
   /** The floor collapses from the edge inward: each step leaves a safe circle of this fraction of the arena. */
   shrink?: { steps: number[]; every: number; warning: number; dpsOfWeapon: number };
   /** Spawned once when the phase starts (bodyguards). */
@@ -95,6 +101,59 @@ export const BOSS_SCRIPTS: Record<string, BossPhase[]> = {
       tentacles: { enemy: 'lumen_tentacle', count: 2, every: 11 },
       adds: { enemy: 'scorched_walker', count: 3, every: 14 },
       sporeFields: { every: 7, count: 3, radius: 3.2, duration: 8, dpsOfWeapon: 0.4, status: 'burning', color: '#c8ff3a' },
+    },
+  ],
+  // ---- Region 3 ----
+  keeper: [
+    { below: 1, adds: { enemy: 'overgrown_walker', count: 2, every: 16 } },
+    { below: 0.5, banner: 'bosses.keeper.phase2', speedMul: 1.3, tempo: 1.2, adds: { enemy: 'spore_swarm', count: 3, every: 12 } },
+  ],
+  brood_warden: [
+    { below: 1, adds: { enemy: 'spore_swarm', count: 3, every: 12 } },
+    { below: 0.5, banner: 'bosses.brood_warden.phase2', tempo: 1.3, adds: { enemy: 'swarm_bloater', count: 2, every: 12 } },
+  ],
+  vine_matriarch: [
+    { below: 1, adds: { enemy: 'vine_weaver', count: 1, every: 18 } },
+    { below: 0.5, banner: 'bosses.vine_matriarch.phase2', tentacles: { enemy: 'mother_root', count: 2, every: 12 } },
+  ],
+  ilse_varga: [
+    { below: 1, guards: { enemy: 'mutated_botanist', count: 2 } },
+    {
+      below: 0.5,
+      banner: 'bosses.ilse_varga.phase2',
+      adds: { enemy: 'overgrown_walker', count: 2, every: 14 },
+      sporeFields: { every: 6, count: 3, radius: 3.2, duration: 8, dpsOfWeapon: 0.35 },
+    },
+  ],
+  gamma_bloom: [
+    { below: 1, adds: { enemy: 'overgrown_walker', count: 3, every: 16 } },
+    {
+      below: 0.5,
+      banner: 'bosses.gamma_bloom.phase2',
+      speedMul: 1.3,
+      adds: { enemy: 'cocoon_warden', count: 1, every: 20 },
+      sporeFields: { every: 7, count: 3, radius: 3.5, duration: 9, dpsOfWeapon: 0.35 },
+    },
+  ],
+  warden: [
+    // Phase 1: it walks the arena firing spore beams; three armour plates keep its weak points covered.
+    { below: 1, armor: { plates: 3, reduction: 0.8, plateLife: 900 }, beams: { every: 5, length: 24, width: 2.4, warning: 1.2, damageOfWeapon: 1.4, color: '#7dff5a' } },
+    // Phase 2: it takes root; destroy the Root Nodes to free it while Overgrown Walkers climb out of the vines.
+    {
+      below: 0.6,
+      banner: 'bosses.warden.phase2',
+      rooted: { nodes: 4, nodeLife: 800, ring: 0.62, vines: 5, vineRadius: 4 },
+      adds: { enemy: 'overgrown_walker', count: 3, every: 12 },
+    },
+    // Phase 3: the Mother Tree joins; its roots slam down near the player and burst up as stationary enemies.
+    {
+      below: 0.3,
+      banner: 'bosses.warden.phase3',
+      speedMul: 1.2,
+      tempo: 1.2,
+      beams: { every: 7, length: 24, width: 2.4, warning: 1.1, damageOfWeapon: 1.4, color: '#7dff5a' },
+      fireballs: { every: 4, count: 3, radius: 3.2, warning: 1.4, damageOfWeapon: 1.5, color: '#5dff6a', vfx: 'slam' },
+      tentacles: { enemy: 'mother_root', count: 2, every: 14 },
     },
   ],
 };

@@ -22,11 +22,11 @@ import {
 } from '../../core/components';
 import type { GameContext } from '../../core/context';
 import type { Entity, World } from '../../core/ecs';
-import { PROGRESSION, dropTable } from '../../data/loot/db';
+import { PROGRESSION, UNIQUE_DEFS, dropTable } from '../../data/loot/db';
 import { heal } from '../combat';
 import { recomputePlayer } from '../stats';
 import { addToGrid } from './inventory';
-import { generateItem, itemPowerFor, killXp, rollDrops, xpToNext } from './generate';
+import { generateItem, generateUnique, itemPowerFor, killXp, rollDrops, xpToNext } from './generate';
 
 export const GOLD_PICKUP_RADIUS = 1.8;
 export const ITEM_PICKUP_RADIUS = 1.6;
@@ -98,6 +98,8 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
       const itemPower = itemPowerFor(req.level, ctx.loot.rng);
       drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, nameOf }));
     }
+    const unique = req.unique ? UNIQUE_DEFS.get(req.unique) : undefined;
+    if (unique) drop.items.push(generateUnique(ctx.loot.rng, unique, itemPowerFor(req.level, ctx.loot.rng), nextItemUid(ctx)));
     const total = drop.items.length + (drop.gold > 0 ? 1 : 0);
     drop.items.forEach((item, i) => {
       const p = spawnGround(world, ctx, req.x, req.z, i, total);
