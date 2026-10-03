@@ -120,7 +120,8 @@ describe('Ash Storm', () => {
     expect(zone.storm.subzone).toBe('ashValley');
     run(world, ctx, [stormSystem], 60 * 6);
     expect(zone.storm.state).toBe('active');
-    moveTo(world, player, -40, 200);
+    const valley = zone.def.subzones.find((z) => z.id === 'ashValley')!;
+    moveTo(world, player, valley.center[0], valley.center[1]);
     run(world, ctx, [stormSystem], 60 * 3);
     expect(zone.storm.exposure).toBe(1);
   });

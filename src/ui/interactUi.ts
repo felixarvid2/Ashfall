@@ -3,12 +3,18 @@ import { t } from '../data/i18n';
 
 type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
 
+/** Small icons for objects that have one. */
+const ICONS: Record<string, string> = { keycard: 'icon.keycard', instanceKey: 'icon.keycard', lore: 'icon.lore_log', relic: 'icon.echo_relic' };
+
 export class InteractPrompt {
   private readonly el: HTMLDivElement;
   private readonly screen = { x: 0, y: 0 };
   private current = '';
 
-  constructor(root: HTMLElement) {
+  constructor(
+    root: HTMLElement,
+    private readonly iconUrl: (id: string) => string | null = () => null,
+  ) {
     this.el = document.createElement('div');
     this.el.className = 'interact-prompt';
     this.el.hidden = true;
@@ -28,6 +34,8 @@ export class InteractPrompt {
       const key = document.createElement('span');
       key.className = 'interact-key';
       key.textContent = keyLabel;
+      const icon = ICONS[target.kind] ? this.iconUrl(ICONS[target.kind]!) : null;
+      if (icon) this.el.append(Object.assign(document.createElement('img'), { className: 'interact-icon', src: icon, alt: '' }));
       this.el.append(key, ` ${t(`interact.actions.${target.kind}`)}`);
       this.el.dataset.testid = 'interact-prompt';
     }

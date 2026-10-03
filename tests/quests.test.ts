@@ -30,7 +30,7 @@ function setup() {
   const world = new World();
   const zone = createZoneRuntime(CINDER_FLATS);
   const ctx = makeCtx({ zone, quests: createQuestRuntime(), account: emptyAccount(), worldHalfSize: zone.def.halfSize });
-  const player = spawnPlayer(world, 'bastion', -300, -228);
+  const player = spawnPlayer(world, 'bastion', CINDER_FLATS.playerSpawn.x, CINDER_FLATS.playerSpawn.z);
   spawnInteractables(world, zone);
   spawnQuestWorld(world, ctx);
   return { world, ctx, zone, player, rt: ctx.quests! };
@@ -82,7 +82,8 @@ describe('quest engine', () => {
     tick(world, ctx);
     expect(rt.active.get('mq.wake_up')).toEqual({ step: 0, progress: 0 });
     expect(rt.tracked).toBe('mq.wake_up');
-    moveTo(world, player, -275, -160);
+    const road = questDef('mq.wake_up').steps[0] as { x: number; z: number };
+    moveTo(world, player, road.x, road.z);
     tick(world, ctx);
     expect(rt.active.get('mq.wake_up')!.step).toBe(1);
     for (let i = 0; i < 3; i++) {
@@ -124,7 +125,8 @@ describe('quest engine', () => {
     restoreQuests(world, ctx, saveQuests(rt));
     world.flushDestroyed();
     // Clear the 6 infected near the convoy.
-    for (let i = 0; i < 6; i++) kill(world, ctx, spawnEnemy(world, 'infected_colonist', 40 + i, 20), 0);
+    const convoy = (questDef('mq.fuel').steps[2] as { near: { x: number; z: number } }).near;
+    for (let i = 0; i < 6; i++) kill(world, ctx, spawnEnemy(world, 'infected_colonist', convoy.x + i, convoy.z + 2), 0);
     tick(world, ctx);
     expect(rt.active.get('mq.fuel')!.step).toBe(3);
     const objects = world.query(Interactable).filter((e) => world.req(e, Interactable).kind === 'questObject' && world.get(e, QuestTag)?.quest === 'mq.fuel');
@@ -148,7 +150,7 @@ describe('quest engine', () => {
     restoreQuests(world, ctx, saveQuests(rt));
     const rook = world.query(DisplayName).find((e) => world.req(e, DisplayName).key === 'enemies.named.rook');
     expect(rook).toBeDefined();
-    kill(world, ctx, spawnEnemy(world, 'spore_hound', -216, -198), 0);
+    kill(world, ctx, spawnEnemy(world, 'spore_hound', world.req(rook!, Transform).x, world.req(rook!, Transform).z), 0);
     tick(world, ctx);
     expect(rt.active.get('sq.old_dog')!.step).toBe(1);
     kill(world, ctx, rook!, 0);

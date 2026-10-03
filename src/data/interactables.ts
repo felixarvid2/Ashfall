@@ -53,7 +53,7 @@ export const BARREL = {
 };
 
 /** Signal towers reveal the map within this radius. */
-export const SIGNAL_TOWER_RADIUS = 120;
+export const SIGNAL_TOWER_RADIUS = 220;
 
 /** XP for reading a log the first time, per character level. */
 export const LORE_XP_PER_LEVEL = 6;

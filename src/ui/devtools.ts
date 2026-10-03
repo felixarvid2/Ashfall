@@ -30,6 +30,8 @@ export interface DebugActions {
   addLevel(): void;
   spawnLoot(): void;
   switchCharacter(): void;
+  /** Extra buttons (region test helpers). */
+  extra?: { label: string; run: () => void; id: string }[];
 }
 
 export class DevTools {
@@ -152,7 +154,12 @@ export class DevTools {
     button(t('debug.deleteSave'), actions.deleteSave, 'debug-delete');
     button(t('debug.switchCharacter'), actions.switchCharacter, 'debug-switch-character');
 
-    this.panel.append(h2, dl, moveLabel, gfxLabel, godLabel, shakeLabel, combatRow, row, fileInput);
+    const regionRow = document.createElement('div');
+    regionRow.className = 'row';
+    target = regionRow;
+    for (const x of actions.extra ?? []) button(x.label, x.run, x.id);
+
+    this.panel.append(h2, dl, moveLabel, gfxLabel, godLabel, shakeLabel, combatRow, row, regionRow, fileInput);
     root.append(this.fpsEl, this.panel);
   }
 

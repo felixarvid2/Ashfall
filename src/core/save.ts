@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { ItemSchema, SlotSchema } from '../data/loot/schemas';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Number of character slots on the select screen. */
 export const CHARACTER_SLOTS = 3;
@@ -109,6 +109,18 @@ export const MIGRATIONS: Record<number, Migration> = {
     player: { position: { x: -296, y: 0, z: -224 }, facing: 0 },
     world: { zone: 'zone.cinder_flats', discovered: ['tp.ember'], revealed: '', found: [], keycards: [] },
   }),
+  // v6 (Phase 5): Cinder Flats grew 2.2× so it takes 5–7 minutes to cross. Positions scale with it;
+  // the fog-of-war grid changed size, so the map starts unexplored again.
+  5: (d) => {
+    const player = d.player as { position: { x: number; y: number; z: number }; facing: number };
+    const world = d.world as Record<string, unknown>;
+    return {
+      ...d,
+      version: 6,
+      player: { ...player, position: { x: player.position.x * 2.2, y: 0, z: player.position.z * 2.2 } },
+      world: { ...world, revealed: '' },
+    };
+  },
 };
 
 export class SaveError extends Error {}

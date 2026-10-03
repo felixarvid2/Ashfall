@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "meshy": "tsx scripts/meshy/cli.ts",
     "sim": "tsx scripts/sim/cli.ts",
-    "play": "tsx scripts/sim/play.ts"
+    "play": "tsx scripts/sim/play.ts",
+    "assets:check": "tsx scripts/assets/check.ts",
+    "region:report": "tsx scripts/sim/regionReport.ts"
   },
   "dependencies": {
     "three": "^0.186.1",

@@ -22,6 +22,7 @@ import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { Rng } from '../core/rng';
 import { INTERACT_RADIUS } from '../data/interactables';
+import { at } from '../data/zones/cinderFlats';
 import { monsterLevel } from '../systems/encounter';
 import { grantXp } from '../systems/loot/rewards';
 import { spawnEnemy } from './spawn';
@@ -33,7 +34,8 @@ export type Tier = 'gold' | 'silver' | 'bronze';
 export const EVENT_TUNING = {
   triggerRadius: 22,
   cooldown: 600,
-  convoy: { path: [[40, 18], [80, 30], [120, 40]] as [number, number][], speed: 2.2, life: 700, leash: 16, waveEvery: 8 },
+  // Along Route 7 (≈ 90 m).
+  convoy: { path: [at(40, 18), at(60, 24), at(80, 30)] as [number, number][], speed: 2.2, life: 700, leash: 16, waveEvery: 8 },
   sporeNest: { life: 900, hatch: 60, gold: 25, silver: 40 },
   rescue: { time: 90, survivors: 3 },
   signalJam: { time: 60, life: 650, waveEvery: 7 },
@@ -200,8 +202,8 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
     }
     if (ev.state !== 'active') continue;
     ev.elapsed += dt;
-    // Walking far away abandons the event.
-    if (d > 90) {
+    // Walking far away abandons the event (the convoy route itself is ~100 m long).
+    if (d > 150) {
       finish(world, ctx, zone, id, ev, 'failed');
       continue;
     }

@@ -4,22 +4,33 @@
  */
 import type { z } from 'zod';
 import type { NpcDefSchema, QuestDefSchema } from './schema';
+import { CINDER_FLATS_HUB as HUB, at } from '../zones/cinderFlats';
 
 type NpcInput = z.input<typeof NpcDefSchema>;
 type QuestInput = z.input<typeof QuestDefSchema>;
 
-/** Outpost Ember is centred on (−150, −66); −x/−z is screen-up. */
+const DANNER = at(-80, -196);
+
+/** Hub NPCs stand relative to Outpost Ember's centre; −x/−z is screen-up. */
 export const CINDER_FLATS_NPCS: NpcInput[] = [
-  { id: 'benny', asset: 'npc.cook', x: -144, z: -71, facing: -2.4, service: 'vendor' },
-  { id: 'hekla', asset: 'npc.blacksmith', x: -139, z: -60, facing: -2, service: 'blacksmith' },
-  { id: 'pell', asset: 'npc.technician', x: -158, z: -59, facing: 2.6, service: 'technician' },
-  { id: 'tomas', asset: 'npc.blacksmith', x: -135, z: -73, facing: -1.6, scale: 0.94 },
+  { id: 'benny', asset: 'npc.cook', x: HUB.x + 6, z: HUB.z - 5, facing: -2.4, service: 'vendor' },
+  { id: 'hekla', asset: 'npc.blacksmith', x: HUB.x + 11, z: HUB.z + 6, facing: -2, service: 'blacksmith' },
+  { id: 'pell', asset: 'npc.technician', x: HUB.x - 8, z: HUB.z + 7, facing: 2.6, service: 'technician' },
+  { id: 'tomas', asset: 'npc.blacksmith', x: HUB.x + 15, z: HUB.z - 7, facing: -1.6, scale: 0.94 },
   // Quest-only: the deserter hiding by the southern bunker.
-  { id: 'danner', asset: 'enemy.sergeant', x: -80, z: -196, facing: 0.6, scale: 0.92, questOnly: true },
+  { id: 'danner', asset: 'enemy.sergeant', x: DANNER[0], z: DANNER[1], facing: 0.6, scale: 0.92, questOnly: true },
 ];
 
 /** Where the stash terminal stands in the hub. */
-export const STASH_POSITION = { x: -155, z: -75 };
+export const STASH_POSITION = { x: HUB.x - 5, z: HUB.z - 9 };
+
+const p = (x: number, z: number) => {
+  const [a, b] = at(x, z);
+  return { x: a, z: b };
+};
+const CONVOY = p(40, 18);
+const LENA = p(-128, 168);
+const KENNEL = p(-212, -192);
 
 const OKAFOR_LOGS = ['lore.2', 'lore.5', 'lore.7', 'lore.9', 'lore.11'];
 
@@ -31,7 +42,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     giver: null,
     level: 1,
     steps: [
-      { kind: 'reach', x: -275, z: -160, radius: 10 },
+      { kind: 'reach', ...p(-275, -160), radius: 12 },
       { kind: 'kill', count: 3, enemy: 'infected_colonist' },
       { kind: 'discover', teleporter: 'tp.impact' },
     ],
@@ -44,7 +55,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     after: ['mq.wake_up'],
     level: 2,
     steps: [
-      { kind: 'reach', x: -150, z: -74, radius: 12 },
+      { kind: 'reach', x: HUB.x, z: HUB.z - 8, radius: 12 },
       { kind: 'talk', npc: 'benny' },
     ],
     rewards: { xp: 90, gold: 20, item: 'magic' },
@@ -57,15 +68,15 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     level: 3,
     steps: [
       { kind: 'talk', npc: 'hekla' },
-      { kind: 'reach', x: 40, z: 18, radius: 14 },
-      { kind: 'kill', count: 6, near: { x: 40, z: 18, radius: 34 } },
+      { kind: 'reach', ...CONVOY, radius: 14 },
+      { kind: 'kill', count: 6, near: { ...CONVOY, radius: 34 } },
       {
         kind: 'interact',
         count: 3,
         objects: [
-          { id: 'fuel.a', x: 34, z: 24, asset: 'prop.fuel_tank', scale: 0.45 },
-          { id: 'fuel.b', x: 47, z: 12, asset: 'prop.fuel_tank', scale: 0.45 },
-          { id: 'fuel.c', x: 43, z: 27, asset: 'prop.fuel_tank', scale: 0.45 },
+          { id: 'fuel.a', x: CONVOY.x - 6, z: CONVOY.z + 6, asset: 'prop.fuel_tank', scale: 0.45 },
+          { id: 'fuel.b', x: CONVOY.x + 7, z: CONVOY.z - 6, asset: 'prop.fuel_tank', scale: 0.45 },
+          { id: 'fuel.c', x: CONVOY.x + 3, z: CONVOY.z + 9, asset: 'prop.fuel_tank', scale: 0.45 },
         ],
       },
       { kind: 'talk', npc: 'hekla' },
@@ -80,7 +91,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     level: 5,
     steps: [
       { kind: 'discover', teleporter: 'tp.sierra' },
-      { kind: 'objective', id: 'stronghold.sierra', x: 232, z: -132 },
+      { kind: 'objective', id: 'stronghold.sierra', ...p(232, -132) },
       { kind: 'talk', npc: 'pell' },
     ],
     rewards: { xp: 450, gold: 90, item: 'rare', restoration: 1 },
@@ -92,8 +103,8 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     after: ['mq.orders'],
     level: 7,
     steps: [
-      { kind: 'reach', x: 54, z: 232, radius: 12 },
-      { kind: 'objective', id: 'dungeon.meridians_hold', x: 54, z: 236 },
+      { kind: 'reach', ...p(54, 232), radius: 12 },
+      { kind: 'objective', id: 'dungeon.meridians_hold', ...p(54, 236) },
       { kind: 'talk', npc: 'pell' },
     ],
     rewards: { xp: 600, gold: 120, item: 'rare', restoration: 1 },
@@ -106,7 +117,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     level: 9,
     steps: [
       { kind: 'discover', teleporter: 'tp.maw' },
-      { kind: 'objective', id: 'boss.first', x: 292, z: 196 },
+      { kind: 'objective', id: 'boss.first', ...p(292, 196) },
       { kind: 'talk', npc: 'benny' },
     ],
     rewards: { xp: 900, gold: 220, item: 'legendary', restoration: 2 },
@@ -120,9 +131,9 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     after: ['mq.signal'],
     level: 4,
     steps: [
-      { kind: 'reach', x: -128, z: 168, radius: 14 },
-      { kind: 'kill', count: 1, spawn: { enemy: 'infected_colonist', x: -124, z: 178, name: 'enemies.named.lena', elite: 'rare', escorts: 3 } },
-      { kind: 'interact', count: 1, objects: [{ id: 'locket', x: -122, z: 176, asset: 'prop.echo_relic', scale: 0.35 }] },
+      { kind: 'reach', ...LENA, radius: 14 },
+      { kind: 'kill', count: 1, spawn: { enemy: 'infected_colonist', x: LENA.x + 4, z: LENA.z + 10, name: 'enemies.named.lena', elite: 'rare', escorts: 3 } },
+      { kind: 'interact', count: 1, objects: [{ id: 'locket', x: LENA.x + 6, z: LENA.z + 8, asset: 'prop.echo_relic', scale: 0.35 }] },
       { kind: 'talk', npc: 'tomas' },
     ],
     rewards: { xp: 260, gold: 50, restoration: 1 },
@@ -146,11 +157,12 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     after: ['mq.fuel'],
     level: 4,
     steps: [
-      { kind: 'reach', x: -62, z: -30, radius: 10 },
+      { kind: 'reach', ...p(-90, -42), radius: 10 },
       {
         kind: 'escort',
         asset: 'prop.water_tanker',
-        path: [[-62, -30], [-90, -42], [-120, -62], [-136, -70]],
+        // West along Route 7 to the outpost gate (≈ 90 m).
+        path: [at(-90, -42), at(-110, -55), at(-130, -68), [HUB.x + 14, HUB.z - 4]],
         life: 600,
         speed: 2.4,
       },
@@ -177,9 +189,9 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     after: ['mq.signal'],
     level: 3,
     steps: [
-      { kind: 'reach', x: -212, z: -192, radius: 12 },
-      { kind: 'kill', count: 1, spawn: { enemy: 'spore_hound', x: -216, z: -198, name: 'enemies.named.rook', elite: 'champion', escorts: 2 } },
-      { kind: 'interact', count: 1, objects: [{ id: 'collar', x: -214, z: -196, asset: 'prop.echo_relic', scale: 0.3 }] },
+      { kind: 'reach', ...KENNEL, radius: 12 },
+      { kind: 'kill', count: 1, spawn: { enemy: 'spore_hound', x: KENNEL.x - 4, z: KENNEL.z - 6, name: 'enemies.named.rook', elite: 'champion', escorts: 2 } },
+      { kind: 'interact', count: 1, objects: [{ id: 'collar', x: KENNEL.x - 2, z: KENNEL.z - 4, asset: 'prop.echo_relic', scale: 0.3 }] },
       { kind: 'talk', npc: 'hekla' },
     ],
     rewards: { xp: 200, gold: 40, restoration: 1 },
@@ -195,9 +207,9 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
         kind: 'interact',
         count: 3,
         objects: [
-          { id: 'relay.a', x: -104, z: -8, asset: 'prop.control_terminal' },
-          { id: 'relay.b', x: 18, z: 44, asset: 'prop.control_terminal' },
-          { id: 'relay.c', x: -36, z: -64, asset: 'prop.control_terminal' },
+          { id: 'relay.a', ...p(-104, -8), asset: 'prop.control_terminal' },
+          { id: 'relay.b', ...p(18, 44), asset: 'prop.control_terminal' },
+          { id: 'relay.c', ...p(-36, -64), asset: 'prop.control_terminal' },
         ],
       },
       { kind: 'talk', npc: 'pell' },
@@ -223,7 +235,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     after: ['mq.fuel'],
     level: 5,
     steps: [
-      { kind: 'reach', x: -80, z: -192, radius: 10 },
+      { kind: 'reach', x: DANNER[0], z: DANNER[1] + 4, radius: 10 },
       {
         kind: 'choice',
         npc: 'danner',
@@ -246,10 +258,10 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
         kind: 'interact',
         count: 4,
         objects: [
-          { id: 'beacon.a', x: 138, z: 8, asset: 'prop.emergency_light' },
-          { id: 'beacon.b', x: 176, z: -50, asset: 'prop.emergency_light' },
-          { id: 'beacon.c', x: 206, z: -94, asset: 'prop.emergency_light' },
-          { id: 'beacon.d', x: 246, z: -150, asset: 'prop.emergency_light' },
+          { id: 'beacon.a', ...p(141, 9), asset: 'prop.emergency_light' },
+          { id: 'beacon.b', ...p(179, -50), asset: 'prop.emergency_light' },
+          { id: 'beacon.c', ...p(209, -93), asset: 'prop.emergency_light' },
+          { id: 'beacon.d', ...p(249, -150), asset: 'prop.emergency_light' },
         ],
       },
       { kind: 'talk', npc: 'hekla' },
@@ -260,7 +272,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     id: 'sq.letter',
     kind: 'side',
     giver: null,
-    trigger: { object: { id: 'letter.body', x: -46, z: 158, asset: 'prop.cargo_crate', scale: 0.5 } },
+    trigger: { object: { id: 'letter.body', ...p(-46, 158), asset: 'prop.cargo_crate', scale: 0.5 } },
     level: 4,
     steps: [{ kind: 'talk', npc: 'benny' }],
     rewards: { xp: 120, gold: 10, restoration: 1 },
@@ -271,13 +283,13 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
     id: 'my.whistle',
     kind: 'mystery',
     giver: null,
-    trigger: { object: { id: 'whistle', x: -296, z: 36, asset: 'prop.echo_relic', scale: 0.25 } },
+    trigger: { object: { id: 'whistle', ...p(-296, 36), asset: 'prop.echo_relic', scale: 0.25 } },
     level: 5,
     steps: [
-      { kind: 'reach', x: -252, z: 92, radius: 8, marker: false },
-      { kind: 'reach', x: -212, z: 150, radius: 8, marker: false },
-      { kind: 'reach', x: -166, z: 214, radius: 8, marker: false },
-      { kind: 'interact', count: 1, objects: [{ id: 'whistle.cache', x: -164, z: 218, asset: 'prop.supply_chest', scale: 0.9 }], marker: false },
+      { kind: 'reach', ...p(-252, 92), radius: 9, marker: false },
+      { kind: 'reach', ...p(-212, 150), radius: 9, marker: false },
+      { kind: 'reach', ...p(-166, 214), radius: 9, marker: false },
+      { kind: 'interact', count: 1, objects: [{ id: 'whistle.cache', x: p(-166, 214).x + 3, z: p(-166, 214).z + 3, asset: 'prop.supply_chest', scale: 0.9 }], marker: false },
     ],
     rewards: { xp: 320, gold: 80, item: 'legendary', restoration: 1 },
   },

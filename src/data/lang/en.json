@@ -70,7 +70,14 @@
     },
     "addLevel": "+1 level",
     "spawnLoot": "Drop loot (+legendary/unique)",
-    "switchCharacter": "Character select"
+    "switchCharacter": "Character select",
+    "region": {
+      "teleporters": "Unlock teleporters",
+      "rare": "Spawn rare elite",
+      "storm": "Start ash storm",
+      "dungeon": "Enter/leave dungeon",
+      "skipStep": "Skip quest step"
+    }
   },
   "combat": {
     "notEnoughResource": "Not enough Heat",

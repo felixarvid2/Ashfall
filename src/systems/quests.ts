@@ -130,6 +130,11 @@ export function choose(world: World, ctx: GameContext, id: string, option: strin
   return true;
 }
 
+/** Debug: finish the current step of a quest. */
+export function skipStep(world: World, ctx: GameContext, id: string): void {
+  if (ctx.quests?.active.has(id)) advance(world, ctx, id);
+}
+
 function advance(world: World, ctx: GameContext, id: string): void {
   const rt = ctx.quests!;
   const st = rt.active.get(id)!;

@@ -8,6 +8,7 @@ import { Collider, Dead, EnemyAI, Faction, Health, PlayerControlled, Renderable,
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { HubDef } from '../data/zones/zoneTypes';
+import { CINDER_SCALE } from '../data/zones/cinderFlats';
 import { spawnBoss, resetBoss } from '../systems/boss';
 import { applyStatus } from '../systems/combat';
 import { signal } from '../systems/quests';
@@ -15,9 +16,9 @@ import { monsterLevel } from '../systems/encounter';
 import { spawnEnemy } from './spawn';
 import type { ZoneRuntime } from './zone';
 
-export const SIERRA = { id: 'stronghold.sierra', x: 232, z: -132, radius: 30, trigger: 24 };
-export const SIERRA_HUB: HubDef = { id: 'hub.sierra', x: 232, z: -132, radius: 26 };
-export const MAW = { id: 'boss.first', x: 292, z: 196, radius: 26, trigger: 19, segments: 22, gaps: [0, 1, 11] };
+export const SIERRA = { id: 'stronghold.sierra', x: 232 * CINDER_SCALE, z: -132 * CINDER_SCALE, radius: 30, trigger: 24 };
+export const SIERRA_HUB: HubDef = { id: 'hub.sierra', x: SIERRA.x, z: SIERRA.z, radius: 26 };
+export const MAW = { id: 'boss.first', x: 292 * CINDER_SCALE, z: 196 * CINDER_SCALE, radius: 26, trigger: 19, segments: 22, gaps: [0, 1, 11] };
 
 const FEEDERS: [number, number][] = [
   [-14, 8],

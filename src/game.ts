@@ -101,6 +101,7 @@ import {
   restoreQuests,
   saveQuests,
   spawnQuestWorld,
+  skipStep,
   startQuest,
   waitingOn,
 } from './systems/quests';
@@ -257,7 +258,7 @@ export class Game {
     this.toasts = new Toasts(uiRoot);
     this.hud = new Hud(uiRoot, () => this.respawn());
     this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
-    this.interactPrompt = new InteractPrompt(uiRoot);
+    this.interactPrompt = new InteractPrompt(uiRoot, (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL));
     this.loreReader = new LoreReader(uiRoot);
     this.dialogue = new DialoguePanel(uiRoot);
     this.npcPlates = new NpcPlates(uiRoot);
@@ -419,6 +420,41 @@ export class Game {
             this.ctx.rewards.push({ table: 'dt.wave_reward', level, x: tr.x + 2, z: tr.z, xp: false, rarity });
           }
         },
+        extra: [
+          {
+            label: t('debug.region.teleporters'),
+            id: 'debug-teleporters',
+            run: () => {
+              for (const tp of ZONE.teleporters) this.zone?.discovered.add(tp.id);
+            },
+          },
+          { label: t('debug.region.rare'), id: 'debug-rare', run: () => this.spawnElite('rare') },
+          {
+            label: t('debug.region.storm'),
+            id: 'debug-storm',
+            run: () => {
+              if (this.zone) this.zone.storm.timer = 0;
+            },
+          },
+          {
+            label: t('debug.region.dungeon'),
+            id: 'debug-dungeon',
+            run: () => {
+              if (this.ctx.instance) return this.exitInstance();
+              const ids = ['dungeon.meridian', 'dungeon.sierra4', 'dungeon.drainage'];
+              this.enterInstance(ids[this.instanceCount % ids.length]!);
+            },
+          },
+          {
+            label: t('debug.region.skipStep'),
+            id: 'debug-skip-step',
+            run: () => {
+              const id = this.ctx.quests?.tracked;
+              if (id) skipStep(this.world, this.ctx, id);
+              this.world.flushDestroyed();
+            },
+          },
+        ],
         switchCharacter: () => {
           this.save(true);
           location.reload();
