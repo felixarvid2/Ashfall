@@ -43,8 +43,8 @@ textures start from the current set and can be replaced with Gemini textures lat
 | 3 | The Seed Bank | E, centre (210, 130) | the frozen gene bank, now infected; frost vents, cold blue light |
 | 4 | The Root Network | NW, centre (−150, 250) | Lumen roots broken up through the ground; an organic maze; spore fields |
 
-**Landmarks:** *The Mother Tree* (a giant Lumen tree through the roof of the Great Dome, centre north
-(60, 270), visible from everywhere), the *collapsed irrigation dam* in the middle (40, 40) with a flooded
+**Landmarks:** *The Mother Tree* (a giant Lumen tree beside the Great Dome, centre north
+(60, 270), visible from everywhere; built just west of the arena so its canopy never hides the fight), the *collapsed irrigation dam* in the middle (40, 40) with a flooded
 basin, and *Lab 9's warning lights* near the entrance. Glass domes are drawn as rings of ribs over each
 subzone.
 

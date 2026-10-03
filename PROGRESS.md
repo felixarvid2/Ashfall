@@ -4,9 +4,20 @@
 
 ## Current phase
 
-**Phase 6 – Region 2: The Refinery District ✅ built — waiting for your playtest feedback** before
-Region 3. Plan: docs/regions/refinery-district.md, measurements and checklist:
-docs/regions/refinery-district-playtest.md.
+**Phase 7 – Region 3: The Hydroponic Vaults ✅ built — waiting for your playtest feedback** before
+Region 4. Plan: docs/regions/hydroponic-vaults.md, measurements and checklist:
+docs/regions/hydroponic-vaults-playtest.md. **No new Meshy models** (credits are used up): every model is
+an earlier one at a new size, tint and glow; the glass domes are drawn by the renderer.
+- A road from the Cathedral steps to a border gate on the district's north edge loads the Vaults.
+- The Vaults: Lab 9 hub, 4 subzones (Outer Domes, Green Sea, Seed Bank, Root Network), the Mother Tree,
+  spore fields with an exposure meter, 6 air filters that clear them for good, water that slows, glowing
+  crystals that blind enemies; 8 new enemy types with new behaviours (root, pull, dodge, heal, call
+  reinforcements, regrow, spawn swarms on death), 6 main + 10 side quests + a mystery, Dome Gamma,
+  the Warden of the Mother Tree (armour plates, a rooted phase with Root Nodes, beams and root slams),
+  4 dungeons with new objectives, 6 bunkers, 6 events (3 new) and a burn-or-spare choice with two
+  unique items.
+
+### Earlier: Phase 6 – Region 2: The Refinery District (levels 10–20)
 - Player characters remodelled (HD models, 10 animations each, weapons in hand).
 - Several zones: Route 7 continues past The Maw to a border gate; crossing loads the district behind a
   short fade (and back). Each zone keeps its own map, teleporters and found objects (save v7); the map
@@ -212,6 +223,23 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
 
+## What to test (Phase 7 – The Hydroponic Vaults)
+1. Finish the district's story (or F3 → skip quest step) and follow *The Green Door*: a new road runs
+   north from the Cathedral steps to the border gate. The screen fades and you are in the Vaults.
+2. Lab 9: Dr. Okafor (story), Quill (trade), Brann (blacksmith), Dace (aspects), stash.
+3. *Clean Air*: stand in a green spore field and watch the exposure meter; switch on an air filter and
+   the fields around it disappear for good.
+4. Wade through water (slow); shatter a glowing crystal near a crowd (they are stunned for 3 s).
+5. New enemies: Overgrown Walkers root you every third hit, Vine Weavers drag you in along a line,
+   Spore Swarms dodge some hits, Mossborn heal, Cocoon Wardens call help, Lumen Giants get back up while a
+   fungus stands nearby (break the fungus).
+6. Dome Gamma (five Root Nodes, each one answered by a bigger wave), the four dungeons (seed cases,
+   drain levers, cocoons and the Mother Cocoon, research terminals) and the Warden in the Great Dome:
+   break the three armour plates, destroy the Root Nodes when it takes root, dodge the green beams.
+7. *The Mother Tree* ends in a choice: burn it or spare it. Each gives a different unique item.
+8. **Tell me:** the models are placeholders — what reads badly? Is the straight walk too short (see the
+   report), are spores and water fun or annoying, and is the Warden fair?
+
 ## What to test (Controls – Diablo-style mouse and phones)
 1. **Mouse:** left-click the ground to walk, hold the button to keep walking toward the cursor. Click an
    enemy to walk up and attack (hold to keep attacking). Click an NPC, crate, teleporter or item to walk
@@ -329,6 +357,8 @@ Shift + left-click to attack in place.
   is untested beyond unit tests; leaving the district mid-escort or mid-event restarts it next time;
   the zone change destroys loot left on the ground in the zone you leave.
 - Region 2 boss arenas (and The Maw) are rings of wall segments with gaps; you can step out of them.
+- Region 3 uses only placeholder models (no Meshy credits); the Service Road walk is shorter than the
+  5–7 minute target (see the playtest report); the bot does not cover levels 20–30.
 - Enemies still have no pathfinding; in dungeons they slide along walls toward you.
 - No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
 - Enemies have no pathfinding around crates (they slide along them via collision); fine for the open arena,
@@ -346,8 +376,8 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 
 ## Next steps
-- **Your playtest feedback on the Refinery District** (and Cinder Flats) → then Region 3 (The Hydroponic
-  Vaults) with the same process.
+- **Your playtest feedback on the Hydroponic Vaults** (and the earlier regions) → then Region 4 (the Deep
+  Mines) with the same process. Replace the Vaults' placeholder models when Meshy credits are available.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
 - Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).

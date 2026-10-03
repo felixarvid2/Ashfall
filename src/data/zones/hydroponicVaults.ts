@@ -41,6 +41,8 @@ export const GAMMA = { id: 'hv.stronghold.gamma', x: -270 * S, z: -172 * S, radi
 /** The Great Dome: the Warden's arena around the Mother Tree's trunk. */
 export const GREAT_DOME = { id: 'hv.boss.warden', x: 60 * S, z: 262 * S, radius: 34 };
 export const DAM = { x: 40 * S, z: 40 * S };
+/** The Mother Tree stands just west of the Great Dome (screen-left), so its canopy never hides the fight. */
+export const MOTHER_TREE = { x: GREAT_DOME.x - GREAT_DOME.radius - 18, z: GREAT_DOME.z + 4 };
 /** Where Dr. Okafor waits for the burn-or-spare choice, outside the arena's south gap. */
 export const TREE_FOOT = { x: GREAT_DOME.x, z: GREAT_DOME.z - GREAT_DOME.radius - 8 };
 
@@ -147,6 +149,16 @@ const lamp = (x: number, z: number, color = '#c8ffd8'): PropPlacement => ({
 });
 const wall = (x: number, z: number, rot: number, scale = 1): PropPlacement => ({ asset: 'env.industrial_wall', x, z, rot, scale, colliders: line(5.6, 0.6, 6) });
 /** A fungal tree: a Lumen growth tens of times its size, glowing faintly. */
+const TELEPORTERS = [
+  { id: 'tp.lab9', x: LAB9.x + 6, z: LAB9.z - 12, hub: true },
+  { id: 'tp.hvGate', x: 150 * S, z: -298 * S },
+  { id: 'tp.outer', x: 24 * S, z: -196 * S },
+  { id: 'tp.sea', x: -168 * S, z: -30 * S },
+  { id: 'tp.seed', x: 196 * S, z: 98 * S },
+  { id: 'tp.roots', x: -158 * S, z: 168 * S },
+  // Inside Dome Gamma: discovered when the dome is reclaimed (or walked to).
+  { id: 'tp.gamma', x: GAMMA.x - 6, z: GAMMA.z + 8 },
+];
 const tree = (x: number, z: number, scale: number): PropPlacement => ({
   asset: 'prop.lumen_growth',
   x,
@@ -183,9 +195,10 @@ function buildProps(): PropPlacement[] {
   const rng = new Rng('vaults-props');
   const props: PropPlacement[] = [];
   const nearPlace = (x: number, z: number, pad: number) =>
-    [LAB9, GAMMA, GREAT_DOME].some((p) => Math.hypot(x - p.x, z - p.z) < p.radius + pad) ||
+    [LAB9, GAMMA, GREAT_DOME, { ...MOTHER_TREE, radius: 16 }].some((p) => Math.hypot(x - p.x, z - p.z) < p.radius + pad) ||
     Math.hypot(x - VAULTS_GATE.x, z - VAULTS_GATE.z) < 30 ||
-    AIR_FILTERS.some((f) => Math.hypot(x - f.x, z - f.z) < 6);
+    AIR_FILTERS.some((f) => Math.hypot(x - f.x, z - f.z) < 6) ||
+    TELEPORTERS.some((t) => Math.hypot(x - t.x, z - t.z) < 8);
 
   // Pale lamps along the main roads.
   for (const road of ROADS) {
@@ -304,12 +317,12 @@ function buildProps(): PropPlacement[] {
   }
   for (let i = 0; i < 14; i++) props.push({ asset: 'env.slag_rock', x: DAM.x + rng.range(-40, 40), z: DAM.z + rng.range(-14, -2), rot: rng.range(0, 6.28), scale: rng.range(0.8, 1.6), collider: 1.3 });
 
-  // The Great Dome: walls around the arena and the Mother Tree at its heart (seen from everywhere).
+  // The Great Dome: walls around the arena; the Mother Tree beside it (seen from everywhere).
   props.push(...ring(GREAT_DOME.x, GREAT_DOME.z, GREAT_DOME.radius, 20, [10, 11]));
   props.push({
     asset: 'prop.lumen_wrath',
-    x: GREAT_DOME.x,
-    z: GREAT_DOME.z,
+    x: MOTHER_TREE.x,
+    z: MOTHER_TREE.z,
     scale: 5.5,
     landmark: true,
     // Lit from within, so it reads against the night sky from anywhere in the region.
@@ -319,7 +332,7 @@ function buildProps(): PropPlacement[] {
   });
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2;
-    props.push({ ...growth(GREAT_DOME.x + Math.sin(a) * 9, GREAT_DOME.z + Math.cos(a) * 9, 2.4), landmark: i % 2 === 0 });
+    props.push({ ...growth(MOTHER_TREE.x + Math.sin(a) * 10, MOTHER_TREE.z + Math.cos(a) * 10, 2.4), landmark: i % 2 === 0 });
   }
 
   // Overgrowth and farm debris elsewhere so no stretch of road is empty.
@@ -478,16 +491,7 @@ export const HYDROPONIC_VAULTS: ZoneDef = {
   ],
   roads: ROADS,
   hubs: [LAB9],
-  teleporters: [
-    { id: 'tp.lab9', x: LAB9.x + 6, z: LAB9.z - 12, hub: true },
-    { id: 'tp.hvGate', x: 150 * S, z: -298 * S },
-    { id: 'tp.outer', x: 24 * S, z: -196 * S },
-    { id: 'tp.sea', x: -168 * S, z: -30 * S },
-    { id: 'tp.seed', x: 196 * S, z: 98 * S },
-    { id: 'tp.roots', x: -158 * S, z: 168 * S },
-    // Inside Dome Gamma: discovered when the dome is reclaimed (or walked to).
-    { id: 'tp.gamma', x: GAMMA.x - 6, z: GAMMA.z + 8 },
-  ],
+  teleporters: TELEPORTERS,
   packs: buildPacks(),
   pois: clearOfProps(buildPois(), PROPS),
   mapCell: 8,

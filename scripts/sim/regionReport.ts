@@ -1,5 +1,5 @@
 /**
- * npm run region:report [-- district] — the measurements behind docs/regions/<region>-playtest.md
+ * npm run region:report [-- district|vaults] — the measurements behind docs/regions/<region>-playtest.md
  * (docs/world-and-gameplay.md §15.3). Combines the region layout with the bot's measured kill
  * rate to estimate quest and exploration times, fight spacing and Legendary drops, and checks for
  * places the player could get stuck (points of interest inside collision).
@@ -14,14 +14,16 @@ import { NPCS, QUESTS } from '../../src/data/quests/db';
 import { CINDER_FLATS } from '../../src/data/zones/cinderFlats';
 import { DELTA_TUNING } from '../../src/world/districtSetPieces';
 import { CATHEDRAL, DELTA, DISTRICT_GATE, REFINERY_DISTRICT, rd } from '../../src/data/zones/refineryDistrict';
+import { GAMMA, GREAT_DOME, HYDROPONIC_VAULTS, VAULTS_GATE, hv } from '../../src/data/zones/hydroponicVaults';
+import { GAMMA_TUNING } from '../../src/world/vaultSetPieces';
 import { ENEMY_DEFS } from '../../src/data/db';
 import { rollDrops } from '../../src/systems/loot/generate';
 import { generateLayout } from '../../src/world/instance';
 import { PLANS } from './plans';
 import { playthrough } from './playthrough';
 
-const which = process.argv[2] === 'district' ? 'district' : 'cinder';
-const zone = which === 'district' ? REFINERY_DISTRICT : CINDER_FLATS;
+const which = process.argv[2] === 'district' ? 'district' : process.argv[2] === 'vaults' ? 'vaults' : 'cinder';
+const zone = which === 'district' ? REFINERY_DISTRICT : which === 'vaults' ? HYDROPONIC_VAULTS : CINDER_FLATS;
 const speed = CLASSES.get('bastion')!.moveSpeed;
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -62,7 +64,7 @@ const distToSegment = (px: number, pz: number, ax: number, az: number, bx: numbe
 const at = (x: number, z: number) => ({ x, z });
 const npc = (id: string) => at(NPCS.get(id)!.x, NPCS.get(id)!.z);
 const tp = (id: string) => {
-  const t = [CINDER_FLATS, REFINERY_DISTRICT].flatMap((z) => z.teleporters).find((x) => x.id === id)!;
+  const t = [CINDER_FLATS, REFINERY_DISTRICT, HYDROPONIC_VAULTS].flatMap((z) => z.teleporters).find((x) => x.id === id)!;
   return at(t.x, t.z);
 };
 type Leg = { label: string; to: { x: number; z: number }; fight?: number; extra?: number; discover?: string };
@@ -109,8 +111,33 @@ const districtRoute: Leg[] = [
   { label: 'Vire', to: at(CATHEDRAL.x, CATHEDRAL.z), extra: 240 },
   { label: 'Mara', to: npc('mara') },
 ];
-const route: Leg[] = which === 'district' ? districtRoute : cinderRoute;
-const CONFIG = which === 'district'
+const v = (x: number, z: number) => {
+  const [a, b] = hv(x, z);
+  return at(a, b);
+};
+const gammaKills = GAMMA_TUNING.waves.flat().reduce((sum, [, n]) => sum + n, 0);
+const vaultsRoute: Leg[] = [
+  { label: 'Border teleporter', to: tp('tp.hvGate'), discover: 'tp.hvGate' },
+  { label: 'Lab 9', to: npc('okafor'), discover: 'tp.lab9' },
+  // Clean Air: the first filter, then what its noise draws in.
+  { label: 'Air filter', to: v(-40, -76), fight: 10, extra: 10 / 0.5 },
+  { label: 'Okafor', to: npc('okafor') },
+  { label: 'The Seed Bank Depths', to: v(272, 188), extra: 0, discover: 'tp.seed' },
+  { label: 'Okafor', to: npc('okafor') },
+  // Gamma: five Root Nodes (each ~10 s), escalating waves, then the Gamma Bloom.
+  { label: 'Dome Gamma', to: at(GAMMA.x, GAMMA.z), extra: GAMMA_TUNING.nodes * 10 + gammaKills / killsPerSecond + 100, discover: 'tp.gamma' },
+  { label: 'Ruiz', to: npc('ruiz') },
+  { label: 'The Sleeping Lab', to: v(-20, -272), extra: 0, discover: 'tp.outer' },
+  { label: 'Okafor', to: npc('okafor') },
+  { label: 'Root Network', to: tp('tp.roots'), discover: 'tp.roots' },
+  // The Warden: three plates, four Root Nodes, then the Mother Tree.
+  { label: 'The Warden', to: at(GREAT_DOME.x, GREAT_DOME.z), extra: 300 },
+  { label: 'The choice', to: npc('okafor_tree') },
+];
+const route: Leg[] = which === 'district' ? districtRoute : which === 'vaults' ? vaultsRoute : cinderRoute;
+const CONFIG = which === 'vaults'
+  ? { name: 'The Hydroponic Vaults', dungeons: ['seed_bank_depths', 'cocoon_chamber', 'irrigation_system', 'sleeping_lab'], bunker: 'hv_bunker', story: 'sleeping_lab', storyLeg: 8, start: VAULTS_GATE.arrive, hub: 'tp.lab9', guaranteed: 4 + 2 }
+  : which === 'district'
   ? { name: 'Refinery District', dungeons: ['smelter_3', 'pipe_alleys', 'cathedral_crypt', 'cold_hall'], bunker: 'rd_bunker', story: 'cathedral_crypt', storyLeg: 9, start: DISTRICT_GATE.arrive, hub: 'tp.coolant', guaranteed: 4 + 2 }
   : { name: 'Cinder Flats', dungeons: ['meridians_hold', 'bunker_sierra4', 'drainage_tunnels'], bunker: 'bunker', story: 'meridians_hold', storyLeg: 11, start: zone.playerSpawn, hub: 'tp.ember', guaranteed: 3 + 2 };
 
@@ -137,12 +164,15 @@ function dungeonTime(id: string): { rooms: number; seconds: number } {
       : o.kind === 'follow' ? mainRooms * 26 * (1 / o.speed - 1 / speed)
       : o.kind === 'rescue' ? o.count * 6
       : o.kind === 'defend' ? o.time
+      : o.kind === 'drain' ? o.count * 8
+      : o.kind === 'collect' ? o.count * 4
       : 0;
     seconds += walk + packs * avgPack + obj + (def.boss ? 60 : 0);
   }
   return { rooms: rooms / 20, seconds: seconds / 20 };
 }
 route[CONFIG.storyLeg]!.extra = dungeonTime(CONFIG.story).seconds;
+if (which === 'vaults') route[4]!.extra = dungeonTime('seed_bank_depths').seconds;
 
 let pos = at(CONFIG.start.x, CONFIG.start.z);
 const discovered = new Set([CONFIG.hub]);
@@ -191,7 +221,7 @@ function legendaries(seed: string): number {
   const rng = new Rng(seed);
   let n = 0;
   let uid = 0;
-  const level = which === 'district' ? 15 : 6;
+  const level = which === 'vaults' ? 25 : which === 'district' ? 15 : 6;
   for (const p of zone.packs) {
     const t = packTemplate(p.template);
     for (const m of t.members) {
@@ -239,9 +269,9 @@ for (const q of QUESTS.values()) {
 const manifest = JSON.parse(readFileSync(new URL('../../assets/manifest.json', import.meta.url), 'utf8')) as { assets: { id: string; meshy?: { creditsSpent?: number } }[] };
 const region2 = ['enemy.smelter', 'enemy.welder', 'boss.vire', 'npc.pump_engineer', 'npc.defector', 'env.smokestack', 'env.pipe_cluster', 'env.slag_rock', 'env.furnace_block', 'env.catwalk', 'env.industrial_wall', 'env.pump_house', 'prop.the_pillar', 'prop.giant_crane', 'prop.smelters_cathedral', 'prop.vent', 'prop.coolant_valve', 'prop.prisoner_cage', 'prop.compressor', 'prop.motorbike', 'enemy.slagborn', 'enemy.cargo_loader', 'enemy.lumen_tentacle'];
 const region1 = ['enemy.spore_hound', 'enemy.sergeant', 'boss.the_first', 'npc.cook', 'npc.blacksmith', 'npc.technician', 'prop.meridian_freighter', 'prop.elevator_foundation', 'prop.refinery_silhouette', 'prop.escape_pod', 'prop.fuel_station', 'prop.teleporter', 'prop.stim_pylon', 'prop.echo_relic', 'prop.signal_tower', 'prop.supply_chest', 'prop.spore_feeder', 'prop.spore_nest', 'prop.generator', 'prop.explosive_barrel', 'prop.water_tanker', 'icon.keycard', 'icon.lore_log', 'icon.echo_relic'];
-const newAssets = which === 'district' ? region2 : region1;
+const newAssets = which === 'vaults' ? [] : which === 'district' ? region2 : region1;
 const credits = manifest.assets.filter((a) => newAssets.includes(a.id)).reduce((s, a) => s + (a.meshy?.creditsSpent ?? 0), 0);
-const srcText = readFileSync(new URL(`../../src/data/zones/${which === 'district' ? 'refineryDistrict' : 'cinderFlats'}.ts`, import.meta.url), 'utf8');
+const srcText = readFileSync(new URL(`../../src/data/zones/${which === 'vaults' ? 'hydroponicVaults' : which === 'district' ? 'refineryDistrict' : 'cinderFlats'}.ts`, import.meta.url), 'utf8');
 const reused = manifest.assets.filter((a) => !newAssets.includes(a.id) && !a.id.startsWith('icon.') && !a.id.startsWith('char.') && srcText.includes(a.id)).length;
 
 console.log(`# ${CONFIG.name} measurements (estimates from layout + bot kill rate)\n`);

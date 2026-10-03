@@ -29,7 +29,7 @@ export const VAULTS_NPCS: NpcInput[] = [
   { id: 'okafor', zone: ZONE, asset: 'npc.technician', x: HUB.x - 7, z: HUB.z + 6, facing: 2.4 },
   { id: 'quill', zone: ZONE, asset: 'npc.cook', x: HUB.x + 7, z: HUB.z - 4, facing: -2.4, scale: 1.04, service: 'vendor' },
   { id: 'brann', zone: ZONE, asset: 'npc.blacksmith', x: HUB.x + 5, z: HUB.z + 10, facing: -2.8, service: 'blacksmith' },
-  { id: 'dace', zone: ZONE, asset: 'npc.pump_engineer', x: HUB.x - 11, z: HUB.z - 6, facing: 1.8, scale: 0.95, service: 'technician' },
+  { id: 'dace', zone: ZONE, asset: 'npc.pump_engineer', x: HUB.x - 12, z: HUB.z + 0.5, facing: 0, scale: 0.95, service: 'technician' },
   // Corporal Ruiz and his squad hold Dome Gamma once it is reclaimed.
   { id: 'ruiz', zone: ZONE, asset: 'enemy.sergeant', x: GAMMA.x + 8, z: GAMMA.z + 4, facing: -2, scale: 0.9, requires: GAMMA.id },
   // Quest-only.
@@ -205,7 +205,7 @@ export const VAULTS_QUESTS: QuestInput[] = [
         kind: 'interact',
         count: 3,
         objects: [
-          { id: 'dam.valve.a', x: DAM.x - 24, z: DAM.z - 6, asset: 'prop.coolant_valve' },
+          { id: 'dam.valve.a', x: DAM.x - 27, z: DAM.z - 9, asset: 'prop.coolant_valve' },
           { id: 'dam.valve.b', x: DAM.x + 4, z: DAM.z + 18, asset: 'prop.coolant_valve' },
           { id: 'dam.valve.c', x: DAM.x + 26, z: DAM.z - 8, asset: 'prop.coolant_valve' },
         ],

@@ -241,3 +241,22 @@ or object and uses it (`InteractTarget`). Settings saved before this switch once
 "auto") get a floating joystick, the action bar restyled as thumb buttons (attack and skills auto-aim at
 the nearest enemy), a menu row, a tappable interact prompt, long-press as right-click in panels, and a
 turn-sideways hint. Taps on the canvas are left-clicks, so everything a click does works by touch too.
+
+### 2026-10-03 — Region 3 reuses every model
+Meshy credits ran out, so the Hydroponic Vaults are built entirely from existing models: enemies are
+earlier models with new tints, sizes and glows (the Warden is a Cargo Loader at ×2.1), fungal trees and
+the Mother Tree are Lumen growths at huge scale with a prop `glow`, Root Nodes are spore nests, and the
+glass domes are merged rib geometry drawn by the renderer. The plan lists which placeholders to replace
+first once credits return.
+
+### 2026-10-03 — The Mother Tree choice lives in the quest record
+The plan called for save version 8 to store the burn-or-spare decision and Okafor's follower flag. The
+finished-quest map already stores the chosen option (`quests.done['mq.mother_tree']` is `burn` or
+`spare`), so no new save field or migration was needed; region 4 reads the follower flag from there.
+
+### 2026-10-03 — Boss parts as separate targets
+Armour plates and Root Nodes are ordinary targetable entities with life, tracked on the `Boss`
+component. The boss's own `damageTaken` multiplier (applied in `applyDamage`) is 0.2 while any plate
+stands and 0 while rooted; destroying the last node restores its speed and removes the vines. Everything
+is destroyed on reset and on death.
+

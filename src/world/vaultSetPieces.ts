@@ -34,7 +34,8 @@ export const GAMMA_TUNING = {
   /** Seconds of quiet between nodes before the dome sends patrols at you anyway. */
   idleWave: 22,
 };
-const WARDEN_GATES = { segments: 22, gaps: [10, 11] };
+/** Matches the Great Dome's wall ring (20 segments, gaps 10–11 toward the road). */
+const WARDEN_GATES = { segments: 20, gaps: [10, 11] };
 
 export interface VaultSetPieces {
   gamma: { state: 'idle' | 'nodes' | 'boss' | 'reclaimed'; nodes: Entity[]; enemies: Entity[]; fallen: number; timer: number; boss: Entity | null };
