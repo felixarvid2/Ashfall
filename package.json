@@ -15,7 +15,8 @@
     "sim": "tsx scripts/sim/cli.ts",
     "play": "tsx scripts/sim/play.ts",
     "assets:check": "tsx scripts/assets/check.ts",
-    "region:report": "tsx scripts/sim/regionReport.ts"
+    "region:report": "tsx scripts/sim/regionReport.ts",
+    "build:artifact": "tsx scripts/artifact/build.ts"
   },
   "dependencies": {
     "three": "^0.186.1",

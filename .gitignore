@@ -9,3 +9,4 @@ dist/
 assets/source/**/*.glb
 assets/source/**/*.fbx
 assets/.manifest.lock
+dist-artifact

@@ -64,7 +64,7 @@ export class AssetLibrary {
       todo.map(async (entry) => {
         try {
           const files = [entry.file!, ...(entry.lods ?? [])];
-          const gltfs = await Promise.all(files.map((f) => loader.loadAsync(`${baseUrl}assets/${f}`)));
+          const gltfs = await Promise.all(files.map((f) => loader.loadAsync(`${baseUrl}assets/${modelFile(f)}`)));
           const levels = gltfs.map((g) => g.scene);
           if (entry.glow) {
             const glow = entry.glow;
@@ -265,4 +265,12 @@ export class AssetLibrary {
     }
     return m;
   }
+}
+
+/**
+ * The artifact build (npm run build:artifact) ships models as embedded glTF JSON, since claude.ai
+ * artifacts don't serve .glb files.
+ */
+function modelFile(file: string): string {
+  return import.meta.env.VITE_MODEL_FORMAT === 'json' ? file.replace(/\.glb$/, '.gltf.json') : file;
 }
