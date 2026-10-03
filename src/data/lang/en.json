@@ -1260,8 +1260,26 @@
         "route7": "Route 7",
         "valley": "Ash Valley",
         "sierra": "Sierra Approach",
-        "maw": "The Maw"
+        "maw": "The Maw",
+        "coolant": "The Coolant Works",
+        "rdGate": "Border Crossing",
+        "conveyor": "Conveyor Lines",
+        "foundry": "Foundry Road",
+        "stacks": "Smokestack Forest",
+        "cathedral": "Cathedral Steps"
       }
+    },
+    "refineryDistrict": {
+      "name": "The Refinery District",
+      "conveyorLines": "The Conveyor Lines",
+      "slagFields": "The Slag Fields",
+      "cathedral": "The Smelters' Cathedral",
+      "smokestackForest": "The Smokestack Forest",
+      "hub": {
+        "coolant": "The Coolant Works",
+        "delta": "Pump Station Delta (reclaimed)"
+      },
+      "foundryRoad": "Foundry Road"
     }
   },
   "map": {
@@ -1389,6 +1407,56 @@
       "11": {
         "title": "Dr. Ines Okafor – personal log 5",
         "body": "They're coming for my notes. If someone finds this: the Governor knew. He had my reports a full month before the first evacuation order, and he kept the drills running. The mine isn't a mine anymore. It's a door. Don't let them open it wider."
+      }
+    },
+    "rd": {
+      "0": {
+        "title": "Border checkpoint log",
+        "body": "Day 41. The tankers stopped coming from the Flats a week ago. The refinery still burns, but nobody answers on the yard channel. If you are reading this, the barrier is up for a reason. Turn back."
+      },
+      "1": {
+        "title": "Shipping order, Governor's seal",
+        "body": "PRIORITY ONE. Rail yard 3 to load sealed containers K-7 through K-19 for transfer below. No manifest. No inspection. Crew to be rotated off-site on completion. — by order of Governor Kade."
+      },
+      "2": {
+        "title": "Coolant Works duty roster",
+        "body": "Pumps two and four running hot again. Brenner says the intake is clogged with that green growth. Logged it three times. Nobody upstairs reads these. I'll fix it myself after shift."
+      },
+      "3": {
+        "title": "Note pinned to a pump",
+        "body": "DO NOT open valve 6. Whatever comes out of the slag line is not coolant anymore. — M."
+      },
+      "4": {
+        "title": "Delta station intercom recording",
+        "body": "...holding the pump room. They came in white robes, singing. They burned Hollis because he coughed. They say the fire makes us clean. We are not opening the door."
+      },
+      "5": {
+        "title": "Belt foreman's tally board",
+        "body": "Line 3 jammed again — 4 hrs lost. Line 5 running backwards since Tuesday, nobody knows why. Line 1 carried something off into the dark last night. Not ore. It was still moving."
+      },
+      "6": {
+        "title": "Smelter sermon, scratched into steel",
+        "body": "The Lumen is rot. The rot spreads through the flesh. Only the furnace makes the flesh pure. Walk into the light, brothers, and leave the green behind."
+      },
+      "7": {
+        "title": "Child's drawing in a stack",
+        "body": "A crayon picture of tall chimneys and a woman in a long red robe with a halo of fire. Underneath, in careful letters: MOTHER VIRE KEEPS US WARM."
+      },
+      "8": {
+        "title": "Refinery shift log",
+        "body": "Final shift entry. Output nominal. Management requested we keep the furnaces lit no matter what happens outside. I asked what that meant. They told me to log my hours and go home. Home is gone."
+      },
+      "9": {
+        "title": "Crane operator's diary",
+        "body": "From up here you can see the whole district. Today I watched the white robes push a man into the slag river. They cheered. I am staying in the cab. I have water for six days."
+      },
+      "10": {
+        "title": "Rail yard dispatch",
+        "body": "Containers K-7 to K-19 dispatched south to the Vaults via the old service line. Escort: Governor's personal guard. Radio silence ordered for the whole run."
+      },
+      "11": {
+        "title": "Vire's private journal",
+        "body": "It speaks to me in the heat. It does not want to be burned — it wants to be carried. My flock thinks I purify them. I only choose who goes in first. The green and the flame are the same light."
       }
     }
   },

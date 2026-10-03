@@ -2699,6 +2699,229 @@
           0.04
         ]
       }
+    },
+    {
+      "id": "env.smokestack",
+      "category": "environment",
+      "prompt": "tall rusted industrial smokestack chimney, riveted steel bands, soot-blackened top with a faint ember glow, cylindrical base with access hatch",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 16,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#6a5a4c",
+        "size": [
+          3.2,
+          16,
+          3.2
+        ],
+        "emissive": "#ff5a1a",
+        "emissiveIntensity": 0.15
+      }
+    },
+    {
+      "id": "env.pipe_cluster",
+      "category": "environment",
+      "prompt": "cluster of thick industrial refinery pipes on steel supports, valves and flanges, rusted and heat-stained, low and wide",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 3,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a5848",
+        "size": [
+          5,
+          3,
+          2.2
+        ]
+      }
+    },
+    {
+      "id": "env.slag_rock",
+      "category": "environment",
+      "prompt": "jagged heap of black volcanic industrial slag, glassy cooled metal crust, faint orange glowing cracks",
+      "source": "text",
+      "targetPolycount": 1500,
+      "heightMeters": 2.2,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#3a3430",
+        "size": [
+          2.6,
+          2.2,
+          2.6
+        ],
+        "emissive": "#ff4a10",
+        "emissiveIntensity": 0.2
+      }
+    },
+    {
+      "id": "env.furnace_block",
+      "category": "environment",
+      "prompt": "massive industrial blast furnace block, brick and steel, open glowing furnace mouth, pipes on top, scorched",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 6,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a2a22",
+        "size": [
+          6,
+          6,
+          4.5
+        ],
+        "emissive": "#ff6a1a",
+        "emissiveIntensity": 0.6
+      }
+    },
+    {
+      "id": "env.catwalk",
+      "category": "environment",
+      "prompt": "raised industrial steel catwalk segment on two legs over a conveyor belt, grated floor, safety rails, rusted",
+      "source": "text",
+      "targetPolycount": 2000,
+      "heightMeters": 4,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a3a38",
+        "size": [
+          1.4,
+          4,
+          8
+        ]
+      }
+    },
+    {
+      "id": "env.industrial_wall",
+      "category": "environment",
+      "prompt": "section of corrugated steel industrial wall with concrete base, hazard stripes, scorch marks, 6 meters long",
+      "source": "text",
+      "targetPolycount": 1500,
+      "heightMeters": 4,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a4440",
+        "size": [
+          6,
+          4,
+          0.8
+        ]
+      }
+    },
+    {
+      "id": "env.pump_house",
+      "category": "environment",
+      "prompt": "small industrial coolant pump house, steel shed with frosted pipes and big blue valves, condensation, frost on the vents",
+      "source": "text",
+      "targetPolycount": 3500,
+      "heightMeters": 7,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a4450",
+        "size": [
+          12,
+          7,
+          7
+        ],
+        "emissive": "#7ad8ff",
+        "emissiveIntensity": 0.2
+      }
+    },
+    {
+      "id": "prop.the_pillar",
+      "category": "prop",
+      "prompt": "colossal industrial refinery smokestack tower with a roaring column of fire at the top, scaffolding rings, glowing vents along its height",
+      "source": "text",
+      "targetPolycount": 5000,
+      "heightMeters": 70,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#2a2420",
+        "size": [
+          16,
+          70,
+          16
+        ],
+        "emissive": "#ff6a1a",
+        "emissiveIntensity": 1.2
+      }
+    },
+    {
+      "id": "prop.giant_crane",
+      "category": "prop",
+      "prompt": "giant rusted industrial gantry crane over a slag field, two legs, long boom with a hanging load on chains, warning lights",
+      "source": "text",
+      "targetPolycount": 5000,
+      "heightMeters": 35,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a4a30",
+        "size": [
+          26,
+          35,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prop.smelters_cathedral",
+      "category": "prop",
+      "prompt": "industrial control hall turned into a temple, tall gothic arched windows glowing with fire, steel buttresses, banners, chimneys",
+      "source": "text",
+      "targetPolycount": 6000,
+      "heightMeters": 30,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a2a24",
+        "size": [
+          44,
+          30,
+          22
+        ],
+        "emissive": "#ff8a3a",
+        "emissiveIntensity": 0.8
+      }
+    },
+    {
+      "id": "prop.vent",
+      "category": "prop",
+      "prompt": "round industrial floor vent grate in a steel frame, heat-stained, ember glow under the slats, flat on the ground",
+      "source": "text",
+      "targetPolycount": 1000,
+      "heightMeters": 0.4,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#2a2422",
+        "size": [
+          2.6,
+          0.3,
+          2.6
+        ],
+        "emissive": "#ff4a10",
+        "emissiveIntensity": 0.5
+      }
     }
   ]
 }

@@ -41,6 +41,8 @@ export interface GameContext {
   zoneLevels: [number, number];
   /** Open-world zone state (absent in the test arena and headless sims). */
   zone?: ZoneRuntime;
+  /** Every zone this character has visited, by id (the current one included). */
+  zones?: Map<string, ZoneRuntime>;
   /** The dungeon or bunker the player is in, if any. */
   instance?: import('../world/instance').InstanceRuntime;
   /** Quest log and the signals systems send it (kills, interactions, objectives). */

@@ -1,6 +1,7 @@
 /**
  * Minimap (top right) and full map (M): fog of war, roads, discovered teleporters and points of
- * interest, rotated to match the camera. Clicking a discovered teleporter on the full map travels there.
+ * interest, rotated to match the camera. Clicking a discovered teleporter on the full map travels there;
+ * tabs switch between the regions you have visited.
  */
 import { t } from '../data/i18n';
 import type { PoiKind } from '../data/zones/zoneTypes';
@@ -60,24 +61,26 @@ export class MapUi {
   private readonly fullCanvas: HTMLCanvasElement;
   private readonly fullCtx: CanvasRenderingContext2D;
   private readonly fullInfo: HTMLDivElement;
-  /** Fog of war as one pixel per map cell, scaled up when drawn. */
-  private fog: HTMLCanvasElement | null = null;
-  private fogDirty = 0;
+  /** Fog of war per zone, one pixel per map cell, scaled up when drawn. */
+  private readonly fog = new Map<string, { canvas: HTMLCanvasElement; dirty: number }>();
+  private readonly tabs: HTMLDivElement;
+  /** Zone shown on the full map (null = the one you are in). */
+  private viewing: string | null = null;
   private timer = 0;
   private readonly cos: number;
   private readonly sin: number;
   /** Extra markers (quest objectives) drawn on both maps. */
   markers: MapMarker[] = [];
   /** Extra line under the full map (Region Restoration). */
-  extraInfo: () => string = () => '';
+  extraInfo: (zone: ZoneRuntime) => string = () => '';
 
   constructor(
     parent: HTMLElement,
     private readonly zone: () => ZoneRuntime | undefined,
     private readonly player: () => { x: number; z: number; facing: number },
     private readonly travel: (teleporterId: string) => void,
-    /** Points of interest the player has found (opened/visited), to show on the map. */
-    private readonly found: () => ReadonlySet<string>,
+    /** Every zone visited, for the region tabs on the full map. */
+    private readonly zones: () => ZoneRuntime[],
     /** Camera yaw (radians): both maps are rotated so their "up" is the screen's up. */
     private readonly yaw = Math.PI / 4,
     /** Inside a dungeon: its rooms (centre, explored, kind), drawn instead of the zone. */
@@ -101,7 +104,9 @@ export class MapUi {
     this.fullCtx = this.fullCanvas.getContext('2d')!;
     this.fullInfo = document.createElement('div');
     this.fullInfo.className = 'inv-hint';
-    this.full.append(title, this.fullCanvas, this.fullInfo);
+    this.tabs = document.createElement('div');
+    this.tabs.className = 'map-tabs';
+    this.full.append(title, this.tabs, this.fullCanvas, this.fullInfo);
     this.fullCanvas.addEventListener('click', (e) => this.onMapClick(e));
     parent.append(this.mini, this.full);
   }
@@ -112,7 +117,36 @@ export class MapUi {
 
   toggle(): void {
     this.full.hidden = !this.full.hidden;
-    if (this.open) this.drawFull();
+    this.viewing = null;
+    if (this.open) {
+      this.buildTabs();
+      this.drawFull();
+    }
+  }
+
+  /** The zone the full map shows. */
+  private shown(): ZoneRuntime | undefined {
+    const current = this.zone();
+    if (this.viewing === null || this.viewing === current?.def.id) return current;
+    return this.zones().find((z) => z.def.id === this.viewing) ?? current;
+  }
+
+  private buildTabs(): void {
+    const zones = [...this.zones()].sort((a, b) => a.def.region - b.def.region);
+    this.tabs.replaceChildren();
+    this.tabs.hidden = zones.length < 2;
+    const shown = this.shown()?.def.id;
+    for (const z of zones) {
+      const b = document.createElement('button');
+      b.className = `map-tab${z.def.id === shown ? ' active' : ''}`;
+      b.textContent = t(`zones.${z.def.key}.name`);
+      b.addEventListener('click', () => {
+        this.viewing = z.def.id;
+        this.buildTabs();
+        this.drawFull();
+      });
+      this.tabs.append(b);
+    }
   }
 
   update(dt: number): void {
@@ -191,30 +225,35 @@ export class MapUi {
   }
 
   private drawFull(): void {
-    const zone = this.zone();
+    const zone = this.shown();
     if (!zone) return;
+    const here = zone === this.zone();
     const c = this.fullCtx;
     const v = this.fullView(zone);
     c.fillStyle = '#080706';
     c.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-    this.drawWorld(c, zone, v, Infinity);
-    const p = this.player();
-    const [sx, sy] = project(v, p.x, p.z);
-    this.arrow(c, sx, sy, p.facing, 8);
-    const extra = this.extraInfo();
+    this.drawWorld(c, zone, v, Infinity, here);
+    if (here) {
+      const p = this.player();
+      const [sx, sy] = project(v, p.x, p.z);
+      this.arrow(c, sx, sy, p.facing, 8);
+    }
+    const extra = this.extraInfo(zone);
     this.fullInfo.textContent = `${t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) })} · ${t('map.travel')}${extra ? ` · ${extra}` : ''}`;
   }
 
   private fogCanvas(zone: ZoneRuntime): HTMLCanvasElement {
     const n = zone.cells;
-    if (!this.fog) {
-      this.fog = document.createElement('canvas');
-      this.fog.width = this.fog.height = n;
+    let fog = this.fog.get(zone.def.id);
+    if (!fog) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = n;
+      this.fog.set(zone.def.id, (fog = { canvas, dirty: 0 }));
     }
     // Repaint at most every ~0.6 s (the reveal is coarse anyway).
-    if (this.fogDirty-- <= 0) {
-      this.fogDirty = 3;
-      const fc = this.fog.getContext('2d')!;
+    if (fog.dirty-- <= 0) {
+      fog.dirty = 3;
+      const fc = fog.canvas.getContext('2d')!;
       const img = fc.createImageData(n, n);
       for (let i = 0; i < n * n; i++) {
         if (!zone.revealed[i]) continue;
@@ -225,10 +264,10 @@ export class MapUi {
       }
       fc.putImageData(img, 0, 0);
     }
-    return this.fog;
+    return fog.canvas;
   }
 
-  private drawWorld(c: CanvasRenderingContext2D, zone: ZoneRuntime, v: View, range: number): void {
+  private drawWorld(c: CanvasRenderingContext2D, zone: ZoneRuntime, v: View, range: number, here = true): void {
     const def = zone.def;
     const cell = def.mapCell;
     const half = def.halfSize;
@@ -280,7 +319,7 @@ export class MapUi {
     c.restore();
 
     // Markers in screen space so they stay upright.
-    const found = this.found();
+    const found = zone.found;
     for (const poi of def.pois) {
       const style = POI_STYLE[poi.kind];
       if (!style || !near(poi.x, poi.z) || !seen(poi.x, poi.z)) continue;
@@ -292,6 +331,12 @@ export class MapUi {
       if (!zone.discovered.has(tp.id) || !near(tp.x, tp.z)) continue;
       this.mark(c, ...project(v, tp.x, tp.z), '#5ad2ff', 5, 'diamond');
     }
+    // Border crossings to other regions.
+    for (const g of def.gates) {
+      if (!near(g.x, g.z) || !seen(g.x, g.z)) continue;
+      this.mark(c, ...project(v, g.x, g.z), '#e8e0d0', 6, 'square');
+    }
+    if (!here) return;
     for (const m of this.markers) {
       let [sx, sy] = project(v, m.x, m.z);
       // On the minimap, off-range quest markers are pinned to the rim.
@@ -346,7 +391,7 @@ export class MapUi {
   }
 
   private onMapClick(e: MouseEvent): void {
-    const zone = this.zone();
+    const zone = this.shown();
     if (!zone) return;
     const rect = this.fullCanvas.getBoundingClientRect();
     const sx = ((e.clientX - rect.left) / rect.width) * MAP_SIZE;

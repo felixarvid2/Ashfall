@@ -21,6 +21,8 @@ export const QuestObjectSchema = z.object({
 const StepBase = {
   /** Show this step on the map and minimap (mysteries hide their trail). */
   marker: z.boolean().default(true),
+  /** The zone this step happens in, when it differs from the quest's. */
+  zone: z.string().optional(),
 };
 
 export const QuestStepSchema = z.discriminatedUnion('kind', [
@@ -86,6 +88,8 @@ export type QuestStep = z.infer<typeof QuestStepSchema>;
 export const QuestDefSchema = z.object({
   id: z.string(),
   kind: z.enum(['main', 'side', 'mystery']),
+  /** The region it belongs to (its Restoration points go there; steps happen there unless they say otherwise). */
+  zone: z.string().default('zone.cinder_flats'),
   /** NPC who offers it; null = starts automatically (first quest, triggers). */
   giver: z.string().nullable(),
   /** Quests that must be finished first. */
@@ -107,6 +111,7 @@ export type QuestDef = z.infer<typeof QuestDefSchema>;
 
 export const NpcDefSchema = z.object({
   id: z.string(),
+  zone: z.string().default('zone.cinder_flats'),
   asset: z.string(),
   x: z.number(),
   z: z.number(),

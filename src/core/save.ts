@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { ItemSchema, SlotSchema } from '../data/loot/schemas';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** Number of character slots on the select screen. */
 export const CHARACTER_SLOTS = 3;
@@ -52,14 +52,20 @@ export const SaveDataSchema = z.object({
     ranks: z.record(z.string(), z.number().int().positive()),
     slots: z.array(z.string().nullable()).length(6),
   }),
-  /** Open-world progress: the region, discovered teleporters and the fog-of-war bitmap (base64). */
+  /** Open-world progress: the zone the character is in, and every visited zone's own state. */
   world: z.object({
     zone: z.string(),
-    discovered: z.array(z.string()),
-    revealed: z.string(),
-    /** One-time points of interest used (relics, logs, locked chests, towers, keycards). */
-    found: z.array(z.string()).default([]),
-    keycards: z.array(z.string()).default([]),
+    zones: z.record(
+      z.string(),
+      z.object({
+        /** Discovered teleporters and the fog-of-war bitmap (base64). */
+        discovered: z.array(z.string()),
+        revealed: z.string(),
+        /** One-time points of interest used (relics, logs, locked chests, towers, keycards). */
+        found: z.array(z.string()).default([]),
+        keycards: z.array(z.string()).default([]),
+      }),
+    ),
   }),
   /** Quest log: active quests (step, progress, choice), finished quests (→ choice) and the tracked one. */
   quests: z
@@ -120,6 +126,11 @@ export const MIGRATIONS: Record<number, Migration> = {
       player: { ...player, position: { x: player.position.x * 2.2, y: 0, z: player.position.z * 2.2 } },
       world: { ...world, revealed: '' },
     };
+  },
+  // v7 (Region 2): several zones. The single zone's progress moves under world.zones.
+  6: (d) => {
+    const { zone, ...state } = d.world as { zone: string } & Record<string, unknown>;
+    return { ...d, version: 7, world: { zone, zones: { [zone]: state } } };
   },
 };
 

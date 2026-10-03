@@ -28,6 +28,7 @@ import {
   SkillUser,
   StatusEffects,
   Transform,
+  MinionAI,
   makeTransform,
 } from './core/components';
 import type { GameContext } from './core/context';
@@ -51,8 +52,9 @@ import { SpatialHash } from './core/spatial';
 import { STATUS_DEFS, classDef, skill } from './data/db';
 import { t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
-import { CINDER_FLATS } from './data/zones/cinderFlats';
-import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, zoneSystem, type ZoneRuntime } from './world/zone';
+import { START_ZONE, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
+import type { ZoneDef } from './data/zones/zoneTypes';
+import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
 import { isAlive, kill } from './systems/combat';
@@ -98,9 +100,9 @@ import {
   offeredBy,
   questMarkers,
   questSystem,
-  restoreQuests,
   saveQuests,
-  spawnQuestWorld,
+  rebuildQuestWorld,
+  setQuestState,
   skipStep,
   startQuest,
   waitingOn,
@@ -127,7 +129,8 @@ import { bossSystem, resetBoss } from './systems/boss';
 import { buildInstance, clearInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
-import { activeEvent, worldEventSystem } from './world/worldEvents';
+import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
+import { environmentSystem, resetEnvironment } from './world/environment';
 import { STORM, stormSystem } from './world/storm';
 import { RESTORATION, grantRestorationPoints, restorationBonuses, restorationSystem, tierFor } from './systems/restoration';
 import { ELITE_COLORS } from './data/elites';
@@ -137,8 +140,8 @@ import { spawnEnemy, spawnPlayer } from './world/spawn';
 
 /** Placeholder class for the player entity before a character is chosen. */
 const DEFAULT_CLASS = 'bastion';
-/** The open-world region being played (one region at a time, docs/world-and-gameplay.md §15). */
-const ZONE = CINDER_FLATS;
+/** Seconds of the black fade when crossing into another zone or teleporting there. */
+const ZONE_FADE = 0.35;
 /** Seconds between automatic saves while playing. */
 const AUTOSAVE_INTERVAL = 60;
 /** How long the target frame keeps showing the last enemy you hit. */
@@ -155,6 +158,8 @@ export class Game {
   private readonly saves: SaveStore;
   private readonly storage = safeLocalStorage();
   private readonly hud: Hud;
+  /** Black overlay faded in while a zone loads. */
+  private readonly fade: HTMLDivElement;
   private readonly toasts: Toasts;
   private readonly devtools: DevTools;
   private readonly damageNumbers: DamageNumbers;
@@ -204,7 +209,7 @@ export class Game {
       tick: 0,
       time: 0,
       cameraYaw: this.renderer.rig.yaw,
-      worldHalfSize: ZONE.halfSize,
+      worldHalfSize: START_ZONE.halfSize,
       pickGround: () =>
         this.input.mouseSeen ? this.renderer.pickGround(this.input.mouseNdc.x, this.input.mouseNdc.y) : null,
       events: new EventQueue(),
@@ -213,12 +218,14 @@ export class Game {
       stats: { kills: 0 },
       loot: { rng: new Rng(seed).fork('loot'), seq: 0 },
       rewards: [],
-      zoneLevels: ZONE.levels,
-      zone: createZoneRuntime(ZONE),
+      zoneLevels: START_ZONE.levels,
+      zone: createZoneRuntime(START_ZONE),
+      zones: new Map(),
       account: loadAccount(this.storage),
       quests: createQuestRuntime(),
     };
     setItemNamer((baseId) => t(`items.bases.${baseId}`));
+    this.ctx.zones!.set(START_ZONE.id, this.ctx.zone!);
 
     this.scheduler
       .add('spatial', spatialSystem)
@@ -235,6 +242,7 @@ export class Game {
       .add('status', statusSystem)
       .add('movement', movementSystem)
       .add('forcedMove', forcedMoveSystem)
+      .add('environment', environmentSystem)
       .add('delayedStrikes', delayedStrikeSystem)
       .add('collision', collisionSystem)
       .add('projectiles', projectileSystem)
@@ -257,6 +265,9 @@ export class Game {
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
     this.hud = new Hud(uiRoot, () => this.respawn());
+    this.fade = document.createElement('div');
+    this.fade.className = 'zone-fade';
+    uiRoot.append(this.fade);
     this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
     this.interactPrompt = new InteractPrompt(uiRoot, (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL));
     this.loreReader = new LoreReader(uiRoot);
@@ -275,7 +286,7 @@ export class Game {
         return { x: tr.x, z: tr.z, facing: tr.facing };
       },
       (id) => this.teleportTo(id),
-      () => this.zone?.found ?? new Set<string>(),
+      () => [...(this.ctx.zones?.values() ?? [])],
       this.renderer.rig.yaw,
       () => {
         const inst = this.ctx.instance;
@@ -283,8 +294,8 @@ export class Game {
         return { rooms: inst.layout.rooms.map((r) => ({ ...roomCenter(r), size: ROOM_CELL, explored: r.explored, kind: r.kind })) };
       },
     );
-    this.mapUi.extraInfo = () => {
-      const entry = this.ctx.account?.restoration[ZONE.id];
+    this.mapUi.extraInfo = (zone) => {
+      const entry = this.ctx.account?.restoration[zone.def.id];
       const points = entry?.points.length ?? 0;
       const tier = tierFor(points);
       const next = RESTORATION.tiers[tier];
@@ -425,7 +436,7 @@ export class Game {
             label: t('debug.region.teleporters'),
             id: 'debug-teleporters',
             run: () => {
-              for (const tp of ZONE.teleporters) this.zone?.discovered.add(tp.id);
+              for (const tp of this.zoneDef.teleporters) this.zone?.discovered.add(tp.id);
             },
           },
           { label: t('debug.region.rare'), id: 'debug-rare', run: () => this.spawnElite('rare') },
@@ -472,12 +483,8 @@ export class Game {
     this.devtools.setMoveMode(this.settings.moveMode);
     this.refreshHint();
 
-    spawnArenaProps(this.world, ZONE);
-    if (this.ctx.zone) {
-      spawnInteractables(this.world, this.ctx.zone, [{ poi: 'stash', kind: 'stash', ...STASH_POSITION }]);
-      spawnQuestWorld(this.world, this.ctx);
-    }
-    this.player = spawnPlayer(this.world, DEFAULT_CLASS, ZONE.playerSpawn.x, ZONE.playerSpawn.z);
+    this.player = spawnPlayer(this.world, DEFAULT_CLASS, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
+    this.populateZone();
     this.applyAccountBonuses();
     const tr = this.playerTransform;
     this.renderer.rig.snapTo(tr.x, tr.y, tr.z);
@@ -492,7 +499,8 @@ export class Game {
   /** Load 3D models (falls back to placeholders) and build the static environment. */
   async loadAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
     await this.renderer.assets.preload(import.meta.env.BASE_URL, onProgress);
-    this.renderer.buildArena(ZONE);
+    this.renderer.buildArena(this.zoneDef);
+    this.builtZone = this.zoneDef.id;
   }
 
   start(): void {
@@ -524,7 +532,9 @@ export class Game {
   /** Start a brand-new character in a slot (overwrites a corrupt slot). */
   newCharacter(slot: number, classId: string, name: string): void {
     this.respawnAs(classId);
-    this.resetZoneProgress();
+    this.resetWorld();
+    setQuestState(this.ctx.quests!, { active: {}, done: {}, tracked: null });
+    this.enterZone(START_ZONE.id, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
     this.slot = slot;
     this.characterName = name;
     const inv = this.world.req(this.player, Inventory);
@@ -548,7 +558,7 @@ export class Game {
   /** Replace the player entity with a fresh one of another class. */
   private respawnAs(classId: string): void {
     const old = this.player;
-    const spawn = ZONE.playerSpawn;
+    const spawn = this.zoneDef.playerSpawn;
     this.player = spawnPlayer(this.world, classId, spawn.x, spawn.z);
     this.world.destroy(old);
     this.applyAccountBonuses();
@@ -564,18 +574,117 @@ export class Game {
     recomputePlayer(this.world, this.player);
   }
 
-  /** Fresh open-world progress for a new character (or before applying a save). */
-  private resetZoneProgress(): void {
-    const zone = this.zone;
+  /** Fresh open-world progress for every zone (new character, or before applying a save). */
+  private resetWorld(): void {
+    const zones = this.ctx.zones!;
+    zones.clear();
+    const start = createZoneRuntime(START_ZONE);
+    zones.set(start.def.id, start);
+    this.ctx.zone = start;
+  }
+
+  get zoneDef(): ZoneDef {
+    return this.ctx.zone?.def ?? START_ZONE;
+  }
+
+  /** Zone whose static scene the renderer has built. */
+  private builtZone: string | null = null;
+
+  /**
+   * Make a zone the current one: everything that belongs to the old zone goes (the player and
+   * their minions stay), the scene is rebuilt if needed, and the new zone's props, objects, NPCs
+   * and quest steps are spawned. The player is placed at (x, z).
+   */
+  private enterZone(id: string, x: number, z: number): void {
+    const def = zoneDef(id);
+    const zones = this.ctx.zones!;
+    if (this.ctx.instance) {
+      clearInstance(this.world);
+      this.ctx.instance = undefined;
+      this.renderer.exitInstance();
+    }
+    const old = this.ctx.zone;
+    if (old) {
+      suspendZone(old);
+      suspendEvents(old);
+    }
+    this.clearZoneEntities();
+    let zone = zones.get(id);
+    if (!zone) zones.set(id, (zone = createZoneRuntime(def)));
+    this.ctx.zone = zone;
+    this.ctx.worldHalfSize = def.halfSize;
+    this.ctx.zoneLevels = def.levels;
+    if (this.builtZone !== null && this.builtZone !== id) {
+      this.renderer.buildArena(def);
+      this.builtZone = id;
+    }
+    this.lastStorm = -1;
+    resetEnvironment();
+    this.populateZone();
+    this.placePlayer(x, z);
+    // Raised minions follow you across.
+    for (const m of this.world.query(MinionAI, Transform)) {
+      if (this.world.req(m, MinionAI).owner !== this.player) continue;
+      const a = Math.random() * Math.PI * 2;
+      Object.assign(this.world.req(m, Transform), makeTransform(x + Math.sin(a) * 2, 0, z + Math.cos(a) * 2, 0));
+    }
+    this.closeDialogue();
+    this.servicePanel.close();
+    this.lastTarget = null;
+  }
+
+  /** Remove every entity but the player and their minions. */
+  private clearZoneEntities(): void {
+    for (const e of this.world.query(Transform)) {
+      if (e === this.player) continue;
+      const minion = this.world.get(e, MinionAI);
+      if (minion && minion.owner === this.player) continue;
+      this.world.destroyDeferred(e);
+    }
+    this.world.flushDestroyed();
+  }
+
+  /** Spawn the current zone's static props, objects, stash, NPCs and quest steps. */
+  private populateZone(): void {
+    const zone = this.ctx.zone;
     if (!zone) return;
-    const fresh = createZoneRuntime(zone.def);
-    zone.discovered = fresh.discovered;
-    zone.revealed.fill(0);
-    zone.found.clear();
-    zone.keycards.clear();
+    spawnArenaProps(this.world, zone.def);
+    const stash = zone.def.id === START_ZONE.id ? STASH_POSITION : zone.def.stash;
+    spawnInteractables(this.world, zone, stash ? [{ poi: 'stash', kind: 'stash', ...stash }] : []);
     syncInteractables(this.world, zone);
     syncSetPieces(this.world, zone);
-    restoreQuests(this.world, this.ctx, { active: {}, done: {}, tracked: null });
+    rebuildQuestWorld(this.world, this.ctx);
+    this.world.flushDestroyed();
+  }
+
+  /** Cross a border gate: fade out, load the other zone at the paired gate, fade in. */
+  private crossGate(gateId: string): void {
+    const gate = this.zoneDef.gates.find((g) => g.id === gateId);
+    if (!gate || !hasZone(gate.to.zone)) return;
+    const target = zoneDef(gate.to.zone).gates.find((g) => g.id === gate.to.gate);
+    if (!target) return;
+    this.fadeTo(() => {
+      this.enterZone(gate.to.zone, target.arrive.x, target.arrive.z);
+      this.hud.showBanner(t(`zones.${this.zoneDef.key}.name`), 2.6);
+      this.autosave();
+    });
+  }
+
+  private fading = false;
+
+  /** Black fade around a zone change (the swap happens while the screen is dark). */
+  private fadeTo(swap: () => void): void {
+    if (this.fading) return;
+    this.fading = true;
+    this.fade.classList.add('on');
+    setTimeout(() => {
+      try {
+        swap();
+      } finally {
+        this.fade.classList.remove('on');
+        this.fading = false;
+      }
+    }, ZONE_FADE * 1000);
   }
 
   private autosave(): void {
@@ -721,7 +830,7 @@ export class Game {
           break;
         case 'hub':
           if (event.entered) {
-            this.hud.showBanner(t(`zones.${ZONE.key}.${event.id}`), 2.2);
+            this.hud.showBanner(t(`zones.${this.zoneDef.key}.${event.id}`), 2.2);
             // Safe hubs refill your stim packs.
             const user = this.world.req(this.player, SkillUser);
             user.potionCharges = classDef(user.classId).potion.charges + (this.world.get(this.player, AccountBonuses)?.potionCharges ?? 0);
@@ -729,6 +838,9 @@ export class Game {
           break;
         case 'interact':
           this.onInteract(event.kind, event.detail, event.id);
+          break;
+        case 'zoneGate':
+          this.crossGate(event.gate);
           break;
         case 'quest':
           this.onQuestEvent(event.id, event.state);
@@ -968,7 +1080,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const x = Math.round(zone.storm.exposure * 50) / 50;
     if (x === this.lastStorm) return;
     this.lastStorm = x;
-    const base = ZONE.fog;
+    const base = this.zoneDef.fog;
     const mix = (a: string, b: string, t: number) => {
       const pa = parseInt(a.slice(1), 16);
       const pb = parseInt(b.slice(1), 16);
@@ -1066,7 +1178,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const tr = this.playerTransform;
     const key = zone.def.key;
     if (zone.inHub) return { title: t(`zones.${key}.name`), sub: t(`zones.${key}.${zone.inHub}`) };
-    let sub = 'route7';
+    // Between subzones: the zone's road name (the subzone with no area).
+    let sub = zone.def.subzones.find((sz) => sz.radius === 0)?.id ?? 'route7';
     let best = Infinity;
     for (const sz of zone.def.subzones) {
       const d = Math.hypot(tr.x - sz.center[0], tr.z - sz.center[1]);
@@ -1178,7 +1291,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     // Inside a dungeon you come back at its entrance; bosses reset (docs/world-and-gameplay.md §13).
     setPiecesOnDeath(w, this.zone);
     for (const b of w.query(Boss)) resetBoss(w, b);
-    const tp = this.ctx.instance ? { x: this.ctx.instance.start.x - 2, z: this.ctx.instance.start.z - 2 } : this.zone ? nearestTeleporter(this.zone, tr.x, tr.z) : ZONE.playerSpawn;
+    const tp = this.ctx.instance ? { x: this.ctx.instance.start.x - 2, z: this.ctx.instance.start.z - 2 } : this.zone ? nearestTeleporter(this.zone, tr.x, tr.z) : this.zoneDef.playerSpawn;
     const spawn = { x: tp.x + 2, z: tp.z + 2 };
     Object.assign(this.playerTransform, makeTransform(spawn.x, 0, spawn.z, Math.PI));
     w.add(p, Invulnerable, { remaining: 2 });
@@ -1236,7 +1349,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     if (!rt) return;
     clearInstance(this.world);
     this.ctx.instance = undefined;
-    this.ctx.worldHalfSize = ZONE.halfSize;
+    this.ctx.worldHalfSize = this.zoneDef.halfSize;
     this.renderer.exitInstance();
     this.placePlayer(rt.exit.x, rt.exit.z);
     this.autosave();
@@ -1269,19 +1382,24 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     this.renderer.rig.snapTo(x, 0, z);
   }
 
-  /** Travel to a discovered teleporter (map). */
+  /** Travel to a discovered teleporter (map), in this zone or another one you have visited. */
   teleportTo(id: string): boolean {
-    const zone = this.zone;
-    const tp = zone?.def.teleporters.find((t) => t.id === id);
-    if (!zone || !tp || !zone.discovered.has(id) || this.world.has(this.player, Dead)) return false;
+    const def = zoneOfTeleporter(id);
+    const zone = def && this.ctx.zones?.get(def.id);
+    const tp = def?.teleporters.find((t) => t.id === id);
+    if (!def || !zone || !tp || !zone.discovered.has(id) || this.world.has(this.player, Dead) || this.fading) return false;
     this.toasts.show(t('map.teleporting', { name: t(`zones.teleporters.${id}`) }));
     const x = tp.x + 2;
     const z = tp.z + 2;
-    Object.assign(this.playerTransform, makeTransform(x, 0, z, Math.PI));
-    this.world.remove(this.player, MoveTarget);
-    this.world.remove(this.player, ForcedMove);
-    this.world.add(this.player, Invulnerable, { remaining: 1.5 });
-    this.renderer.rig.snapTo(x, 0, z);
+    if (def.id === this.zone?.def.id && !this.ctx.instance) {
+      this.placePlayer(x, z);
+      return true;
+    }
+    this.fadeTo(() => {
+      this.enterZone(def.id, x, z);
+      this.hud.showBanner(t(`zones.${def.key}.name`), 2.4);
+      this.autosave();
+    });
     return true;
   }
 
@@ -1347,15 +1465,15 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         const user = this.world.req(this.player, SkillUser);
         return { ranks: { ...user.tree.ranks }, slots: [...user.slots] };
       })(),
-      world: this.zone
-        ? {
-            zone: this.zone.def.id,
-            discovered: [...this.zone.discovered],
-            revealed: encodeRevealed(this.zone),
-            found: [...this.zone.found],
-            keycards: [...this.zone.keycards],
-          }
-        : { zone: ZONE.id, discovered: [], revealed: '', found: [], keycards: [] },
+      world: {
+        zone: this.zoneDef.id,
+        zones: Object.fromEntries(
+          [...(this.ctx.zones ?? new Map<string, ZoneRuntime>()).values()].map((z) => [
+            z.def.id,
+            { discovered: [...z.discovered], revealed: encodeRevealed(z), found: [...z.found], keycards: [...z.keycards] },
+          ]),
+        ),
+      },
       quests: saveQuests(this.ctx.quests!),
     };
   }
@@ -1397,19 +1515,26 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     recomputePlayer(this.world, this.player);
     const health = this.world.req(this.player, Health);
     health.current = health.max;
-    this.resetZoneProgress();
-    if (this.zone && data.world.zone === this.zone.def.id) {
-      for (const id of data.world.discovered) this.zone.discovered.add(id);
-      if (data.world.revealed) decodeRevealed(this.zone, data.world.revealed);
-      for (const id of data.world.found) this.zone.found.add(id);
-      for (const id of data.world.keycards) this.zone.keycards.add(id);
-      syncInteractables(this.world, this.zone);
-      syncSetPieces(this.world, this.zone);
+    // Every visited zone's progress, then the zone the character stood in (unknown zones fall back
+    // to the start of the game).
+    this.resetWorld();
+    for (const [id, saved] of Object.entries(data.world.zones)) {
+      if (!hasZone(id)) continue;
+      const zone = createZoneRuntime(zoneDef(id));
+      for (const tp of saved.discovered) zone.discovered.add(tp);
+      if (saved.revealed) decodeRevealed(zone, saved.revealed);
+      for (const f of saved.found) zone.found.add(f);
+      for (const k of saved.keycards) zone.keycards.add(k);
+      this.ctx.zones!.set(id, zone);
     }
-    restoreQuests(this.world, this.ctx, data.quests);
+    setQuestState(this.ctx.quests!, data.quests);
+    const known = hasZone(data.world.zone);
+    const at = known ? { x, z } : START_ZONE.playerSpawn;
+    this.enterZone(known ? data.world.zone : START_ZONE.id, at.x, at.z);
+    Object.assign(tr, makeTransform(at.x, y, at.z, data.player.facing));
     this.applyAccountBonuses();
     if (this.ctx.account) grantRestorationPoints(this.world, this.ctx.account);
-    this.renderer.rig.snapTo(x, y, z);
+    this.renderer.rig.snapTo(at.x, y, at.z);
     this.inventoryPanel.refresh();
   }
 

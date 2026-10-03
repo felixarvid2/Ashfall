@@ -57,6 +57,8 @@ export interface ZoneRuntime {
   events: Map<string, EventState>;
   /** Ash Storm (docs/regions/cinder-flats.md). */
   storm: StormState;
+  /** Border gates fire only after the player has stepped clear of them (no bounce on arrival). */
+  gateReady: boolean;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
@@ -74,6 +76,7 @@ export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
     setPieces: createSetPieces(),
     events: new Map(),
     storm: createStorm(),
+    gateReady: false,
   };
   zone.events = createEvents(zone);
   return zone;
@@ -122,6 +125,18 @@ export function nearestTeleporter(zone: ZoneRuntime, x: number, z: number) {
     }
   }
   return best;
+}
+
+/** The player left this zone: its live packs go back to sleep (their entities are gone). */
+export function suspendZone(zone: ZoneRuntime): void {
+  for (const st of zone.packs.values()) {
+    if (st.state !== 'active') continue;
+    st.members = [];
+    st.state = 'dormant';
+  }
+  zone.inHub = null;
+  zone.gateReady = false;
+  zone.timer = 0;
 }
 
 /** Fog bitmap ↔ base64 for saves. */
@@ -227,6 +242,18 @@ export function zoneSystem(world: World, dt: number, ctx: GameContext): void {
     zone.discovered.add(t.id);
     ctx.events.push({ type: 'discover', id: t.id });
   }
+  // Border crossings (the game loads the other zone).
+  let atGate: string | null = null;
+  let clear = true;
+  for (const g of zone.def.gates) {
+    const d = Math.hypot(g.x - ptr.x, g.z - ptr.z);
+    if (d <= g.radius) atGate = g.id;
+    if (d <= g.radius + 3) clear = false;
+  }
+  if (atGate && zone.gateReady && !world.has(player, Dead)) {
+    zone.gateReady = false;
+    ctx.events.push({ type: 'zoneGate', gate: atGate });
+  } else if (clear) zone.gateReady = true;
   const hub = hubAt(zone, ptr.x, ptr.z);
   if ((hub?.id ?? null) !== zone.inHub) {
     ctx.events.push({ type: 'hub', id: hub?.id ?? zone.inHub!, entered: hub !== null });

@@ -554,8 +554,13 @@ html, body {
 .char-create:hover { background: #8a4a1a; }
 
 /* ---- Minimap and full map --------------------------------------------------------- */
+.zone-fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 40; }
+.zone-fade.on { opacity: 1; }
 .minimap { position: absolute; top: 44px; right: 14px; width: 180px; height: 180px; pointer-events: none; }
 .map-panel { left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 14px; width: auto; max-height: none; overflow: visible; }
+.map-tabs { display: flex; gap: 6px; margin: 0 0 8px; }
+.map-tab { background: #1a1612; color: #b8a888; border: 1px solid #3a322a; padding: 4px 10px; font: inherit; font-size: 0.85em; cursor: pointer; }
+.map-tab.active { background: #3a2e22; color: #ffe0a8; border-color: #8a6a44; }
 .map-canvas { display: block; width: min(640px, calc(100vw - 60px), calc(100vh - 140px)); aspect-ratio: 1; cursor: crosshair; border: 1px solid #3a322a; }
 
 /* Interaction prompt and lore reader (Region 1). */

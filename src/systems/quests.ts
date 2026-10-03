@@ -72,6 +72,20 @@ export function currentStep(id: string, state: QuestState): QuestStep | undefine
   return questDef(id).steps[state.step];
 }
 
+/** The zone a quest step happens in. */
+export function stepZone(id: string, step: QuestStep): string {
+  return step.zone ?? questDef(id).zone;
+}
+
+/** Is the player in this zone? (Headless sims without a zone count as everywhere.) */
+function here(ctx: GameContext, zoneId: string): boolean {
+  return !ctx.zone || ctx.zone.def.id === zoneId;
+}
+
+function zoneState(ctx: GameContext, zoneId: string) {
+  return ctx.zones?.get(zoneId) ?? (ctx.zone?.def.id === zoneId ? ctx.zone : undefined);
+}
+
 function prerequisitesMet(rt: QuestRuntime, def: QuestDef): boolean {
   return def.after.every((q) => rt.done.has(q));
 }
@@ -148,7 +162,7 @@ function advance(world: World, ctx: GameContext, id: string): void {
     rt.done.set(id, st.choice ?? '');
     payReward(world, ctx, def.rewards);
     if (ctx.account && def.rewards.restoration > 0) {
-      const zoneId = ctx.zone?.def.id ?? 'zone';
+      const zoneId = def.zone;
       const entry = (ctx.account.restoration[zoneId] ??= { points: [], tiers: 0 });
       for (let i = 0; i < def.rewards.restoration; i++) {
         const key = `quest:${id}#${i}`;
@@ -188,6 +202,9 @@ function enterStep(world: World, ctx: GameContext, id: string): void {
   const step = currentStep(id, st);
   if (!step) return;
   const spawned: Entity[] = [];
+  rt.spawned.set(id, spawned);
+  // Steps in another zone spawn their things when the player gets there.
+  if (!here(ctx, stepZone(id, step))) return;
   if (step.kind === 'kill' && step.spawn) {
     const s = step.spawn;
     const level = monsterLevel(world, ctx);
@@ -206,8 +223,9 @@ function enterStep(world: World, ctx: GameContext, id: string): void {
       spawned.push(tag(world, questObject(world, o.id, o.x, o.z, o.asset, o.scale), id, st.step));
     }
     // Specific points of interest already used count at once (logs read before the quest).
-    if (step.ids && ctx.zone) {
-      st.progress = step.ids.filter((p) => ctx.zone!.found.has(p)).length;
+    const zone = zoneState(ctx, stepZone(id, step));
+    if (step.ids && zone) {
+      st.progress = step.ids.filter((p) => zone.found.has(p)).length;
       if (st.progress >= step.count) {
         advance(world, ctx, id);
         return;
@@ -227,9 +245,8 @@ function enterStep(world: World, ctx: GameContext, id: string): void {
     spawned.push(tag(world, e, id, st.step));
   } else if (step.kind === 'choice' || step.kind === 'talk') {
     const npc = NPCS.get(step.npc);
-    if (npc?.questOnly) spawned.push(tag(world, spawnNpc(world, npc.id), id, st.step));
+    if (npc?.questOnly && here(ctx, npc.zone)) spawned.push(tag(world, spawnNpc(world, npc.id), id, st.step));
   }
-  rt.spawned.set(id, spawned);
 }
 
 function leaveStep(world: World, rt: QuestRuntime, id: string): void {
@@ -268,8 +285,21 @@ export function spawnNpc(world: World, id: string): Entity {
 
 /** Hub NPCs that are always present, and trigger objects for quests not yet found. */
 export function spawnQuestWorld(world: World, ctx: GameContext): void {
-  for (const npc of NPCS.values()) if (!npc.questOnly) spawnNpc(world, npc.id);
+  for (const npc of NPCS.values()) if (!npc.questOnly && here(ctx, npc.zone)) spawnNpc(world, npc.id);
   refreshTriggers(world, ctx);
+}
+
+/**
+ * After a zone change (every entity but the player's is gone): hub NPCs, trigger objects and the
+ * current steps' entities for the zone the player is in now.
+ */
+export function rebuildQuestWorld(world: World, ctx: GameContext): void {
+  const rt = ctx.quests;
+  if (!rt) return;
+  rt.spawned.clear();
+  rt.triggers.clear();
+  spawnQuestWorld(world, ctx);
+  for (const id of [...rt.active.keys()]) if (rt.active.has(id)) enterStep(world, ctx, id);
 }
 
 function refreshTriggers(world: World, ctx: GameContext): void {
@@ -277,7 +307,7 @@ function refreshTriggers(world: World, ctx: GameContext): void {
   if (!rt) return;
   for (const def of QUESTS.values()) {
     const has = rt.triggers.get(def.id);
-    const wanted = def.trigger && 'object' in def.trigger && !rt.active.has(def.id) && !rt.done.has(def.id);
+    const wanted = def.trigger && 'object' in def.trigger && !rt.active.has(def.id) && !rt.done.has(def.id) && here(ctx, def.zone);
     if (wanted && has === undefined) {
       const o = (def.trigger as { object: { id: string; x: number; z: number; asset: string; scale: number } }).object;
       rt.triggers.set(def.id, questObject(world, o.id, o.x, o.z, o.asset, o.scale));
@@ -297,6 +327,16 @@ export function restoreQuests(
   const rt = ctx.quests;
   if (!rt) return;
   for (const id of [...rt.spawned.keys()]) leaveStep(world, rt, id);
+  setQuestState(rt, saved);
+  for (const id of [...rt.active.keys()]) if (rt.active.has(id)) enterStep(world, ctx, id);
+  refreshTriggers(world, ctx);
+}
+
+/** Replace the quest log's state without touching the world (the caller rebuilds it). */
+export function setQuestState(
+  rt: QuestRuntime,
+  saved: { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null },
+): void {
   rt.active.clear();
   rt.done.clear();
   rt.signals = [];
@@ -308,8 +348,6 @@ export function restoreQuests(
     rt.active.set(id, { step: Math.min(st.step, def.steps.length - 1), progress: st.progress, ...(st.choice ? { choice: st.choice } : {}) });
   }
   rt.tracked = saved.tracked && rt.active.has(saved.tracked) ? saved.tracked : (rt.active.keys().next().value ?? null);
-  for (const id of rt.active.keys()) enterStep(world, ctx, id);
-  refreshTriggers(world, ctx);
 }
 
 export function saveQuests(rt: QuestRuntime): { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null } {
@@ -351,12 +389,16 @@ export function questSystem(world: World, _dt: number, ctx: GameContext): void {
     if (fresh.has(id)) continue;
     const step = currentStep(id, st);
     if (!step) continue;
+    const sz = stepZone(id, step);
+    if (step.kind === 'discover') {
+      if (zoneState(ctx, sz)?.discovered.has(step.teleporter)) advance(world, ctx, id);
+      continue;
+    }
+    // Everything else happens where the step is.
+    if (!here(ctx, sz)) continue;
     switch (step.kind) {
       case 'reach':
         if (Math.hypot(ptr.x - step.x, ptr.z - step.z) <= step.radius) advance(world, ctx, id);
-        break;
-      case 'discover':
-        if (ctx.zone?.discovered.has(step.teleporter)) advance(world, ctx, id);
         break;
       case 'kill':
         for (const s of signals) {
@@ -441,6 +483,13 @@ export function questMarkers(world: World, ctx: GameContext): QuestMarker[] {
     if (!step || !step.marker) continue;
     const main = questDef(id).kind === 'main';
     const push = (x: number, z: number) => out.push({ quest: id, x, z, main });
+    const sz = stepZone(id, step);
+    if (!here(ctx, sz)) {
+      // Elsewhere: point at the border crossing that leads there.
+      const gate = ctx.zone?.def.gates.find((g) => g.to.zone === sz);
+      if (gate) push(gate.x, gate.z);
+      continue;
+    }
     switch (step.kind) {
       case 'reach':
       case 'objective':

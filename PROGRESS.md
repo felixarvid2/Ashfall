@@ -4,9 +4,17 @@
 
 ## Current phase
 
-**Phase 5 – Region 1: Cinder Flats ✅ built — waiting for your playtest feedback** before Region 2
-(docs/world-and-gameplay.md §15: one region at a time). Plan: docs/regions/cinder-flats.md,
-measurements and checklist: docs/regions/cinder-flats-playtest.md.
+**Phase 6 – Region 2: The Refinery District 🚧 in progress.** Plan: docs/regions/refinery-district.md.
+- ✅ Player characters remodelled (HD models, 10 animations each, weapons in hand).
+- ✅ Several zones: Route 7 continues past The Maw to a border gate; crossing loads the district behind a
+  short fade (and back). Each zone keeps its own map, teleporters and found objects (save v7); the map
+  (M) has a tab per visited region and travels to any discovered teleporter, in either zone.
+- ✅ District greybox: roads, Coolant Works hub (stash), 4 subzones, landmarks, 6 teleporters, packs,
+  chests, relics, logs, towers, pylons, bunkers; conveyor belts, molten metal rivers and vents.
+  Models are placeholders until the Region 2 Meshy batch; the packs use region 1 enemies for now.
+- Next: region 2 enemies and behaviours, then the hub NPCs, quests, dungeons, stronghold, Vire.
+
+Region 1 (Cinder Flats) is built; measurements and checklist: docs/regions/cinder-flats-playtest.md.
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 
 ## Done
@@ -297,7 +305,8 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 
 ## Next steps
-- **Your playtest feedback on Cinder Flats** → then Region 2 (The Refinery District) with the same process.
+- Region 2 (The Refinery District): enemies, content, Meshy assets, playtest report — then your feedback.
+- Your playtest feedback on Cinder Flats.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
 - Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).

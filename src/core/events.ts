@@ -71,6 +71,8 @@ export type GameEvent =
   | { type: 'notice'; key: string }
   | { type: 'discover'; id: string }
   | { type: 'hub'; id: string; entered: boolean }
+  /** The player walked into a border crossing. */
+  | { type: 'zoneGate'; gate: string }
   /** The player used a point of interest (UI shows toasts, the lore reader, buff banners). */
   | { type: 'interact'; kind: string; id: string; detail?: string }
   | { type: 'quest'; id: string; state: 'started' | 'progress' | 'step' | 'completed' | 'failed' }

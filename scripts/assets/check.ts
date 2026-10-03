@@ -8,7 +8,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { CLASSES, SKILLS } from '../../src/data/db';
-import { CINDER_FLATS } from '../../src/data/zones/cinderFlats';
+import { ZONES } from '../../src/data/zones';
 
 const root = new URL('../..', import.meta.url).pathname;
 const manifest = JSON.parse(readFileSync(join(root, 'assets/manifest.json'), 'utf8')) as { assets: { id: string; category: string }[] };
@@ -32,7 +32,7 @@ const derived = new Set<string>([
 const used = (id: string) => derived.has(id) || text.includes(`'${id}'`) || text.includes(`"${id}"`);
 const unused = manifest.assets.filter((a) => !used(a.id)).map((a) => `${a.id} (${a.category})`);
 // Point-of-interest ids look like asset ids ("boss.first") but aren't.
-const notAssets = new Set(CINDER_FLATS.pois.map((p) => p.id));
+const notAssets = new Set(ZONES.flatMap((z) => z.pois.map((p) => p.id)));
 
 const mentioned = new Set<string>();
 for (const m of text.matchAll(/['"]((?:prop|env|npc|boss|enemy|char|icon)\.[a-z0-9_]+)['"]/g)) mentioned.add(m[1]!);

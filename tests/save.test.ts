@@ -44,7 +44,7 @@ const sample = (): SaveData => ({
   inventory: { gold: 120, grid: [null, null], equipped: {}, aspects: [] },
   loot: { seq: 7, rngState: [5, 6, 7, 8] },
   skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
-  world: { zone: 'zone.cinder_flats', discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=', found: [], keycards: [] },
+  world: { zone: 'zone.cinder_flats', zones: { 'zone.cinder_flats': { discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=', found: [], keycards: [] } } },
   quests: { active: { 'mq.fuel': { step: 2, progress: 3 } }, done: { 'mq.wake_up': '' }, tracked: 'mq.fuel' },
 });
 
@@ -103,8 +103,20 @@ describe('save migrations', () => {
     delete v4.world;
     const save = parseSave(JSON.stringify(v4));
     expect(save.world.zone).toBe('zone.cinder_flats');
-    expect(save.world.discovered).toContain('tp.ember');
+    expect(save.world.zones['zone.cinder_flats']!.discovered).toContain('tp.ember');
     expect(save.player.position.x).toBeLessThan(-250);
+  });
+
+  it('upgrades a v6 save: the single zone moves under world.zones', () => {
+    const v6 = {
+      ...sample(),
+      version: 6,
+      world: { zone: 'zone.cinder_flats', discovered: ['tp.ember', 'tp.maw'], revealed: 'AAE=', found: ['relic.3'], keycards: ['keycard.1'] },
+    };
+    const save = parseSave(JSON.stringify(v6));
+    expect(save.version).toBe(SAVE_VERSION);
+    expect(save.world.zone).toBe('zone.cinder_flats');
+    expect(save.world.zones['zone.cinder_flats']).toEqual({ discovered: ['tp.ember', 'tp.maw'], revealed: 'AAE=', found: ['relic.3'], keycards: ['keycard.1'] });
   });
 
   it('upgrades a v2 save, refunding a skill point per level', () => {

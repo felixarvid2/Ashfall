@@ -11,6 +11,7 @@ import { CLASS_WEAPONS } from '../data/weapons';
 import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef } from '../data/zones/testArena';
+import type { EnvFeature } from '../data/zones/zoneTypes';
 import { scatterInstances } from '../world/arena';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
@@ -70,20 +71,29 @@ export class GameRenderer {
     window.addEventListener('resize', () => this.resize());
   }
 
-  /** Static environment: lights, fog, ground, instanced scatter. */
+  /** Static environment: lights, fog, ground, instanced scatter. Calling it again swaps zones. */
   buildArena(arena: ArenaDef): void {
-    const s = this.scene;
-    s.background = new THREE.Color(arena.fog.color);
-    s.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
+    this.exitInstance();
+    this.disposeZone();
+    const root = new THREE.Group();
+    this.zoneRoot = root;
+    this.scene.add(root);
+    const s = root;
+    this.scene.background = new THREE.Color(arena.fog.color);
+    this.scene.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
     this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
-    this.ambientLight = new THREE.AmbientLight(arena.ambient.color, arena.ambient.intensity);
-    this.hemiLight = new THREE.HemisphereLight('#4a5466', '#2a2018', arena.ambient.intensity * 1.6);
-    s.add(this.ambientLight, this.hemiLight);
+    if (!this.ambientLight || !this.hemiLight) {
+      this.ambientLight = new THREE.AmbientLight();
+      this.hemiLight = new THREE.HemisphereLight('#4a5466', '#2a2018');
+      this.scene.add(this.ambientLight, this.hemiLight, this.playerLight, this.moon, this.moon.target);
+    }
+    this.ambientLight.color.set(arena.ambient.color);
+    this.ambientLight.intensity = arena.ambient.intensity;
+    this.hemiLight.intensity = arena.ambient.intensity * 1.6;
     const pl = arena.playerLight;
     this.playerLight.color.set(pl.color);
     this.playerLight.intensity = pl.intensity;
     this.playerLight.distance = pl.distance;
-    s.add(this.playerLight);
 
     this.moon.color.set(arena.moon.color);
     this.moon.intensity = arena.moon.intensity;
@@ -95,7 +105,6 @@ export class GameRenderer {
     sc.near = 1;
     sc.far = 80;
     this.moon.shadow.bias = -0.0005;
-    s.add(this.moon, this.moon.target);
 
     const size = arena.halfSize * 2 + 40;
     const ground = new THREE.Mesh(
@@ -113,10 +122,14 @@ export class GameRenderer {
       for (const road of roads) s.add(roadMesh(road.points, road.width, roadMat));
     }
 
+    const env = (arena as { env?: EnvFeature[] }).env ?? [];
+    if (env.length) this.buildEnv(s, env);
+
     const glowTexture = makeGlowTexture();
     // Lights come from a small pool moved to the lamps nearest the camera (hundreds of real point
     // lights would make every material's shader far too expensive).
     this.lightSpots = [];
+    this.lightTimer = 0;
     for (const prop of arena.props) {
       if (!prop.light) continue;
       const light = { x: prop.x, z: prop.z, ...prop.light };
@@ -137,6 +150,8 @@ export class GameRenderer {
       glow.material.opacity = prop.asset === 'prop.lumen_growth' ? 0.35 : 0.9;
       s.add(glow);
     }
+
+    this.lightSpots.push(...this.envLights);
 
     // Scatter is split into square chunks so frustum culling (and the shadow pass) skip the
     // parts of a big region that are off screen.
@@ -166,6 +181,107 @@ export class GameRenderer {
         s.add(mesh);
       }
     });
+  }
+
+  private zoneRoot: THREE.Group | null = null;
+  /** Scrolling belt surface and the molten-metal glow (animated each frame). */
+  private beltTexture: THREE.Texture | null = null;
+  private moltenMaterial: THREE.MeshBasicMaterial | null = null;
+  private lavaTime: { value: number } | null = null;
+  private envLights: typeof this.lightSpots = [];
+
+  /** Conveyor belts (chevrons scrolling along the direction of travel) and pools of molten metal. */
+  private buildEnv(root: THREE.Group, env: EnvFeature[]): void {
+    const belts = env.filter((f): f is Extract<EnvFeature, { kind: 'conveyor' }> => f.kind === 'conveyor');
+    const pools = env.filter((f): f is Extract<EnvFeature, { kind: 'molten' }> => f.kind === 'molten');
+    this.envLights = [];
+    if (belts.length) {
+      const tex = makeBeltTexture();
+      this.beltTexture = tex;
+      const surface = new THREE.MeshStandardMaterial({ map: tex, color: 0xb0a898, roughness: 0.7, metalness: 0.4, polygonOffset: true, polygonOffsetFactor: -2 });
+      const rail = new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: 0.6, metalness: 0.7 });
+      for (const b of belts) {
+        const group = new THREE.Group();
+        group.position.set(b.x, 0, b.z);
+        group.rotation.y = b.dir;
+        const geo = new THREE.PlaneGeometry(b.width, b.length);
+        // One chevron per 2 m of belt.
+        const uv = geo.attributes.uv as THREE.BufferAttribute;
+        for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * (b.length / 2));
+        const belt = new THREE.Mesh(geo, surface);
+        belt.rotation.x = -Math.PI / 2;
+        belt.position.y = 0.04;
+        belt.receiveShadow = true;
+        group.add(belt);
+        for (const side of [-1, 1]) {
+          const r = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, b.length), rail);
+          r.position.set(side * (b.width / 2 + 0.18), 0.17, 0);
+          r.castShadow = true;
+          group.add(r);
+        }
+        root.add(group);
+      }
+    } else this.beltTexture = null;
+    if (pools.length) {
+      // Overlapping discs of one flat, unlit colour read as a single river; a dark crust rims it.
+      const disc = new THREE.CircleGeometry(1, 24);
+      disc.rotateX(-Math.PI / 2);
+      // Molten metal glows through the haze (no fog) so rivers read from a distance. The crust
+      // pattern is sampled in world space so overlapping discs join into one seamless river.
+      const glow = new THREE.MeshBasicMaterial({ color: '#ff7a24', map: makeLavaTexture(), fog: false, polygonOffset: true, polygonOffsetFactor: -3 });
+      const lavaTime = { value: 0 };
+      this.lavaTime = lavaTime;
+      glow.onBeforeCompile = (shader) => {
+        shader.uniforms.lavaTime = lavaTime;
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nvarying vec2 vLavaUv;\nuniform float lavaTime;')
+          .replace(
+            '#include <begin_vertex>',
+            '#include <begin_vertex>\nvec4 lavaWorld = modelMatrix * instanceMatrix * vec4(position, 1.0);\nvLavaUv = lavaWorld.xz * 0.07 + vec2(lavaTime * 0.01, lavaTime * 0.006);',
+          );
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', '#include <common>\nvarying vec2 vLavaUv;')
+          .replace('#include <map_fragment>', 'diffuseColor *= texture2D(map, vLavaUv);');
+      };
+      glow.customProgramCacheKey = () => 'lava';
+      const crust = new THREE.MeshBasicMaterial({ color: '#3a1408', polygonOffset: true, polygonOffsetFactor: -1 });
+      this.moltenMaterial = glow;
+      const hot = new THREE.InstancedMesh(disc, glow, pools.length);
+      const rim = new THREE.InstancedMesh(disc, crust, pools.length);
+      const m = new THREE.Matrix4();
+      pools.forEach((p, i) => {
+        m.makeScale(p.radius, 1, p.radius).setPosition(p.x, 0.03, p.z);
+        hot.setMatrixAt(i, m);
+        m.makeScale(p.radius * 1.18, 1, p.radius * 1.18).setPosition(p.x, 0.02, p.z);
+        rim.setMatrixAt(i, m);
+        if (i % 3 === 0) this.envLights.push({ x: p.x, z: p.z, color: '#ff5a1a', intensity: 45, distance: 13, height: 1.2 });
+      });
+      hot.computeBoundingSphere();
+      rim.computeBoundingSphere();
+      hot.userData.own = rim.userData.own = true;
+      root.add(rim, hot);
+    } else this.moltenMaterial = null;
+  }
+
+  /** Drop the current zone's ground, roads, lamp glows and scatter (shared model assets stay). */
+  private disposeZone(): void {
+    const root = this.zoneRoot;
+    if (!root) return;
+    this.scene.remove(root);
+    root.traverse((o) => {
+      const m = o as THREE.Mesh;
+      // Instanced scatter shares geometry and material with the asset cache; only free our own.
+      if ((o as THREE.InstancedMesh).isInstancedMesh) {
+        (o as THREE.InstancedMesh).dispose();
+        if (!o.userData.own) return;
+      }
+      // Sprites share one geometry across the whole scene.
+      if (!(o as THREE.Sprite).isSprite) m.geometry?.dispose();
+      const mat = m.material as (THREE.Material & { map?: THREE.Texture | null }) | undefined;
+      mat?.map?.dispose();
+      mat?.dispose();
+    });
+    this.zoneRoot = null;
   }
 
   private lightSpots: { x: number; z: number; color: string; intensity: number; distance: number; height: number }[] = [];
@@ -317,6 +433,58 @@ export class GameRenderer {
     }
   }
 
+  private readonly fadedMaterials = new Map<THREE.Material, THREE.Material>();
+  private readonly sizeCache = new Map<string, { h: number; r: number }>();
+
+  /** Does this static prop stand between the camera and the player's upper body? */
+  private occludes(r: Renderable, x: number, z: number): boolean {
+    let size = this.sizeCache.get(r.assetId);
+    if (!size) {
+      const entry = this.assets.entry(r.assetId);
+      const p = entry.placeholder?.size ?? [1, 1, 1];
+      size = { h: entry.heightMeters ?? p[1], r: Math.max(p[0], p[2]) / 2 };
+      this.sizeCache.set(r.assetId, size);
+    }
+    const scale = r.scale ?? 1;
+    const h = size.h * scale;
+    if (h < 4.5) return false;
+    const f = this.rig.focusPoint;
+    const cam = this.rig.camera.position;
+    const vx = cam.x - f.x;
+    const vz = cam.z - f.z;
+    const len2 = vx * vx + vz * vz;
+    if (len2 < 1e-6) return false;
+    const t = Math.max(0, Math.min(1, ((x - f.x) * vx + (z - f.z) * vz) / len2));
+    if (t <= 0) return false;
+    const d = Math.hypot(f.x + vx * t - x, f.z + vz * t - z);
+    const rayY = 1.4 + t * (cam.y - 1.4);
+    return d < size.r * scale + 1.2 && rayY < h;
+  }
+
+  private setFaded(obj: THREE.Object3D, on: boolean): void {
+    if (Boolean(obj.userData.faded) === on) return;
+    obj.userData.faded = on;
+    obj.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+      if (on) {
+        mesh.userData.solid = mesh.material;
+        let faded = this.fadedMaterials.get(mesh.material);
+        if (!faded) {
+          faded = mesh.material.clone();
+          faded.transparent = true;
+          faded.opacity = 0.22;
+          faded.depthWrite = false;
+          this.fadedMaterials.set(mesh.material, faded);
+        }
+        mesh.material = faded;
+      } else if (mesh.userData.solid) {
+        mesh.material = mesh.userData.solid as THREE.Material;
+        delete mesh.userData.solid;
+      }
+    });
+  }
+
   /** Mirror ECS → scene, interpolating between the last two ticks by `alpha`. */
   sync(world: World, alpha: number, frameDt: number): void {
     this.time += frameDt;
@@ -354,11 +522,15 @@ export class GameRenderer {
       }
       // Cull far-away static props (the fog hides them anyway); characters and landmarks stay.
       const r = world.req(e, Renderable);
-      if (!r.landmark && !world.has(e, Mover)) {
-        const f = this.rig.focusPoint;
-        const visible = (tr.x - f.x) ** 2 + (tr.z - f.z) ** 2 < CULL_DISTANCE * CULL_DISTANCE;
-        obj.visible = visible;
-        if (!visible) continue;
+      if (!world.has(e, Mover)) {
+        if (!r.landmark) {
+          const f = this.rig.focusPoint;
+          const visible = (tr.x - f.x) ** 2 + (tr.z - f.z) ** 2 < CULL_DISTANCE * CULL_DISTANCE;
+          obj.visible = visible;
+          if (!visible) continue;
+        }
+        // Tall props between the camera and the player turn see-through (smokestacks, towers).
+        this.setFaded(obj, this.occludes(r, tr.x, tr.z));
       }
       obj.position.set(
         tr.prevX + (tr.x - tr.prevX) * alpha,
@@ -563,6 +735,11 @@ export class GameRenderer {
     this.moon.position.set(f.x - 12, 30, f.z + 6);
     this.moon.target.position.set(f.x, 0, f.z);
     this.ash.update(frameDt, f);
+    // Belts scroll at 3.2 m/s (one chevron per 2 m); molten metal breathes.
+    if (this.beltTexture) this.beltTexture.offset.y = (this.beltTexture.offset.y - frameDt * 1.6 * this.animationTimeScale) % 1;
+    // Post-processing tone-maps the scene: a moderate colour stays orange instead of washing out.
+    if (this.moltenMaterial) this.moltenMaterial.color.setHSL(0.045, 1, 0.38 + Math.sin(this.time * 1.7) * 0.04);
+    if (this.lavaTime) this.lavaTime.value = this.time;
     this.renderer.info.reset();
     this.postfx.render(this.scene, this.rig.camera);
   }
@@ -649,6 +826,62 @@ function makeGlowTexture(): THREE.Texture {
 }
 
 /** Procedural ash-and-cinder ground texture (deterministic). */
+/** Bright molten metal with darker cooling crust plates (tiles seamlessly). */
+function makeLavaTexture(): THREE.Texture {
+  const n = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = n;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#ffb060';
+  g.fillRect(0, 0, n, n);
+  const rng = new Rng('lava');
+  // Crust plates, drawn wrapped around the edges so the tile repeats without seams.
+  for (let i = 0; i < 26; i++) {
+    const x = rng.range(0, n);
+    const y = rng.range(0, n);
+    const r = rng.range(6, 18);
+    const shade = Math.round(rng.range(30, 80));
+    const squash = rng.range(0.5, 1);
+    const turn = rng.range(0, Math.PI);
+    g.fillStyle = `rgb(${shade + 20}, ${Math.round(shade * 0.45)}, ${Math.round(shade * 0.2)})`;
+    for (const dx of [-n, 0, n]) {
+      for (const dy of [-n, 0, n]) {
+        g.beginPath();
+        g.ellipse(x + dx, y + dy, r, r * squash, turn, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Dark rubber with a pale chevron pointing along +v (the direction of travel). */
+function makeBeltTexture(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#26221e';
+  g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#1a1714';
+  for (let y = 0; y < 64; y += 8) g.fillRect(0, y, 64, 2);
+  g.strokeStyle = '#c8a24a';
+  g.lineWidth = 7;
+  g.beginPath();
+  // Canvas y grows downwards while texture v grows upwards: draw the chevron pointing up.
+  g.moveTo(10, 46);
+  g.lineTo(32, 20);
+  g.lineTo(54, 46);
+  g.stroke();
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function makeGroundTexture(): THREE.Texture {
   const size = 512;
   const canvas = document.createElement('canvas');

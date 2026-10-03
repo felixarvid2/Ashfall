@@ -11,7 +11,8 @@ import { ASPECT_DEFS, BASE_ITEMS, UNIQUE_DEFS } from './loot/db';
 import en from './lang/en.json';
 import { SettingsSchema } from './settings';
 import { TEST_ARENA, type ArenaDef } from './zones/testArena';
-import { CINDER_FLATS } from './zones/cinderFlats';
+import { ZONES } from './zones';
+import { PACK_TEMPLATES } from './packs';
 import { NPCS, QUESTS } from './quests/db';
 
 export function validateGameData(): string[] {
@@ -30,7 +31,7 @@ export function validateGameData(): string[] {
     if (asset.category !== 'icon' && !asset.placeholder) errors.push(`manifest: ${asset.id} needs a placeholder`);
   }
 
-  const arenas: ArenaDef[] = [TEST_ARENA, CINDER_FLATS];
+  const arenas: ArenaDef[] = [TEST_ARENA, ...ZONES];
   for (const arena of arenas) {
     for (const prop of arena.props) {
       if (!ids.has(prop.asset)) errors.push(`${arena.id}: unknown asset ${prop.asset}`);
@@ -149,6 +150,55 @@ export function validateGameData(): string[] {
     for (const k of ['name', 'effect', 'flavor']) lang(`uniques.${u.id}.${k}`);
   }
   for (const b of ['basic', 'core', 'defensive', 'tactical', 'mastery', 'ultimate', 'key']) lang(`tree.branches.${b}`);
+
+  // Zones: border gates pair up, and ids that are stored by name never repeat across zones.
+  const zoneIds = new Set(ZONES.map((z) => z.id));
+  const seen = new Map<string, string>();
+  const unique = (kind: string, id: string, zone: string) => {
+    const other = seen.get(`${kind}:${id}`);
+    if (other) errors.push(`${zone}: ${kind} id ${id} is also used in ${other}`);
+    seen.set(`${kind}:${id}`, zone);
+  };
+  const templates = new Set(PACK_TEMPLATES.map((p) => p.id));
+  for (const zone of ZONES) {
+    lang(`zones.${zone.key}.name`);
+    for (const sz of zone.subzones) lang(`zones.${zone.key}.${sz.id}`);
+    for (const h of zone.hubs) lang(`zones.${zone.key}.${h.id}`);
+    for (const tp of zone.teleporters) {
+      unique('teleporter', tp.id, zone.id);
+      lang(`zones.teleporters.${tp.id}`);
+    }
+    for (const poi of zone.pois) {
+      unique('poi', poi.id, zone.id);
+      if (poi.kind === 'lore') {
+        lang(`lore.${String(poi.data?.log)}.title`);
+        lang(`lore.${String(poi.data?.log)}.body`);
+      }
+    }
+    for (const p of zone.packs) {
+      unique('pack', p.id, zone.id);
+      if (!templates.has(p.template)) errors.push(`${zone.id}: unknown pack template ${p.template}`);
+    }
+    for (const g of zone.gates) {
+      unique('gate', g.id, zone.id);
+      if (!zoneIds.has(g.to.zone)) {
+        errors.push(`${zone.id}: gate ${g.id} leads to unknown zone ${g.to.zone}`);
+        continue;
+      }
+      const other = ZONES.find((z) => z.id === g.to.zone)!.gates.find((o) => o.id === g.to.gate);
+      if (!other) errors.push(`${zone.id}: gate ${g.id} leads to unknown gate ${g.to.gate}`);
+      else if (other.to.zone !== zone.id || other.to.gate !== g.id) errors.push(`${zone.id}: gate ${g.id} and ${other.id} do not lead to each other`);
+      // Arriving must not land inside the gate's own trigger (no bounce back).
+      if (Math.hypot(g.arrive.x - g.x, g.arrive.z - g.z) < g.radius + 4) errors.push(`${zone.id}: gate ${g.id} arrival point is inside its trigger`);
+      if (Math.abs(g.x) > zone.halfSize || Math.abs(g.z) > zone.halfSize) errors.push(`${zone.id}: gate ${g.id} is outside the zone`);
+    }
+    if (zone.stash && Math.hypot(zone.stash.x, zone.stash.z) > zone.halfSize * 1.5) errors.push(`${zone.id}: stash outside the zone`);
+  }
+  for (const npc of NPCS.values()) if (!zoneIds.has(npc.zone)) errors.push(`npc ${npc.id}: unknown zone ${npc.zone}`);
+  for (const q of QUESTS.values()) {
+    if (!zoneIds.has(q.zone)) errors.push(`quest ${q.id}: unknown zone ${q.zone}`);
+    for (const step of q.steps) if (step.zone && !zoneIds.has(step.zone)) errors.push(`quest ${q.id}: unknown step zone ${step.zone}`);
+  }
 
   if (!SettingsSchema.safeParse({}).success) errors.push('settings: defaults do not validate');
   if (typeof en !== 'object') errors.push('lang/en.json: not an object');

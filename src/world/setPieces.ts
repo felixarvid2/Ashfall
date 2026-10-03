@@ -16,6 +16,8 @@ import { monsterLevel } from '../systems/encounter';
 import { spawnEnemy } from './spawn';
 import type { ZoneRuntime } from './zone';
 
+/** These set pieces live in Cinder Flats only. */
+const ZONE_ID = 'zone.cinder_flats';
 export const SIERRA = { id: 'stronghold.sierra', x: 232 * CINDER_SCALE, z: -132 * CINDER_SCALE, radius: 30, trigger: 24 };
 export const SIERRA_HUB: HubDef = { id: 'hub.sierra', x: SIERRA.x, z: SIERRA.z, radius: 26 };
 export const MAW = { id: 'boss.first', x: 292 * CINDER_SCALE, z: 196 * CINDER_SCALE, radius: 26, trigger: 19, segments: 22, gaps: [0, 1, 11] };
@@ -41,7 +43,7 @@ export function createSetPieces(): SetPieceState {
 
 /** Reclaimed strongholds act as hubs. */
 export function extraHubs(zone: ZoneRuntime): HubDef[] {
-  return zone.found.has(SIERRA.id) ? [SIERRA_HUB] : [];
+  return zone.def.id === ZONE_ID && zone.found.has(SIERRA.id) ? [SIERRA_HUB] : [];
 }
 
 /** After loading: reclaimed or defeated set pieces stay that way. */
@@ -62,7 +64,7 @@ function restorationPoint(ctx: GameContext, key: string): void {
 
 export function setPieceSystem(world: World, dt: number, ctx: GameContext): void {
   const zone = ctx.zone;
-  if (!zone || ctx.instance) return;
+  if (!zone || ctx.instance || zone.def.id !== ZONE_ID) return;
   const player = world.first(PlayerControlled, Transform);
   if (player === undefined || world.has(player, Dead)) return;
   const ptr = world.req(player, Transform);

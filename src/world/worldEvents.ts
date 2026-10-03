@@ -68,6 +68,16 @@ export function createEvents(zone: ZoneRuntime): Map<string, EventState> {
   return out;
 }
 
+/** The player left the zone mid-event: it can be started again later (its entities are gone). */
+export function suspendEvents(zone: ZoneRuntime): void {
+  for (const ev of zone.events.values()) {
+    if (ev.state !== 'active') continue;
+    ev.state = 'idle';
+    ev.objects = [];
+    ev.result = null;
+  }
+}
+
 function eventObject(world: World, id: string, x: number, z: number, asset: string, scale = 1, glow?: string): Entity {
   const e = world.create();
   world.add(e, Transform, makeTransform(x, 0, z, 0));

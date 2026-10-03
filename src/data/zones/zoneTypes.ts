@@ -35,6 +35,31 @@ export interface TeleporterDef {
   hub?: boolean;
 }
 
+/**
+ * A border crossing to another zone (docs/regions/refinery-district.md, "Several zones"). Walking
+ * into the trigger circle loads the other zone behind a short fade; you arrive at the paired gate's
+ * `arrive` point, outside its trigger.
+ */
+export interface ZoneGateDef {
+  id: string;
+  x: number;
+  z: number;
+  radius: number;
+  /** Zone and gate on the other side. */
+  to: { zone: string; gate: string };
+  /** Where a player coming through from the other side appears. */
+  arrive: { x: number; z: number };
+}
+
+/** Environmental mechanics placed in a zone (Refinery District). */
+export type EnvFeature =
+  /** A moving belt: everything standing on it is carried along `dir` (radians, 0 = +z). */
+  | { kind: 'conveyor'; id: string; x: number; z: number; length: number; width: number; dir: number; speed: number }
+  /** Molten metal: damages everyone standing in it; enemies avoid stepping in when they can. */
+  | { kind: 'molten'; id: string; x: number; z: number; radius: number }
+  /** A vent: a warned, timed fire or steam blast that hits everyone near it. */
+  | { kind: 'vent'; id: string; x: number; z: number; radius: number; period: number; offset: number; element: 'fire' | 'steam' | 'frost' };
+
 export interface PackSpawn {
   id: string;
   x: number;
@@ -80,6 +105,14 @@ export interface ZoneDef extends ArenaDef {
   pois: PoiDef[];
   /** Grid size (m) of the fog-of-war map. */
   mapCell: number;
+  /** Border crossings to neighbouring zones. */
+  gates: ZoneGateDef[];
+  /** Belts, molten metal and vents. */
+  env?: EnvFeature[];
+  /** Order on the world map (region number). */
+  region: number;
+  /** The account stash in this zone's hub. */
+  stash?: { x: number; z: number };
 }
 
 export type { PropPlacement };
