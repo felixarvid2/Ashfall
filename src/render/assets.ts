@@ -8,7 +8,6 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import manifestJson from '../../assets/manifest.json';
 import { AssetManifestSchema, type AssetEntry } from '../data/assetManifest';
@@ -57,14 +56,25 @@ export class AssetLibrary {
 
   /** Load every optimized model listed in the manifest. Missing files fall back to placeholders. */
   async preload(baseUrl: string, onProgress?: (done: number, total: number) => void): Promise<void> {
-    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+    const loader = new GLTFLoader();
+    // The meshopt decoder is WebAssembly, which artifact pages may not run; their models arrive decoded.
+    if (!EMBEDDED) loader.setMeshoptDecoder((await import('three/examples/jsm/libs/meshopt_decoder.module.js')).MeshoptDecoder);
+    if (EMBEDDED) {
+      // Artifact pages may only fetch their own files: textures come as data: images, which must load
+      // through an <img> (TextureLoader), never through fetch (ImageBitmapLoader).
+      loader.register((parser) => {
+        parser.textureLoader = new THREE.TextureLoader(parser.options.manager);
+        return { name: 'ashfall_image_element_textures' };
+      });
+    }
     const todo = [...this.entries.values()].filter((e) => e.status === 'optimized' && e.file && e.category !== 'icon');
     let done = 0;
     await Promise.all(
       todo.map(async (entry) => {
         try {
-          const files = [entry.file!, ...(entry.lods ?? [])];
-          const gltfs = await Promise.all(files.map((f) => loader.loadAsync(`${baseUrl}assets/${modelFile(f)}`)));
+          // Artifact builds ship one level per model (smaller download; the CPU cost of full detail is small).
+          const files = EMBEDDED ? [entry.file!] : [entry.file!, ...(entry.lods ?? [])];
+          const gltfs = await Promise.all(files.map((f) => loadModel(loader, `${baseUrl}assets/${modelFile(f)}`)));
           const levels = gltfs.map((g) => g.scene);
           if (entry.glow) {
             const glow = entry.glow;
@@ -271,6 +281,20 @@ export class AssetLibrary {
  * The artifact build (npm run build:artifact) ships models as embedded glTF JSON, since claude.ai
  * artifacts don't serve .glb files.
  */
+/** Artifact builds (npm run build:artifact) ship each model as `.glb.json`: `{ "glb": "<base64>" }`. */
+const EMBEDDED = import.meta.env.VITE_MODEL_FORMAT === 'json';
+
 function modelFile(file: string): string {
-  return import.meta.env.VITE_MODEL_FORMAT === 'json' ? file.replace(/\.glb$/, '.gltf.json') : file;
+  return EMBEDDED ? file.replace(/\.glb$/, '.glb.json') : file;
+}
+
+async function loadModel(loader: GLTFLoader, url: string) {
+  if (!EMBEDDED) return loader.loadAsync(url);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  const { glb } = (await res.json()) as { glb: string };
+  const bin = atob(glb);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return loader.parseAsync(bytes.buffer, '');
 }
