@@ -4,9 +4,10 @@
     {
       "id": "char.bastion",
       "category": "character",
-      "prompt": "heavy armored space marine in a bulky battered exoskeleton, oversized hydraulic gauntlets, hydraulic joints, scorched gunmetal paint, glowing orange visor, full body, T-pose",
-      "source": "text",
-      "targetPolycount": 8000,
+      "prompt": "heavy armored space marine hero in a bulky battered powered exoskeleton, oversized hydraulic gauntlets, scorched gunmetal armor with orange hazard stripes, glowing orange visor, empty hands, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "heavy armored sci-fi space marine hero in a bulky battered powered exoskeleton, oversized hydraulic gauntlets with exposed pistons, thick layered armor plates with scratches and burn marks, scorched gunmetal paint with faded orange hazard stripes, glowing orange visor slit in a heavy helmet, small exhaust vents on the back, highly detailed game-ready hero character, clean readable silhouette, standing in a T-pose with arms straight out to the sides, empty hands, full body, neutral background",
+      "targetPolycount": 20000,
       "heightMeters": 1.95,
       "pose": "t-pose",
       "rig": {
@@ -26,8 +27,24 @@
             "actionId": 128
           },
           {
-            "state": "cast",
+            "state": "attack2",
+            "actionId": 92
+          },
+          {
+            "state": "slam",
             "actionId": 127
+          },
+          {
+            "state": "leap",
+            "actionId": 382
+          },
+          {
+            "state": "cast",
+            "actionId": 125
+          },
+          {
+            "state": "dodge",
+            "actionId": 158
           },
           {
             "state": "hit",
@@ -41,25 +58,29 @@
       },
       "status": "optimized",
       "meshy": {
-        "previewTaskId": "01a0fcb1-1862-7037-a4e1-9a720fb5653f",
-        "refineTaskId": "01a0fcc6-264d-772a-b3a1-6acf72b18da9",
-        "rigTaskId": "01a0fcd0-f854-7007-847d-65ccd88f5f89",
-        "animationTaskId": "01a0fcd1-db4d-73da-8bbe-1204905c67a7",
+        "previewTaskId": "01a10050-8e08-7151-a8d6-79d95a906d34",
+        "refineTaskId": "01a10051-92fb-758b-8a41-3d88188ce30c",
+        "rigTaskId": "01a10054-b1c3-7721-8ef0-f885106985bc",
+        "animationTaskId": "01a10055-09cb-76c1-a69a-61b5b94b16b3",
         "previewApproved": true,
-        "creditsSpent": 53,
+        "creditsSpent": 139,
         "clips": {
           "idle": "idle",
           "run": "run",
           "attack": "attack",
+          "attack2": "attack2",
+          "slam": "slam",
+          "leap": "leap",
           "cast": "cast",
+          "dodge": "dodge",
           "hit": "hit",
           "death": "death"
         }
       },
       "file": "characters/bastion.glb",
       "stats": {
-        "triangles": 7990,
-        "bytes": 484296,
+        "triangles": 20733,
+        "bytes": 862292,
         "textures": 1
       },
       "placeholder": {
@@ -1077,10 +1098,10 @@
     {
       "id": "char.spectre",
       "category": "character",
-      "prompt": "lean agile sniper and saboteur in a dark hooded tactical stealth suit with light composite armor plates, tattered grey scarf, glowing cyan optical visor, utility belts with grenades, twin pistols holstered at the hips, full body, T-pose",
+      "prompt": "lean agile sniper and saboteur hero in a dark hooded tactical stealth suit, light composite armor, tattered grey scarf, glowing cyan visor, utility belts, empty hands, full body, T-pose",
       "source": "image",
-      "conceptPrompt": "lean agile sci-fi sniper and saboteur in a dark charcoal hooded tactical stealth suit with light composite armor plates, tattered grey scarf, glowing cyan optical visor covering the eyes, utility belts with small grenades, twin pistols holstered on the thighs, worn and dusty, standing in a T-pose with arms straight out to the sides",
-      "targetPolycount": 7000,
+      "conceptPrompt": "lean agile sci-fi sniper and saboteur hero in a dark charcoal hooded tactical stealth suit, light composite armor plates on chest and shoulders, tattered grey scarf, glowing cyan optical visor covering the eyes, utility belts with small grenades, empty thigh holsters, fingerless gloves, worn and dusty, highly detailed game-ready hero character, clean readable silhouette, standing in a T-pose with arms straight out to the sides, empty hands, full body, neutral background",
+      "targetPolycount": 20000,
       "heightMeters": 1.8,
       "pose": "t-pose",
       "rig": {
@@ -1104,8 +1125,20 @@
             "actionId": 219
           },
           {
-            "state": "cast",
+            "state": "shoot",
+            "actionId": 222
+          },
+          {
+            "state": "throw",
             "actionId": 239
+          },
+          {
+            "state": "cast",
+            "actionId": 126
+          },
+          {
+            "state": "dodge",
+            "actionId": 158
           },
           {
             "state": "hit",
@@ -1119,27 +1152,30 @@
       },
       "status": "optimized",
       "meshy": {
-        "previewTaskId": "01a0fd9d-cf04-777d-b01b-93f467e24668",
-        "refineTaskId": "01a0fd9f-5f7b-74d5-b456-90009816f766",
-        "rigTaskId": "01a0fda2-0be6-7525-bfc8-015f50e036cb",
-        "animationTaskId": "01a0fda2-5665-71c1-add1-053651ced642",
+        "previewTaskId": "01a1004e-ebe5-7770-880d-4b8a1bcd1719",
+        "refineTaskId": "01a10051-94d1-7526-9b8d-5b3d9bea8f1f",
+        "rigTaskId": "01a10054-b308-7176-9fe3-6bc28be2117d",
+        "animationTaskId": "01a10055-124c-7237-82ca-dec35a21cf53",
         "previewApproved": true,
-        "creditsSpent": 62,
+        "creditsSpent": 128,
         "clips": {
           "idle": "idle",
           "run": "run",
           "attack": "attack",
           "attack2": "attack2",
+          "shoot": "shoot",
+          "throw": "throw",
           "cast": "cast",
+          "dodge": "dodge",
           "hit": "hit",
           "death": "death"
         }
       },
       "file": "characters/spectre.glb",
       "stats": {
-        "triangles": 7133,
-        "bytes": 561988,
-        "textures": 1
+        "triangles": 20738,
+        "bytes": 1203548,
+        "textures": 3
       },
       "placeholder": {
         "shape": "capsule",
@@ -1394,10 +1430,10 @@
     {
       "id": "char.xenomant",
       "category": "character",
-      "prompt": "gaunt rogue biologist in a torn stained lab coat over light armor, bioluminescent sickly green fungal-crystal growth spreading over one shoulder and arm, injector vials on a belt, full body, T-pose",
+      "prompt": "gaunt rogue biologist hero in a torn stained lab coat over light armor, bioluminescent green fungal growths, respirator mask with glowing green filters, bandolier of vials, empty hands, full body, T-pose",
       "source": "image",
-      "conceptPrompt": "gaunt sci-fi rogue biologist in a torn and stained long lab coat over light armor plates, bioluminescent sickly green fungal-crystal growth spreading over the left shoulder, arm and side of the face, glowing green veins, belt with injector vials and a scalpel blade, worn boots, standing in a T-pose with arms straight out to the sides",
-      "targetPolycount": 7000,
+      "conceptPrompt": "gaunt sci-fi rogue biologist hero in a torn stained long lab coat over light armor, bioluminescent sickly green fungal growths on one shoulder and arm, respirator mask with green glowing filters, vials and syringes on a bandolier, surgical gloves, highly detailed game-ready hero character, clean readable silhouette, standing in a T-pose with arms straight out to the sides, empty hands, full body, neutral background",
+      "targetPolycount": 20000,
       "heightMeters": 1.82,
       "pose": "t-pose",
       "rig": {
@@ -1425,6 +1461,18 @@
             "actionId": 125
           },
           {
+            "state": "cast2",
+            "actionId": 131
+          },
+          {
+            "state": "slam",
+            "actionId": 127
+          },
+          {
+            "state": "dodge",
+            "actionId": 158
+          },
+          {
             "state": "hit",
             "actionId": 178
           },
@@ -1436,27 +1484,30 @@
       },
       "status": "optimized",
       "meshy": {
-        "previewTaskId": "01a0fdd5-71ee-77d4-a594-6c910433ec59",
-        "refineTaskId": "01a0fdda-37f4-70bf-87e8-0dfb19480649",
-        "rigTaskId": "01a0fddd-d851-7119-90c1-8903d87b934b",
-        "animationTaskId": "01a0fdde-282a-73bc-8e78-bf52272c1b3b",
+        "previewTaskId": "01a1004e-ec3d-741b-aa65-b71276a5cfff",
+        "refineTaskId": "01a10051-9516-721b-92b5-55a4fa1c49a4",
+        "rigTaskId": "01a10054-b388-736e-b9d3-2e356512e674",
+        "animationTaskId": "01a10055-0b43-74f6-9ebe-39ab72e0c36c",
         "previewApproved": true,
-        "creditsSpent": 62,
+        "creditsSpent": 128,
         "clips": {
           "idle": "idle",
           "run": "run",
           "attack": "attack",
           "attack2": "attack2",
           "cast": "cast",
+          "cast2": "cast2",
+          "slam": "slam",
+          "dodge": "dodge",
           "hit": "hit",
           "death": "death"
         }
       },
       "file": "characters/xenomant.glb",
       "stats": {
-        "triangles": 7038,
-        "bytes": 557068,
-        "textures": 1
+        "triangles": 20683,
+        "bytes": 1189284,
+        "textures": 3
       },
       "placeholder": {
         "shape": "capsule",
@@ -1784,8 +1835,8 @@
       "file": "enemies/sergeant.glb",
       "stats": {
         "triangles": 6249,
-        "bytes": 532788,
-        "textures": 1
+        "bytes": 854664,
+        "textures": 3
       },
       "placeholder": {
         "shape": "capsule",
@@ -2545,6 +2596,108 @@
       "stats": {
         "triangles": 0,
         "bytes": 4998
+      }
+    },
+    {
+      "id": "weapon.hydraulic_hammer",
+      "category": "prop",
+      "prompt": "sci-fi war hammer weapon standing upright on its handle: a large heavy rectangular steel hammer head at the top with hydraulic pistons on its sides, a long straight metal handle with a wrapped grip at the bottom, scorched gunmetal with orange glowing heat vents, single object, game asset",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 1.3,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a10050-8fcb-77fa-8bbc-ff8cfb9ffa04",
+        "refineTaskId": "01a10051-9466-74e0-b4bc-d8d9859e8945",
+        "previewApproved": true,
+        "creditsSpent": 50
+      },
+      "file": "props/hydraulic_hammer.glb",
+      "lods": [
+        "props/hydraulic_hammer_lod1.glb",
+        "props/hydraulic_hammer_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2502,
+        "bytes": 316336,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a5048",
+        "size": [
+          0.35,
+          1.3,
+          0.2
+        ]
+      }
+    },
+    {
+      "id": "weapon.heavy_pistol",
+      "category": "prop",
+      "prompt": "compact sci-fi heavy pistol, chunky dark gunmetal frame, cyan glowing energy cell and sight strips, worn grip, game asset, side view",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 0.22,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1004e-ec47-706c-9627-7298f15a074c",
+        "refineTaskId": "01a10051-9467-77dd-88ed-43f9d8bd88be",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/heavy_pistol.glb",
+      "lods": [
+        "props/heavy_pistol_lod1.glb",
+        "props/heavy_pistol_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2415,
+        "bytes": 298728,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a4048",
+        "size": [
+          0.06,
+          0.3,
+          0.18
+        ]
+      }
+    },
+    {
+      "id": "weapon.scalpel_blade",
+      "category": "prop",
+      "prompt": "long curved surgical scalpel blade used as a sword standing upright, bone handle wrapped in medical tape, thin steel blade with a bioluminescent green edge, game asset",
+      "source": "text",
+      "targetPolycount": 2500,
+      "heightMeters": 0.85,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1004e-ec06-708e-a40a-e6ce4f386ace",
+        "refineTaskId": "01a10051-94b5-7221-8748-096ebf837a8d",
+        "previewApproved": true,
+        "creditsSpent": 30
+      },
+      "file": "props/scalpel_blade.glb",
+      "lods": [
+        "props/scalpel_blade_lod1.glb",
+        "props/scalpel_blade_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2468,
+        "bytes": 191992,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#7a8a70",
+        "size": [
+          0.08,
+          0.85,
+          0.04
+        ]
       }
     }
   ]

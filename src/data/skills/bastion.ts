@@ -7,6 +7,7 @@ type SkillInput = z.input<typeof SkillDefSchema>;
 export const BASTION_SKILLS: SkillInput[] = [
   {
     id: 'bastion.hydraulic_strike',
+    anim: 'attack',
     classId: 'bastion',
     category: 'basic',
     cooldown: 0,
@@ -28,6 +29,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   },
   {
     id: 'bastion.seismic_shock',
+    anim: 'slam',
     classId: 'bastion',
     category: 'core',
     cooldown: 0,
@@ -47,6 +49,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   },
   {
     id: 'bastion.rocket_leap',
+    anim: 'leap',
     classId: 'bastion',
     category: 'tactical',
     cooldown: 7,
@@ -71,6 +74,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   },
   {
     id: 'bastion.energy_shield',
+    anim: 'cast',
     classId: 'bastion',
     category: 'defensive',
     cooldown: 14,
@@ -87,6 +91,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   {
     // Fast, narrow jab: less damage than Hydraulic Strike but briefly exposes enemies.
     id: 'bastion.piston_jab',
+    anim: 'attack2',
     classId: 'bastion',
     category: 'basic',
     cooldown: 0,
@@ -108,6 +113,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   {
     // Wide superheated cleave that sets everything in front on fire.
     id: 'bastion.furnace_cleave',
+    anim: 'attack2',
     classId: 'bastion',
     category: 'core',
     cooldown: 0,
@@ -129,6 +135,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   {
     // Dump Heat into coolant: heals and grants a small barrier.
     id: 'bastion.coolant_flush',
+    anim: 'cast',
     classId: 'bastion',
     category: 'defensive',
     cooldown: 16,
@@ -145,6 +152,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   {
     // Magnetic burst that drags enemies in and briefly stuns them.
     id: 'bastion.magnetic_pull',
+    anim: 'cast',
     classId: 'bastion',
     category: 'tactical',
     cooldown: 10,
@@ -165,6 +173,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   {
     // Release all stored Heat as a fire wave; more Heat = more damage.
     id: 'bastion.heat_vent',
+    anim: 'cast',
     classId: 'bastion',
     category: 'mastery',
     cooldown: 12,
@@ -186,6 +195,7 @@ export const BASTION_SKILLS: SkillInput[] = [
   {
     // Call down an orbital strike on the cursor after a short warning.
     id: 'bastion.orbital_strike',
+    anim: 'slam',
     classId: 'bastion',
     category: 'ultimate',
     cooldown: 50,

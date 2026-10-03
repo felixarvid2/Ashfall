@@ -4,9 +4,10 @@
  */
 import * as THREE from 'three';
 import type { Entity, World } from '../core/ecs';
-import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, MinionAI, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
+import { CLASS_WEAPONS } from '../data/weapons';
 import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef } from '../data/zones/testArena';
@@ -279,6 +280,43 @@ export class GameRenderer {
     }
   }
 
+  /** Put the class's weapons into the character's hands (bone attachments). */
+  private attachWeapons(obj: THREE.Object3D, classId: string): void {
+    obj.updateMatrixWorld(true);
+    for (const mount of CLASS_WEAPONS[classId] ?? []) {
+      const bone = obj.getObjectByName(mount.bone);
+      if (!bone || !this.assets.has(mount.asset)) continue;
+      const weapon = this.assets.create(mount.asset);
+      weapon.traverse((o) => {
+        o.castShadow = true;
+        o.userData.noTint = true;
+      });
+      // The armature is scaled (centimetre bones), so undo the bone's world scale.
+      const ws = new THREE.Vector3();
+      bone.getWorldScale(ws);
+      const pivot = new THREE.Group();
+      pivot.name = `weapon:${mount.asset}`;
+      pivot.scale.setScalar(1 / ws.x);
+      pivot.rotation.set(...mount.rot);
+      if (mount.offset) pivot.position.set(...mount.offset).multiplyScalar(1 / ws.x);
+      weapon.position.y = -mount.grip * mount.length;
+      pivot.add(weapon);
+      pivot.userData.mount = mount;
+      bone.add(pivot);
+    }
+  }
+
+  /** Debug: change every held weapon's rotation (tuning mounts). */
+  setWeaponRotation(rot: [number, number, number], offset?: [number, number, number]): void {
+    for (const obj of this.objects.values()) {
+      obj.traverse((o) => {
+        if (!o.name.startsWith('weapon:')) return;
+        o.rotation.set(...rot);
+        if (offset) o.position.set(...offset).multiplyScalar(o.scale.x);
+      });
+    }
+  }
+
   /** Mirror ECS → scene, interpolating between the last two ticks by `alpha`. */
   sync(world: World, alpha: number, frameDt: number): void {
     this.time += frameDt;
@@ -304,6 +342,11 @@ export class GameRenderer {
             }
           });
         }
+        const user = world.get(e, SkillUser);
+        if (user && world.has(e, PlayerControlled)) this.attachWeapons(obj, user.classId);
+        // Rim light keeps characters readable against the dark ground (docs/world-and-gameplay.md §14).
+        if (world.has(e, PlayerControlled)) addRim(obj, '#a8bcdf', 0.55);
+        else if (world.has(e, EnemyAI)) addRim(obj, '#e07a4a', 0.32);
         this.objects.set(e, obj);
         this.scene.add(obj);
         const clips = this.assets.clips(r.assetId);
@@ -406,7 +449,9 @@ export class GameRenderer {
 
     const user = world.get(e, SkillUser);
     const fm = world.get(e, ForcedMove);
-    if (fm && fm.height > 0) return { state: 'cast', loop: false, fit: fm.duration, token: fm };
+    // Leaps play the leap clip; dodges (flat forced moves of the player) the roll.
+    if (fm && fm.height > 0) return { state: 'leap', loop: false, fit: fm.duration, token: fm };
+    if (fm && world.has(e, PlayerControlled) && animator.has('dodge')) return { state: 'dodge', loop: false, fit: fm.duration, token: fm };
     if (user?.cast) {
       const def = skill(user.cast.skillId);
       const state = def.anim ?? (def.category === 'basic' ? 'attack' : 'cast');
@@ -639,3 +684,27 @@ function makeGroundTexture(): THREE.Texture {
   tex.anisotropy = 4;
   return tex;
 }
+
+/** Fresnel rim on a character's (own, cloned) standard materials. */
+function addRim(obj: THREE.Object3D, color: string, strength: number): void {
+  const rim = new THREE.Color(color).multiplyScalar(strength);
+  obj.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh || o.userData.noTint) return;
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+    if (!(mat instanceof THREE.MeshStandardMaterial) || mat.userData.rim) return;
+    mat.userData.rim = true;
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.rimColor = { value: rim };
+      shader.fragmentShader = shader.fragmentShader
+        .replace('void main() {', 'uniform vec3 rimColor;\nvoid main() {')
+        .replace(
+          '#include <emissivemap_fragment>',
+          '#include <emissivemap_fragment>\n  float rimF = pow(1.0 - clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0), 2.5);\n  totalEmissiveRadiance += rimColor * rimF;',
+        );
+    };
+    mat.customProgramCacheKey = () => `rim-${color}`;
+    mat.needsUpdate = true;
+  });
+}
+

@@ -8,13 +8,13 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Basic, ranged: a poison dart that builds Biomass.
     id: 'xenomant.spore_dart',
+    anim: 'attack',
     classId: 'xenomant',
     category: 'basic',
     cooldown: 0,
     resourceGain: 5,
     castTime: 0.1,
     recovery: 0.16,
-    anim: 'attack',
     effect: {
       kind: 'projectile',
       speed: 24,
@@ -31,13 +31,13 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Basic, melee: a scalpel slash that steals life.
     id: 'xenomant.scalpel_slash',
+    anim: 'attack2',
     classId: 'xenomant',
     category: 'basic',
     cooldown: 0,
     resourceGain: 6,
     castTime: 0.08,
     recovery: 0.17,
-    anim: 'attack2',
     effect: {
       kind: 'meleeArc',
       range: 2.2,
@@ -53,13 +53,13 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Core: a cloud of spores at the cursor that keeps poisoning enemies inside.
     id: 'xenomant.spore_burst',
+    anim: 'cast',
     classId: 'xenomant',
     category: 'core',
     cooldown: 0,
     resourceCost: 30,
     castTime: 0.2,
     recovery: 0.25,
-    anim: 'cast',
     effect: {
       kind: 'cloud',
       maxRange: 12,
@@ -75,13 +75,13 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Core: a parasitic link that drains an enemy and heals you.
     id: 'xenomant.parasite_link',
+    anim: 'cast2',
     classId: 'xenomant',
     category: 'core',
     cooldown: 0,
     resourceCost: 25,
     castTime: 0.15,
     recovery: 0.2,
-    anim: 'cast',
     effect: {
       kind: 'tether',
       maxRange: 9,
@@ -97,36 +97,36 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Defensive: hardened chitin — 30 % less damage taken, melee attackers are hurt.
     id: 'xenomant.chitin_armor',
+    anim: 'cast',
     classId: 'xenomant',
     category: 'defensive',
     cooldown: 16,
     resourceGain: 10,
     castTime: 0.1,
     recovery: 0.1,
-    anim: 'cast',
     effect: { kind: 'selfBuff', applies: [{ status: 'chitin', duration: 6 }] },
   },
   {
     // Defensive: a fungal cocoon — barrier, healing and cleansing.
     id: 'xenomant.spore_cocoon',
+    anim: 'cast2',
     classId: 'xenomant',
     category: 'defensive',
     cooldown: 20,
     castTime: 0.15,
     recovery: 0.1,
-    anim: 'cast',
     effect: { kind: 'selfBuff', applies: [{ status: 'barrier', duration: 4, lifeFraction: 0.25 }], cleanse: true, healFraction: 0.1 },
   },
   {
     // Tactical: raise corpses near the cursor as minions.
     id: 'xenomant.raise_corpse',
+    anim: 'cast2',
     classId: 'xenomant',
     category: 'tactical',
     cooldown: 0.5,
     resourceCost: 15,
     castTime: 0.25,
     recovery: 0.15,
-    anim: 'cast',
     effect: {
       kind: 'raise',
       maxRange: 12,
@@ -142,12 +142,12 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Tactical: tendrils burst from the ground and hold enemies in place.
     id: 'xenomant.grasping_tendrils',
+    anim: 'slam',
     classId: 'xenomant',
     category: 'tactical',
     cooldown: 10,
     castTime: 0.2,
     recovery: 0.15,
-    anim: 'cast',
     effect: {
       kind: 'cursorBurst',
       maxRange: 12,
@@ -166,13 +166,13 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Mastery: detonate up to three corpses near the cursor.
     id: 'xenomant.corpse_explosion',
+    anim: 'cast',
     classId: 'xenomant',
     category: 'mastery',
     cooldown: 3,
     resourceCost: 10,
     castTime: 0.2,
     recovery: 0.15,
-    anim: 'cast',
     effect: {
       kind: 'corpseBurst',
       maxRange: 12,
@@ -191,12 +191,12 @@ export const XENOMANT_SKILLS: Skill[] = [
   {
     // Ultimate: a colossal Lumen creature erupts at the cursor, taunts and slams for 12 seconds.
     id: 'xenomant.wrath_of_lumen',
+    anim: 'slam',
     classId: 'xenomant',
     category: 'ultimate',
     cooldown: 60,
     castTime: 0.4,
     recovery: 0.2,
-    anim: 'cast',
     effect: {
       kind: 'turret',
       assetId: 'prop.lumen_wrath',

@@ -24,7 +24,7 @@ export const PlaceholderSchema = z.object({
 });
 
 /** Character animation: which Meshy library action plays for which game state. */
-export const AnimStateSchema = z.enum(['idle', 'walk', 'run', 'attack', 'attack2', 'cast', 'hit', 'death']);
+export const AnimStateSchema = z.enum(['idle', 'walk', 'run', 'attack', 'attack2', 'cast', 'cast2', 'slam', 'leap', 'shoot', 'throw', 'dodge', 'block', 'hit', 'death']);
 export type AnimState = z.infer<typeof AnimStateSchema>;
 
 export const RigSpecSchema = z.object({

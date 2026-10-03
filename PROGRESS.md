@@ -287,13 +287,11 @@ Shift + left-click to attack in place.
 - **60 FPS not verified**: only measured in a headless CPU-rendered browser (4–6 FPS there — not
   representative). Skinned enemies are not instanced (one draw call each + shadows); if 100 enemies is too
   slow, next steps are GPU-instanced crowd animation (vertex-baked) and shadow LOD.
-- Rigged models keep only the base-colour texture (Meshy's rig/animation output drops the PBR maps);
-  static props keep full PBR.
 - Textures are WebP, not KTX2 (no `toktx` binary here) — see docs/decisions.md.
 - The drone was asked for "no rotors" but has small ones; acceptable for now.
 - The balance simulator's dummy doesn't fight back, so it only measures damage, not survivability.
 - Minions are re-raised enemy bodies, so their look depends on what died (colonists, drones, carriers).
-- Spectre's weapons are not visible in its hands (animations only); shots come from the body.
+- Weapons in hand are one model per class (hammer, pistols, scalpel), not the equipped item's model yet.
 - Raw Meshy downloads (`assets/source/**/*.glb`) are not in git; re-download within 3 days or regenerate.
 - Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.

@@ -305,7 +305,8 @@ export const SkillDefSchema = z.object({
     .object({ threshold: z.number().nonnegative(), applies: z.array(StatusApplySchema) })
     .optional(),
   /** Animation for the cast; default: basic skills "attack", others "cast". */
-  anim: z.enum(['attack', 'attack2', 'cast']).optional(),
+  /** Character clip to play (missing clips fall back: shoot→attack, slam/leap/throw/cast2→cast). */
+  anim: z.enum(['attack', 'attack2', 'cast', 'cast2', 'slam', 'leap', 'shoot', 'throw', 'dodge']).optional(),
   effect: SkillEffectSchema,
 });
 export type SkillDef = z.infer<typeof SkillDefSchema>;

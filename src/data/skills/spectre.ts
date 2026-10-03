@@ -8,13 +8,13 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Basic, ranged: fast shot that builds Focus.
     id: 'spectre.quick_shot',
+    anim: 'attack',
     classId: 'spectre',
     category: 'basic',
     cooldown: 0,
     resourceGain: 6,
     castTime: 0.1,
     recovery: 0.14,
-    anim: 'attack',
     effect: {
       kind: 'projectile',
       speed: 32,
@@ -31,13 +31,13 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Basic, melee: a wide vibroblade slash that makes enemies Vulnerable.
     id: 'spectre.vibro_slash',
+    anim: 'attack2',
     classId: 'spectre',
     category: 'basic',
     cooldown: 0,
     resourceGain: 7,
     castTime: 0.08,
     recovery: 0.18,
-    anim: 'attack2',
     effect: {
       kind: 'meleeArc',
       range: 2.3,
@@ -53,13 +53,13 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Core: a heavy round that passes through every enemy in a line.
     id: 'spectre.piercing_shot',
+    anim: 'shoot',
     classId: 'spectre',
     category: 'core',
     cooldown: 0,
     resourceCost: 30,
     castTime: 0.25,
     recovery: 0.2,
-    anim: 'attack',
     effect: {
       kind: 'projectile',
       speed: 42,
@@ -78,13 +78,13 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Core: a close-range fan of pistol rounds.
     id: 'spectre.pistol_barrage',
+    anim: 'attack',
     classId: 'spectre',
     category: 'core',
     cooldown: 0,
     resourceCost: 35,
     castTime: 0.15,
     recovery: 0.25,
-    anim: 'attack',
     effect: {
       kind: 'projectile',
       speed: 26,
@@ -104,12 +104,12 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Defensive: a hologram that enemies attack instead of you.
     id: 'spectre.holo_decoy',
+    anim: 'cast',
     classId: 'spectre',
     category: 'defensive',
     cooldown: 18,
     castTime: 0.1,
     recovery: 0.1,
-    anim: 'cast',
     effect: {
       kind: 'decoy',
       maxRange: 6,
@@ -123,18 +123,19 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Defensive: vanish. Enemies lose track of you and your next hit is a critical strike.
     id: 'spectre.smoke_cloak',
+    anim: 'cast',
     classId: 'spectre',
     category: 'defensive',
     cooldown: 12,
     resourceGain: 20,
     castTime: 0.1,
     recovery: 0.05,
-    anim: 'cast',
     effect: { kind: 'selfBuff', applies: [{ status: 'stealth', duration: 4 }], cleanse: true, healFraction: 0.1 },
   },
   {
     // Tactical: instant blink with a moment of invulnerability.
     id: 'spectre.phase_shift',
+    anim: 'dodge',
     classId: 'spectre',
     category: 'tactical',
     cooldown: 7,
@@ -146,12 +147,12 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Tactical: three mines that arm and explode when enemies step near.
     id: 'spectre.minefield',
+    anim: 'throw',
     classId: 'spectre',
     category: 'tactical',
     cooldown: 10,
     castTime: 0.2,
     recovery: 0.2,
-    anim: 'cast',
     effect: {
       kind: 'trap',
       maxRange: 9,
@@ -172,12 +173,12 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Mastery: a grenade that bursts into bomblets.
     id: 'spectre.cluster_grenade',
+    anim: 'throw',
     classId: 'spectre',
     category: 'mastery',
     cooldown: 10,
     castTime: 0.25,
     recovery: 0.2,
-    anim: 'cast',
     effect: {
       kind: 'grenade',
       maxRange: 12,
@@ -195,13 +196,13 @@ export const SPECTRE_SKILLS: Skill[] = [
   {
     // Ultimate: marks every enemy in a wide area; marked enemies take more damage and refund Focus on death.
     id: 'spectre.death_mark',
+    anim: 'cast',
     classId: 'spectre',
     category: 'ultimate',
     cooldown: 45,
     resourceGain: 30,
     castTime: 0.3,
     recovery: 0.2,
-    anim: 'cast',
     effect: {
       kind: 'cursorBurst',
       maxRange: 14,

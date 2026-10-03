@@ -158,6 +158,27 @@ function smoothNormals(doc: Document, prim: Primitive): void {
   prim.setAttribute('NORMAL', doc.createAccessor().setType('VEC3').setArray(n).setBuffer(buffer ?? null));
 }
 
+/** Copy normal and metallic-roughness textures from `from` into `doc`'s matching materials. */
+function restorePbr(doc: Document, from: Document, id: string, log: (m: string) => void): void {
+  const src = from.getRoot().listMaterials();
+  doc.getRoot().listMaterials().forEach((mat, i) => {
+    const s = src[i];
+    if (!s) return;
+    const copy = (t: ReturnType<typeof s.getNormalTexture>) => {
+      if (!t) return null;
+      const image = t.getImage();
+      return image ? doc.createTexture(t.getName()).setImage(image).setMimeType(t.getMimeType()) : null;
+    };
+    if (!mat.getNormalTexture() && s.getNormalTexture()) {
+      mat.setNormalTexture(copy(s.getNormalTexture())).setNormalScale(s.getNormalScale());
+    }
+    if (!mat.getMetallicRoughnessTexture() && s.getMetallicRoughnessTexture()) {
+      mat.setMetallicRoughnessTexture(copy(s.getMetallicRoughnessTexture())).setMetallicFactor(s.getMetallicFactor()).setRoughnessFactor(s.getRoughnessFactor());
+    }
+  });
+  log(`${id}: restored PBR maps from the rigged model`);
+}
+
 export async function optimizeAssets(manifest: AssetManifest, entries: AssetEntry[], log: (m: string) => void): Promise<void> {
   const nodeIO = await io();
   for (const entry of entries) {
@@ -165,6 +186,10 @@ export async function optimizeAssets(manifest: AssetManifest, entries: AssetEntr
     const input = entry.rig && existsSync(animated) ? animated : sourcePath(entry, 'refined.glb');
     log(`${entry.id}: optimizing ${input.split('/').slice(-2).join('/')}`);
     const doc = await nodeIO.read(input);
+    // Meshy's animation step returns base colour only; the rigged model (same mesh and UVs) still
+    // has the normal and metallic-roughness maps, so copy them back.
+    const rigged = sourcePath(entry, 'rigged.glb');
+    if (input === animated && existsSync(rigged)) restorePbr(doc, await nodeIO.read(rigged), entry.id, log);
     const before = countTriangles(doc);
     const skinned = doc.getRoot().listSkins().length > 0;
 
