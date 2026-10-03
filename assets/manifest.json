@@ -2922,6 +2922,96 @@
         "emissive": "#ff4a10",
         "emissiveIntensity": 0.5
       }
+    },
+    {
+      "id": "enemy.smelter",
+      "category": "enemy",
+      "prompt": "fanatic fire cultist survivor in a scorched heavy protective suit and long ash-grey robe, welding mask with a burning cross symbol, fuel tanks on the back, empty hands, T-pose",
+      "source": "image",
+      "targetPolycount": 20000,
+      "heightMeters": 1.8,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#6a4a3a",
+        "size": [
+          0.8,
+          1.8,
+          0.8
+        ],
+        "showFacing": true,
+        "facingColor": "#ff7a1a"
+      },
+      "pose": "t-pose",
+      "conceptPrompt": "full body concept art, front view, T-pose, fanatic fire cultist in a scorched heavy protective suit and long ash-grey robe, welding mask with a burning cross symbol, fuel tanks on the back, dark sci-fi industrial, plain background"
+    },
+    {
+      "id": "enemy.welder",
+      "category": "enemy",
+      "prompt": "lean industrial welder in a leather apron and dark welding goggles, glowing cutting torch strapped to the right forearm, burn scars, empty hands, T-pose",
+      "source": "image",
+      "targetPolycount": 20000,
+      "heightMeters": 1.8,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#5a4a3a",
+        "size": [
+          0.7,
+          1.8,
+          0.7
+        ],
+        "showFacing": true,
+        "facingColor": "#ffb03a"
+      },
+      "pose": "t-pose",
+      "conceptPrompt": "full body concept art, front view, T-pose, lean industrial welder in a leather apron and dark welding goggles, glowing cutting torch strapped to the forearm, burn scars, dark sci-fi industrial, plain background"
+    },
+    {
+      "id": "enemy.slagborn",
+      "category": "enemy",
+      "prompt": "hulking humanoid creature made of cooling molten slag and black metal, glowing orange cracks, green bioluminescent crystal growths on its shoulders, heavy fists",
+      "source": "text",
+      "targetPolycount": 8000,
+      "heightMeters": 2.6,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3a2a22",
+        "size": [
+          1.6,
+          2.6,
+          1.6
+        ],
+        "emissive": "#ff5a1a",
+        "emissiveIntensity": 0.6,
+        "showFacing": true,
+        "facingColor": "#7dff5a"
+      }
+    },
+    {
+      "id": "enemy.cargo_loader",
+      "category": "enemy",
+      "prompt": "hijacked industrial cargo loader robot, bipedal walker with two huge hydraulic claws, yellow-black hazard paint, cracked cockpit overgrown with green glowing fungus",
+      "source": "text",
+      "targetPolycount": 8000,
+      "heightMeters": 3.2,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a5a28",
+        "size": [
+          2.4,
+          3.2,
+          2
+        ],
+        "showFacing": true,
+        "facingColor": "#ffd23a"
+      }
     }
   ]
 }

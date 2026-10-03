@@ -37,7 +37,8 @@ export type VfxKind =
   | 'raise'
   | 'minionSlash'
   | 'slam'
-  | 'corpseBurst';
+  | 'corpseBurst'
+  | 'flame';
 
 export type GameEvent =
   | {

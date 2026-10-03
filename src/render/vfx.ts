@@ -262,6 +262,27 @@ export class VfxSystem {
         fx.update(fx, 0);
         break;
       }
+      case 'flame': {
+        // Flamethrower stream: a flickering orange cone and embers along it.
+        const fx = this.acquire(`flame:${arcDeg}`, () => {
+          const mat = additive('#ff7a1a');
+          const group = new THREE.Group();
+          group.add(new THREE.Mesh(this.arcGeometry(arcDeg), mat));
+          return { group, materials: [mat] };
+        });
+        fx.life = 0.28;
+        fx.group.position.set(x, 0.8, z);
+        fx.group.rotation.y = facing + Math.PI;
+        fx.update = (f, t) => {
+          const r = radius * (0.55 + 0.45 * t);
+          f.group.scale.set(r, 1, r);
+          f.materials[0]!.opacity = (1 - t) * 0.6;
+        };
+        fx.update(fx, 0);
+        const d = radius * 0.6;
+        this.sparks.emit(x + Math.sin(facing) * d, 0.9, z + Math.cos(facing) * d, 8, '#ffb040', 4);
+        break;
+      }
       case 'shockwave':
         this.spawnRing('ring:shock', '#ff9a40', x, z, radius, 0.38);
         this.spawnRing('ring:shock2', '#ffd9a0', x, z, radius * 0.7, 0.25, 0.1);

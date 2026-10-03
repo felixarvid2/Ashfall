@@ -70,15 +70,15 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     championChance: 0.12,
     rareChance: 0.1,
   },
-  // Refinery District (docs/regions/refinery-district.md). Region 2 enemies replace these line-ups
-  // as they arrive; until then the district uses region 1's roster.
+  // Refinery District (docs/regions/refinery-district.md): returning fire variants plus the Smelters.
   {
     id: 'rd_road',
     members: [
-      { enemy: 'infected_colonist', count: [3, 6] },
-      { enemy: 'security_drone', count: [1, 2], chance: 0.6 },
-      { enemy: 'bloater', count: [1, 1], chance: 0.4 },
-      { enemy: 'spore_hound', count: [2, 3], chance: 0.35 },
+      { enemy: 'scorched_walker', count: [3, 5] },
+      { enemy: 'flame_drone', count: [1, 2], chance: 0.5 },
+      { enemy: 'smelter', count: [1, 2], chance: 0.45 },
+      { enemy: 'welder', count: [1, 2], chance: 0.35 },
+      { enemy: 'fire_bloater', count: [1, 1], chance: 0.3 },
     ],
     championChance: 0.1,
     rareChance: 0.08,
@@ -86,9 +86,10 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'rd_conveyor',
     members: [
-      { enemy: 'infected_colonist', count: [3, 5] },
-      { enemy: 'security_drone', count: [1, 3] },
-      { enemy: 'sergeant', count: [1, 1], chance: 0.2 },
+      { enemy: 'welder', count: [2, 3] },
+      { enemy: 'flame_drone', count: [1, 3] },
+      { enemy: 'cargo_loader', count: [1, 1], chance: 0.25 },
+      { enemy: 'sergeant', count: [1, 1], chance: 0.15 },
     ],
     championChance: 0.1,
     rareChance: 0.08,
@@ -96,9 +97,9 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'rd_slag',
     members: [
-      { enemy: 'spore_hound', count: [3, 5] },
-      { enemy: 'bloater', count: [1, 2], chance: 0.5 },
-      { enemy: 'infected_colonist', count: [1, 3], chance: 0.6 },
+      { enemy: 'slag_hound', count: [3, 5] },
+      { enemy: 'fire_bloater', count: [1, 2], chance: 0.5 },
+      { enemy: 'slagborn', count: [1, 1], chance: 0.35 },
     ],
     championChance: 0.12,
     rareChance: 0.1,
@@ -106,9 +107,10 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'rd_stacks',
     members: [
-      { enemy: 'infected_colonist', count: [3, 5] },
-      { enemy: 'spore_carrier', count: [1, 1], chance: 0.5 },
-      { enemy: 'spore_hound', count: [1, 2], chance: 0.5 },
+      { enemy: 'scorched_walker', count: [3, 5] },
+      { enemy: 'slag_hound', count: [1, 3], chance: 0.6 },
+      { enemy: 'fire_bloater', count: [1, 1], chance: 0.4 },
+      { enemy: 'smelter', count: [1, 1], chance: 0.3 },
     ],
     championChance: 0.1,
     rareChance: 0.1,
@@ -116,9 +118,10 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'rd_cathedral',
     members: [
-      { enemy: 'infected_colonist', count: [4, 7] },
-      { enemy: 'security_drone', count: [1, 2], chance: 0.5 },
-      { enemy: 'sergeant', count: [1, 1], chance: 0.35 },
+      { enemy: 'smelter', count: [2, 4] },
+      { enemy: 'welder', count: [1, 2], chance: 0.6 },
+      { enemy: 'smelter_priest', count: [1, 1], chance: 0.45 },
+      { enemy: 'scorched_walker', count: [2, 3], chance: 0.5 },
     ],
     championChance: 0.14,
     rareChance: 0.12,

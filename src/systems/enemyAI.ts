@@ -2,15 +2,19 @@
  * Enemy behaviours, driven by EnemyDef.behavior:
  *  - rusher:  chase, telegraphed melee swing (dodgeable: the hit is checked when the swing lands)
  *  - ranged:  hold a distance band, strafe, telegraphed projectile
- *  - support: hide behind its pack and periodically shield nearby allies
+ *  - support: hide behind its pack and periodically shield nearby allies (and revive the fallen)
+ * Attack kinds add their own movement: flamethrower cones, lunges, grab-and-throw slams.
+ * Def extras: a front shield raised as the target closes in, burning trails, revives.
  */
 import {
   Collider,
   Dead,
   EnemyAI,
   Faction,
+  ForcedMove,
   Health,
   Mover,
+  PlayerControlled,
   Projectile,
   StatusEffects,
   Taunt,
@@ -23,7 +27,7 @@ import type { Entity, World } from '../core/ecs';
 import { CombatStats } from '../core/components';
 import { enemyDef } from '../data/db';
 import type { EnemyDef } from '../data/schemas';
-import { applyStatus, dealHit, hasStatus, conditionsOf, kill } from './combat';
+import { applyStatus, dealHit, hasStatus, conditionsOf, kill, spawnEnemyHazard } from './combat';
 import { computeOutgoing } from './damage';
 import { angleDelta } from './movement';
 import { livingInCircle } from './targeting';
@@ -82,6 +86,11 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     ai.cooldown = Math.max(0, ai.cooldown - dt);
     mover.vx = 0;
     mover.vz = 0;
+    if (def.shield) {
+      ai.shieldUp = Math.max(0, (ai.shieldUp ?? 0) - dt);
+      ai.shieldCooldown = Math.max(0, (ai.shieldCooldown ?? 0) - dt);
+    }
+    if (def.trail && ai.aggro) trail(world, e, ai, def, tr, dt);
 
     if (!(world.get(e, StatusEffects)?.canAct ?? true)) continue;
 
@@ -114,6 +123,26 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
       }
     }
 
+    // Fire shield: raised when the target closes in from the front; the Smelter advances behind it.
+    if (def.shield && ai.state !== 'windup' && (ai.shieldUp ?? 0) <= 0 && (ai.shieldCooldown ?? 0) <= 0 && dist <= def.shield.range) {
+      ai.shieldUp = def.shield.duration;
+      ai.shieldCooldown = def.shield.cooldown + def.shield.duration;
+      ctx.events.push({ type: 'vfx', kind: 'shield', x: tr.x, z: tr.z, radius: 1.2, facing: tr.facing });
+    }
+    if ((ai.shieldUp ?? 0) > 0) {
+      face(tr, ptr.x, ptr.z, def.turnRate, dt);
+      steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed * 0.45, 2);
+      continue;
+    }
+    if (def.attack.kind === 'cone') {
+      flamer(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
+      continue;
+    }
+    if (def.attack.kind === 'lunge') {
+      lunger(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
+      continue;
+    }
+
     switch (def.behavior) {
       case 'rusher':
         rusher(world, ctx, e, ai, def, tr, mover, player, ptr, dist, dt);
@@ -141,7 +170,9 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
         }
         break;
       case 'tank':
-        ranged(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
+        // Heavies either shoot (riot sergeants) or close in and slam.
+        if (def.attack.kind === 'melee') rusher(world, ctx, e, ai, def, tr, mover, player, ptr, dist, dt);
+        else ranged(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
         break;
     }
   }
@@ -205,16 +236,19 @@ function rusher(
       // The swing lands now: only hits if the player is still in the arc.
       const angle = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
       const inArc = Math.abs(angleDelta(tr.facing, angle)) <= (atk.arcDeg * Math.PI) / 360;
+      ai.swings = (ai.swings ?? 0) + 1;
+      const grab = atk.grabEvery !== undefined && ai.swings % atk.grabEvery === 0;
       if (dist <= atk.range + playerRadius && inArc) {
         dealHit(world, ctx, e, player, {
-          coefficient: 1,
+          coefficient: grab ? 1.3 : 1,
           damageType: atk.damageType,
-          knockback: atk.knockback,
+          knockback: grab ? 0 : atk.knockback,
           fromX: tr.x,
           fromZ: tr.z,
-          applies: [],
+          applies: atk.applies,
           range: 'melee',
         });
+        if (grab && !world.has(player, Dead)) throwTarget(world, ctx, player, tr, atk.throwDistance);
       }
       ctx.events.push({ type: 'vfx', kind: 'enemySlash', x: tr.x, z: tr.z, radius: atk.range, facing: tr.facing, arcDeg: atk.arcDeg });
       ai.state = 'recover';
@@ -250,6 +284,153 @@ function rusher(
     return;
   }
   steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed, atk.range * 0.7);
+}
+
+/** Grab and fling the target along the thrower's facing; it lands stunned. */
+function throwTarget(world: World, ctx: GameContext, target: Entity, from: Transform, distance: number): void {
+  const t = world.req(target, Transform);
+  const lim = ctx.worldHalfSize - 1;
+  const toX = Math.max(-lim, Math.min(lim, t.x + Math.sin(from.facing) * distance));
+  const toZ = Math.max(-lim, Math.min(lim, t.z + Math.cos(from.facing) * distance));
+  world.add(target, ForcedMove, { fromX: t.x, fromZ: t.z, toX, toZ, elapsed: 0, duration: 0.55, height: 1.6, landingSkill: null });
+  applyStatus(world, ctx, target, { status: 'stunned', duration: 1.1 }, { team: 'enemy', level: world.get(target, CombatStats)?.level ?? 1 });
+  ctx.events.push({ type: 'shake', trauma: 0.45 });
+}
+
+/** Flamethrower: close in, telegraph a cone, then hold the stream (it follows the target slowly). */
+function flamer(
+  world: World,
+  ctx: GameContext,
+  e: Entity,
+  ai: EnemyAIData,
+  def: EnemyDef,
+  tr: Transform,
+  mover: Mover,
+  ptr: Transform,
+  dist: number,
+  dt: number,
+): void {
+  if (def.attack.kind !== 'cone') return;
+  const atk = def.attack;
+  if (ai.state === 'windup') {
+    ai.timer -= dt;
+    if (ai.timer > 0) return;
+    // Streaming: turn slowly toward the target and hit everything in the cone each tick.
+    if (ai.channel === undefined) {
+      ai.channel = atk.duration;
+      ai.channelTick = 0;
+    }
+    face(tr, ptr.x, ptr.z, def.turnRate * 0.2, dt);
+    ai.channel -= dt;
+    ai.channelTick = (ai.channelTick ?? 0) - dt;
+    if (ai.channelTick <= 0) {
+      ai.channelTick = atk.tick;
+      ctx.events.push({ type: 'vfx', kind: 'flame', x: tr.x, z: tr.z, radius: atk.range, facing: tr.facing, arcDeg: atk.arcDeg });
+      for (const target of livingInCircle(world, ctx, tr.x, tr.z, atk.range + 0.4, 'player')) {
+        const t = world.req(target, Transform);
+        const angle = Math.atan2(t.x - tr.x, t.z - tr.z);
+        if (Math.abs(angleDelta(tr.facing, angle)) > (atk.arcDeg * Math.PI) / 360) continue;
+        dealHit(world, ctx, e, target, { coefficient: atk.coefficient, damageType: atk.damageType, knockback: 0, fromX: tr.x, fromZ: tr.z, applies: atk.applies, range: 'ranged' });
+      }
+    }
+    if (ai.channel <= 0) {
+      ai.channel = undefined;
+      ai.state = 'recover';
+      ai.timer = 0.4;
+      ai.cooldown = atk.cooldown;
+    }
+    return;
+  }
+  if (ai.state === 'recover') {
+    ai.timer -= dt;
+    if (ai.timer <= 0) ai.state = 'chase';
+    return;
+  }
+  ai.state = 'chase';
+  face(tr, ptr.x, ptr.z, def.turnRate, dt);
+  if (dist <= atk.range * 0.85 && ai.cooldown <= 0) {
+    ai.state = 'windup';
+    ai.attackSeq++;
+    ai.timer = atk.windup;
+    ai.channel = undefined;
+    tr.facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
+    ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'cone', radius: atk.range, arcDeg: atk.arcDeg, facing: tr.facing }, duration: atk.windup, color: '#ff7a1a' });
+    return;
+  }
+  steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed, atk.range * 0.6);
+}
+
+/** Welder: telegraph a line, then dash along it, hitting everything in the path. */
+function lunger(
+  world: World,
+  ctx: GameContext,
+  e: Entity,
+  ai: EnemyAIData,
+  def: EnemyDef,
+  tr: Transform,
+  mover: Mover,
+  ptr: Transform,
+  dist: number,
+  dt: number,
+): void {
+  if (def.attack.kind !== 'lunge') return;
+  const atk = def.attack;
+  if (ai.state === 'windup') {
+    face(tr, ai.aimX, ai.aimZ, def.turnRate * 0.15, dt);
+    ai.timer -= dt;
+    if (ai.timer > 0) return;
+    const lim = ctx.worldHalfSize - 1;
+    const toX = Math.max(-lim, Math.min(lim, tr.x + Math.sin(tr.facing) * atk.distance));
+    const toZ = Math.max(-lim, Math.min(lim, tr.z + Math.cos(tr.facing) * atk.distance));
+    // Everything along the dash line is hit (checked now: the telegraph was the warning).
+    const vx = toX - tr.x;
+    const vz = toZ - tr.z;
+    const len2 = vx * vx + vz * vz || 1;
+    for (const target of livingInCircle(world, ctx, (tr.x + toX) / 2, (tr.z + toZ) / 2, atk.distance / 2 + atk.width, 'player')) {
+      const t = world.req(target, Transform);
+      const k = Math.max(0, Math.min(1, ((t.x - tr.x) * vx + (t.z - tr.z) * vz) / len2));
+      const r = world.get(target, Collider)?.radius ?? 0.4;
+      if (Math.hypot(tr.x + vx * k - t.x, tr.z + vz * k - t.z) > atk.width / 2 + r) continue;
+      dealHit(world, ctx, e, target, { coefficient: 1, damageType: atk.damageType, knockback: atk.knockback, fromX: tr.x, fromZ: tr.z, applies: atk.applies, range: 'melee' });
+    }
+    world.add(e, ForcedMove, { fromX: tr.x, fromZ: tr.z, toX, toZ, elapsed: 0, duration: atk.distance / atk.speed, height: 0, landingSkill: null });
+    ctx.events.push({ type: 'vfx', kind: 'dodge', x: tr.x, z: tr.z, radius: atk.width, facing: tr.facing });
+    ai.state = 'recover';
+    ai.timer = atk.recovery + atk.distance / atk.speed;
+    ai.cooldown = atk.cooldown;
+    return;
+  }
+  if (ai.state === 'recover') {
+    ai.timer -= dt;
+    if (ai.timer <= 0) ai.state = 'chase';
+    return;
+  }
+  ai.state = 'chase';
+  face(tr, ptr.x, ptr.z, def.turnRate, dt);
+  if (dist <= atk.range && ai.cooldown <= 0) {
+    ai.state = 'windup';
+    ai.attackSeq++;
+    ai.timer = atk.windup;
+    ai.aimX = ptr.x;
+    ai.aimZ = ptr.z;
+    tr.facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
+    ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'line', length: atk.distance, width: atk.width, facing: tr.facing }, duration: atk.windup, color: '#ffb03a' });
+    return;
+  }
+  // Between lunges it keeps a little distance, circling, so the next dash has room.
+  if (dist < 3) steer(mover, tr, tr.x - ptr.x, tr.z - ptr.z, mover.speed * 0.6, 0);
+  else steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed, atk.range * 0.6);
+}
+
+/** Burning ground left behind while walking. */
+function trail(world: World, e: Entity, ai: EnemyAIData, def: EnemyDef, tr: Transform, dt: number): void {
+  const spec = def.trail!;
+  ai.trailTimer = (ai.trailTimer ?? spec.every) - dt;
+  if (ai.trailTimer > 0) return;
+  ai.trailTimer = spec.every;
+  // Only where it actually walked since the last patch.
+  if (Math.hypot(tr.x - tr.prevX, tr.z - tr.prevZ) < 1e-3) return;
+  spawnEnemyHazard(world, e, tr.x, tr.z, spec);
 }
 
 function ranged(
@@ -428,7 +609,21 @@ function support(
   if (def.attack.kind !== 'buffAllies') return;
   const atk = def.attack;
   const [minR] = def.preferredRange ?? [7, 12];
+  if (def.revive) {
+    ai.revives ??= def.revive.uses;
+    ai.reviveCooldown = Math.max(0, (ai.reviveCooldown ?? 0) - dt);
+  }
 
+  if (ai.state === 'windup' && ai.reviveTarget !== undefined) {
+    ai.timer -= dt;
+    if (ai.timer <= 0) {
+      revive(world, ctx, ai.reviveTarget, def.revive!.lifeFraction);
+      ai.reviveTarget = undefined;
+      ai.state = 'recover';
+      ai.timer = 0.4;
+    }
+    return;
+  }
   if (ai.state === 'windup') {
     ai.timer -= dt;
     if (ai.timer <= 0) {
@@ -450,6 +645,21 @@ function support(
 
   ai.state = 'chase';
   face(tr, ptr.x, ptr.z, def.turnRate, dt);
+  // Raise a fallen ally (once per cooldown, a few times per life).
+  if (def.revive && (ai.revives ?? 0) > 0 && (ai.reviveCooldown ?? 0) <= 0) {
+    const corpse = fallenAlly(world, tr, def.revive.targets, def.revive.radius);
+    if (corpse !== undefined) {
+      ai.state = 'windup';
+      ai.attackSeq++;
+      ai.timer = def.revive.windup;
+      ai.reviveTarget = corpse;
+      ai.revives = (ai.revives ?? 1) - 1;
+      ai.reviveCooldown = def.revive.cooldown;
+      const ct = world.req(corpse, Transform);
+      ctx.events.push({ type: 'telegraph', owner: e, x: ct.x, z: ct.z, shape: { kind: 'circle', radius: 1.6 }, duration: def.revive.windup, color: '#ffd23a' });
+      return;
+    }
+  }
   const allies = livingInCircle(world, ctx, tr.x, tr.z, 12, 'enemy').filter(
     (a) => a !== e && world.get(a, EnemyAI)?.defId !== ai.defId,
   );
@@ -497,4 +707,38 @@ function support(
     cz += (az / al) * 2.5;
   }
   steer(mover, tr, cx - tr.x, cz - tr.z, mover.speed, 1.5);
+}
+
+/** The nearest corpse of these enemy types within reach. */
+function fallenAlly(world: World, tr: Transform, targets: string[], radius: number): Entity | undefined {
+  let best: Entity | undefined;
+  let bestD = radius;
+  for (const e of world.query(EnemyAI, Dead, Transform)) {
+    if (!world.req(e, Dead).corpse || !targets.includes(world.req(e, EnemyAI).defId)) continue;
+    const t = world.req(e, Transform);
+    const d = Math.hypot(t.x - tr.x, t.z - tr.z);
+    if (d < bestD) {
+      bestD = d;
+      best = e;
+    }
+  }
+  return best;
+}
+
+/** Bring a corpse back to its feet with part of its life (its first death already paid out). */
+export function revive(world: World, ctx: GameContext, e: Entity, lifeFraction: number): boolean {
+  if (!world.isAlive(e) || !world.has(e, Dead) || world.has(e, PlayerControlled)) return false;
+  world.remove(e, Dead);
+  const h = world.req(e, Health);
+  h.current = h.max * lifeFraction;
+  const ai = world.get(e, EnemyAI);
+  if (ai) {
+    ai.state = 'chase';
+    ai.aggro = true;
+    ai.timer = 0;
+    ai.cooldown = 1;
+  }
+  const tr = world.req(e, Transform);
+  ctx.events.push({ type: 'vfx', kind: 'raise', x: tr.x, z: tr.z, radius: 1.4, facing: 0 });
+  return true;
 }

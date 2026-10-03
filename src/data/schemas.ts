@@ -377,6 +377,42 @@ const EnemyAttackSchema = z.discriminatedUnion('kind', [
     cooldown: z.number().nonnegative(),
     damageType: DamageTypeSchema,
     knockback: z.number().nonnegative().default(0),
+    /** Statuses the hit applies (burning bites). */
+    applies: z.array(StatusApplySchema).default([]),
+    /** Every Nth swing grabs the target and throws it `throwDistance` metres (Cargo Loader). */
+    grabEvery: z.number().int().positive().optional(),
+    throwDistance: z.number().positive().default(6),
+  }),
+  // Flamethrower: a telegraphed cone, then a stream that ticks while it lasts.
+  z.object({
+    kind: z.literal('cone'),
+    range: z.number().positive(),
+    arcDeg: z.number().positive(),
+    windup: z.number().positive(),
+    /** Seconds the stream lasts; it hits every `tick` seconds. */
+    duration: z.number().positive(),
+    tick: z.number().positive().default(0.25),
+    cooldown: z.number().nonnegative(),
+    /** Damage coefficient per tick. */
+    coefficient: z.number().positive(),
+    damageType: DamageTypeSchema,
+    applies: z.array(StatusApplySchema).default([]),
+  }),
+  // A telegraphed dash along a line; everything in its path is hit (Welder).
+  z.object({
+    kind: z.literal('lunge'),
+    /** Starts a lunge when the target is this close. */
+    range: z.number().positive(),
+    /** Dash length (overshoots the target's position a little). */
+    distance: z.number().positive(),
+    speed: z.number().positive(),
+    width: z.number().positive(),
+    windup: z.number().positive(),
+    recovery: z.number().nonnegative(),
+    cooldown: z.number().nonnegative(),
+    damageType: DamageTypeSchema,
+    knockback: z.number().nonnegative().default(0),
+    applies: z.array(StatusApplySchema).default([]),
   }),
   z.object({
     kind: z.literal('projectile'),
@@ -413,7 +449,7 @@ const EnemyAttackSchema = z.discriminatedUnion('kind', [
 export const EnemyDefSchema = z.object({
   id: z.string(),
   assetId: z.string(),
-  family: z.enum(['infected', 'insect', 'machine', 'beast', 'lumen']),
+  family: z.enum(['infected', 'insect', 'machine', 'beast', 'lumen', 'human']),
   behavior: z.enum(['rusher', 'ranged', 'support', 'kamikaze', 'flanker', 'tank']),
   life: z.number().positive(),
   armor: z.number().nonnegative(),
@@ -440,9 +476,21 @@ export const EnemyDefSchema = z.object({
       hazard: z.object({
         radius: z.number().positive(),
         duration: z.number().positive(),
+        /** DoTs here use `dps`, or `coefficient` × the enemy's level-scaled damage over the duration. */
         applies: z.array(StatusApplySchema),
+        color: z.string().optional(),
       }),
     })
+    .optional(),
+  /** Raises a front shield when the target closes in (Smelter): blocks `block` of frontal hits. */
+  shield: z.object({ block: z.number().min(0).max(0.95), duration: z.number().positive(), cooldown: z.number().positive(), range: z.number().positive().default(7) }).optional(),
+  /** Leaves burning ground behind while it walks (Slagborn). */
+  trail: z
+    .object({ every: z.number().positive(), radius: z.number().positive(), duration: z.number().positive(), applies: z.array(StatusApplySchema), color: z.string().optional() })
+    .optional(),
+  /** Brings a fallen ally of these types back once per `cooldown` (Smelter Priest). */
+  revive: z
+    .object({ targets: z.array(z.string()).min(1), radius: z.number().positive(), windup: z.number().positive(), cooldown: z.number().positive(), lifeFraction: z.number().positive().max(1), uses: z.number().int().positive() })
     .optional(),
 });
 export type EnemyDef = z.infer<typeof EnemyDefSchema>;

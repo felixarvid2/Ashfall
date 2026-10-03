@@ -244,6 +244,21 @@ export interface EnemyAI {
   pack?: string;
   /** Attack tempo multiplier (boss phases): >1 = faster wind-ups and cooldowns. */
   tempo?: number;
+  /** Flamethrower stream: seconds left and time to the next tick. */
+  channel?: number;
+  channelTick?: number;
+  /** Front shield: seconds it stays up, and until it can rise again. */
+  shieldUp?: number;
+  shieldCooldown?: number;
+  /** Seconds to the next patch of burning ground (trail). */
+  trailTimer?: number;
+  /** Melee swings so far (grab every Nth). */
+  swings?: number;
+  /** Revives left and the time until the next one. */
+  revives?: number;
+  reviveCooldown?: number;
+  /** The corpse being revived during the wind-up. */
+  reviveTarget?: Entity;
 }
 export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
 

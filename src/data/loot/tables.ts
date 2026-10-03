@@ -46,6 +46,16 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   { id: 'dt.bloater', itemChance: 0.14, goldChance: 0.4, gold: [1, 3], crystalChance: 0.02, xp: 14 },
   { id: 'dt.spore_hound', itemChance: 0.1, goldChance: 0.3, gold: [1, 2], crystalChance: 0.01, xp: 9 },
   { id: 'dt.sergeant', itemChance: 0.9, extraItems: 1, goldChance: 1, gold: [6, 12], crystalChance: 0.15, rarityBias: { rare: 2.5, legendary: 2 }, minRarity: 'magic', xp: 70 },
+  // Region 2 (values are per level-1 kill; XP and gold scale with level like everything else).
+  { id: 'dt.scorched_walker', itemChance: 0.12, goldChance: 0.32, gold: [1, 3], crystalChance: 0.01, xp: 11 },
+  { id: 'dt.slag_hound', itemChance: 0.1, goldChance: 0.3, gold: [1, 2], crystalChance: 0.01, xp: 10 },
+  { id: 'dt.flame_drone', itemChance: 0.12, goldChance: 0.35, gold: [1, 3], crystalChance: 0.02, xp: 11 },
+  { id: 'dt.fire_bloater', itemChance: 0.14, goldChance: 0.4, gold: [1, 3], crystalChance: 0.02, xp: 15 },
+  { id: 'dt.smelter', itemChance: 0.3, goldChance: 0.7, gold: [2, 5], crystalChance: 0.05, xp: 28 },
+  { id: 'dt.welder', itemChance: 0.22, goldChance: 0.6, gold: [2, 4], crystalChance: 0.04, xp: 20 },
+  { id: 'dt.slagborn', itemChance: 0.9, goldChance: 1, gold: [5, 10], crystalChance: 0.15, rarityBias: { rare: 2 }, minRarity: 'magic', xp: 80 },
+  { id: 'dt.cargo_loader', itemChance: 0.95, extraItems: 1, goldChance: 1, gold: [6, 12], crystalChance: 0.18, rarityBias: { rare: 2.5, legendary: 2 }, minRarity: 'magic', xp: 95 },
+  { id: 'dt.smelter_priest', itemChance: 0.6, goldChance: 1, gold: [4, 8], crystalChance: 0.1, rarityBias: { rare: 1.5 }, minRarity: 'magic', xp: 45 },
   // Elites: champions (blue) and rare elites (yellow) roll extra, better loot.
   { id: 'dt.champion', itemChance: 0.6, goldChance: 1, gold: [3, 6], crystalChance: 0.08, rarityBias: { rare: 2, legendary: 1.5 }, minRarity: 'magic', xp: 40 },
   { id: 'dt.rare_elite', itemChance: 1, extraItems: 2, goldChance: 1, gold: [8, 14], crystalChance: 0.2, rarityBias: { rare: 3, legendary: 3, unique: 2 }, minRarity: 'magic', xp: 120 },

@@ -152,7 +152,9 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
 function frontShieldFactor(world: World, target: Entity, fromX: number, fromZ: number): number {
   const ai = world.get(target, EnemyAI);
   if (!ai) return 1;
-  const shield = enemyDef(ai.defId).frontShield;
+  const def = enemyDef(ai.defId);
+  // A raised fire shield (Smelters) blocks more than a permanent riot shield.
+  const shield = Math.max(def.frontShield, (ai.shieldUp ?? 0) > 0 ? (def.shield?.block ?? 0) : 0);
   if (shield <= 0 || hasStatus(world, target, 'stunned')) return 1;
   const tr = world.get(target, Transform);
   if (!tr) return 1;
@@ -369,6 +371,37 @@ export function removeStatuses(world: World, target: Entity, predicate: (s: Stat
 }
 
 /** Mark an entity dead, trigger on-death effects and emit events. */
+/**
+ * Ground that hurts the player's side, left by an enemy (death clouds, burning trails). DoTs with
+ * a `coefficient` scale with the enemy's level-scaled damage; `dps` values are used as they are.
+ */
+export function spawnEnemyHazard(
+  world: World,
+  owner: Entity,
+  x: number,
+  z: number,
+  spec: { radius: number; duration: number; applies: StatusApply[]; color?: string | undefined },
+): Entity {
+  const stats = world.get(owner, CombatStats);
+  const hz = world.create();
+  world.add(hz, Transform, makeTransform(x, 0, z));
+  world.add(hz, Hazard, {
+    team: 'enemy',
+    radius: spec.radius,
+    remaining: spec.duration,
+    duration: spec.duration,
+    tickTimer: 0,
+    ...(spec.color ? { color: spec.color } : {}),
+    applies: spec.applies.map((a) => ({
+      status: a.status,
+      duration: a.duration,
+      dps: a.dps ?? (a.coefficient !== undefined && stats ? (stats.weaponDamage * a.coefficient) / a.duration : undefined),
+    })),
+    attackerLevel: stats?.level ?? 1,
+  });
+  return hz;
+}
+
 export function kill(world: World, ctx: GameContext, target: Entity, fallDir: number): void {
   if (world.has(target, Dead)) return;
   const isPlayer = world.has(target, PlayerControlled);
@@ -407,19 +440,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
         xp: true,
       });
     }
-    if (def.onDeath && tr) {
-      const hz = world.create();
-      world.add(hz, Transform, makeTransform(tr.x, 0, tr.z));
-      world.add(hz, Hazard, {
-        team: 'enemy',
-        radius: def.onDeath.hazard.radius,
-        remaining: def.onDeath.hazard.duration,
-        duration: def.onDeath.hazard.duration,
-        tickTimer: 0,
-        applies: def.onDeath.hazard.applies.map((a) => ({ status: a.status, duration: a.duration, dps: a.dps })),
-        attackerLevel: world.get(target, CombatStats)?.level ?? 1,
-      });
-    }
+    if (def.onDeath && tr) spawnEnemyHazard(world, target, tr.x, tr.z, def.onDeath.hazard);
     eliteDeath(world, ctx, target);
     ctx.stats.kills++;
     if (tr) {

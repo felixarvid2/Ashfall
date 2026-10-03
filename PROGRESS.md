@@ -12,7 +12,11 @@
 - ✅ District greybox: roads, Coolant Works hub (stash), 4 subzones, landmarks, 6 teleporters, packs,
   chests, relics, logs, towers, pylons, bunkers; conveyor belts, molten metal rivers and vents.
   Models are placeholders until the Region 2 Meshy batch; the packs use region 1 enemies for now.
-- Next: region 2 enemies and behaviours, then the hub NPCs, quests, dungeons, stronghold, Vire.
+- ✅ Region 2 enemies: fire variants of region 1 enemies (Scorched Walker, Slag Hound, Flame Drone, Fire
+  Bloater) and new ones — Smelter (flamethrower, fire shield), Welder (telegraphed lunge), Slagborn
+  (burning trail), Cargo Loader (every third swing grabs and throws), Smelter Priest (empowers, revives).
+  Fix: heavy melee bosses in region 1 (Brood Mother, The First) now actually close in and attack.
+- Next: the hub NPCs, quests, dungeons, stronghold, Vire, events, the crane, the motorbike.
 
 Region 1 (Cinder Flats) is built; measurements and checklist: docs/regions/cinder-flats-playtest.md.
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).

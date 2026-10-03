@@ -230,7 +230,16 @@
     },
     "brood_mother": "Brood Mother",
     "commandant_hale": "Commandant Hale",
-    "the_first": "The First"
+    "the_first": "The First",
+    "scorched_walker": "Scorched Walker",
+    "slag_hound": "Slag Hound",
+    "flame_drone": "Flame Drone",
+    "fire_bloater": "Fire Bloater",
+    "smelter": "Smelter",
+    "welder": "Welder",
+    "slagborn": "Slagborn",
+    "cargo_loader": "Cargo Loader",
+    "smelter_priest": "Smelter Priest"
   },
   "resources": {
     "heat": "Heat",
