@@ -356,55 +356,71 @@ export class GameRenderer {
 
   /**
    * The base texture everywhere, two samples at different scales and angles mixed by slow noise so
-   * its repeat doesn't show, then up to three overlays blended in by a splat map built from the
-   * zone's patches. Bright green Lumen spots in an overlay glow faintly.
+   * its repeat doesn't show, then up to six overlays blended in by splat maps built from the zone's
+   * patches. Each texture's look (scale, brightness, glow) comes from GROUND_LOOK: Lumen spots glow
+   * green, cracks in slag glow orange.
    */
   private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string): THREE.MeshStandardMaterial {
     const res = 1024;
-    const splat = new THREE.DataTexture(buildGroundSplat(def.patches, size, res, seed), res, res, THREE.RGBAFormat);
-    splat.magFilter = THREE.LinearFilter;
-    splat.minFilter = THREE.LinearFilter;
-    splat.needsUpdate = true;
-    this.zoneTextures.push(splat);
+    const count = Math.min(def.layers.length, 6);
+    const splats = buildGroundSplat(def.patches, size, res, seed, count).map((data) => {
+      const tex = new THREE.DataTexture(data, res, res, THREE.RGBAFormat);
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearFilter;
+      tex.needsUpdate = true;
+      this.zoneTextures.push(tex);
+      return tex;
+    });
     const base = this.groundTexture(def.base!);
-    const layers = [0, 1, 2].map((i) => (def.layers[i] ? this.groundTexture(def.layers[i]!) : base));
+    const layers = def.layers.slice(0, count);
     const mat = new THREE.MeshStandardMaterial({ map: base, bumpMap: base, bumpScale: 0.8, color: GROUND_TINT, roughness: 1, metalness: 0 });
+    const channels = ['r', 'g', 'b'];
+    const glsl = (n: number) => n.toFixed(4);
+    let body = '';
+    layers.forEach((name, i) => {
+      const look = GROUND_LOOK[name] ?? {};
+      const scale = look.scale ?? 1;
+      const offset = glsl(((i * 0.37) % 1) + 0.13);
+      const weight = `splat${Math.floor(i / 3)}.${channels[i % 3]}`;
+      body += `vec3 raw${i} = texture2D(groundLayer${i}, vMapUv * ${glsl(scale)} + ${offset}).rgb;\n`;
+      let color = `raw${i}`;
+      if (look.soften) color = `mix(vec3(${look.soften.toward.map(glsl).join(', ')}), ${color}, ${glsl(look.soften.keep)})`;
+      if (look.gain) color = `(${color}) * ${glsl(look.gain)}`;
+      body += `ground = mix(ground, ${color}, ${weight});\n`;
+      if (look.glow === 'green') {
+        body += `groundGlow += vec3(0.36, 1.0, 0.42) * ${weight} * smoothstep(0.2, 0.6, raw${i}.g - max(raw${i}.r, raw${i}.b)) * 1.5;\n`;
+      } else if (look.glow === 'orange') {
+        body += `groundGlow += vec3(1.0, 0.42, 0.1) * ${weight} * smoothstep(0.3, 0.75, raw${i}.r - raw${i}.b) * 1.2;\n`;
+      }
+    });
+    const samplers = layers.map((_, i) => `groundLayer${i}`).concat(splats.map((_, i) => `groundSplat${i}`));
+    // The generated shader differs per layer set: give three a cache key so zones don't share programs.
+    mat.customProgramCacheKey = () => `ground:${layers.join(',')}`;
     mat.onBeforeCompile = (shader) => {
-      Object.assign(shader.uniforms, {
-        groundSplat: { value: splat },
-        groundLayer0: { value: layers[0] },
-        groundLayer1: { value: layers[1] },
-        groundLayer2: { value: layers[2] },
-        groundReps: { value: reps },
-      });
+      shader.uniforms.groundReps = { value: reps };
+      layers.forEach((name, i) => (shader.uniforms[`groundLayer${i}`] = { value: this.groundTexture(name) }));
+      splats.forEach((tex, i) => (shader.uniforms[`groundSplat${i}`] = { value: tex }));
+      const splatReads = splats
+        .map((_, i) => `vec4 splat${i} = texture2D(groundSplat${i}, splatUv);`)
+        .join('\n');
       shader.fragmentShader = shader.fragmentShader
-        .replace(
-          'void main() {',
-          'uniform sampler2D groundSplat, groundLayer0, groundLayer1, groundLayer2;\nuniform float groundReps;\nvoid main() {',
-        )
+        .replace('void main() {', `uniform sampler2D ${samplers.join(', ')};\nuniform float groundReps;\nvoid main() {`)
         .replace(
           '#include <map_fragment>',
           `
           // The plane's v runs from +z to -z; the splat's rows run from -z.
-          vec4 splat = texture2D(groundSplat, vec2(vMapUv.x, groundReps - vMapUv.y) / groundReps);
+          vec2 splatUv = vec2(vMapUv.x, groundReps - vMapUv.y) / groundReps;
+          ${splatReads}
           vec3 ground = mix(
             texture2D(map, vMapUv).rgb,
             texture2D(map, mat2(0.8, -0.6, 0.6, 0.8) * vMapUv * 0.43 + 0.37).rgb,
-            splat.a);
-          vec3 lumen = texture2D(groundLayer1, vMapUv * 0.9 + 0.21).rgb;
-          // The scorched texture is dark and blotchy: lift it and soften its contrast.
-          vec3 scorched = texture2D(groundLayer0, vMapUv * 0.6 + 0.53).rgb;
-          ground = mix(ground, mix(vec3(0.045, 0.038, 0.034), scorched, 0.7) * 1.6, splat.r);
-          ground = mix(ground, lumen, splat.g);
-          ground = mix(ground, texture2D(groundLayer2, vMapUv * 0.75).rgb, splat.b);
+            splat0.a);
+          vec3 groundGlow = vec3(0.0);
+          ${body}
           diffuseColor.rgb *= ground;
-          float groundGlow = splat.g * smoothstep(0.2, 0.6, lumen.g - max(lumen.r, lumen.b));
           `,
         )
-        .replace(
-          '#include <emissivemap_fragment>',
-          '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(0.36, 1.0, 0.42) * groundGlow * 1.5;',
-        );
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += groundGlow;');
     };
     return mat;
   }
@@ -990,6 +1006,24 @@ function makeGlowTexture(): THREE.Texture {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+
+/**
+ * How each overlay texture is drawn: repeats per base tile (`scale` < 1 = larger), brightness
+ * `gain`, contrast softened toward a dark colour (`soften`), and which bright pixels glow.
+ */
+const GROUND_LOOK: Partial<
+  Record<GroundTexture, { scale?: number; gain?: number; soften?: { toward: [number, number, number]; keep: number }; glow?: 'green' | 'orange' }>
+> = {
+  // Dark and blotchy: lifted, with softer contrast.
+  scorched_ground: { scale: 0.6, gain: 1.6, soften: { toward: [0.045, 0.038, 0.034], keep: 0.7 } },
+  lumen_infested: { scale: 0.9, glow: 'green' },
+  military_concrete: { scale: 0.75 },
+  // Very dark crust: lifted so the plates read; the thin orange cracks glow.
+  slag_ground: { scale: 0.7, gain: 2.5, glow: 'orange' },
+  cooling_slag: { scale: 0.8, gain: 1.2, glow: 'orange' },
+  steel_plating: { scale: 0.75 },
+  scorched_flagstones: { scale: 0.8, gain: 1.15 },
+};
 
 /** Multiplies the painted ground textures down to the dark night look of the procedural ground. */
 const GROUND_TINT = 0xd8d0c8;

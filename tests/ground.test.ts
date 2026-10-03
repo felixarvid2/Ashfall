@@ -13,15 +13,17 @@ const texel = (data: Uint8Array, res: number, extent: number, x: number, z: numb
 describe('ground splat', () => {
   const extent = 400;
   const res = 200;
-  const data = buildGroundSplat(
+  const [data, second] = buildGroundSplat(
     [
       { layer: 0, x: -100, z: 50, radius: 40 },
       { layer: 2, x: 120, z: -80, radius: 10, strength: 0.5 },
+      { layer: 4, x: 0, z: 0, radius: 20 },
     ],
     extent,
     res,
     'test',
-  );
+    5,
+  ) as [Uint8Array, Uint8Array];
 
   it('covers a patch fully at its centre and not at all far away', () => {
     expect(texel(data, res, extent, -100, 50, 0)).toBe(255);
@@ -32,6 +34,11 @@ describe('ground splat', () => {
   it('places rows from -z to +z and honours strength', () => {
     expect(texel(data, res, extent, 120, -80, 2)).toBe(128);
     expect(texel(data, res, extent, 120, 80, 2)).toBe(0);
+  });
+
+  it('puts layers 3–5 in a second texture', () => {
+    expect(texel(second, res, extent, 0, 0, 1)).toBe(255);
+    expect(texel(data, res, extent, 0, 0, 1)).toBe(0);
   });
 
   it('fills the variation channel with slow noise and is deterministic', () => {
@@ -47,7 +54,7 @@ describe('zone ground textures', () => {
     for (const zone of ZONES) {
       const ground = zone.ground;
       if (!ground) continue;
-      expect(ground.layers.length).toBeLessThanOrEqual(3);
+      expect(ground.layers.length).toBeLessThanOrEqual(6);
       const names = [ground.base, ground.road, ...ground.layers].filter(Boolean);
       for (const name of names) expect(existsSync(join(__dirname, `../public/assets/textures/ground/${name}.webp`)), `${name}.webp`).toBe(true);
       for (const p of ground.patches) expect(p.layer).toBeLessThan(ground.layers.length);

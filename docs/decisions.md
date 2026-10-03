@@ -228,8 +228,11 @@ patches with ragged edges. A zone's `ground` lists the patches (subzones plus on
 growth); the renderer turns them into a 1024² splat map and blends in one shader. The base is sampled
 twice at different scales and angles, mixed by slow noise, so its 9 m repeat doesn't show. Roads use
 cracked asphalt with alpha-faded edges. The road ribbons used to face down and were culled, so roads had
-never shown before this change. The Refinery District keeps its procedural ground for now and shares the
-asphalt.
+never shown before this change. The Refinery District got its own set later: refinery grit, slag crust
+(Slag Fields), half-cooled glowing crust around molten metal, steel plating (belts and hubs) and scorched
+flagstones (Cathedral). Up to six overlays use two splat maps; each texture's scale, brightness and glow
+(green Lumen, orange slag cracks) live in `GROUND_LOOK`, and the generated shader gets a program cache key
+per layer set.
 
 ### 2026-10-03 — Click-to-move is the default; phones get touch controls
 The game plays like Diablo: left-click moves, attacks the enemy under the cursor, or walks to an item

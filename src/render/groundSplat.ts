@@ -1,25 +1,33 @@
 import type { GroundPatch } from '../data/zones/testArena';
 import { Rng } from '../core/rng';
 
+/** Overlay layers one splat texture carries (its RGB; the first texture's alpha is the variation noise). */
+export const LAYERS_PER_SPLAT = 3;
+
 /**
  * Weights for the ground shader (pure, so tests can run it): one RGBA texel per cell over the
- * ground plane. R, G and B hold how much of overlay layer 0, 1 and 2 shows; A is a slow noise the
- * shader uses to break up the base texture's repeat. Row 0 is the plane's -z edge.
+ * ground plane, in one texture per three overlay layers. Texture k's R, G and B hold how much of
+ * layers 3k, 3k + 1 and 3k + 2 show; the first texture's A is a slow noise the shader uses to break
+ * up the base texture's repeat. Row 0 is the plane's -z edge.
  */
-export function buildGroundSplat(patches: GroundPatch[], extent: number, res: number, seed: string): Uint8Array {
-  const data = new Uint8Array(res * res * 4);
+export function buildGroundSplat(patches: GroundPatch[], extent: number, res: number, seed: string, layers = 3): Uint8Array[] {
+  const splats = Array.from({ length: Math.max(1, Math.ceil(layers / LAYERS_PER_SPLAT)) }, () => new Uint8Array(res * res * 4));
   const cell = extent / res;
   const ragged = new ValueNoise(`${seed}-edge`, 64);
   const slow = new ValueNoise(`${seed}-variation`, 64);
   const half = extent / 2;
+  const first = splats[0]!;
   for (let j = 0; j < res; j++) {
     const z = -half + (j + 0.5) * cell;
     for (let i = 0; i < res; i++) {
       const x = -half + (i + 0.5) * cell;
-      data[(j * res + i) * 4 + 3] = Math.round(255 * smooth(0.35, 0.65, slow.fbm(x / 70, z / 70)));
+      first[(j * res + i) * 4 + 3] = Math.round(255 * smooth(0.35, 0.65, slow.fbm(x / 70, z / 70)));
     }
   }
   for (const p of patches) {
+    const data = splats[Math.floor(p.layer / LAYERS_PER_SPLAT)];
+    if (!data) continue;
+    const channel = p.layer % LAYERS_PER_SPLAT;
     // Ragged edges: the noise pushes the border in and out by up to a quarter of the radius.
     const rough = Math.max(2.5, p.radius * 0.25);
     const fade = Math.max(1.5, p.radius * 0.2);
@@ -36,12 +44,12 @@ export function buildGroundSplat(patches: GroundPatch[], extent: number, res: nu
         const x = -half + (i + 0.5) * cell;
         const d = Math.hypot(x - p.x, z - p.z) + (ragged.fbm(x / scale, z / scale) - 0.5) * 2 * rough;
         const w = Math.min(1, Math.max(0, (p.radius - d) / fade)) * strength;
-        const k = (j * res + i) * 4 + p.layer;
+        const k = (j * res + i) * 4 + channel;
         data[k] = Math.max(data[k]!, Math.round(w * 255));
       }
     }
   }
-  return data;
+  return splats;
 }
 
 function smooth(a: number, b: number, v: number): number {

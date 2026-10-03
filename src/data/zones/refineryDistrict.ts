@@ -6,6 +6,7 @@
  */
 import { Rng } from '../../core/rng';
 import { alongRoad, clearOfProps, distanceToRoad as roadDistance, line } from './layout';
+import type { GroundDef, GroundPatch } from './testArena';
 import type { EnvFeature, PackSpawn, PoiDef, PropPlacement, Road, ZoneDef } from './zoneTypes';
 
 const S = 2.2;
@@ -122,6 +123,41 @@ function buildEnv(): EnvFeature[] {
 }
 
 export const DISTRICT_ENV = buildEnv();
+
+/**
+ * Ground textures: soot-black refinery grit everywhere, slag crust over the Slag Fields, half-cooled
+ * glowing crust around every pool of molten metal, steel plating under the belts and inside the Coolant
+ * Works and Pump Station Delta, and scorched flagstones around the Smelters' Cathedral.
+ */
+function buildGround(): GroundDef {
+  const SLAG = 0;
+  const COOLING = 1;
+  const STEEL = 2;
+  const FLAGSTONES = 3;
+  const patches: GroundPatch[] = [
+    { layer: SLAG, x: SUBZONES.slag.c[0], z: SUBZONES.slag.c[1], radius: SUBZONES.slag.r * 0.85, strength: 0.9 },
+    { layer: STEEL, x: SUBZONES.conveyor.c[0], z: SUBZONES.conveyor.c[1], radius: SUBZONES.conveyor.r * 0.75, strength: 0.45 },
+    { layer: STEEL, x: COOLANT_WORKS.x, z: COOLANT_WORKS.z, radius: COOLANT_WORKS.radius - 4 },
+    { layer: STEEL, x: DELTA.x, z: DELTA.z, radius: DELTA.radius - 5 },
+    { layer: FLAGSTONES, x: CATHEDRAL.x, z: CATHEDRAL.z, radius: CATHEDRAL.radius + 18 },
+  ];
+  for (const e of DISTRICT_ENV) {
+    if (e.kind === 'molten') patches.push({ layer: COOLING, x: e.x, z: e.z, radius: e.radius + 4.5 });
+    else if (e.kind === 'conveyor') {
+      // Plating under the whole belt: small patches along its length.
+      const dx = Math.sin(e.dir);
+      const dz = Math.cos(e.dir);
+      for (let t = -e.length / 2; t <= e.length / 2; t += 5) patches.push({ layer: STEEL, x: e.x + dx * t, z: e.z + dz * t, radius: e.width + 1.5 });
+    }
+  }
+  return {
+    base: 'industrial_grit',
+    tile: 9,
+    layers: ['slag_ground', 'cooling_slag', 'steel_plating', 'scorched_flagstones'],
+    patches,
+    road: 'cracked_asphalt',
+  };
+}
 
 // ---- Props ------------------------------------------------------------------------------------
 
@@ -422,8 +458,7 @@ export const REFINERY_DISTRICT: ZoneDef = {
   playerLight: { color: '#ffc890', intensity: 45, distance: 12 },
   props: PROPS,
   scatter: [{ asset: 'env.debris_rock', count: 26000, seed: 'refinery-debris', minScale: 0.4, maxScale: 2 }],
-  // The district keeps its procedural ground for now; its roads share Cinder Flats' asphalt.
-  ground: { tile: 9, layers: [], patches: [], road: 'cracked_asphalt' },
+  ground: buildGround(),
   subzones: [
     { id: 'foundryRoad', center: [0, 0], radius: 0 },
     { id: 'conveyorLines', center: SUBZONES.conveyor.c, radius: SUBZONES.conveyor.r },

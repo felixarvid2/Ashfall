@@ -32,10 +32,20 @@ export interface ArenaDef {
 }
 
 /** A ground texture in public/assets/textures/ground/ (file name without .webp). */
-export type GroundTexture = 'ash_plain' | 'scorched_ground' | 'lumen_infested' | 'military_concrete' | 'cracked_asphalt';
+export type GroundTexture =
+  | 'ash_plain'
+  | 'scorched_ground'
+  | 'lumen_infested'
+  | 'military_concrete'
+  | 'cracked_asphalt'
+  | 'industrial_grit'
+  | 'slag_ground'
+  | 'cooling_slag'
+  | 'steel_plating'
+  | 'scorched_flagstones';
 
 /**
- * Ground textures for an open-world zone: a base that covers everything, up to three overlay
+ * Ground textures for an open-world zone: a base that covers everything, up to six overlay
  * textures painted in soft patches with ragged edges, and a road surface.
  */
 export interface GroundDef {
@@ -43,7 +53,7 @@ export interface GroundDef {
   base?: GroundTexture;
   /** Metres one repeat of a texture covers. */
   tile: number;
-  /** Overlay textures (at most three); patches pick one by index. */
+  /** Overlay textures (at most six); patches pick one by index. */
   layers: GroundTexture[];
   patches: GroundPatch[];
   /** Road ribbons use this texture, one repeat across the road's width. */
