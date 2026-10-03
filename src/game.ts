@@ -64,7 +64,8 @@ import { encounterSystem, startNextWave } from './systems/encounter';
 import { enemyAISystem } from './systems/enemyAI';
 import { minionSystem, tetherSystem, turretSystem } from './systems/minions';
 import { movementSystem } from './systems/movement';
-import { playerControlSystem } from './systems/playerControl';
+import { clickableAt, playerControlSystem } from './systems/playerControl';
+import { TouchControls, isTouchDevice } from './ui/touchControls';
 import { hazardSystem, projectileSystem, summonSystem, trapSystem } from './systems/projectiles';
 import { resourceSystem } from './systems/resource';
 import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from './systems/skills';
@@ -187,6 +188,16 @@ export class Game {
   private player!: Entity;
   private hitstop = 0;
   private lastTarget: { entity: Entity; until: number } | null = null;
+  private cursor = '';
+  private readonly touchControls: TouchControls;
+
+  private hasStoredSettings(): boolean {
+    try {
+      return !!this.storage?.getItem('ashfall.settings');
+    } catch {
+      return false;
+    }
+  }
   private lastNotice = new Map<string, number>();
   private realTime = 0;
   /** Character slot being played (null on the select screen). */
@@ -195,7 +206,10 @@ export class Game {
   private nextAutosave = AUTOSAVE_INTERVAL;
 
   constructor(canvas: HTMLCanvasElement, uiRoot: HTMLElement) {
+    const firstRun = !this.hasStoredSettings();
     this.settings = loadSettings(this.storage);
+    // Phones start on medium graphics (no 2× pixel ratio, lighter post-processing).
+    if (firstRun && isTouchDevice()) this.settings.graphics = 'medium';
     document.documentElement.style.setProperty('--text-scale', String(this.settings.textScale));
     this.saves = new SaveStore(this.storage);
 
@@ -273,7 +287,24 @@ export class Game {
     this.fade.className = 'zone-fade';
     uiRoot.append(this.fade);
     this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
-    this.interactPrompt = new InteractPrompt(uiRoot, (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL));
+    this.interactPrompt = new InteractPrompt(
+      uiRoot,
+      (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
+      () => this.input.pressAction('pickup'),
+    );
+    this.touchControls = new TouchControls(uiRoot, this.input, this.hud.slotElements);
+    this.applyTouchControls();
+    // "Auto" also switches the touch layout on at the first touch (tablets that report a mouse).
+    window.addEventListener(
+      'touchstart',
+      () => {
+        if (this.settings.touchControls === 'auto' && !this.touchControls.shown) {
+          this.touchControls.setActive(true);
+          this.hud.setTouch(true);
+        }
+      },
+      { once: true, passive: true },
+    );
     this.loreReader = new LoreReader(uiRoot);
     this.dialogue = new DialoguePanel(uiRoot);
     this.npcPlates = new NpcPlates(uiRoot);
@@ -419,6 +450,7 @@ export class Game {
           this.toasts.show(t('debug.saveDeleted'));
         },
         setMoveMode: (mode) => this.setMoveMode(mode),
+        setTouchControls: (mode) => this.setTouchControls(mode),
         nextWave: () => startNextWave(this.world, this.ctx),
         killAll: () => this.killAllEnemies(),
         spawnHorde: () => this.spawnHorde(100),
@@ -485,6 +517,7 @@ export class Game {
       this.settings.graphics,
     );
     this.devtools.setMoveMode(this.settings.moveMode);
+    this.devtools.setTouchControls(this.settings.touchControls);
     this.refreshHint();
 
     this.player = spawnPlayer(this.world, DEFAULT_CLASS, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
@@ -1102,7 +1135,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   private updateInteractPrompt(px: number, pz: number): void {
     const near = this.world.has(this.player, Dead) ? null : nearestInteractable(this.world, px, pz, this.ctx.time);
     const target = near !== null ? { ...this.world.req(near, Transform), kind: this.world.req(near, Interactable).kind } : null;
-    this.interactPrompt.update(target, keyLabel(resolveKeybindings(this.settings).pickup[0] ?? 'KeyE'), (x, y, z, out) =>
+    this.interactPrompt.update(target, this.touchControls.shown ? t('touch.use') : keyLabel(resolveKeybindings(this.settings).pickup[0] ?? 'KeyE'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
     );
   }
@@ -1234,6 +1267,12 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     let target: HudState['target'] = null;
     const ground = this.ctx.pickGround();
     let te = ground ? enemyNear(w, this.ctx, ground.x, ground.z, 1.2) : null;
+    // Diablo-style cursor: crosshair over enemies, a hand over things you can click.
+    const cursor = te !== null ? 'crosshair' : ground && clickableAt(w, this.ctx, ground.x, ground.z) ? 'pointer' : '';
+    if (cursor !== this.cursor) {
+      this.cursor = cursor;
+      this.renderer.renderer.domElement.style.cursor = cursor;
+    }
     if (te === null && this.lastTarget && this.realTime < this.lastTarget.until && isAlive(w, this.lastTarget.entity)) {
       te = this.lastTarget.entity;
     }
@@ -1760,6 +1799,19 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   }
 
   // ---- Settings -------------------------------------------------------------
+
+  setTouchControls(mode: Settings['touchControls']): void {
+    this.settings.touchControls = mode;
+    saveSettings(this.storage, this.settings);
+    this.applyTouchControls();
+  }
+
+  private applyTouchControls(): void {
+    const mode = this.settings.touchControls;
+    const on = mode === 'on' || (mode === 'auto' && isTouchDevice());
+    this.touchControls.setActive(on);
+    this.hud.setTouch(on);
+  }
 
   setMoveMode(mode: MoveMode): void {
     this.settings.moveMode = mode;

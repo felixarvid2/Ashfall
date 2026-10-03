@@ -212,6 +212,20 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
 
+## What to test (Controls – Diablo-style mouse and phones)
+1. **Mouse:** left-click the ground to walk, hold the button to keep walking toward the cursor. Click an
+   enemy to walk up and attack (hold to keep attacking). Click an NPC, crate, teleporter or item to walk
+   over and use it. Shift + click attacks in place; right-click and 1–4 cast skills at the cursor.
+   The cursor turns into a crosshair over enemies and a hand over things you can use.
+2. WASD is still there: F3 → Movement → WASD.
+3. **Phone (held sideways):** the joystick appears where your left thumb lands. The big button attacks
+   the nearest enemy; the smaller ones cast skills at the nearest enemy (Blink and Leap follow the
+   stick), plus Dodge and Stim pack. Tap the screen to walk or click things; pinch to zoom. The top row
+   opens the panels; tap "Use" on the prompt to interact. In the bag and the skill bar, hold a finger on
+   an item or slot instead of right-clicking.
+4. **Tell me:** does clicking feel right (speed, what gets picked)? On the phone: are the buttons where
+   your thumbs expect them, and is the FPS playable?
+
 ## What to test (Phase 6 – The Refinery District)
 1. Finish Cinder Flats' story (or use F3 → skip quest step) and follow *The Burning Road*: Route 7 past
    The Maw to the border gate in the north-east corner. The screen fades and you are in the district.

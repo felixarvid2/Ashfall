@@ -400,6 +400,12 @@ export interface PickupTarget {
 }
 export const PickupTarget = defineComponent<PickupTarget>('PickupTarget');
 
+/** Walking to a clicked object (NPC, crate, teleporter…) to use it on arrival. */
+export interface InteractTarget {
+  target: Entity;
+}
+export const InteractTarget = defineComponent<InteractTarget>('InteractTarget');
+
 /** An impact that lands after a delay: orbital strikes, grenades, bomblets. */
 export interface DelayedStrike {
   caster: Entity;

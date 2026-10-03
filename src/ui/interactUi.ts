@@ -14,10 +14,13 @@ export class InteractPrompt {
   constructor(
     root: HTMLElement,
     private readonly iconUrl: (id: string) => string | null = () => null,
+    onTap: () => void = () => {},
   ) {
     this.el = document.createElement('div');
     this.el.className = 'interact-prompt';
     this.el.hidden = true;
+    // Touch controls make the prompt a button (clickable only in the touch layout, see style.css).
+    this.el.addEventListener('click', onTap);
     root.appendChild(this.el);
   }
 

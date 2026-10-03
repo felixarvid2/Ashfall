@@ -20,11 +20,13 @@
     "cooldown": "Cooldown {seconds}s",
     "cost": "Costs {amount} {resource}",
     "generates": "Generates {amount} {resource}",
-    "slotEmpty": "Empty slot"
+    "slotEmpty": "Empty slot",
+    "controlsHintClick": "{lmb} move, attack and use · {rmb} skill · 1–4 skills · Shift+{lmb} attack in place · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {map} map · {quests} quests · {debug} debug",
+    "respawnTap": "Tap to rise again"
   },
   "moveMode": {
     "wasd": "WASD",
-    "click": "Click to move",
+    "click": "Click to move (Diablo)",
     "clickHint": "Left-click"
   },
   "save": {
@@ -77,7 +79,8 @@
       "storm": "Start ash storm",
       "dungeon": "Enter/leave dungeon",
       "skipStep": "Skip quest step"
-    }
+    },
+    "touchControls": "Touch controls"
   },
   "combat": {
     "notEnoughResource": "Not enough Heat",
@@ -360,7 +363,8 @@
     "equipped": "Equipped",
     "compare": "Compared to equipped",
     "hint": "Right-click: equip · Shift+click: salvage · Click a crystal, then an item: socket",
-    "damageEstimate": "Damage"
+    "damageEstimate": "Damage",
+    "hintTouch": "Hold an item: equip · Hold an equipped item: unequip · Tap a crystal, then an item: socket"
   },
   "stats": {
     "strength": "Strength",
@@ -1054,7 +1058,8 @@
         "name": "Symbiote",
         "desc": "Your melee attacks deal x25% damage, Scalpel Slash heals for 6% more, and you take 10% less damage."
       }
-    }
+    },
+    "barHintTouch": "Tap an action bar slot, then a learned skill to assign it. Hold a slot to clear it."
   },
   "aspects": {
     "fissure": {
@@ -2274,5 +2279,25 @@
     "locked": "You don't have a motorbike yet.",
     "notHere": "You can't ride here.",
     "thrown": "You're thrown off the bike!"
+  },
+  "touch": {
+    "attack": "Attack",
+    "use": "Use",
+    "menu": {
+      "inventory": "Bag",
+      "character": "Hero",
+      "skills": "Skills",
+      "map": "Map",
+      "quests": "Quests",
+      "mount": "Bike",
+      "fullscreen": "Full screen"
+    },
+    "rotate": "Turn your phone sideways to play",
+    "playAnyway": "Play anyway",
+    "modes": {
+      "auto": "Auto",
+      "on": "On",
+      "off": "Off"
+    }
   }
 }

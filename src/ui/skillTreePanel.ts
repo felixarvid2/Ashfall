@@ -125,7 +125,11 @@ export class SkillTreePanel {
     });
     const barHint = document.createElement('div');
     barHint.className = 'inv-hint';
-    barHint.textContent = t('tree.barHint');
+    // The touch layout swaps in the phone wording (style.css shows one of the two).
+    barHint.append(
+      Object.assign(document.createElement('span'), { className: 'hint-mouse', textContent: t('tree.barHint') }),
+      Object.assign(document.createElement('span'), { className: 'hint-touch', textContent: t('tree.barHintTouch') }),
+    );
 
     const branches = BRANCHES.map((branch) => {
       const row = document.createElement('div');

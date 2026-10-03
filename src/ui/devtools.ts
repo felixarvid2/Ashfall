@@ -21,6 +21,7 @@ export interface DebugActions {
   importSave(json: string): void;
   deleteSave(): void;
   setMoveMode(mode: MoveMode): void;
+  setTouchControls(mode: Settings['touchControls']): void;
   nextWave(): void;
   killAll(): void;
   spawnHorde(): void;
@@ -39,6 +40,7 @@ export class DevTools {
   private readonly panel: HTMLDivElement;
   private readonly values = new Map<string, HTMLElement>();
   private readonly moveSelect: HTMLSelectElement;
+  private readonly touchSelect: HTMLSelectElement;
   private frames = 0;
   private elapsed = 0;
   private worstFrame = 0;
@@ -86,6 +88,18 @@ export class DevTools {
       this.moveSelect.blur();
     });
     moveLabel.appendChild(this.moveSelect);
+
+    const touchLabel = document.createElement('label');
+    touchLabel.textContent = t('debug.touchControls');
+    this.touchSelect = document.createElement('select');
+    for (const mode of ['auto', 'on', 'off'] as const) {
+      this.touchSelect.appendChild(Object.assign(document.createElement('option'), { value: mode, textContent: t(`touch.modes.${mode}`) }));
+    }
+    this.touchSelect.addEventListener('change', () => {
+      actions.setTouchControls(this.touchSelect.value as Settings['touchControls']);
+      this.touchSelect.blur();
+    });
+    touchLabel.appendChild(this.touchSelect);
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -159,7 +173,7 @@ export class DevTools {
     target = regionRow;
     for (const x of actions.extra ?? []) button(x.label, x.run, x.id);
 
-    this.panel.append(h2, dl, moveLabel, gfxLabel, godLabel, shakeLabel, combatRow, row, regionRow, fileInput);
+    this.panel.append(h2, dl, moveLabel, touchLabel, gfxLabel, godLabel, shakeLabel, combatRow, row, regionRow, fileInput);
     root.append(this.fpsEl, this.panel);
   }
 
@@ -169,6 +183,10 @@ export class DevTools {
 
   get panelOpen(): boolean {
     return !this.panel.hidden;
+  }
+
+  setTouchControls(mode: Settings['touchControls']): void {
+    this.touchSelect.value = mode;
   }
 
   setMoveMode(mode: MoveMode): void {

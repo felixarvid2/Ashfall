@@ -61,7 +61,11 @@ export class InventoryPanel {
     this.grid.className = 'inv-grid';
     const hint = document.createElement('div');
     hint.className = 'inv-hint';
-    hint.textContent = t('items.hint');
+    // The touch layout swaps in the phone wording (style.css shows one of the two).
+    hint.append(
+      Object.assign(document.createElement('span'), { className: 'hint-mouse', textContent: t('items.hint') }),
+      Object.assign(document.createElement('span'), { className: 'hint-touch', textContent: t('items.hintTouch') }),
+    );
     this.root.append(title, this.doll, this.gold, this.grid, hint);
     this.tooltip = document.createElement('div');
     this.tooltip.className = 'item-tooltip';

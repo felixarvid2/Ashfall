@@ -230,3 +230,11 @@ twice at different scales and angles, mixed by slow noise, so its 9 m repeat doe
 cracked asphalt with alpha-faded edges. The road ribbons used to face down and were culled, so roads had
 never shown before this change. The Refinery District keeps its procedural ground for now and shares the
 asphalt.
+
+### 2026-10-03 — Click-to-move is the default; phones get touch controls
+The game plays like Diablo: left-click moves, attacks the enemy under the cursor, or walks to an item
+or object and uses it (`InteractTarget`). Settings saved before this switch once to click mode
+(`controlsVersion`); WASD stays available. Touch screens (`pointer: coarse`, or the first touch with
+"auto") get a floating joystick, the action bar restyled as thumb buttons (attack and skills auto-aim at
+the nearest enemy), a menu row, a tappable interact prompt, long-press as right-click in panels, and a
+turn-sideways hint. Taps on the canvas are left-clicks, so everything a click does works by touch too.

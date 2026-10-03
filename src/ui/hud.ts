@@ -258,7 +258,7 @@ export class Hud {
       moveMode === 'wasd'
         ? [first('moveUp'), first('moveLeft'), first('moveDown'), first('moveRight')].join('')
         : t('moveMode.clickHint');
-    this.hint.textContent = t('hud.controlsHint', {
+    this.hint.textContent = t(moveMode === 'click' ? 'hud.controlsHintClick' : 'hud.controlsHint', {
       move,
       lmb: 'LMB',
       rmb: 'RMB',
@@ -272,7 +272,20 @@ export class Hud {
       debug: first('toggleDebug'),
     });
     this.respawnKey = first('respawn');
-    this.deathHint.textContent = t('hud.respawnHint', { key: this.respawnKey });
+    this.deathHint.textContent = this.touch ? t('hud.respawnTap') : t('hud.respawnHint', { key: this.respawnKey });
+  }
+
+  private touch = false;
+
+  /** Touch controls on: the action bar becomes on-screen buttons (styled by `.touch-ui`). */
+  setTouch(on: boolean): void {
+    this.touch = on;
+    this.deathHint.textContent = on ? t('hud.respawnTap') : t('hud.respawnHint', { key: this.respawnKey });
+  }
+
+  /** The action bar's slot elements in bar order: LMB, RMB, 1–4, dodge, potion. */
+  get slotElements(): HTMLElement[] {
+    return [...this.slots.map((s) => s.el), this.dodgeSlot.el, this.potionSlot.el];
   }
 
   /** Big centred message (wave start/clear). */

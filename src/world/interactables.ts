@@ -11,6 +11,8 @@ import {
   Destructible,
   Health,
   Interactable,
+  InteractTarget,
+  MoveTarget,
   PlayerControlled,
   Progression,
   Renderable,
@@ -152,10 +154,23 @@ export function interactSystem(world: World, _dt: number, ctx: GameContext): voi
       restoreGlow(world, e, it, zone);
     }
   }
-  if (!ctx.input.wasPressed('pickup')) return;
   const player = world.first(PlayerControlled, Transform);
   if (player === undefined || world.has(player, Dead)) return;
   const ptr = world.req(player, Transform);
+  // A clicked object: use it once the player has walked into its reach.
+  const order = world.get(player, InteractTarget);
+  if (order) {
+    const it = world.get(order.target, Interactable);
+    const tr = world.get(order.target, Transform);
+    if (!it || !tr || !usable(it, ctx.time)) {
+      world.remove(player, InteractTarget);
+    } else if (Math.hypot(tr.x - ptr.x, tr.z - ptr.z) <= it.radius) {
+      world.remove(player, InteractTarget);
+      world.remove(player, MoveTarget);
+      interact(world, ctx, player, order.target);
+    }
+  }
+  if (!ctx.input.wasPressed('pickup')) return;
   // Loot on the ground takes priority over objects.
   if (nearestGroundItem(world, ptr.x, ptr.z, PICKUP_KEY_RADIUS) !== null) return;
   const target = nearestInteractable(world, ptr.x, ptr.z, ctx.time);

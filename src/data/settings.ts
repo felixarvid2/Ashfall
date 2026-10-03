@@ -67,8 +67,15 @@ const actionShape = Object.fromEntries(ACTIONS.map((a) => [a, z.array(z.string()
   z.ZodArray<z.ZodString>
 >;
 
+/** Bumped when a change to the controls should reset older players' movement mode. */
+export const CONTROLS_VERSION = 1;
+
 export const SettingsSchema = z.object({
-  moveMode: MoveModeSchema.default('wasd'),
+  moveMode: MoveModeSchema.default('click'),
+  /** Settings saved before click-to-move became the default (version 0) switch to it once. */
+  controlsVersion: z.number().int().default(0),
+  /** Touch controls: 'auto' shows them on touch screens. */
+  touchControls: z.enum(['auto', 'on', 'off']).default('auto'),
   screenShake: z.boolean().default(true),
   showFps: z.boolean().default(true),
   graphics: z.enum(['low', 'medium', 'high']).default('high'),
@@ -80,7 +87,14 @@ export const SettingsSchema = z.object({
 export type Settings = z.infer<typeof SettingsSchema>;
 
 export function defaultSettings(): Settings {
-  return SettingsSchema.parse({});
+  return migrateSettings(SettingsSchema.parse({}));
+}
+
+/** Diablo-style click-to-move replaced WASD as the default (controls version 1). */
+export function migrateSettings(settings: Settings): Settings {
+  if (settings.controlsVersion < 1) settings.moveMode = 'click';
+  settings.controlsVersion = CONTROLS_VERSION;
+  return settings;
 }
 
 /** Resolved bindings: user overrides on top of the defaults. */
@@ -95,7 +109,7 @@ export function loadSettings(storage: Storage | undefined): Settings {
     const raw = storage?.getItem(SETTINGS_KEY);
     if (raw) {
       const parsed = SettingsSchema.safeParse(JSON.parse(raw));
-      if (parsed.success) return parsed.data;
+      if (parsed.success) return migrateSettings(parsed.data);
     }
   } catch {
     // Corrupt or blocked storage: fall through to defaults.

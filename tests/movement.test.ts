@@ -15,7 +15,7 @@ function setup(ctxOverrides: Partial<GameContext> = {}) {
   world.add(e, Transform, makeTransform());
   world.add(e, Mover, { speed: 5, speedMul: 1, turnRate: 100, vx: 0, vz: 0 });
   world.add(e, PlayerControlled, {});
-  const ctx: GameContext = makeCtx(ctxOverrides);
+  const ctx: GameContext = makeCtx({ settings: { ...defaultSettings(), moveMode: 'wasd' }, ...ctxOverrides });
   const step = (ticks = 1) => {
     for (let i = 0; i < ticks; i++) {
       playerControlSystem(world, 1 / 60, ctx);

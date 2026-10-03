@@ -7,11 +7,21 @@ import type { Rng } from './rng';
 import type { SpatialHash } from './spatial';
 
 /** The slice of Input that systems use — lets tests pass a fake. */
+/** On-screen touch controls (phones and tablets). */
+export interface TouchState {
+  /** Joystick deflection in screen space (x right, y up), length 0–1; null when released. */
+  stick: { x: number; y: number } | null;
+  /** The attack button is held. */
+  attack: boolean;
+}
+
 export interface InputState {
   isDown(action: Action): boolean;
   wasPressed(action: Action): boolean;
   isMouseDown(button?: number): boolean;
   wasMousePressed(button?: number): boolean;
+  /** Present while the touch controls are shown. */
+  touch?: TouchState | null;
 }
 
 export interface GameContext {
