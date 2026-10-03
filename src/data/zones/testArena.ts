@@ -46,7 +46,13 @@ export type GroundTexture =
   | 'slag_ground'
   | 'cooling_slag'
   | 'steel_plating'
-  | 'scorched_flagstones';
+  | 'scorched_flagstones'
+  | 'vault_soil'
+  | 'fungal_moss'
+  | 'root_mat'
+  | 'frosted_concrete'
+  | 'dry_silt'
+  | 'overgrown_asphalt';
 
 /**
  * Ground textures for an open-world zone: a base that covers everything, up to six overlay

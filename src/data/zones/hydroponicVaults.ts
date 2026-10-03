@@ -118,24 +118,28 @@ export const VAULTS_ENV = buildEnv();
  * the dam, steel plating inside the Seed Bank.
  */
 function buildGround(props: PropPlacement[]): GroundDef {
-  const LUMEN = 0;
-  const CONCRETE = 1;
-  const STEEL = 2;
+  const MOSS = 0;
+  const ROOTS = 1;
+  const FROST = 2;
+  const SILT = 3;
+  const CONCRETE = 4;
   const patches: GroundPatch[] = [
-    { layer: LUMEN, x: VAULT_SUBZONES.sea.c[0], z: VAULT_SUBZONES.sea.c[1], radius: VAULT_SUBZONES.sea.r * 0.85, strength: 0.75 },
-    { layer: LUMEN, x: VAULT_SUBZONES.roots.c[0], z: VAULT_SUBZONES.roots.c[1], radius: VAULT_SUBZONES.roots.r * 0.85, strength: 0.9 },
-    { layer: LUMEN, x: GAMMA.x, z: GAMMA.z, radius: GAMMA.radius + 10 },
-    { layer: LUMEN, x: GREAT_DOME.x, z: GREAT_DOME.z, radius: GREAT_DOME.radius + 14 },
-    { layer: LUMEN, x: VAULT_SUBZONES.outer.c[0], z: VAULT_SUBZONES.outer.c[1], radius: VAULT_SUBZONES.outer.r * 0.7, strength: 0.3 },
+    { layer: MOSS, x: VAULT_SUBZONES.sea.c[0], z: VAULT_SUBZONES.sea.c[1], radius: VAULT_SUBZONES.sea.r * 0.85, strength: 0.85 },
+    { layer: ROOTS, x: VAULT_SUBZONES.roots.c[0], z: VAULT_SUBZONES.roots.c[1], radius: VAULT_SUBZONES.roots.r * 0.85, strength: 0.9 },
+    { layer: MOSS, x: GAMMA.x, z: GAMMA.z, radius: GAMMA.radius + 10 },
+    { layer: ROOTS, x: GREAT_DOME.x, z: GREAT_DOME.z, radius: GREAT_DOME.radius + 10, strength: 0.8 },
+    { layer: ROOTS, x: MOTHER_TREE.x, z: MOTHER_TREE.z, radius: 22 },
+    { layer: MOSS, x: VAULT_SUBZONES.outer.c[0], z: VAULT_SUBZONES.outer.c[1], radius: VAULT_SUBZONES.outer.r * 0.7, strength: 0.3 },
     { layer: CONCRETE, x: LAB9.x, z: LAB9.z, radius: LAB9.radius - 4 },
-    { layer: CONCRETE, x: DAM.x, z: DAM.z + 4, radius: 26 },
-    { layer: STEEL, x: VAULT_SUBZONES.seed.c[0], z: VAULT_SUBZONES.seed.c[1], radius: VAULT_SUBZONES.seed.r * 0.55, strength: 0.7 },
+    // The drained basin below the broken dam.
+    { layer: SILT, x: DAM.x, z: DAM.z + 4, radius: 34 },
+    { layer: FROST, x: VAULT_SUBZONES.seed.c[0], z: VAULT_SUBZONES.seed.c[1], radius: VAULT_SUBZONES.seed.r * 0.6, strength: 0.8 },
   ];
-  // Fungus spreads around every growth and fungal tree.
+  // Moss spreads around every growth and fungal tree.
   for (const p of props) {
-    if (p.asset === 'prop.lumen_growth') patches.push({ layer: LUMEN, x: p.x, z: p.z, radius: 3.5 * (p.scale ?? 1), strength: 0.9 });
+    if (p.asset === 'prop.lumen_growth') patches.push({ layer: MOSS, x: p.x, z: p.z, radius: 3.5 * (p.scale ?? 1), strength: 0.9 });
   }
-  return { base: 'industrial_grit', tile: 9, layers: ['lumen_infested', 'military_concrete', 'steel_plating'], patches, road: 'cracked_asphalt' };
+  return { base: 'vault_soil', tile: 9, layers: ['fungal_moss', 'root_mat', 'frosted_concrete', 'dry_silt', 'military_concrete'], patches, road: 'overgrown_asphalt' };
 }
 
 // ---- Props ------------------------------------------------------------------------------------

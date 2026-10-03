@@ -1147,6 +1147,12 @@ const GROUND_LOOK: Partial<
   cooling_slag: { scale: 0.8, gain: 1.2, glow: 'orange' },
   steel_plating: { scale: 0.75 },
   scorched_flagstones: { scale: 0.8, gain: 1.15 },
+  // Hydroponic Vaults: dark moss and roots lifted so they read; their pale green spots and veins glow.
+  fungal_moss: { scale: 0.8, gain: 1.8, glow: 'green' },
+  root_mat: { scale: 0.7, gain: 1.6, glow: 'green' },
+  // Bright frost and silt brought down to the night look.
+  frosted_concrete: { scale: 0.7, gain: 0.62 },
+  dry_silt: { scale: 0.8, gain: 0.8 },
 };
 
 /** Multiplies the painted ground textures down to the dark night look of the procedural ground. */
