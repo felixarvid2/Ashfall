@@ -52,6 +52,11 @@ export class AshFall {
     this.points.frustumCulled = false;
   }
 
+  /** Tint the falling particles (grey ash; green spores in the Hydroponic Vaults). */
+  setColor(color: string): void {
+    (this.points.material as THREE.PointsMaterial).color.set(color);
+  }
+
   update(dt: number, focus: THREE.Vector3): void {
     this.time += dt;
     const { x: bx, y: by, z: bz } = this.box;

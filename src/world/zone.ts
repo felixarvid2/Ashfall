@@ -273,7 +273,11 @@ export function zoneSystem(world: World, dt: number, ctx: GameContext): void {
         st.state = 'cleared';
         st.clearedAt = ctx.time;
       } else if (d > PACK_SLEEP && !st.members.some((m) => world.req(m, EnemyAI).aggro)) {
-        for (const m of st.members) world.destroyDeferred(m);
+        for (const m of st.members) {
+          // A Lumen Giant's fungi go with it.
+          for (const f of world.req(m, EnemyAI).fungi ?? []) if (world.isAlive(f)) world.destroyDeferred(f);
+          world.destroyDeferred(m);
+        }
         st.members = [];
         st.state = 'dormant';
       }

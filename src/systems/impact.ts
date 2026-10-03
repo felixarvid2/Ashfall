@@ -41,7 +41,7 @@ export function impactArea(
     if (hitOne(world, ctx, caster, target, x, z, impact, extraApplies, bonuses) !== null) hits++;
   }
   // Player attacks set off explosive barrels.
-  if (team === 'player') hitDestructibles(world, x, z, radius);
+  if (team === 'player') hitDestructibles(world, x, z, radius, ctx);
   if (hits > 0) {
     if (impact.hitstopMs > 0) ctx.events.push({ type: 'hitstop', ms: impact.hitstopMs });
     if (impact.shake > 0) ctx.events.push({ type: 'shake', trauma: impact.shake });

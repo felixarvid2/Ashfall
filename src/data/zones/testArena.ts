@@ -13,6 +13,8 @@ export interface PropPlacement {
   light?: { color: string; intensity: number; distance: number; height: number };
   /** Huge far-away landmark: ignores fog and distance culling so it can be seen across the region. */
   landmark?: boolean;
+  /** Constant emissive tint (a glowing landmark such as the Mother Tree). */
+  glow?: string;
 }
 
 export interface ArenaDef {
@@ -29,6 +31,8 @@ export interface ArenaDef {
   scatter: { asset: string; count: number; seed: string; minScale: number; maxScale: number }[];
   /** Painted ground textures (zones without one keep the procedural ash ground). */
   ground?: GroundDef;
+  /** Colour of the drifting particles (default grey ash). */
+  particles?: string;
 }
 
 /** A ground texture in public/assets/textures/ground/ (file name without .webp). */

@@ -36,6 +36,7 @@ import type { Bonus, Condition, DamageType, StatusApply, StatusId } from '../dat
 import { computeHit, computeOutgoing, computeTaken, type TargetState } from './damage';
 import { signal } from './quests';
 import { eliteDeath, onEliteHit } from './elites';
+import { spawnEnemy } from '../world/spawn';
 
 export function hasStatus(world: World, e: Entity, id: StatusId): boolean {
   return world.get(e, StatusEffects)?.list.some((s) => s.id === id) ?? false;
@@ -107,6 +108,16 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   const stats = world.get(attacker, CombatStats);
   const team = world.get(attacker, Faction)?.team ?? 'enemy';
   if (!stats) return null;
+  // Evasive swarms slip some of the player's hits.
+  const targetAi = world.get(target, EnemyAI);
+  if (team === 'player' && targetAi) {
+    const evasion = enemyDef(targetAi.defId).evasion;
+    if (evasion > 0 && ctx.rng.next() < evasion) {
+      const tt = world.req(target, Transform);
+      ctx.events.push({ type: 'miss', x: tt.x, y: 1.4, z: tt.z });
+      return null;
+    }
+  }
   const state = targetState(world, target, hit.range);
   const conditions = new Set(state.conditions);
   for (const c of attackerConditions(world, attacker)) conditions.add(c);
@@ -426,6 +437,18 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
   if (effects) effects.list = [];
 
   const ai = world.get(target, EnemyAI);
+  // A Lumen Giant falls but regrows while one of its fungi still stands: no loot until it stays down.
+  if (ai && tr && enemyDef(ai.defId).regrow && ai.fungi?.some((f) => isAlive(world, f))) {
+    const regrow = enemyDef(ai.defId).regrow!;
+    const dead = world.req(target, Dead);
+    dead.removeAfter = Infinity;
+    dead.corpse = false;
+    ai.regrowAt = ctx.time + regrow.delay;
+    ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: tr.x, z: tr.z, radius: regrow.radius, facing: 0 });
+    ctx.events.push({ type: 'banner', key: 'enemies.regrowing', seconds: 2 });
+    ctx.events.push({ type: 'death', target, x: tr.x, z: tr.z, isPlayer: false });
+    return;
+  }
   if (ai) {
     const def = enemyDef(ai.defId);
     if (tr) {
@@ -440,7 +463,16 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
         xp: true,
       });
     }
-    if (def.onDeath && tr) spawnEnemyHazard(world, target, tr.x, tr.z, def.onDeath.hazard);
+    if (def.onDeath?.hazard && tr) spawnEnemyHazard(world, target, tr.x, tr.z, def.onDeath.hazard);
+    // Swarms burst out of the body.
+    if (def.onDeath?.spawn && tr) {
+      const level = world.get(target, CombatStats)?.level ?? 1;
+      for (let i = 0; i < def.onDeath.spawn.count; i++) {
+        const a = (i / def.onDeath.spawn.count) * Math.PI * 2;
+        const m = spawnEnemy(world, def.onDeath.spawn.enemy, tr.x + Math.sin(a) * 1.2, tr.z + Math.cos(a) * 1.2, { level });
+        world.req(m, EnemyAI).aggro = true;
+      }
+    }
     eliteDeath(world, ctx, target);
     ctx.stats.kills++;
     if (tr) {

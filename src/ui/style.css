@@ -813,3 +813,11 @@ html.touch-device .hint-mouse { display: none; }
   .char-portrait { width: 96px; margin-bottom: 4px; }
   .char-class-details { margin-top: 10px; font-size: 0.9em; }
 }
+
+/* Spore exposure (Hydroponic Vaults). */
+.exposure-meter { position: absolute; left: 50%; bottom: 152px; transform: translateX(-50%); width: 220px; height: 14px; background: rgba(8, 14, 10, 0.85); border: 1px solid #3a6a44; pointer-events: none; }
+.exposure-meter[hidden] { display: none; }
+.exposure-fill { height: 100%; background: linear-gradient(90deg, #4aa040, #a8ff5a); transition: width 0.2s; }
+.exposure-meter.high { border-color: #c8ff5a; box-shadow: 0 0 10px rgba(168, 255, 90, 0.5); }
+.exposure-text { position: absolute; inset: 0; line-height: 14px; text-align: center; font-size: 0.66em; color: #e8ffe0; text-shadow: 0 0 3px #000; letter-spacing: 0.08em; }
+#ui.touch-ui .exposure-meter { bottom: 96px; width: 180px; }

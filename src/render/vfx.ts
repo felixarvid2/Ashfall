@@ -322,6 +322,12 @@ export class VfxSystem {
         this.spawnBeam(x, z, radius * 0.45);
         this.sparks.emit(x, 0.5, z, 80, '#bfe8ff', 14);
         break;
+      case 'flash':
+        // A crystal shatters: a blinding white-cyan burst.
+        this.spawnRing('ring:flash', '#e8ffff', x, z, radius, 0.35, 0.05, 1);
+        this.spawnRing('ring:flash2', '#7affff', x, z, radius * 0.6, 0.5, 0.1);
+        this.sparks.emit(x, 1.2, z, 50, '#bfffff', 9);
+        break;
       case 'coolant':
         this.spawnRing('ring:coolant', '#7ec8ff', x, z, 2.4, 0.5, 0.2, 0.3);
         this.sparks.emit(x, 1, z, 30, '#bfe8ff', 4);

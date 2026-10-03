@@ -259,6 +259,23 @@ export interface EnemyAI {
   reviveCooldown?: number;
   /** The corpse being revived during the wind-up. */
   reviveTarget?: Entity;
+  // ---- Region 3 behaviours ----
+  /** Melee hits that landed (root every Nth). */
+  landed?: number;
+  /** Vine lash: cooldown, and the wind-up left while a pull is being telegraphed. */
+  pullCooldown?: number;
+  pullTimer?: number;
+  /** Seconds to the next heal pulse (Mossborn). */
+  healTimer?: number;
+  /** Seconds spent fighting, and until the next call for help (Cocoon Warden). */
+  fightTime?: number;
+  reinforceTimer?: number;
+  /** Seconds to the next lobbed spore cloud, and the clouds still in the air. */
+  cloudTimer?: number;
+  clouds?: { x: number; z: number; t: number }[];
+  /** Lumen Giant: its fungi, and when it rises again after falling while they stand. */
+  fungi?: Entity[];
+  regrowAt?: number;
 }
 export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
 
@@ -516,6 +533,8 @@ export interface Destructible {
   radius: number;
   /** Blast when destroyed (barrels); null = just breaks. */
   blast: { radius: number; flat: number } | null;
+  /** Glowing crystal (Hydroponic Vaults): blinds enemies in `radius` for `duration` s, grows back after `regrow` s. */
+  blind?: { radius: number; duration: number; regrow: number };
 }
 export const Destructible = defineComponent<Destructible>('Destructible');
 

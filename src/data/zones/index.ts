@@ -1,9 +1,10 @@
 /** Every open-world zone, in region order (docs/world-and-gameplay.md §5). */
 import { CINDER_FLATS } from './cinderFlats';
 import { REFINERY_DISTRICT } from './refineryDistrict';
+import { HYDROPONIC_VAULTS } from './hydroponicVaults';
 import type { ZoneDef } from './zoneTypes';
 
-export const ZONES: readonly ZoneDef[] = [CINDER_FLATS, REFINERY_DISTRICT];
+export const ZONES: readonly ZoneDef[] = [CINDER_FLATS, REFINERY_DISTRICT, HYDROPONIC_VAULTS];
 
 /** New characters start here. */
 export const START_ZONE = CINDER_FLATS;

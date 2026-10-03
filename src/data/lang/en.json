@@ -22,7 +22,8 @@
     "generates": "Generates {amount} {resource}",
     "slotEmpty": "Empty slot",
     "controlsHintClick": "{lmb} move, attack and use · {rmb} skill · 1–4 skills · Shift+{lmb} attack in place · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {map} map · {quests} quests · {debug} debug",
-    "respawnTap": "Tap to rise again"
+    "respawnTap": "Tap to rise again",
+    "exposure": "Spores {pct}%"
   },
   "moveMode": {
     "wasd": "WASD",
@@ -237,7 +238,15 @@
       "brother_ash": "Brother Ash",
       "vire": "High Priestess Vire",
       "hask": "Deacon Hask",
-      "red": "Red"
+      "red": "Red",
+      "keeper": "The Keeper",
+      "brood_warden": "The Brood Warden",
+      "vine_matriarch": "The Vine Matriarch",
+      "ilse_varga": "Dr. Ilse Varga",
+      "gamma_bloom": "The Gamma Bloom",
+      "warden": "The Warden of the Mother Tree",
+      "swarm_queen": "The Swarm Queen",
+      "thorn": "Thorn"
     },
     "brood_mother": "Brood Mother",
     "commandant_hale": "Commandant Hale",
@@ -255,7 +264,24 @@
     "pyre_warden": "Pyre Warden",
     "frozen_welder": "The Frozen Welder",
     "vire": "High Priestess Vire",
-    "lumen_tentacle": "Lumen Tentacle"
+    "lumen_tentacle": "Lumen Tentacle",
+    "overgrown_walker": "Overgrown Walker",
+    "swarm_bloater": "Swarm Bloater",
+    "mossborn": "Mossborn",
+    "vine_weaver": "Vine Weaver",
+    "spore_swarm": "Spore Swarm",
+    "cocoon_warden": "Cocoon Warden",
+    "mutated_botanist": "Mutated Botanist",
+    "lumen_giant": "Lumen Giant",
+    "the_keeper": "The Keeper",
+    "brood_warden": "The Brood Warden",
+    "vine_matriarch": "The Vine Matriarch",
+    "ilse_varga": "Dr. Ilse Varga",
+    "gamma_bloom": "The Gamma Bloom",
+    "warden": "The Warden of the Mother Tree",
+    "mother_root": "Mother Tree Root",
+    "regrowing": "It is regrowing from its fungi — destroy them!",
+    "fungus": "Lumen Fungus"
   },
   "resources": {
     "heat": "Heat",
@@ -280,7 +306,8 @@
     "aegis": "Barrier Pylon",
     "chainReaction": "Chain Reaction",
     "magnet": "Magnet",
-    "overclock": "Overclock"
+    "overclock": "Overclock",
+    "wading": "Wading"
   },
   "items": {
     "bases": {
@@ -1294,7 +1321,14 @@
         "foundry": "Foundry Road",
         "stacks": "Smokestack Forest",
         "cathedral": "Cathedral Steps",
-        "delta": "Pump Station Delta"
+        "delta": "Pump Station Delta",
+        "lab9": "Lab 9",
+        "hvGate": "Quarantine Gate",
+        "outer": "Outer Domes",
+        "sea": "The Green Sea",
+        "seed": "Seed Bank",
+        "roots": "Root Network",
+        "gamma": "Dome Gamma"
       }
     },
     "refineryDistrict": {
@@ -1308,6 +1342,18 @@
         "delta": "Pump Station Delta (reclaimed)"
       },
       "foundryRoad": "Foundry Road"
+    },
+    "hydroponicVaults": {
+      "name": "The Hydroponic Vaults",
+      "serviceRoad": "The Service Road",
+      "outerDomes": "The Outer Domes",
+      "greenSea": "The Green Sea",
+      "seedBank": "The Seed Bank",
+      "rootNetwork": "The Root Network",
+      "hub": {
+        "lab9": "Lab 9",
+        "gamma": "Dome Gamma (reclaimed)"
+      }
     }
   },
   "map": {
@@ -1341,7 +1387,8 @@
       "portal": "Leave",
       "generator": "Start Generator",
       "instanceKey": "Take Keycard",
-      "cache": "Open Cache"
+      "cache": "Open Cache",
+      "crystal": "Break Crystal"
     },
     "needKeycard": "Locked. A keycard should be lying somewhere nearby.",
     "keycard": "Keycard taken. A locked chest is close by.",
@@ -1485,6 +1532,56 @@
       "11": {
         "title": "Vire's private journal",
         "body": "It speaks to me in the heat. It does not want to be burned — it wants to be carried. My flock thinks I purify them. I only choose who goes in first. The green and the flame are the same light."
+      }
+    },
+    "hv": {
+      "0": {
+        "title": "Quarantine order 9-C",
+        "body": "By order of Lab 9: the Vaults are sealed. No crops, seed or soil leaves this gate. Anyone showing green under the nails is to be turned back. Anyone arguing is to be turned back twice."
+      },
+      "1": {
+        "title": "Lab 9 airlock log",
+        "body": "Filters at 61 %. Dr. Okafor has asked us again not to burn the growth around the airlock. She says it is listening. Chen says she has been in the domes too long. I say the filters are at 61 % and that is the only thing I am sure of."
+      },
+      "2": {
+        "title": "Okafor's notes, day 12",
+        "body": "The mycelium in Dome 2 grew a lattice overnight that maps the old irrigation lines exactly. Not the pipes. The water that used to run in them. It remembers. I do not know yet whether that should frighten me."
+      },
+      "3": {
+        "title": "Crop report, Outer Dome 1",
+        "body": "Wheat yield: zero. Potato yield: zero. Unknown green yield: eleven tonnes, and it moved. Recommend we stop calling this a farm."
+      },
+      "4": {
+        "title": "Farmhand's diary",
+        "body": "Marta keeps one row clean. Every morning she pulls the green out by hand and every night it grows back everywhere except her row. She says it is being polite. I have started helping her."
+      },
+      "5": {
+        "title": "Field note: the Green Sea",
+        "body": "Tree 14 grew four metres between my shifts. When I put my hand on the bark it was warm, and something under it pulsed in time with my own heart. I took my hand away. The pulse did not stop."
+      },
+      "6": {
+        "title": "Survey team, last call",
+        "body": "…filters are clogging, we are turning back. Hollis says he hears singing in the spores. Nobody else does. Hollis is walking toward the trees. Hollis, come back. Hollis—"
+      },
+      "7": {
+        "title": "Okafor's notes, day 40",
+        "body": "I played the tone the cores emit back to the growth at the Dome 3 node. It went still. Then it answered with the same tone, a fifth higher. I have not told the others. They would want to know what it said, and I do not know."
+      },
+      "8": {
+        "title": "Seed Bank freezer log",
+        "body": "Vault 3 temperature: −18 °C. Vault 3 contents: 40,000 seed lines, Earth stock. Vault 3 door: open from the inside. We do not have anything that lives on the inside."
+      },
+      "9": {
+        "title": "Transport manifest 7734",
+        "body": "Authorised: Governor E. Kade. Cargo: 12 sealed cores from the Mother Tree sample site, routed to the Deep Mines lift. Handling note: do not open. Do not listen to them either."
+      },
+      "10": {
+        "title": "Recording, Dr. Varga",
+        "body": "I am not sick. I feel better than I have in years. The others are scared of the green in my veins but it only wants to understand us. It asked me what pain is. I showed it. I am sorry. I am so sorry."
+      },
+      "11": {
+        "title": "Harvester W-01 service log",
+        "body": "Unit W-01 failed to return from the Great Dome. Telemetry shows it still moving in a slow circle around the big tree, arms raised. Its tracks are full of roots. Its engine has not run for nine months."
       }
     }
   },
@@ -2273,7 +2370,12 @@
       "used": "Steam floods the slag. Cross while it lasts!",
       "locked": "The valve won't turn"
     },
-    "noTargets": "Nothing to aim at."
+    "noTargets": "Nothing to aim at.",
+    "airFilter": {
+      "name": "Air Filter",
+      "used": "The filter roars to life. The spores here are clearing.",
+      "locked": "The filter is already running."
+    }
   },
   "bike": {
     "locked": "You don't have a motorbike yet.",

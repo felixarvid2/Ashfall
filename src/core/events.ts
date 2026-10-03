@@ -38,7 +38,9 @@ export type VfxKind =
   | 'minionSlash'
   | 'slam'
   | 'corpseBurst'
-  | 'flame';
+  | 'flame'
+  // Hydroponic Vaults: a crystal's blinding burst.
+  | 'flash';
 
 export type GameEvent =
   | {
@@ -55,6 +57,8 @@ export type GameEvent =
       dot: boolean;
     }
   | { type: 'heal'; target: Entity; x: number; y: number; z: number; amount: number }
+  /** A hit that an evasive enemy slipped (Spore Swarm). */
+  | { type: 'miss'; x: number; y: number; z: number }
   | { type: 'status'; target: Entity; status: StatusId }
   | { type: 'death'; target: Entity; x: number; z: number; isPlayer: boolean }
   | { type: 'hitstop'; ms: number }

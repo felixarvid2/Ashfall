@@ -12,6 +12,7 @@ import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena';
 import { buildGroundSplat } from './groundSplat';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnvFeature } from '../data/zones/zoneTypes';
 import { scatterInstances } from '../world/arena';
 import { angleDelta } from '../systems/movement';
@@ -82,6 +83,7 @@ export class GameRenderer {
     const s = root;
     this.scene.background = new THREE.Color(arena.fog.color);
     this.scene.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
+    this.ash.setColor(arena.particles ?? '#b8b2aa');
     this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
     if (!this.ambientLight || !this.hemiLight) {
       this.ambientLight = new THREE.AmbientLight();
@@ -152,7 +154,10 @@ export class GameRenderer {
     }
 
     const env = (arena as { env?: EnvFeature[] }).env ?? [];
+    this.sporeFields = null;
     if (env.length) this.buildEnv(s, env);
+    const domes = (arena as { domes?: { x: number; z: number; radius: number }[] }).domes ?? [];
+    if (domes.length) this.buildDomes(s, domes);
 
     const glowTexture = makeGlowTexture();
     // Lights come from a small pool moved to the lamps nearest the camera (hundreds of real point
@@ -294,6 +299,91 @@ export class GameRenderer {
       this.moltenMaterial = null;
       this.molten = null;
     }
+
+    // Hydroponic Vaults: spore fields as glowing green haze, shallow water as dark still discs.
+    const spores = env.filter((f): f is Extract<EnvFeature, { kind: 'spores' }> => f.kind === 'spores');
+    if (spores.length) {
+      const plane = new THREE.PlaneGeometry(2, 2);
+      plane.rotateX(-Math.PI / 2);
+      const haze = new THREE.MeshBasicMaterial({ map: makeGlowTexture(), color: '#5aff4a', transparent: true, opacity: 0.32, depthWrite: false, blending: THREE.AdditiveBlending });
+      const mesh = new THREE.InstancedMesh(plane, haze, spores.length);
+      this.sporeFields = { mesh, fields: spores.map((f) => ({ id: f.id, x: f.x, z: f.z, r: f.radius })), key: '' };
+      const m = new THREE.Matrix4();
+      spores.forEach((f, i) => {
+        m.makeScale(f.radius * 1.15, 1, f.radius * 1.15).setPosition(f.x, 0.08, f.z);
+        mesh.setMatrixAt(i, m);
+      });
+      mesh.computeBoundingSphere();
+      mesh.userData.own = true;
+      root.add(mesh);
+    } else this.sporeFields = null;
+    const water = env.filter((f): f is Extract<EnvFeature, { kind: 'water' }> => f.kind === 'water');
+    if (water.length) {
+      const disc = new THREE.CircleGeometry(1, 28);
+      disc.rotateX(-Math.PI / 2);
+      // Still, dark water that catches a little light (it must read against the night ground).
+      const mat = new THREE.MeshStandardMaterial({ color: '#3a7a92', emissive: '#0e3442', roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.8, polygonOffset: true, polygonOffsetFactor: -3 });
+      const mesh = new THREE.InstancedMesh(disc, mat, water.length);
+      const m = new THREE.Matrix4();
+      water.forEach((f, i) => {
+        m.makeScale(f.radius, 1, f.radius).setPosition(f.x, 0.05, f.z);
+        mesh.setMatrixAt(i, m);
+      });
+      mesh.computeBoundingSphere();
+      mesh.receiveShadow = true;
+      mesh.userData.own = true;
+      root.add(mesh);
+    }
+  }
+
+  private sporeFields: { mesh: THREE.InstancedMesh; fields: { id: string; x: number; z: number; r: number }[]; key: string } | null = null;
+
+  /** Spore fields cleared by an air filter (or a reclaimed dome) disappear. */
+  updateSpores(active: (id: string) => boolean): void {
+    const sf = this.sporeFields;
+    if (!sf) return;
+    const key = sf.fields.map((f) => (active(f.id) ? '1' : '0')).join('');
+    if (key === sf.key) return;
+    sf.key = key;
+    const m = new THREE.Matrix4();
+    sf.fields.forEach((f, i) => {
+      const r = key[i] === '1' ? f.r * 1.15 : 0.0001;
+      m.makeScale(r, 1, r).setPosition(f.x, 0.08, f.z);
+      sf.mesh.setMatrixAt(i, m);
+    });
+    sf.mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  /** Glass farming domes: rings of thin ribs rising from a base ring (no collision). */
+  private buildDomes(root: THREE.Group, domes: { x: number; z: number; radius: number }[]): void {
+    const parts: THREE.BufferGeometry[] = [];
+    for (const d of domes) {
+      const h = d.radius * 0.42;
+      const ribs = Math.max(8, Math.round(d.radius / 18));
+      const tube = Math.min(0.9, 0.25 + d.radius / 600);
+      for (let i = 0; i < ribs; i++) {
+        const a = (i / ribs) * Math.PI;
+        const dx = Math.sin(a);
+        const dz = Math.cos(a);
+        const pts: THREE.Vector3[] = [];
+        for (let k = 0; k <= 24; k++) {
+          const t = (k / 24) * Math.PI;
+          pts.push(new THREE.Vector3(d.x + dx * Math.cos(t) * d.radius, Math.sin(t) * h, d.z + dz * Math.cos(t) * d.radius));
+        }
+        parts.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, tube, 5, false));
+      }
+      const base = new THREE.TorusGeometry(d.radius, tube * 1.6, 6, Math.max(48, Math.round(d.radius)));
+      base.rotateX(Math.PI / 2);
+      base.translate(d.x, tube, d.z);
+      parts.push(base);
+    }
+    if (!parts.length) return;
+    const merged = mergeGeometries(parts);
+    for (const p of parts) p.dispose();
+    if (!merged) return;
+    const mat = new THREE.MeshBasicMaterial({ color: '#4a8a70', transparent: true, opacity: 0.4, depthWrite: false });
+    const mesh = new THREE.Mesh(merged, mat);
+    root.add(mesh);
   }
 
   private molten: { hot: THREE.InstancedMesh; rim: THREE.InstancedMesh; pools: { id: string; x: number; z: number; r: number }[]; key: string } | null = null;

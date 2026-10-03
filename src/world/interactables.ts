@@ -9,6 +9,7 @@ import {
   Collider,
   Dead,
   Destructible,
+  EnemyAI,
   Health,
   Interactable,
   InteractTarget,
@@ -73,6 +74,13 @@ export function spawnInteractables(world: World, zone: ZoneRuntime, extras: { po
     if (v.collider) world.add(e, Collider, { radius: v.collider, mass: Infinity, layer: 'ground', isStatic: true });
   };
   for (const poi of zone.def.pois) {
+    if (poi.kind === 'crystal') {
+      const e = world.create();
+      world.add(e, Transform, makeTransform(poi.x, 0, poi.z, ((poi.x * 7 + poi.z * 13) % 628) / 100));
+      world.add(e, Renderable, { assetId: CRYSTAL.asset, scale: CRYSTAL.scale, glow: CRYSTAL.glow });
+      world.add(e, Destructible, { radius: 0.9, blast: null, blind: { radius: CRYSTAL.radius, duration: CRYSTAL.duration, regrow: CRYSTAL.regrow } });
+      continue;
+    }
     if (poi.kind === 'barrel') {
       const e = world.create();
       world.add(e, Transform, makeTransform(poi.x, 0, poi.z));
@@ -304,23 +312,48 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
 
 // ---- Explosive barrels and blasts ---------------------------------------------------
 
-/** Player attacks that reach a barrel set it off. */
-export function hitDestructibles(world: World, x: number, z: number, radius: number): number {
+/** Glowing crystals: break one and the enemies around it are blinded for a moment; it grows back. */
+export const CRYSTAL = { asset: 'prop.lumen_growth', scale: 1.25, glow: '#7affff', radius: 7, duration: 3, regrow: 45 };
+/** Broken crystals and when they grow back (ctx.time). */
+const regrowing = new Map<Entity, { at: number; blind: NonNullable<Destructible['blind']> }>();
+
+/** Player attacks that reach a barrel set it off (and break crystals). */
+export function hitDestructibles(world: World, x: number, z: number, radius: number, ctx?: GameContext): number {
   let n = 0;
   for (const e of world.query(Destructible, Transform)) {
     const tr = world.req(e, Transform);
     const d = world.req(e, Destructible);
     if (Math.hypot(tr.x - x, tr.z - z) > radius + d.radius) continue;
-    breakDestructible(world, e, 0);
+    breakDestructible(world, e, 0, ctx);
     n++;
   }
   return n;
 }
 
-function breakDestructible(world: World, e: Entity, fuse: number): void {
+function breakDestructible(world: World, e: Entity, fuse: number, ctx?: GameContext): void {
   const d = world.get(e, Destructible);
   if (!d) return;
   world.remove(e, Destructible);
+  if (d.blind) {
+    const tr = world.req(e, Transform);
+    if (ctx) {
+      const level = monsterLevel(world, ctx);
+      for (const enemy of livingInCircle(world, ctx, tr.x, tr.z, d.blind.radius, 'enemy')) {
+        if (!world.has(enemy, EnemyAI)) continue;
+        applyStatus(world, ctx, enemy, { status: 'stunned', duration: d.blind.duration }, { team: 'player', level });
+      }
+      ctx.events.push({ type: 'vfx', kind: 'flash', x: tr.x, z: tr.z, radius: d.blind.radius, facing: 0 });
+      ctx.events.push({ type: 'interact', kind: 'crystal', id: 'crystal' });
+      signal(ctx, { type: 'interact', kind: 'crystal', id: 'crystal' });
+      regrowing.set(e, { at: ctx.time + d.blind.regrow, blind: d.blind });
+    }
+    const r = world.get(e, Renderable);
+    if (r) {
+      r.scale = 0.0001;
+      delete r.glow;
+    }
+    return;
+  }
   if (d.blast) {
     world.add(e, Blast, {
       fuse,
@@ -375,12 +408,31 @@ export function blastSystem(world: World, dt: number, ctx: GameContext): void {
         applyDamage(world, ctx, p, fromLife + flat, { crit: false, damageType: 'heat', dot: false, sourceTeam: 'enemy' });
       }
     }
-    // Other barrels in the blast go off a moment later.
+    // Other barrels in the blast go off a moment later (crystals shatter).
     for (const other of world.query(Destructible, Transform)) {
       const ot = world.req(other, Transform);
-      if (Math.hypot(ot.x - tr.x, ot.z - tr.z) <= b.radius) breakDestructible(world, other, BARREL.chainDelay);
+      if (Math.hypot(ot.x - tr.x, ot.z - tr.z) <= b.radius) breakDestructible(world, other, BARREL.chainDelay, ctx);
     }
     ctx.events.push({ type: 'vfx', kind: 'explosion', x: tr.x, z: tr.z, radius: b.radius, facing: 0 });
     ctx.events.push({ type: 'shake', trauma: b.player ? 0.45 : 0.2 });
+  }
+}
+
+/** Broken crystals grow back. */
+export function crystalSystem(world: World, _dt: number, ctx: GameContext): void {
+  if (!regrowing.size) return;
+  for (const [e, c] of regrowing) {
+    if (!world.isAlive(e)) {
+      regrowing.delete(e);
+      continue;
+    }
+    if (ctx.time < c.at) continue;
+    regrowing.delete(e);
+    world.add(e, Destructible, { radius: 0.9, blast: null, blind: c.blind });
+    const r = world.get(e, Renderable);
+    if (r) {
+      r.scale = CRYSTAL.scale;
+      r.glow = CRYSTAL.glow;
+    }
   }
 }

@@ -9,6 +9,7 @@
 import {
   Collider,
   Dead,
+  DisplayName,
   EnemyAI,
   Faction,
   ForcedMove,
@@ -16,7 +17,9 @@ import {
   Mover,
   PlayerControlled,
   Projectile,
+  Renderable,
   StatusEffects,
+  Targetable,
   Taunt,
   Transform,
   makeTransform,
@@ -27,7 +30,8 @@ import type { Entity, World } from '../core/ecs';
 import { CombatStats } from '../core/components';
 import { enemyDef } from '../data/db';
 import type { EnemyDef } from '../data/schemas';
-import { applyStatus, dealHit, hasStatus, conditionsOf, kill, spawnEnemyHazard } from './combat';
+import { applyStatus, dealHit, hasStatus, conditionsOf, heal, kill, spawnEnemyHazard } from './combat';
+import { spawnEnemy } from '../world/spawn';
 import { computeOutgoing } from './damage';
 import { angleDelta } from './movement';
 import { livingInCircle } from './targeting';
@@ -74,6 +78,7 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
 
 export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): void {
   const candidates = targetCandidates(world, ctx);
+  regrowFallen(world, ctx);
 
   for (const e of world.query(EnemyAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
@@ -91,6 +96,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
       ai.shieldCooldown = Math.max(0, (ai.shieldCooldown ?? 0) - dt);
     }
     if (def.trail && ai.aggro) trail(world, e, ai, def, tr, dt);
+    if (ai.aggro) vaultBehaviours(world, ctx, e, ai, def, tr, dt);
 
     if (!(world.get(e, StatusEffects)?.canAct ?? true)) continue;
 
@@ -134,6 +140,8 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
       steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed * 0.45, 2);
       continue;
     }
+    // Vine lash: a telegraphed line that drags a target who keeps its distance.
+    if (def.pull && pull(world, ctx, e, ai, def, tr, player, ptr, dist, dt)) continue;
     if (def.attack.kind === 'cone') {
       flamer(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
       continue;
@@ -249,6 +257,11 @@ function rusher(
           range: 'melee',
         });
         if (grab && !world.has(player, Dead)) throwTarget(world, ctx, player, tr, atk.throwDistance);
+        // Vines: every Nth hit that lands holds the target in place for a moment.
+        ai.landed = (ai.landed ?? 0) + 1;
+        if (atk.rootEvery !== undefined && ai.landed % atk.rootEvery === 0 && !world.has(player, Dead)) {
+          applyStatus(world, ctx, player, { status: 'rooted', duration: atk.rootDuration }, { team: 'enemy', level: world.get(e, CombatStats)?.level ?? 1 });
+        }
       }
       ctx.events.push({ type: 'vfx', kind: 'enemySlash', x: tr.x, z: tr.z, radius: atk.range, facing: tr.facing, arcDeg: atk.arcDeg });
       ai.state = 'recover';
@@ -740,5 +753,136 @@ export function revive(world: World, ctx: GameContext, e: Entity, lifeFraction: 
   }
   const tr = world.req(e, Transform);
   ctx.events.push({ type: 'vfx', kind: 'raise', x: tr.x, z: tr.z, radius: 1.4, facing: 0 });
+  return true;
+}
+
+// ---- Region 3 behaviours (docs/regions/hydroponic-vaults.md) ----------------------------------
+
+const isUp = (world: World, e: Entity | undefined) => e !== undefined && world.isAlive(e) && !world.has(e, Dead);
+
+/** Heal pulses, calls for help, lobbed spore clouds and a Lumen Giant's fungi, while fighting. */
+function vaultBehaviours(world: World, ctx: GameContext, e: Entity, ai: EnemyAIData, def: EnemyDef, tr: Transform, dt: number): void {
+  const level = world.get(e, CombatStats)?.level ?? 1;
+  if (def.healAllies) {
+    const h = def.healAllies;
+    ai.healTimer = (ai.healTimer ?? h.every) - dt;
+    if (ai.healTimer <= 0) {
+      ai.healTimer = h.every;
+      let healed = 0;
+      for (const ally of livingInCircle(world, ctx, tr.x, tr.z, h.radius, 'enemy')) {
+        const allyAi = world.get(ally, EnemyAI);
+        if (!allyAi || !h.families.includes(enemyDef(allyAi.defId).family)) continue;
+        const health = world.req(ally, Health);
+        if (health.current >= health.max) continue;
+        heal(world, ctx, ally, health.max * h.fraction);
+        healed++;
+      }
+      if (healed) ctx.events.push({ type: 'vfx', kind: 'heal', x: tr.x, z: tr.z, radius: h.radius, facing: 0 });
+    }
+  }
+  if (def.reinforce) {
+    const r = def.reinforce;
+    ai.fightTime = (ai.fightTime ?? 0) + dt;
+    ai.reinforceTimer = Math.max(0, (ai.reinforceTimer ?? 0) - dt);
+    if (ai.fightTime >= r.after && ai.reinforceTimer <= 0) {
+      ai.reinforceTimer = r.cooldown;
+      for (let i = 0; i < r.count; i++) {
+        const a = (i / r.count) * Math.PI * 2 + ctx.rng.range(0, 1);
+        const m = spawnEnemy(world, r.enemy, tr.x + Math.sin(a) * 3, tr.z + Math.cos(a) * 3, { level });
+        world.req(m, EnemyAI).aggro = true;
+        if (ai.pack) world.req(m, EnemyAI).pack = ai.pack;
+      }
+      ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: tr.x, z: tr.z, radius: 4, facing: 0 });
+    }
+  }
+  if (def.sporeCloud) {
+    const c = def.sporeCloud;
+    ai.clouds ??= [];
+    for (const cloud of ai.clouds) cloud.t -= dt;
+    for (const cloud of ai.clouds.filter((q) => q.t <= 0)) spawnEnemyHazard(world, e, cloud.x, cloud.z, c);
+    ai.clouds = ai.clouds.filter((q) => q.t > 0);
+    ai.cloudTimer = (ai.cloudTimer ?? c.every * 0.5) - dt;
+    const target = world.first(PlayerControlled, Transform);
+    if (ai.cloudTimer <= 0 && target !== undefined && !world.has(target, Dead)) {
+      const t = world.req(target, Transform);
+      if (Math.hypot(t.x - tr.x, t.z - tr.z) <= c.range) {
+        ai.cloudTimer = c.every;
+        ai.clouds.push({ x: t.x, z: t.z, t: c.warning });
+        ctx.events.push({ type: 'telegraph', owner: null, x: t.x, z: t.z, shape: { kind: 'circle', radius: c.radius }, duration: c.warning, color: c.color ?? '#7dff5a' });
+      }
+    }
+  }
+  if (def.regrow && ai.fungi === undefined) {
+    // The Giant's fungi sprout around it as it wakes; break them or it keeps getting back up.
+    const g = def.regrow;
+    ai.fungi = [];
+    for (let i = 0; i < g.fungi; i++) {
+      const a = (i / g.fungi) * Math.PI * 2 + ctx.rng.range(0, 0.6);
+      const d = g.radius * ctx.rng.range(0.55, 0.9);
+      const f = world.create();
+      world.add(f, Transform, makeTransform(tr.x + Math.sin(a) * d, 0, tr.z + Math.cos(a) * d, ctx.rng.range(0, 6)));
+      world.add(f, Renderable, { assetId: 'prop.lumen_growth', scale: 1.7, glow: '#7affd8' });
+      world.add(f, Faction, { team: 'enemy' });
+      const life = g.fungusLife * (1 + 0.15 * (level - 1));
+      world.add(f, Health, { current: life, max: life });
+      world.add(f, Collider, { radius: 0.9, mass: Infinity, layer: 'ground', isStatic: true });
+      world.add(f, Targetable, {});
+      world.add(f, DisplayName, { key: 'enemies.fungus' });
+      ai.fungi.push(f);
+    }
+  }
+}
+
+/** Fallen Lumen Giants rise again while a fungus stands; once they are all gone, it stays down. */
+function regrowFallen(world: World, ctx: GameContext): void {
+  for (const e of world.query(EnemyAI, Dead)) {
+    const ai = world.req(e, EnemyAI);
+    if (ai.regrowAt === undefined || ctx.time < ai.regrowAt) continue;
+    ai.regrowAt = undefined;
+    const def = enemyDef(ai.defId);
+    if (def.regrow && ai.fungi?.some((f) => isUp(world, f))) {
+      revive(world, ctx, e, def.regrow.lifeFraction);
+    } else {
+      // No fungi left: the death counts now (loot, quests).
+      world.remove(e, Dead);
+      world.req(e, Health).current = 0;
+      kill(world, ctx, e, 0);
+    }
+  }
+}
+
+/** Vine Weaver: telegraph a lash along a line; a target still on it is hit and dragged in. Returns true while busy. */
+function pull(world: World, ctx: GameContext, e: Entity, ai: EnemyAIData, def: EnemyDef, tr: Transform, player: Entity, ptr: Transform, dist: number, dt: number): boolean {
+  const p = def.pull!;
+  // The first lash comes soon after it spots you.
+  ai.pullCooldown = Math.max(0, (ai.pullCooldown ?? 1) - dt);
+  if ((ai.pullTimer ?? 0) > 0) {
+    ai.pullTimer! -= dt;
+    if (ai.pullTimer! > 0) return true;
+    ai.pullTimer = 0;
+    // Still on the line?
+    const ang = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
+    const off = Math.abs(Math.sin(angleDelta(tr.facing, ang))) * dist;
+    const ahead = Math.cos(angleDelta(tr.facing, ang)) > 0;
+    if (ahead && dist <= p.range + 0.5 && off <= p.width / 2 + (world.get(player, Collider)?.radius ?? 0.4)) {
+      dealHit(world, ctx, e, player, { coefficient: p.coefficient, damageType: 'toxic', knockback: 0, fromX: tr.x, fromZ: tr.z, applies: [], range: 'ranged' });
+      if (!world.has(player, Dead)) {
+        const stop = 1.8;
+        const toX = tr.x + Math.sin(ang) * stop;
+        const toZ = tr.z + Math.cos(ang) * stop;
+        world.add(player, ForcedMove, { fromX: ptr.x, fromZ: ptr.z, toX, toZ, elapsed: 0, duration: 0.35, height: 0.4, landingSkill: null });
+        ctx.events.push({ type: 'vfx', kind: 'pull', x: tr.x, z: tr.z, radius: dist, facing: tr.facing });
+      }
+    }
+    ai.pullCooldown = p.every;
+    ai.state = 'recover';
+    ai.timer = 0.5;
+    return true;
+  }
+  if (ai.state === 'windup' || ai.state === 'recover' || ai.pullCooldown > 0 || dist < p.minRange || dist > p.range) return false;
+  ai.pullTimer = p.windup;
+  ai.attackSeq++;
+  tr.facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
+  ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'line', length: p.range, width: p.width, facing: tr.facing }, duration: p.windup, color: '#6aff8a' });
   return true;
 }

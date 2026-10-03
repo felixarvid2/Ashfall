@@ -52,7 +52,7 @@ function skillProjectile(world: World, ctx: GameContext, e: Entity, p: Projectil
   if (!world.isAlive(p.owner)) return true;
   const compiled = skillOf(world.get(p.owner, SkillUser), spec.skillId);
   // Shots that reach an explosive barrel set it off and stop.
-  if (p.team === 'player' && hitDestructibles(world, tr.x, tr.z, p.radius) > 0 && spec.pierce <= 0) return true;
+  if (p.team === 'player' && hitDestructibles(world, tr.x, tr.z, p.radius, ctx) > 0 && spec.pierce <= 0) return true;
   for (const target of livingInCircle(world, ctx, tr.x, tr.z, p.radius, opposingTeam(p.team))) {
     if (spec.hit.includes(target)) continue;
     spec.hit.push(target);

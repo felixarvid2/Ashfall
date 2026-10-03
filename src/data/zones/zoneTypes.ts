@@ -58,7 +58,15 @@ export type EnvFeature =
   /** Molten metal: damages everyone standing in it; enemies avoid stepping in when they can. */
   | { kind: 'molten'; id: string; x: number; z: number; radius: number }
   /** A vent: a warned, timed fire or steam blast that hits everyone near it. */
-  | { kind: 'vent'; id: string; x: number; z: number; radius: number; period: number; offset: number; element: 'fire' | 'steam' | 'frost' };
+  | { kind: 'vent'; id: string; x: number; z: number; radius: number; period: number; offset: number; element: 'fire' | 'steam' | 'frost' }
+  /**
+   * A spore field (Hydroponic Vaults): standing in it builds up poison. An air filter switched on
+   * within `filterRadius` of the filter clears it for good; `clearedBy` names a set piece that
+   * clears it instead (Dome Gamma).
+   */
+  | { kind: 'spores'; id: string; x: number; z: number; radius: number; clearedBy?: string }
+  /** Shallow water: slows everyone wading through it. Drained water (dungeon levers) is gone. */
+  | { kind: 'water'; id: string; x: number; z: number; radius: number };
 
 export interface PackSpawn {
   id: string;
@@ -83,7 +91,9 @@ export type PoiKind =
   | 'stronghold'
   | 'boss'
   | 'feature'
-  | 'npc';
+  | 'npc'
+  // Hydroponic Vaults: glowing crystals that blind nearby enemies when broken.
+  | 'crystal';
 
 export interface PoiDef {
   id: string;
@@ -107,8 +117,10 @@ export interface ZoneDef extends ArenaDef {
   mapCell: number;
   /** Border crossings to neighbouring zones. */
   gates: ZoneGateDef[];
-  /** Belts, molten metal and vents. */
+  /** Belts, molten metal, vents, spore fields and water. */
   env?: EnvFeature[];
+  /** Glass farming domes drawn as rings of ribs (Hydroponic Vaults). */
+  domes?: { x: number; z: number; radius: number }[];
   /** Order on the world map (region number). */
   region: number;
   /** The account stash in this zone's hub. */

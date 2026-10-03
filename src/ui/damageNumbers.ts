@@ -35,6 +35,8 @@ export class DamageNumbers {
       if (event.dot) cls += ' dmg-dot';
       if (event.amount < 0.5 && event.absorbed > 0) cls += ' dmg-absorbed';
       this.spawn(event.x, event.y, event.z, String(Math.round(total)), cls);
+    } else if (event.type === 'miss') {
+      this.spawn(event.x, event.y, event.z, 'Miss', 'dmg dmg-dot');
     } else if (event.type === 'heal') {
       this.spawn(event.x, event.y, event.z, `+${Math.round(event.amount)}`, 'dmg dmg-heal');
     }

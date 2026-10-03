@@ -16,7 +16,7 @@ export function spawnArenaProps(world: World, arena: ArenaDef): void {
   for (const prop of arena.props) {
     const e = world.create();
     world.add(e, Transform, makeTransform(prop.x, 0, prop.z, prop.rot ?? 0));
-    world.add(e, Renderable, { assetId: prop.asset, scale: prop.scale ?? 1, ...(prop.landmark ? { landmark: true } : {}) });
+    world.add(e, Renderable, { assetId: prop.asset, scale: prop.scale ?? 1, ...(prop.landmark ? { landmark: true } : {}), ...(prop.glow ? { glow: prop.glow } : {}) });
     if (prop.collider) world.add(e, Collider, { radius: prop.collider, mass: Infinity, layer: 'ground', isStatic: true });
     // Long props get invisible collision circles rotated into place.
     const rot = prop.rot ?? 0;

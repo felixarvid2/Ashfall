@@ -40,8 +40,10 @@ export interface ObjectiveExtra {
   robot?: { entity: Entity | null; path: { x: number; z: number }[]; next: number; respawnAt: number };
   cages?: { entity: Entity; room: InstanceRoom; remaining: number | null; state: 'locked' | 'freed' | 'lost' }[];
   defend?: { entity: Entity | null; state: 'idle' | 'running'; remaining: number; wave: number; respawnAt: number; x: number; z: number };
-  /** Frost vents, run by the environment system while inside. */
+  /** Frost vents and water, run by the environment system while inside. */
   env?: EnvFeature[];
+  /** Water drained by the Irrigation System's levers. */
+  drained?: Set<string>;
 }
 
 /** How many steps the objective counts to. */

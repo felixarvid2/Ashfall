@@ -33,6 +33,8 @@ const ROADS: Road[] = [
   // Narrow trails winding through the Smokestack Forest.
   { id: 'trailA', width: 3, points: scaled([[-110, 140], [-170, 130], [-230, 160], [-280, 210], [-300, 270]]) },
   { id: 'trailB', width: 3, points: scaled([[-160, 200], [-120, 250], [-90, 300], [-30, 320]]) },
+  // North past the Cathedral Crypt to the border crossing into the Hydroponic Vaults.
+  { id: 'vaults', width: 7, points: scaled([[150, 104], [140, 170], [118, 236], [140, 300], [150, 334]]) },
 ];
 
 const distanceToRoad = (x: number, z: number): number => roadDistance(x, z, ROADS);
@@ -53,6 +55,16 @@ export const DISTRICT_GATE = {
   radius: 7,
   to: { zone: 'zone.cinder_flats', gate: 'gate.cf.refinery' },
   arrive: { x: -322 * S, z: -318 * S },
+};
+
+/** The border crossing at the north edge, on to the Hydroponic Vaults. */
+export const VAULTS_ROAD_GATE = {
+  id: 'gate.rd.vaults',
+  x: 150 * S,
+  z: 334 * S,
+  radius: 7,
+  to: { zone: 'zone.hydroponic_vaults', gate: 'gate.hv.refinery' },
+  arrive: { x: 150 * S, z: 318 * S },
 };
 
 const SUBZONES = {
@@ -204,7 +216,8 @@ function buildProps(): PropPlacement[] {
   const hub = COOLANT_WORKS;
   const nearPlace = (x: number, z: number, pad: number) =>
     [hub, DELTA, CATHEDRAL].some((p) => Math.hypot(x - p.x, z - p.z) < p.radius + pad) ||
-    Math.hypot(x - DISTRICT_GATE.x, z - DISTRICT_GATE.z) < 30;
+    Math.hypot(x - DISTRICT_GATE.x, z - DISTRICT_GATE.z) < 30 ||
+    Math.hypot(x - VAULTS_ROAD_GATE.x, z - VAULTS_ROAD_GATE.z) < 30;
   const onEnv = (x: number, z: number, pad: number) =>
     DISTRICT_ENV.some((e) =>
       e.kind === 'conveyor'
@@ -333,6 +346,7 @@ function buildPacks(): PackSpawn[] {
   const safe = (x: number, z: number) =>
     Math.hypot(x - COOLANT_WORKS.x, z - COOLANT_WORKS.z) > COOLANT_WORKS.radius + 22 &&
     Math.hypot(x - DISTRICT_GATE.arrive.x, z - DISTRICT_GATE.arrive.z) > 40 &&
+    Math.hypot(x - VAULTS_ROAD_GATE.arrive.x, z - VAULTS_ROAD_GATE.arrive.z) > 40 &&
     Math.hypot(x - CATHEDRAL.x, z - CATHEDRAL.z) > CATHEDRAL.radius + 6;
   const templateAt = (x: number, z: number): string => {
     if (inSub(x, z, SUBZONES.stacks)) return 'rd_stacks';
@@ -481,7 +495,7 @@ export const REFINERY_DISTRICT: ZoneDef = {
   packs: buildPacks(),
   pois: clearOfProps(buildPois(), PROPS),
   mapCell: 8,
-  gates: [DISTRICT_GATE],
+  gates: [DISTRICT_GATE, VAULTS_ROAD_GATE],
   env: DISTRICT_ENV,
   region: 2,
   stash: { x: COOLANT_WORKS.x + 9, z: COOLANT_WORKS.z + 7 },

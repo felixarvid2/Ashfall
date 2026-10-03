@@ -26,6 +26,8 @@ export const STATUS_IDS = [
   // Xenomant: hardened chitin (less damage taken, thorns) and roots that hold enemies in place.
   'chitin',
   'rooted',
+  // Hydroponic Vaults: slowed by shallow water.
+  'wading',
   // Stim Pylon buffs (docs/world-and-gameplay.md §3.1).
   'overcharge',
   'kinetic',
@@ -382,6 +384,9 @@ const EnemyAttackSchema = z.discriminatedUnion('kind', [
     /** Every Nth swing grabs the target and throws it `throwDistance` metres (Cargo Loader). */
     grabEvery: z.number().int().positive().optional(),
     throwDistance: z.number().positive().default(6),
+    /** Every Nth swing that lands roots the target for `rootDuration` seconds (Overgrown Walker). */
+    rootEvery: z.number().int().positive().optional(),
+    rootDuration: z.number().positive().default(1),
   }),
   // Flamethrower: a telegraphed cone, then a stream that ticks while it lasts.
   z.object({
@@ -473,13 +478,17 @@ export const EnemyDefSchema = z.object({
   attack: EnemyAttackSchema,
   onDeath: z
     .object({
-      hazard: z.object({
-        radius: z.number().positive(),
-        duration: z.number().positive(),
-        /** DoTs here use `dps`, or `coefficient` × the enemy's level-scaled damage over the duration. */
-        applies: z.array(StatusApplySchema),
-        color: z.string().optional(),
-      }),
+      hazard: z
+        .object({
+          radius: z.number().positive(),
+          duration: z.number().positive(),
+          /** DoTs here use `dps`, or `coefficient` × the enemy's level-scaled damage over the duration. */
+          applies: z.array(StatusApplySchema),
+          color: z.string().optional(),
+        })
+        .optional(),
+      /** Enemies that burst out of the body (Swarm Bloater → Spore Swarms). */
+      spawn: z.object({ enemy: z.string(), count: z.number().int().positive() }).optional(),
     })
     .optional(),
   /** Raises a front shield when the target closes in (Smelter): blocks `block` of frontal hits. */
@@ -487,6 +496,25 @@ export const EnemyDefSchema = z.object({
   /** Leaves burning ground behind while it walks (Slagborn). */
   trail: z
     .object({ every: z.number().positive(), radius: z.number().positive(), duration: z.number().positive(), applies: z.array(StatusApplySchema), color: z.string().optional() })
+    .optional(),
+  // ---- Region 3 behaviours (docs/regions/hydroponic-vaults.md) ----
+  /** Lashes a target that keeps its distance and drags it in (Vine Weaver). */
+  pull: z
+    .object({ every: z.number().positive(), range: z.number().positive(), minRange: z.number().nonnegative(), windup: z.number().positive(), width: z.number().positive(), coefficient: z.number().nonnegative().default(0.5) })
+    .optional(),
+  /** Chance to slip past each of the player's hits (Spore Swarm). */
+  evasion: z.number().min(0).max(0.9).default(0),
+  /** Heals nearby allies of these families by `fraction` of their max life every `every` seconds (Mossborn). */
+  healAllies: z
+    .object({ every: z.number().positive(), radius: z.number().positive(), fraction: z.number().positive().max(1), families: z.array(z.enum(['infected', 'insect', 'machine', 'beast', 'lumen', 'human'])).min(1) })
+    .optional(),
+  /** Calls `count` more enemies once it has been fighting for `after` seconds, then every `cooldown` (Cocoon Warden). */
+  reinforce: z.object({ after: z.number().positive(), cooldown: z.number().positive(), enemy: z.string(), count: z.number().int().positive() }).optional(),
+  /** Spawns with fungi around it; while any fungus stands it regrows after dying (Lumen Giant). */
+  regrow: z.object({ fungi: z.number().int().positive(), radius: z.number().positive(), delay: z.number().positive(), lifeFraction: z.number().positive().max(1), fungusLife: z.number().positive() }).optional(),
+  /** Lobs a telegraphed spore cloud at the target (Mutated Botanist). */
+  sporeCloud: z
+    .object({ every: z.number().positive(), range: z.number().positive(), radius: z.number().positive(), warning: z.number().positive(), duration: z.number().positive(), applies: z.array(StatusApplySchema), color: z.string().optional() })
     .optional(),
   /** Brings a fallen ally of these types back once per `cooldown` (Smelter Priest). */
   revive: z

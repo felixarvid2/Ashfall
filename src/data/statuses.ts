@@ -15,6 +15,7 @@ export const STATUSES: Record<StatusId, z.input<typeof StatusDefSchema>> = {
   evasive: { kind: 'buff', color: '#c9c2b6' },
   chitin: { kind: 'ward', damageReduction: 0.3, thornsCoefficient: 0.6, color: '#a8d86a' },
   rooted: { kind: 'disable', color: '#6bff7a' },
+  wading: { kind: 'slow', slow: 0.4, color: '#5aa8d8' },
   overcharge: { kind: 'buff', color: '#ff6a3a' },
   kinetic: { kind: 'buff', color: '#ffd23a' },
   aegis: { kind: 'buff', color: '#9fd8ff' },

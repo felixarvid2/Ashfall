@@ -57,6 +57,15 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   { id: 'dt.cargo_loader', itemChance: 0.95, extraItems: 1, goldChance: 1, gold: [6, 12], crystalChance: 0.18, rarityBias: { rare: 2.5, legendary: 2 }, minRarity: 'magic', xp: 95 },
   { id: 'dt.smelter_priest', itemChance: 0.6, goldChance: 1, gold: [4, 8], crystalChance: 0.1, rarityBias: { rare: 1.5 }, minRarity: 'magic', xp: 45 },
   { id: 'dt.tentacle', itemChance: 0.05, goldChance: 0.2, gold: [1, 2], crystalChance: 0, xp: 4 },
+  // Region 3.
+  { id: 'dt.overgrown_walker', itemChance: 0.12, goldChance: 0.32, gold: [1, 3], crystalChance: 0.01, xp: 12 },
+  { id: 'dt.swarm_bloater', itemChance: 0.14, goldChance: 0.4, gold: [1, 3], crystalChance: 0.02, xp: 15 },
+  { id: 'dt.mossborn', itemChance: 0.9, goldChance: 1, gold: [5, 10], crystalChance: 0.15, rarityBias: { rare: 2 }, minRarity: 'magic', xp: 85 },
+  { id: 'dt.vine_weaver', itemChance: 0.3, goldChance: 0.6, gold: [2, 5], crystalChance: 0.05, xp: 30 },
+  { id: 'dt.spore_swarm', itemChance: 0.05, goldChance: 0.2, gold: [1, 2], crystalChance: 0.005, xp: 5 },
+  { id: 'dt.cocoon_warden', itemChance: 0.8, goldChance: 1, gold: [5, 10], crystalChance: 0.12, rarityBias: { rare: 2 }, minRarity: 'magic', xp: 70 },
+  { id: 'dt.mutated_botanist', itemChance: 0.3, goldChance: 0.7, gold: [2, 5], crystalChance: 0.05, xp: 28 },
+  { id: 'dt.lumen_giant', itemChance: 1, extraItems: 2, goldChance: 1, gold: [10, 18], crystalChance: 0.3, rarityBias: { rare: 3, legendary: 2.5 }, minRarity: 'magic', xp: 220 },
   // Elites: champions (blue) and rare elites (yellow) roll extra, better loot.
   { id: 'dt.champion', itemChance: 0.6, goldChance: 1, gold: [3, 6], crystalChance: 0.08, rarityBias: { rare: 2, legendary: 1.5 }, minRarity: 'magic', xp: 40 },
   { id: 'dt.rare_elite', itemChance: 1, extraItems: 2, goldChance: 1, gold: [8, 14], crystalChance: 0.2, rarityBias: { rare: 3, legendary: 3, unique: 2 }, minRarity: 'magic', xp: 120 },

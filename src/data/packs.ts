@@ -126,6 +126,75 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     championChance: 0.14,
     rareChance: 0.12,
   },
+  // Hydroponic Vaults (docs/regions/hydroponic-vaults.md): overgrown variants, the brood and the botanists.
+  {
+    id: 'hv_road',
+    members: [
+      { enemy: 'overgrown_walker', count: [3, 5] },
+      { enemy: 'spore_hound', count: [2, 4], chance: 0.5 },
+      { enemy: 'mutated_botanist', count: [1, 2], chance: 0.4 },
+      { enemy: 'swarm_bloater', count: [1, 1], chance: 0.3 },
+      { enemy: 'spore_swarm', count: [2, 3], chance: 0.25 },
+    ],
+    championChance: 0.1,
+    rareChance: 0.08,
+  },
+  {
+    id: 'hv_outer',
+    members: [
+      { enemy: 'overgrown_walker', count: [3, 5] },
+      { enemy: 'mutated_botanist', count: [1, 2], chance: 0.6 },
+      { enemy: 'swarm_bloater', count: [1, 1], chance: 0.35 },
+    ],
+    championChance: 0.08,
+    rareChance: 0.07,
+  },
+  {
+    id: 'hv_sea',
+    members: [
+      { enemy: 'spore_hound', count: [5, 7] },
+      { enemy: 'vine_weaver', count: [1, 2], chance: 0.55 },
+      { enemy: 'spore_swarm', count: [2, 4], chance: 0.5 },
+      { enemy: 'mossborn', count: [1, 1], chance: 0.3 },
+      { enemy: 'lumen_giant', count: [1, 1], chance: 0.04 },
+    ],
+    championChance: 0.12,
+    rareChance: 0.1,
+  },
+  {
+    id: 'hv_seed',
+    members: [
+      { enemy: 'overgrown_walker', count: [3, 5] },
+      { enemy: 'mutated_botanist', count: [1, 2], chance: 0.55 },
+      { enemy: 'mossborn', count: [1, 1], chance: 0.35 },
+      { enemy: 'sergeant', count: [1, 1], chance: 0.15 },
+    ],
+    championChance: 0.12,
+    rareChance: 0.1,
+  },
+  {
+    id: 'hv_roots',
+    members: [
+      { enemy: 'vine_weaver', count: [2, 3] },
+      { enemy: 'overgrown_walker', count: [2, 4], chance: 0.7 },
+      { enemy: 'spore_swarm', count: [2, 3], chance: 0.5 },
+      { enemy: 'cocoon_warden', count: [1, 1], chance: 0.3 },
+    ],
+    championChance: 0.12,
+    rareChance: 0.1,
+  },
+  {
+    id: 'hv_gamma',
+    members: [
+      { enemy: 'overgrown_walker', count: [3, 5] },
+      { enemy: 'cocoon_warden', count: [1, 1], chance: 0.5 },
+      { enemy: 'swarm_bloater', count: [1, 2], chance: 0.5 },
+      { enemy: 'mossborn', count: [1, 1], chance: 0.3 },
+      { enemy: 'lumen_giant', count: [1, 1], chance: 0.06 },
+    ],
+    championChance: 0.14,
+    rareChance: 0.12,
+  },
 ];
 
 export function packTemplate(id: string): PackTemplate {

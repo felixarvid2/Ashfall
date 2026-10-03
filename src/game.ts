@@ -90,7 +90,7 @@ import { MapUi } from './ui/minimap';
 import { Hud, type HudState } from './ui/hud';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
-import { blastSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
+import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
 import { loadAccount, relicEffects, saveAccount } from './core/account';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { keyLabel } from './ui/hud';
@@ -133,7 +133,7 @@ import { buildInstance, clearInstance, instanceSystem, objectiveText, roomCenter
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
-import { environmentSystem, resetEnvironment } from './world/environment';
+import { environmentSystem, resetEnvironment, sporeExposure, sporesActive } from './world/environment';
 import { vehicleSystem } from './systems/vehicle';
 import { STORM, stormSystem } from './world/storm';
 import { RESTORATION, grantRestorationPoints, restorationBonuses, restorationSystem, tierFor } from './systems/restoration';
@@ -189,6 +189,7 @@ export class Game {
   private hitstop = 0;
   private lastTarget: { entity: Entity; until: number } | null = null;
   private cursor = '';
+  private sporeKey = '';
   private readonly touchControls: TouchControls;
 
   private hasStoredSettings(): boolean {
@@ -270,6 +271,7 @@ export class Game {
       .add('turrets', turretSystem)
       .add('hazards', hazardSystem)
       .add('blasts', blastSystem)
+      .add('crystals', crystalSystem)
       .add('resource', resourceSystem)
       .add('death', deathSystem)
       .add('encounter', encounterSystem)
@@ -540,6 +542,7 @@ export class Game {
       this.renderer.preloadGround(ZONES.map((z) => z.ground)),
     ]);
     this.renderer.buildArena(this.zoneDef);
+    this.sporeKey = '';
     this.builtZone = this.zoneDef.id;
   }
 
@@ -656,6 +659,7 @@ export class Game {
     this.ctx.zoneLevels = def.levels;
     if (this.builtZone !== null && this.builtZone !== id) {
       this.renderer.buildArena(def);
+      this.sporeKey = '';
       this.builtZone = id;
     }
     this.lastStorm = -1;
@@ -790,7 +794,19 @@ export class Game {
     if (zoom !== 0) this.renderer.rig.zoom(zoom);
 
     this.updateStormLook();
-    if (this.zone) this.renderer.updateCooled(this.zone.cooled, this.ctx.time);
+    if (this.zone) {
+      const zone = this.zone;
+      this.renderer.updateCooled(zone.cooled, this.ctx.time);
+      // Spore fields only change when something new is found (a filter, a reclaimed dome).
+      const sporeKey = `${zone.def.id}:${zone.found.size}`;
+      if (sporeKey !== this.sporeKey) {
+        this.sporeKey = sporeKey;
+        this.renderer.updateSpores((id) => {
+          const f = zone.def.env?.find((e) => e.id === id);
+          return f?.kind === 'spores' ? sporesActive(zone, f) : false;
+        });
+      }
+    }
     this.renderer.sync(this.world, alpha, frameDt);
     const tr = this.playerTransform;
     const px = tr.prevX + (tr.x - tr.prevX) * alpha;
@@ -1316,6 +1332,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       buffs: (w.get(p, StatusEffects)?.list ?? [])
         .filter((st) => PYLON_STATUSES.has(st.id))
         .map((st) => ({ id: st.id, remaining: st.remaining, color: STATUS_DEFS[st.id].color })),
+      exposure: this.ctx.instance ? 0 : sporeExposure(),
       dead: w.has(p, Dead),
       xp: (() => {
         const prog = w.req(p, Progression);
