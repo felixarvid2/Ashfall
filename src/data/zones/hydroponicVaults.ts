@@ -122,7 +122,7 @@ function buildGround(props: PropPlacement[]): GroundDef {
   const ROOTS = 1;
   const FROST = 2;
   const SILT = 3;
-  const CONCRETE = 4;
+  const TILES = 4;
   const patches: GroundPatch[] = [
     { layer: MOSS, x: VAULT_SUBZONES.sea.c[0], z: VAULT_SUBZONES.sea.c[1], radius: VAULT_SUBZONES.sea.r * 0.85, strength: 0.85 },
     { layer: ROOTS, x: VAULT_SUBZONES.roots.c[0], z: VAULT_SUBZONES.roots.c[1], radius: VAULT_SUBZONES.roots.r * 0.85, strength: 0.9 },
@@ -130,7 +130,7 @@ function buildGround(props: PropPlacement[]): GroundDef {
     { layer: ROOTS, x: GREAT_DOME.x, z: GREAT_DOME.z, radius: GREAT_DOME.radius + 10, strength: 0.8 },
     { layer: ROOTS, x: MOTHER_TREE.x, z: MOTHER_TREE.z, radius: 22 },
     { layer: MOSS, x: VAULT_SUBZONES.outer.c[0], z: VAULT_SUBZONES.outer.c[1], radius: VAULT_SUBZONES.outer.r * 0.7, strength: 0.3 },
-    { layer: CONCRETE, x: LAB9.x, z: LAB9.z, radius: LAB9.radius - 4 },
+    { layer: TILES, x: LAB9.x, z: LAB9.z, radius: LAB9.radius - 4 },
     // The drained basin below the broken dam.
     { layer: SILT, x: DAM.x, z: DAM.z + 4, radius: 34 },
     { layer: FROST, x: VAULT_SUBZONES.seed.c[0], z: VAULT_SUBZONES.seed.c[1], radius: VAULT_SUBZONES.seed.r * 0.6, strength: 0.8 },
@@ -139,7 +139,7 @@ function buildGround(props: PropPlacement[]): GroundDef {
   for (const p of props) {
     if (p.asset === 'prop.lumen_growth') patches.push({ layer: MOSS, x: p.x, z: p.z, radius: 3.5 * (p.scale ?? 1), strength: 0.9 });
   }
-  return { base: 'vault_soil', tile: 9, layers: ['fungal_moss', 'root_mat', 'frosted_concrete', 'dry_silt', 'military_concrete'], patches, road: 'overgrown_asphalt' };
+  return { base: 'vault_soil', tile: 9, layers: ['fungal_moss', 'root_mat', 'frosted_concrete', 'dry_silt', 'lab_tiles'], patches, road: 'overgrown_asphalt' };
 }
 
 // ---- Props ------------------------------------------------------------------------------------

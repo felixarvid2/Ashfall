@@ -1153,6 +1153,7 @@ const GROUND_LOOK: Partial<
   // Bright frost and silt brought down to the night look.
   frosted_concrete: { scale: 0.7, gain: 0.62 },
   dry_silt: { scale: 0.8, gain: 0.8 },
+  lab_tiles: { scale: 0.8, gain: 0.75 },
 };
 
 /** Multiplies the painted ground textures down to the dark night look of the procedural ground. */

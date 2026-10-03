@@ -235,8 +235,7 @@ flagstones (Cathedral). Up to six overlays use two splat maps; each texture's sc
 per layer set.
 The Hydroponic Vaults use vault soil as the base, with fungal moss (Green Sea, Gamma), a root mat (Root
 Network, around the Great Dome and the Mother Tree), frosted concrete (Seed Bank), dry silt (the dam basin)
-and overgrown asphalt roads. The soil came back from Gemini without colour, so its grey image is tinted
-dark brown; Lab 9 keeps military concrete until a lab-tile texture arrives.
+overgrown asphalt roads, and worn lab tiles with drain grates in Lab 9.
 
 ### 2026-10-03 — Click-to-move is the default; phones get touch controls
 The game plays like Diablo: left-click moves, attacks the enemy under the cursor, or walks to an item
