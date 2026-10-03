@@ -4,11 +4,31 @@
 
 ## Current phase
 
-**Phase 4 – All classes ✅ done** (4a character select + Spectre, 4b Xenomant, 4c balance to level 10).
-Next: **Phase 5 – Region 1: Cinder Flats**, following docs/world-and-gameplay.md (one region at a time).
+**Phase 5 – Region 1: Cinder Flats ✅ built — waiting for your playtest feedback** before Region 2
+(docs/world-and-gameplay.md §15: one region at a time). Plan: docs/regions/cinder-flats.md,
+measurements and checklist: docs/regions/cinder-flats-playtest.md.
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
 
 ## Done
+
+### Phase 5 – Region 1: Cinder Flats (levels 1–10)
+- **Open world** (1500 × 1500 m): escape pod → Route 7 → Outpost Ember → Ash Valley, Checkpoint Sierra,
+  The Maw. Roads, ~260 enemy packs that wake/sleep by distance and respawn, landmarks (Meridian,
+  elevator foundation, refinery glow), fog of war, camera-aligned minimap and full map (M) with
+  teleporter travel, safe hubs. Save v6.
+- **Interactables (E):** supply crates, locked chests + keycards, 6 Stim Pylons, 10 Echo Relics
+  (account-wide bonuses), 12 lore logs, 3 signal towers, explosive barrels that chain.
+- **Quests:** 6 main, 10 side, 1 mystery; tracker, quest log (J), map markers, conversations with
+  choices; hub NPCs Benny, Hekla, Pell, Tomas.
+- **Hub services:** trader (buy/sell), blacksmith (affix reroll, salvage junk), Technician (extract and
+  imprint aspects), shared stash.
+- **Enemies:** Bloater, Spore Hound, Contaminated Sergeant; champions and rare elites with 10 affixes,
+  generated names and minions.
+- **Instances:** 3 procedural dungeons (generators / keycards / spore nests) with bosses, 6 bunkers.
+- **Set pieces:** Checkpoint Sierra stronghold (Spore Feeders → Commandant Hale → becomes a hub) and
+  The First (3 phases, arena gates, reset on death).
+- **Systems:** 6 world events (Bronze/Silver/Gold), Ash Storm, Region Restoration (5 tiers).
+- Tools: `npm run assets:check`, `npm run region:report`; F3 region helpers. 239 unit tests.
 
 ### Phase 0 – Foundation
 - Project setup: TypeScript (strict) + Vite + Three.js + Zod + Vitest, folder layout per brief §8.3.
@@ -163,17 +183,35 @@ npm test           # unit tests
 npm run build      # typecheck + production build into dist/
 npm run sim        # balance simulator (DPS of sample builds, all classes)
 npm run play       # bot playthrough level 1→10 for every class and build
+npm run assets:check   # orphan / missing Meshy assets
+npm run region:report  # Cinder Flats pacing estimates (docs/regions/cinder-flats-playtest.md)
 ```
 
 Meshy pipeline (needs `MESHY_API_KEY` in `ashfall/.env`): `npm run meshy -- status`.
 Behind a proxy (cloud sessions) prefix with `NODE_USE_ENV_PROXY=1`.
 
 Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them in the skill tree) ·
-**K** skill tree · **I** inventory · **C** character · **E** pick up · **Alt** show loot labels ·
+**K** skill tree · **I** inventory · **C** character · **M** map · **J** quests ·
+**E** pick up / interact / talk · **Alt** show loot labels ·
 **Space** dodge · **Q** stim pack · **mouse wheel** zoom · **F3** debug panel ·
 **F5/F9** quick save/load · **R** respawn. Skills aim at the cursor.
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
+
+## What to test (Phase 5 – Cinder Flats)
+1. Make a new character: you wake by the escape pod. Follow the quest tracker (right) — *Wake Up*,
+   then *Signal in the Ash* to Outpost Ember. Talk to Benny, Hekla, Pell and Tomas (E); ! means a new
+   quest, ? means they are waiting on you.
+2. Open the map (M) and the quest log (J). Discover teleporters and travel by clicking them on the map.
+3. Try the trader, Hekla's reroll, Pell's aspect bench and the stash (the green chest in the hub).
+4. Along the roads: crates, pylons (buffs show above the action bar), relics, logs, signal towers,
+   red barrels (shoot them near enemies).
+5. Enter a dungeon (orange rings on the map) and a bunker; try Checkpoint Sierra and The Maw.
+6. Wait for an Ash Storm in Ash Valley, and run into a world event (yellow diamonds).
+7. Shortcuts for testing (F3): +1 level, unlock teleporters, spawn rare elite, start ash storm,
+   enter/leave dungeon, skip quest step, god mode.
+8. **Tell me:** is the region the right size and density? Too many fights or too few? Do the quests
+   read well? What feels confusing? And the FPS on your machine.
 
 ## What to test (Phase 4b)
 1. Create a **Xenomant** on the character select. Spore Dart with LMB; watch the green Biomass orb fill
@@ -239,6 +277,10 @@ Shift + left-click to attack in place.
 9. **Most important:** is it fun? Too easy/hard, too slow/fast, too much/little shake?
 
 ## Known issues / limitations
+- Region 1: no sound or music yet (Phase 8); no durability on death (§13); Codex unlocks, tempering and
+  masterworking come with Phase 7; Force Wall and Laser Grid elite affixes come later.
+- Region 1: dungeons are a bit short (~6 min) and road packs a bit dense — see the playtest report.
+- Enemies still have no pathfinding; in dungeons they slide along walls toward you.
 - No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
 - Enemies have no pathfinding around crates (they slide along them via collision); fine for the open arena,
   needs a nav grid when dungeons arrive (Phase 5).
@@ -257,6 +299,7 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 
 ## Next steps
+- **Your playtest feedback on Cinder Flats** → then Region 2 (The Refinery District) with the same process.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
 - Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).

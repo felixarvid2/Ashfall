@@ -184,3 +184,22 @@ The CLI now takes `assets/.manifest.lock` (pid; stale locks from crashed runs ar
 A training dummy cannot show survivability, chasing or ranged pressure. `npm run play` runs the real
 waves with a deliberately average bot; numbers are tuned so all nine builds reach level 10 in a
 similar time band. The bot's limits (no pathfinding, 35 % dodges) are documented in docs/balance.md.
+
+### 2026-10-03 — Instances live far outside the zone, not in a separate scene
+Dungeons and bunkers are built at x ≈ 2000 in the same world. The open world keeps its state
+(packs, quests, interactables) without unloading; leaving deletes everything in instance space. The
+renderer swaps floor, fog and the lamp pool while inside.
+
+### 2026-10-03 — Cinder Flats scaled 2.2× after measuring
+The first layout took ~2 minutes to cross; §2.2 asks for 5–7. Positions are design coordinates × 2.2
+(hubs, compounds, arenas and props keep their size). Save v6 scales stored positions and resets the
+fog-of-war bitmap.
+
+### 2026-10-03 — Account-wide progress in its own store
+Echo Relics, Region Restoration and the stash are shared by all characters, so they live in
+`ashfall.account` (localStorage), not in a character slot. Restoration skill points are granted per
+character once (`progression.restorationGranted`).
+
+### 2026-10-03 — Quests listen to signals, not to the event queue
+Kills, interactions and objectives push small signals that the quest system consumes every tick, so
+quest logic stays deterministic and testable without the presentation event queue.

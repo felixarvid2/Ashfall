@@ -122,3 +122,8 @@ New assets and estimated credits (concept → image-to-3D → rig for humanoids;
 | **Total** | | **~850** (2172 left) |
 
 Each Meshy batch stays below the 800-credit prompt threshold.
+
+## Status (as built)
+Everything above is implemented. The layout uses design coordinates × 2.2 (`CINDER_SCALE` in
+`src/data/zones/cinderFlats.ts`) so the region takes ~5 minutes to cross; the ASCII map above is in
+design coordinates. Measurements and the §15.2 checklist: [cinder-flats-playtest.md](cinder-flats-playtest.md).
