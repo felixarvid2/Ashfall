@@ -15,6 +15,7 @@ import { signal } from '../systems/quests';
 import { monsterLevel } from '../systems/encounter';
 import { spawnEnemy } from './spawn';
 import type { ZoneRuntime } from './zone';
+import { DISTRICT_ID, districtHubs, districtOnDeath, districtSystem, syncDistrict, type DistrictSetPieces } from './districtSetPieces';
 
 /** These set pieces live in Cinder Flats only. */
 const ZONE_ID = 'zone.cinder_flats';
@@ -32,6 +33,8 @@ const FEEDER_RANGE = 11;
 export interface SetPieceState {
   sierra: { state: 'idle' | 'feeders' | 'boss' | 'reclaimed'; feeders: Entity[]; boss: Entity | null; wave: number; aura: number };
   maw: { state: 'idle' | 'fight' | 'defeated'; boss: Entity | null; gates: Entity[]; leftAt: number };
+  /** Refinery District: Pump Station Delta and Vire. */
+  district?: DistrictSetPieces;
 }
 
 export function createSetPieces(): SetPieceState {
@@ -43,7 +46,7 @@ export function createSetPieces(): SetPieceState {
 
 /** Reclaimed strongholds act as hubs. */
 export function extraHubs(zone: ZoneRuntime): HubDef[] {
-  return zone.def.id === ZONE_ID && zone.found.has(SIERRA.id) ? [SIERRA_HUB] : [];
+  return [...(zone.def.id === ZONE_ID && zone.found.has(SIERRA.id) ? [SIERRA_HUB] : []), ...districtHubs(zone)];
 }
 
 /** After loading: reclaimed or defeated set pieces stay that way. */
@@ -51,7 +54,9 @@ export function syncSetPieces(world: World, zone: ZoneRuntime): void {
   const sp = zone.setPieces;
   for (const e of [...sp.sierra.feeders, ...sp.maw.gates]) if (world.isAlive(e)) world.destroyDeferred(e);
   for (const e of [sp.sierra.boss, sp.maw.boss]) if (e !== null && world.isAlive(e)) world.destroyDeferred(e);
+  const district = syncDistrict(world, zone);
   zone.setPieces = createSetPieces();
+  if (zone.def.id === DISTRICT_ID) zone.setPieces.district = district;
   if (zone.found.has(SIERRA.id)) zone.setPieces.sierra.state = 'reclaimed';
   if (zone.found.has(MAW.id)) zone.setPieces.maw.state = 'defeated';
 }
@@ -64,10 +69,15 @@ function restorationPoint(ctx: GameContext, key: string): void {
 
 export function setPieceSystem(world: World, dt: number, ctx: GameContext): void {
   const zone = ctx.zone;
-  if (!zone || ctx.instance || zone.def.id !== ZONE_ID) return;
+  if (!zone || ctx.instance) return;
   const player = world.first(PlayerControlled, Transform);
   if (player === undefined || world.has(player, Dead)) return;
   const ptr = world.req(player, Transform);
+  if (zone.def.id === DISTRICT_ID) {
+    districtSystem(world, dt, ctx, zone, ptr);
+    return;
+  }
+  if (zone.def.id !== ZONE_ID) return;
   sierra(world, dt, ctx, zone, ptr);
   maw(world, ctx, zone, ptr);
 }
@@ -203,6 +213,7 @@ function maw(world: World, ctx: GameContext, zone: ZoneRuntime, ptr: Transform):
 /** The player died: an ongoing boss fight resets and the gates open. */
 export function setPiecesOnDeath(world: World, zone: ZoneRuntime | undefined): void {
   if (!zone) return;
+  districtOnDeath(world, zone);
   const st = zone.setPieces.maw;
   if (st.state === 'fight') {
     for (const g of st.gates) world.destroyDeferred(g);

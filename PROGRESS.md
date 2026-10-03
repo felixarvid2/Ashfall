@@ -16,7 +16,15 @@
   Bloater) and new ones — Smelter (flamethrower, fire shield), Welder (telegraphed lunge), Slagborn
   (burning trail), Cargo Loader (every third swing grabs and throws), Smelter Priest (empowers, revives).
   Fix: heavy melee bosses in region 1 (Brood Mother, The First) now actually close in and attack.
-- Next: the hub NPCs, quests, dungeons, stronghold, Vire, events, the crane, the motorbike.
+- ✅ Region 2 content: Coolant Works NPCs (trader, blacksmith, technician, a Smelter defector), 6 main
+  quests (starting after The First, across the border), 10 side quests and the mystery *The Fireproof
+  Man*; Pump Station Delta (defend 3 technicians through 4 waves, then Brother Ash; becomes a hub with a
+  teleporter and its engineer); High Priestess Vire (guards and fireballs → the floor collapses in three
+  steps → infected form with tentacles); 4 dungeons with new objectives (pumps in order with a heat
+  meter, follow the robot, free the prisoners before the pyres, defend the compressor with frost vents)
+  and 6 district bunkers; 4 new world events; The Crane and coolant valves; the motorbike (B, unlocked
+  by *Spare Parts*). Cinder Flats' autocannon and fuel depot now work too (they were map markers only).
+- Next: the Region 2 Meshy batch (models are placeholders), playtest report and checklist.
 
 Region 1 (Cinder Flats) is built; measurements and checklist: docs/regions/cinder-flats-playtest.md.
 Phase 2's 60 FPS check is still open (needs a measurement on real hardware).

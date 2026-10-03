@@ -47,11 +47,13 @@ function tick(world: World, ctx: GameContext, n = 1) {
 }
 
 describe('quest data', () => {
-  it('has 6 main quests, 10 side quests and a mystery for Cinder Flats', () => {
-    const kinds = [...QUESTS.values()].map((q) => q.kind);
-    expect(kinds.filter((k) => k === 'main')).toHaveLength(6);
-    expect(kinds.filter((k) => k === 'side')).toHaveLength(10);
-    expect(kinds.filter((k) => k === 'mystery')).toHaveLength(1);
+  it('has 6 main quests, 10 side quests and a mystery per region', () => {
+    for (const zone of ['zone.cinder_flats', 'zone.refinery_district']) {
+      const kinds = [...QUESTS.values()].filter((q) => q.zone === zone).map((q) => q.kind);
+      expect(kinds.filter((k) => k === 'main'), zone).toHaveLength(6);
+      expect(kinds.filter((k) => k === 'side'), zone).toHaveLength(10);
+      expect(kinds.filter((k) => k === 'mystery'), zone).toHaveLength(1);
+    }
   });
 
   it('references real NPCs, quests and language strings', () => {

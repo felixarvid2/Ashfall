@@ -6,6 +6,7 @@ import { ZONES, zoneDef, zoneOfTeleporter } from '../src/data/zones';
 import { CINDER_FLATS, CINDER_GATE } from '../src/data/zones/cinderFlats';
 import { DISTRICT_ENV, DISTRICT_GATE, REFINERY_DISTRICT } from '../src/data/zones/refineryDistrict';
 import type { EnvFeature } from '../src/data/zones/zoneTypes';
+import { NPCS } from '../src/data/quests/db';
 import { questMarkers, questSystem, createQuestRuntime, rebuildQuestWorld, setQuestState } from '../src/systems/quests';
 import { environmentSystem, ENV_TUNING, inMolten, resetEnvironment } from '../src/world/environment';
 import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
@@ -86,7 +87,7 @@ describe('Refinery District layout', () => {
     for (const h of REFINERY_DISTRICT.hubs) expect(inMolten(env, h.x, h.z, h.radius)).toBeNull();
   });
 
-  it('has the planned points of interest (before set pieces arrive)', () => {
+  it('has the planned points of interest', () => {
     const count = (kind: string) => REFINERY_DISTRICT.pois.filter((p) => p.kind === kind).length;
     expect(count('relic')).toBe(10);
     expect(count('lore')).toBe(12);
@@ -94,7 +95,13 @@ describe('Refinery District layout', () => {
     expect(count('pylon')).toBe(6);
     expect(count('bunker')).toBe(6);
     expect(count('lockedChest')).toBe(6);
-    expect(REFINERY_DISTRICT.teleporters).toHaveLength(6);
+    expect(count('dungeon')).toBe(4);
+    expect(count('event')).toBe(6);
+    expect(count('stronghold')).toBe(1);
+    expect(count('boss')).toBe(1);
+    // The Crane and three coolant valves.
+    expect(count('feature')).toBe(4);
+    expect(REFINERY_DISTRICT.teleporters).toHaveLength(7);
     expect(REFINERY_DISTRICT.pois.every((p) => p.id.startsWith('rd.'))).toBe(true);
   });
 });
@@ -171,11 +178,15 @@ describe('quests across zones', () => {
     return { world, ctx, player, flats };
   }
 
-  it('spawns Cinder Flats NPCs only in Cinder Flats', () => {
+  it("spawns each region's NPCs only in that region", () => {
     for (const inDistrict of [false, true]) {
       const { world, ctx } = setup(inDistrict);
       rebuildQuestWorld(world, ctx);
-      expect(world.query(Npc).length > 0).toBe(!inDistrict);
+      const ids = world.query(Npc).map((e) => world.req(e, Npc).id);
+      expect(ids.length).toBeGreaterThan(0);
+      for (const id of ids) expect(NPCS.get(id)!.zone, id).toBe(inDistrict ? 'zone.refinery_district' : 'zone.cinder_flats');
+      // Osei only arrives once Pump Station Delta is reclaimed.
+      expect(ids.includes('osei')).toBe(false);
     }
   });
 

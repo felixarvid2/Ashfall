@@ -138,6 +138,10 @@ export function hazardSystem(world: World, dt: number, ctx: GameContext): void {
     const tr = world.req(e, Transform);
     for (const target of livingInCircle(world, ctx, tr.x, tr.z, hz.radius, opposingTeam(hz.team))) {
       if (world.has(target, Dead)) continue;
+      if (hz.inner !== undefined) {
+        const t = world.req(target, Transform);
+        if (Math.hypot(t.x - tr.x, t.z - tr.z) < hz.inner) continue;
+      }
       for (const apply of hz.applies) {
         applyStatus(world, ctx, target, apply, { team: hz.team, level: hz.attackerLevel });
       }

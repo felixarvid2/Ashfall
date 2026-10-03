@@ -29,6 +29,7 @@ import {
   StatusEffects,
   Transform,
   MinionAI,
+  Mounted,
   makeTransform,
 } from './core/components';
 import type { GameContext } from './core/context';
@@ -103,6 +104,7 @@ import {
   saveQuests,
   rebuildQuestWorld,
   setQuestState,
+  spawnUnlockedNpcs,
   skipStep,
   startQuest,
   waitingOn,
@@ -131,6 +133,7 @@ import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
 import { environmentSystem, resetEnvironment } from './world/environment';
+import { vehicleSystem } from './systems/vehicle';
 import { STORM, stormSystem } from './world/storm';
 import { RESTORATION, grantRestorationPoints, restorationBonuses, restorationSystem, tierFor } from './systems/restoration';
 import { ELITE_COLORS } from './data/elites';
@@ -231,6 +234,7 @@ export class Game {
       .add('spatial', spatialSystem)
       .add('zone', zoneSystem)
       .add('playerControl', playerControlSystem)
+      .add('vehicle', vehicleSystem)
       .add('skills', skillSystem)
       .add('enemyAI', enemyAISystem)
       .add('elites', eliteSystem)
@@ -750,6 +754,7 @@ export class Game {
     if (zoom !== 0) this.renderer.rig.zoom(zoom);
 
     this.updateStormLook();
+    if (this.zone) this.renderer.updateCooled(this.zone.cooled, this.ctx.time);
     this.renderer.sync(this.world, alpha, frameDt);
     const tr = this.playerTransform;
     const px = tr.prevX + (tr.x - tr.prevX) * alpha;
@@ -1145,6 +1150,14 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       case 'stash':
         this.openService('stash');
         break;
+      case 'feature':
+        if (detail) this.hud.showBanner(t(`features.${detail}.used`), 2);
+        break;
+      case 'reclaimed':
+        // Pump Station Delta's people move in.
+        if (id) spawnUnlockedNpcs(this.world, this.ctx, id);
+        this.autosave();
+        break;
       case 'dungeon':
       case 'bunker':
         if (id) this.enterInstance(id);
@@ -1173,7 +1186,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   /** Region and subzone (or hub) under the player, for the HUD. */
   private locationLabel(): { title: string; sub: string } {
     const inst = this.ctx.instance;
-    if (inst) return { title: t(`instances.names.${inst.def.id === 'bunker' ? inst.poi.replace('.', '_') : inst.def.id}`), sub: objectiveText(inst, t) };
+    if (inst) return { title: t(`instances.names.${inst.def.kind === 'bunker' ? inst.poi.replace(/\./g, '_') : inst.def.id}`), sub: objectiveText(inst, t) };
     const zone = this.zone!;
     const tr = this.playerTransform;
     const key = zone.def.key;
@@ -1310,7 +1323,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const zone = this.zone;
     const poi = zone?.def.pois.find((p) => p.id === poiId);
     if (!zone || !poi || this.ctx.instance) return;
-    const defId = poi.kind === 'dungeon' ? String(poi.data?.dungeon ?? '') : 'bunker';
+    const defId = poi.kind === 'dungeon' ? String(poi.data?.dungeon ?? '') : String(poi.data?.instance ?? 'bunker');
     // Wake-up packs far away would only sit there: put them back to sleep.
     for (const st of zone.packs.values()) {
       if (st.state !== 'active') continue;
@@ -1409,6 +1422,19 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     for (const e of this.world.query(EnemyAI)) {
       if (!this.world.has(e, Dead)) kill(this.world, this.ctx, e, 0);
     }
+  }
+
+  /** Debug: set every living boss to this share of its life (to see later phases). */
+  setBossLife(fraction: number): void {
+    for (const e of this.world.query(Boss, Health)) {
+      if (this.world.has(e, Dead)) continue;
+      const h = this.world.req(e, Health);
+      h.current = h.max * fraction;
+    }
+  }
+
+  get mounted(): boolean {
+    return this.world.has(this.player, Mounted);
   }
 
   /** Debug: a champion pack or rare elite next to the player. */

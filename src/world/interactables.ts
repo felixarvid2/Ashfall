@@ -43,6 +43,7 @@ import { revealAround, type ZoneRuntime } from './zone';
 import { signal } from '../systems/quests';
 import { instanceInteract } from './instance';
 import { eventInteract } from './worldEvents';
+import { FEATURES, featureOf, useFeature } from './features';
 
 const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: number; glow?: string; collider?: number }>> = {
   chest: { asset: 'prop.supply_chest', collider: 0.7 },
@@ -75,6 +76,16 @@ export function spawnInteractables(world: World, zone: ZoneRuntime, extras: { po
       world.add(e, Transform, makeTransform(poi.x, 0, poi.z));
       world.add(e, Renderable, { assetId: 'prop.explosive_barrel' });
       world.add(e, Destructible, { radius: 0.7, blast: { radius: BARREL.radius, flat: BARREL.base } });
+      continue;
+    }
+    const feature = poi.kind === 'feature' ? featureOf(poi) : null;
+    if (feature) {
+      const f = FEATURES[feature];
+      const e = world.create();
+      world.add(e, Transform, makeTransform(poi.x, 0, poi.z, ((poi.x * 7 + poi.z * 13) % 628) / 100));
+      world.add(e, Renderable, { assetId: f.asset, scale: f.scale ?? 1, glow: f.glow });
+      world.add(e, Interactable, { poi: poi.id, kind: 'feature', radius: INTERACT_RADIUS, used: false, readyAt: 0 });
+      world.add(e, Collider, { radius: 0.6, mass: Infinity, layer: 'ground', isStatic: true });
       continue;
     }
     const glow = poi.kind === 'pylon' ? PYLONS[poi.data?.type as PylonType]?.color : undefined;
@@ -158,6 +169,9 @@ function restoreGlow(world: World, e: Entity, it: Interactable, zone: ZoneRuntim
     const poi = zone.def.pois.find((p) => p.id === it.poi);
     const color = PYLONS[poi?.data?.type as PylonType]?.color;
     if (color) r.glow = color;
+  } else if (it.kind === 'feature') {
+    const kind = featureOf(zone.def.pois.find((p) => p.id === it.poi));
+    if (kind) r.glow = FEATURES[kind].glow;
   } else {
     const v = VISUAL[it.kind];
     if (v?.glow) r.glow = v.glow;
@@ -252,9 +266,14 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
     case 'instanceKey':
     case 'cache':
     case 'portal':
+    case 'valve':
+    case 'cage':
+    case 'compressor':
       return instanceInteract(world, ctx, target, it);
     case 'eventObject':
       return eventInteract(world, ctx, target, it);
+    case 'feature':
+      return useFeature(world, ctx, zone, target, it, poi);
     case 'questObject':
       // Quest objects vanish when used; the quest log decides what they mean.
       it.used = true;

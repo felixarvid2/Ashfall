@@ -27,6 +27,7 @@ export const ACTIONS = [
   'toggleDebug',
   'quickSave',
   'quickLoad',
+  'mount',
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -55,6 +56,7 @@ export const DEFAULT_KEYBINDINGS: Record<Action, string[]> = {
   toggleDebug: ['F3', 'Backquote'],
   quickSave: ['F5'],
   quickLoad: ['F9'],
+  mount: ['KeyB'],
 };
 
 export const MoveModeSchema = z.enum(['wasd', 'click']);

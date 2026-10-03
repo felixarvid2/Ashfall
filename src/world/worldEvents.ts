@@ -9,6 +9,7 @@ import {
   EnemyAI,
   Faction,
   Health,
+  Hazard,
   Interactable,
   MoveTarget,
   Mover,
@@ -28,7 +29,18 @@ import { grantXp } from '../systems/loot/rewards';
 import { spawnEnemy } from './spawn';
 import { makeElite, type ZoneRuntime } from './zone';
 
-export type EventType = 'convoy' | 'sporeNest' | 'rescue' | 'signalJam' | 'eliteHunt' | 'supplyDrop';
+export type EventType =
+  | 'convoy'
+  | 'sporeNest'
+  | 'rescue'
+  | 'signalJam'
+  | 'eliteHunt'
+  | 'supplyDrop'
+  // Refinery District
+  | 'runawayBelt'
+  | 'slagTide'
+  | 'purgeFurnace'
+  | 'smelterRaid';
 export type Tier = 'gold' | 'silver' | 'bronze';
 
 export const EVENT_TUNING = {
@@ -41,6 +53,14 @@ export const EVENT_TUNING = {
   signalJam: { time: 60, life: 650, waveEvery: 7 },
   eliteHunt: { time: 90, gold: 45, silver: 70 },
   supplyDrop: { land: 3, guards: 6, steal: 60, gold: 20, silver: 35, clearRadius: 6 },
+  /** Explosive cargo rides a runaway belt toward the furnace; shoot it before it gets there. */
+  runawayBelt: { crates: 6, every: 4, speed: 3, length: 46, life: 90, blast: 4 },
+  /** The slag rises: kill what crawls out of it before the tide swallows the field. */
+  slagTide: { kills: 22, time: 80, gold: 45, silver: 65, poolEvery: 3, poolRadius: 3, poolDuration: 9 },
+  /** Shut the furnace igniters before the Smelters light the pyre. */
+  purgeFurnace: { igniters: 3, life: 520, time: 75, gold: 35, silver: 55 },
+  /** Hold the pump against a Smelter raid. */
+  smelterRaid: { time: 60, life: 700, waveEvery: 8 },
   /** XP per tier, × monster level. */
   xp: { gold: 40, silver: 28, bronze: 18 } as Record<Tier, number>,
 };
@@ -57,6 +77,9 @@ export interface EventState {
   progress: number;
   waveTimer: number;
   result: Tier | 'failed' | null;
+  /** Runaway Belt: crates that reached the furnace. Slag Tide: kills whose corpses are gone. */
+  missed?: number;
+  banked?: number;
 }
 
 export function createEvents(zone: ZoneRuntime): Map<string, EventState> {
@@ -86,18 +109,45 @@ function eventObject(world: World, id: string, x: number, z: number, asset: stri
   return e;
 }
 
-function wave(world: World, ctx: GameContext, x: number, z: number, n: number, level: number, radius = 18): void {
+/** Who answers an event's noise, by region. */
+const WAVE_ROSTER: Record<string, { item: string; weight: number }[]> = {
+  'zone.refinery_district': [
+    { item: 'scorched_walker', weight: 5 },
+    { item: 'slag_hound', weight: 2 },
+    { item: 'smelter', weight: 1 },
+    { item: 'welder', weight: 1 },
+    { item: 'fire_bloater', weight: 1 },
+  ],
+  default: [
+    { item: 'infected_colonist', weight: 6 },
+    { item: 'spore_hound', weight: 2 },
+    { item: 'bloater', weight: 1 },
+    { item: 'security_drone', weight: 1 },
+  ],
+};
+
+function wave(world: World, ctx: GameContext, x: number, z: number, n: number, level: number, radius = 18, roster?: { item: string; weight: number }[]): Entity[] {
+  const out: Entity[] = [];
   for (let i = 0; i < n; i++) {
     const a = ctx.rng.range(0, Math.PI * 2);
-    const enemy = ctx.rng.weighted([
-      { item: 'infected_colonist', weight: 6 },
-      { item: 'spore_hound', weight: 2 },
-      { item: 'bloater', weight: 1 },
-      { item: 'security_drone', weight: 1 },
-    ]);
+    const enemy = ctx.rng.weighted(roster ?? WAVE_ROSTER[ctx.zone?.def.id ?? ''] ?? WAVE_ROSTER.default!);
     const e = spawnEnemy(world, enemy, x + Math.sin(a) * radius, z + Math.cos(a) * radius, { level });
     world.req(e, EnemyAI).aggro = true;
+    out.push(e);
   }
+  return out;
+}
+
+/** A thing with life the player protects or destroys. */
+function target(world: World, x: number, z: number, asset: string, team: 'player' | 'enemy', life: number, scale = 1, glow?: string): Entity {
+  const e = world.create();
+  world.add(e, Transform, makeTransform(x, 0, z, 0));
+  world.add(e, Renderable, { assetId: asset, scale, ...(glow ? { glow } : {}) });
+  world.add(e, Faction, { team });
+  world.add(e, Health, { current: life, max: life });
+  world.add(e, Collider, { radius: 0.9 * scale, mass: Infinity, layer: 'ground', isStatic: true });
+  if (team === 'enemy') world.add(e, Targetable, {});
+  return e;
 }
 
 function start(world: World, ctx: GameContext, id: string, ev: EventState): void {
@@ -109,6 +159,8 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
   ev.waveTimer = 2;
   ev.result = null;
   ev.objects = [];
+  ev.missed = 0;
+  ev.banked = 0;
   switch (ev.type) {
     case 'convoy': {
       const [x, z] = T.convoy.path[0]!;
@@ -155,7 +207,8 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
       break;
     }
     case 'eliteHunt': {
-      const e = spawnEnemy(world, 'spore_hound', ev.x, ev.z, { level: level + 1 });
+      const prey = ctx.zone?.def.id === 'zone.refinery_district' ? 'welder' : 'spore_hound';
+      const e = spawnEnemy(world, prey, ev.x, ev.z, { level: level + 1 });
       makeElite(world, e, 'rare', new Rng(`${id}-${ctx.tick}`));
       world.req(e, EnemyAI).aggro = true;
       ev.objects.push(e);
@@ -164,6 +217,28 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
     case 'supplyDrop':
       ctx.events.push({ type: 'telegraph', owner: null, x: ev.x, z: ev.z, shape: { kind: 'circle', radius: 2.5 }, duration: T.supplyDrop.land, color: '#ffd23a' });
       ev.progress = 0; // 0 = falling, 1 = landed
+      break;
+    case 'runawayBelt':
+      // progress = crates sent; objects hold the crates still riding.
+      ev.waveTimer = 1;
+      wave(world, ctx, ev.x, ev.z, 3, level, 14);
+      break;
+    case 'slagTide':
+      ev.waveTimer = 0;
+      ev.progress = 0;
+      break;
+    case 'purgeFurnace': {
+      const T2 = T.purgeFurnace;
+      const life = T2.life * (1 + 0.15 * (level - 1));
+      for (let i = 0; i < T2.igniters; i++) {
+        const a = (i / T2.igniters) * Math.PI * 2;
+        ev.objects.push(target(world, ev.x + Math.sin(a) * 9, ev.z + Math.cos(a) * 9, 'env.furnace_block', 'enemy', life, 0.45, '#ff6a1a'));
+      }
+      wave(world, ctx, ev.x, ev.z, 4, level, 6, [{ item: 'smelter', weight: 2 }, { item: 'scorched_walker', weight: 3 }]);
+      break;
+    }
+    case 'smelterRaid':
+      ev.objects.push(target(world, ev.x, ev.z, 'env.pump_house', 'player', T.smelterRaid.life, 0.35, '#7ad8ff'));
       break;
   }
   ctx.events.push({ type: 'banner', key: `worldEvents.${ev.type}.title`, seconds: 2.4 });
@@ -289,6 +364,86 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
         }
         break;
       }
+      case 'runawayBelt': {
+        const R = T.runawayBelt;
+        // Crates ride east along the belt; each one that reaches the end blows up the line.
+        if (ev.progress < R.crates && (ev.waveTimer -= dt) <= 0) {
+          ev.waveTimer = R.every;
+          ev.progress++;
+          ev.objects.push(target(world, ev.x - R.length / 2, ev.z, 'prop.explosive_barrel', 'enemy', R.life * (1 + 0.12 * (level - 1)), 1.3, '#ff3a2a'));
+        }
+        for (const crate of ev.objects) {
+          if (!alive(world, crate)) continue;
+          const tr = world.req(crate, Transform);
+          tr.x += R.speed * dt;
+          if (tr.x >= ev.x + R.length / 2) {
+            world.destroyDeferred(crate);
+            ev.missed = (ev.missed ?? 0) + 1;
+            ctx.events.push({ type: 'vfx', kind: 'explosion', x: tr.x, z: tr.z, radius: R.blast, facing: 0 });
+            ctx.events.push({ type: 'shake', trauma: 0.35 });
+          }
+        }
+        ev.objects = ev.objects.filter((o) => alive(world, o) && world.req(o, Transform).x < ev.x + R.length / 2);
+        if (ev.progress >= R.crates && ev.objects.length === 0) {
+          const missed = ev.missed ?? 0;
+          ev.missed = 0;
+          finish(world, ctx, zone, id, ev, missed === 0 ? 'gold' : missed <= 2 ? 'silver' : missed <= 4 ? 'bronze' : 'failed');
+        }
+        break;
+      }
+      case 'slagTide': {
+        const S = T.slagTide;
+        if ((ev.waveTimer -= dt) <= 0) {
+          ev.waveTimer = S.poolEvery;
+          const a = ctx.rng.range(0, Math.PI * 2);
+          const r = ctx.rng.range(4, 18);
+          spawnTidePool(world, ev.x + Math.sin(a) * r, ev.z + Math.cos(a) * r, S, level);
+          ev.objects.push(...wave(world, ctx, ev.x, ev.z, 2, level, 16, [{ item: 'slag_hound', weight: 3 }, { item: 'fire_bloater', weight: 1 }]));
+        }
+        ev.progress = ev.objects.filter((o) => world.isAlive(o) && world.has(o, Dead)).length + (ev.banked ?? 0);
+        // Corpses vanish after a while: bank kills as they happen.
+        const gone = ev.objects.filter((o) => !world.isAlive(o));
+        if (gone.length) {
+          ev.banked = (ev.banked ?? 0) + gone.length;
+          ev.objects = ev.objects.filter((o) => world.isAlive(o));
+        }
+        if (ev.progress >= S.kills) {
+          ev.banked = 0;
+          finish(world, ctx, zone, id, ev, ev.elapsed < S.gold ? 'gold' : ev.elapsed < S.silver ? 'silver' : 'bronze');
+        } else if (ev.elapsed >= S.time) {
+          ev.banked = 0;
+          finish(world, ctx, zone, id, ev, 'failed');
+        }
+        break;
+      }
+      case 'purgeFurnace': {
+        const P = T.purgeFurnace;
+        if (ev.objects.every((o) => !alive(world, o))) {
+          finish(world, ctx, zone, id, ev, ev.elapsed < P.gold ? 'gold' : ev.elapsed < P.silver ? 'silver' : 'bronze');
+        } else if (ev.elapsed >= P.time) {
+          ctx.events.push({ type: 'vfx', kind: 'vent', x: ev.x, z: ev.z, radius: 9, facing: 0 });
+          finish(world, ctx, zone, id, ev, 'failed');
+        }
+        break;
+      }
+      case 'smelterRaid': {
+        const M = T.smelterRaid;
+        const pump = ev.objects[0];
+        if (!alive(world, pump)) {
+          finish(world, ctx, zone, id, ev, 'failed');
+          break;
+        }
+        if ((ev.waveTimer -= dt) <= 0) {
+          ev.waveTimer = M.waveEvery;
+          wave(world, ctx, ev.x, ev.z, 3, level, 22, [{ item: 'smelter', weight: 2 }, { item: 'welder', weight: 2 }, { item: 'flame_drone', weight: 1 }]);
+        }
+        if (ev.elapsed >= M.time) {
+          const h = world.req(pump!, Health);
+          const frac = h.current / h.max;
+          finish(world, ctx, zone, id, ev, frac >= 0.7 ? 'gold' : frac >= 0.35 ? 'silver' : 'bronze');
+        }
+        break;
+      }
       case 'supplyDrop': {
         if (ev.progress === 0 && ev.elapsed >= T.supplyDrop.land) {
           ev.progress = 1;
@@ -370,5 +525,29 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
       return { type: best.type, text: 'worldEvents.eliteHunt.objective', params: { s: left(T.eliteHunt.time) } };
     case 'supplyDrop':
       return { type: best.type, text: best.progress === 0 ? 'worldEvents.supplyDrop.falling' : 'worldEvents.supplyDrop.objective', params: { s: left(T.supplyDrop.steal) } };
+    case 'runawayBelt':
+      return { type: best.type, text: 'worldEvents.runawayBelt.objective', params: { n: best.progress, count: T.runawayBelt.crates } };
+    case 'slagTide':
+      return { type: best.type, text: 'worldEvents.slagTide.objective', params: { n: best.progress, count: T.slagTide.kills, s: left(T.slagTide.time) } };
+    case 'purgeFurnace':
+      return { type: best.type, text: 'worldEvents.purgeFurnace.objective', params: { s: left(T.purgeFurnace.time) } };
+    case 'smelterRaid':
+      return { type: best.type, text: 'worldEvents.smelterRaid.objective', params: { s: left(T.smelterRaid.time) } };
   }
+}
+
+/** A burning pool of rising slag (hurts the player's side only). */
+function spawnTidePool(world: World, x: number, z: number, S: { poolRadius: number; poolDuration: number }, level: number): void {
+  const hz = world.create();
+  world.add(hz, Transform, makeTransform(x, 0, z));
+  world.add(hz, Hazard, {
+    team: 'enemy',
+    radius: S.poolRadius,
+    remaining: S.poolDuration,
+    duration: S.poolDuration,
+    tickTimer: 0.5,
+    color: '#ff6a1a',
+    applies: [{ status: 'burning', duration: 1.5, dps: 6 + 3 * level }],
+    attackerLevel: level,
+  });
 }

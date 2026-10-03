@@ -121,5 +121,7 @@ export const NpcDefSchema = z.object({
   service: z.enum(['vendor', 'blacksmith', 'technician']).optional(),
   /** Spawned only while a quest step needs it (otherwise always present). */
   questOnly: z.boolean().default(false),
+  /** Only present once this point of interest is found (a reclaimed stronghold's people). */
+  requires: z.string().optional(),
 });
 export type NpcDef = z.infer<typeof NpcDefSchema>;

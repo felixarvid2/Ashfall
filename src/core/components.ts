@@ -299,6 +299,8 @@ export interface Hazard {
   tickTimer: number;
   applies: { status: StatusId; duration: number; dps?: number }[];
   attackerLevel: number;
+  /** A ring: only the band between `inner` and `radius` hurts (a collapsing arena floor). */
+  inner?: number;
 }
 export const Hazard = defineComponent<Hazard>('Hazard');
 
@@ -492,7 +494,7 @@ export const Turret = defineComponent<Turret>('Turret');
 export interface Interactable {
   /** Point-of-interest id (or teleporter id). */
   poi: string;
-  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject';
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject' | 'valve' | 'cage' | 'compressor';
   /** Use radius (m). */
   radius: number;
   /** Spent for good (opened, read, claimed). */
@@ -595,14 +597,27 @@ export const Targetable = defineComponent<Targetable>('Targetable');
 export interface Boss {
   script: string | null;
   phase: number;
-  timers: { adds: number; plates: number; spores: number };
+  timers: { adds: number; plates: number; spores: number; fireballs?: number; shrink?: number; tentacles?: number };
   engaged: boolean;
   /** Arena centre and radius (spore fields, resets). */
   arena: { x: number; z: number; radius: number };
   adds: Entity[];
-  /** Cover plates thrown in phase 2 (removed on reset). */
+  /** Cover plates thrown in phase 2, and other arena changes (the collapsing floor); removed on reset. */
   plates: Entity[];
-  pending: { x: number; z: number; t: number }[];
+  /** Warned impacts: plates (leave cover), fireballs (don't), or the next floor collapse. */
+  pending: { x: number; z: number; t: number; kind?: 'plate' | 'fireball' | 'shrink' }[];
   baseSpeed: number;
+  /** Collapse steps taken (shrinking arena). */
+  shrinkStep?: number;
+  /** Renderable look before a transformation. */
+  baseLook?: { scale: number; glow?: string | undefined };
 }
 export const Boss = defineComponent<Boss>('Boss');
+
+/** Riding the motorbike. */
+export interface Mounted {
+  speedMul: number;
+  /** Life last tick (a big drop throws you off). */
+  lastLife: number;
+}
+export const Mounted = defineComponent<Mounted>('Mounted');

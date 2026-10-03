@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import type { Entity, World } from '../core/ecs';
-import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CLASS_WEAPONS } from '../data/weapons';
@@ -248,6 +248,7 @@ export class GameRenderer {
       this.moltenMaterial = glow;
       const hot = new THREE.InstancedMesh(disc, glow, pools.length);
       const rim = new THREE.InstancedMesh(disc, crust, pools.length);
+      this.molten = { hot, rim, pools: pools.map((p) => ({ id: p.id, x: p.x, z: p.z, r: p.radius })), key: '' };
       const m = new THREE.Matrix4();
       pools.forEach((p, i) => {
         m.makeScale(p.radius, 1, p.radius).setPosition(p.x, 0.03, p.z);
@@ -260,7 +261,30 @@ export class GameRenderer {
       rim.computeBoundingSphere();
       hot.userData.own = rim.userData.own = true;
       root.add(rim, hot);
-    } else this.moltenMaterial = null;
+    } else {
+      this.moltenMaterial = null;
+      this.molten = null;
+    }
+  }
+
+  private molten: { hot: THREE.InstancedMesh; rim: THREE.InstancedMesh; pools: { id: string; x: number; z: number; r: number }[]; key: string } | null = null;
+
+  /** Molten metal flooded by a coolant valve turns to dark, steaming crust until it heats up again. */
+  updateCooled(cooled: ReadonlyMap<string, number>, time: number): void {
+    const m = this.molten;
+    if (!m) return;
+    const active = [...cooled].filter(([, until]) => until > time).map(([id]) => id);
+    const key = active.sort().join(',');
+    if (key === m.key) return;
+    m.key = key;
+    const off = new Set(active);
+    const mat = new THREE.Matrix4();
+    m.pools.forEach((p, i) => {
+      const r = off.has(p.id) ? 0.0001 : p.r;
+      mat.makeScale(r, 1, r).setPosition(p.x, 0.03, p.z);
+      m.hot.setMatrixAt(i, mat);
+    });
+    m.hot.instanceMatrix.needsUpdate = true;
   }
 
   /** Drop the current zone's ground, roads, lamp glows and scatter (shared model assets stay). */
@@ -538,6 +562,8 @@ export class GameRenderer {
         tr.prevZ + (tr.z - tr.prevZ) * alpha,
       );
       obj.rotation.y = tr.prevFacing + angleDelta(tr.prevFacing, tr.facing) * alpha;
+      // The motorbike rides under the player while mounted.
+      if (world.has(e, PlayerControlled)) this.syncBike(obj, world.has(e, Mounted));
       // Hovering machines bob gently (procedural animation, brief §9.4).
       if (tr.y > 0.5 && world.has(e, EnemyAI)) obj.position.y += Math.sin(this.time * 3 + e) * 0.08;
 
@@ -616,8 +642,23 @@ export class GameRenderer {
   }
 
   /** Pick the animation for what the entity is doing this frame. */
+  private syncBike(obj: THREE.Object3D, mounted: boolean): void {
+    const bike = obj.userData.bike as THREE.Object3D | undefined;
+    if (mounted && !bike) {
+      const b = this.assets.create('prop.motorbike', false);
+      // Children inherit the character's scale; keep the bike at its own size.
+      b.scale.setScalar(1 / (obj.scale.x || 1));
+      obj.add(b);
+      obj.userData.bike = b;
+    } else if (!mounted && bike) {
+      obj.remove(bike);
+      delete obj.userData.bike;
+    }
+  }
+
   private animationFor(world: World, e: Entity, animator: CharacterAnimator): PlayRequest {
     if (world.has(e, Dead)) return { state: 'death', loop: false, token: 'death' };
+    if (world.has(e, Mounted)) return { state: 'idle', loop: true, token: 'bike' };
 
     const user = world.get(e, SkillUser);
     const fm = world.get(e, ForcedMove);

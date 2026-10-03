@@ -29,6 +29,7 @@ import { spawnBoss } from '../systems/boss';
 import { signal } from '../systems/quests';
 import { spawnEnemy } from './spawn';
 import { makeElite } from './zone';
+import { objectiveCount, objectiveDetail, objectiveInteract, setupObjective, tickObjective, type ObjectiveExtra } from './instanceObjectives';
 
 export type Dir = 'n' | 's' | 'e' | 'w';
 const DIRS: Record<Dir, [number, number]> = { n: [0, 1], s: [0, -1], e: [1, 0], w: [-1, 0] };
@@ -145,6 +146,8 @@ export interface InstanceRuntime {
   completed: boolean;
   /** Lamps for the renderer's light pool. */
   lights: { x: number; z: number; color: string; intensity: number; distance: number; height: number }[];
+  /** Region 2 objectives' state (valves, robot, cages, compressor, heat, frost vents). */
+  extra: ObjectiveExtra;
 }
 
 export function instanceDef(id: string): InstanceDef {
@@ -222,6 +225,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
     boss: null,
     completed: false,
     lights: [],
+    extra: {},
   };
 
   const bossRoom = layout.rooms.find((r) => r.kind === 'boss');
@@ -286,6 +290,8 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
       }
     }
   }
+
+  setupObjective(world, rt, spots, roomCenter);
 
   // The way out, by the entrance.
   interactable(world, 'exit', 'portal', rt.start.x - 6, rt.start.z - 6, 'prop.teleporter', 0.32, '#5ad2ff');
@@ -362,6 +368,7 @@ export function instanceSystem(world: World, dt: number, ctx: GameContext): void
   }
 
   const obj = def.objective;
+  tickObjective(world, dt, ctx, rt, player, roomCenter);
   if (!rt.objective.done) {
     if (obj.kind === 'destroy') {
       const dead = world.query(Targetable).filter((e) => world.has(e, Dead) && inInstance(world.req(e, Transform).x)).length;
@@ -387,7 +394,7 @@ export function instanceSystem(world: World, dt: number, ctx: GameContext): void
       const alive = world.query(EnemyAI, Transform).some((e) => !world.has(e, Dead) && inInstance(world.req(e, Transform).x));
       if (allSpawned && !alive) rt.objective.progress = 1;
     }
-    const count = obj.kind === 'clear' ? 1 : obj.count;
+    const count = objectiveCount(obj);
     if (rt.objective.progress >= count) {
       rt.objective.done = true;
       for (const g of rt.gate) world.destroyDeferred(g);
@@ -469,6 +476,10 @@ export function instanceInteract(world: World, ctx: GameContext, target: Entity,
     case 'portal':
       ctx.events.push({ type: 'interact', kind: 'portal', id: 'exit' });
       return true;
+    case 'valve':
+    case 'cage':
+    case 'compressor':
+      return objectiveInteract(world, ctx, rt, target, it);
     default:
       return false;
   }
@@ -488,6 +499,8 @@ export function objectiveText(rt: InstanceRuntime, t: (key: string, params?: Rec
   const obj = rt.def.objective;
   if (rt.completed) return t('instances.objective.done');
   if (rt.objective.done) return rt.def.boss ? t('instances.objective.boss', { name: t(rt.def.boss.name) }) : t('instances.objective.done');
+  const detail = objectiveDetail(rt, t);
+  if (detail) return detail;
   if (obj.kind === 'clear') return t('instances.objective.clear');
-  return t(`instances.objective.${obj.kind}`, { n: rt.objective.progress, count: obj.count });
+  return t(`instances.objective.${obj.kind}`, { n: rt.objective.progress, count: objectiveCount(obj) });
 }

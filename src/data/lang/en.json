@@ -226,7 +226,15 @@
       "vos": "Sergeant Vos",
       "brood_mother": "The Brood Mother",
       "hale": "Commandant Hale",
-      "the_first": "The First"
+      "the_first": "The First",
+      "krell": "Foreman Krell",
+      "slag_heart": "The Slag Heart",
+      "pyre_warden": "The Pyre Warden",
+      "frozen_welder": "The Frozen Welder",
+      "brother_ash": "Brother Ash",
+      "vire": "High Priestess Vire",
+      "hask": "Deacon Hask",
+      "red": "Red"
     },
     "brood_mother": "Brood Mother",
     "commandant_hale": "Commandant Hale",
@@ -239,7 +247,12 @@
     "welder": "Welder",
     "slagborn": "Slagborn",
     "cargo_loader": "Cargo Loader",
-    "smelter_priest": "Smelter Priest"
+    "smelter_priest": "Smelter Priest",
+    "brother_ash": "Brother Ash",
+    "pyre_warden": "Pyre Warden",
+    "frozen_welder": "The Frozen Welder",
+    "vire": "High Priestess Vire",
+    "lumen_tentacle": "Lumen Tentacle"
   },
   "resources": {
     "heat": "Heat",
@@ -1275,7 +1288,8 @@
         "conveyor": "Conveyor Lines",
         "foundry": "Foundry Road",
         "stacks": "Smokestack Forest",
-        "cathedral": "Cathedral Steps"
+        "cathedral": "Cathedral Steps",
+        "delta": "Pump Station Delta"
       }
     },
     "refineryDistrict": {
@@ -1497,6 +1511,44 @@
       "name": "Pvt. Danner",
       "title": "Deserter",
       "greeting": "Don't shoot. Please. I'm not one of them. Not yet."
+    },
+    "mara": {
+      "name": "Mara Kowal",
+      "title": "Pump engineer · Technician",
+      "greeting": "Mind the pipes. If one of them bursts we all learn what minus forty feels like.",
+      "service": "Aspects"
+    },
+    "gus": {
+      "name": "Gus Abara",
+      "title": "Quartermaster · Trader",
+      "greeting": "Everything here was salvaged, bartered or stolen. Prices reflect all three.",
+      "service": "Trade"
+    },
+    "ines": {
+      "name": "Ines Varro",
+      "title": "Machinist · Blacksmith",
+      "greeting": "Put it on the bench. If it was made in a refinery, I can make it better.",
+      "service": "Blacksmith"
+    },
+    "tobin": {
+      "name": "Tobin",
+      "title": "Smelter defector",
+      "greeting": "I wore the robe for two years. I can tell you what they believe. I can't tell you why I believed it."
+    },
+    "osei": {
+      "name": "Kofi Osei",
+      "title": "Delta station engineer",
+      "greeting": "Three weeks locked in the pump room. The cooling's ours again. I owe you more than a thank-you."
+    },
+    "rhee": {
+      "name": "Rhee",
+      "title": "Crane operator",
+      "greeting": "Are they gone? Tell me they're gone. I've been up in that cab for nine days."
+    },
+    "lenn": {
+      "name": "Brother Lenn",
+      "title": "Smelter preacher",
+      "greeting": "You've come to judge me. Good. Somebody should."
     }
   },
   "quests": {
@@ -1571,6 +1623,81 @@
         "offer": "Every infected thing out there moves like it's listening to something. Okafor called it a network.\nIf the first node goes dark, maybe the rest go deaf. Maybe not.\nIt's the only idea we've got. Go to the Maw.",
         "talk2": "You're back. That means it's dead. Or you are, and this is the soup talking.\nPell read me the rest of the logs. Kade knew. He kept the drills running because the Consortium paid by the ton, and the dead don't file complaints.\nThe refinery's still burning out east. If he's anywhere, he's there. Eat first.",
         "done": "The Maw is silent. The refinery fire still lights the horizon."
+      },
+      "burning_road": {
+        "title": "The Burning Road",
+        "summary": "The First is dead, but Kade's trail leads on. Route 7 continues past the Maw toward the refinery glow on the horizon.",
+        "steps": {
+          "0": "Follow Route 7 past the Maw to the border crossing",
+          "1": "Activate the teleporter at the Border Crossing",
+          "2": "Find the survivors at the Coolant Works",
+          "3": "Talk to Mara Kowal"
+        },
+        "talk3": "You walked here from the Flats? Through the Smelters' country? Either you're lucky or they didn't notice you.\nI'm Mara. This is the Coolant Works. We keep the pumps running so the district doesn't cook itself. Mostly.\nPull up a crate. The tea's lukewarm, which is the warmest thing we have.",
+        "done": "The Coolant Works. Cold steel, warm people."
+      },
+      "cold_comfort": {
+        "title": "Cold Comfort",
+        "summary": "The Coolant Works' outer pumps have stalled. Without them, the vents around the yard blow fire instead of steam.",
+        "steps": {
+          "0": "Reopen the coolant valves around the yard ({n}/{count})",
+          "1": "Drive off the scavengers drawn by the noise ({n}/{count})",
+          "2": "Report to Mara"
+        },
+        "offer": "Three valves on the outer ring stalled when the last pressure spike hit. Until they're open, the vents out there blow fire.\nWatch the ground. When a grate starts glowing, step off it. Count to two. Then go.\nTurning them will make noise. Noise brings company.",
+        "talk2": "Steam's back on the outer ring. Hear that hiss? That's the sound of us not dying this week.\nYou move like you've been doing this all your life. Tobin wants to talk to you. He used to be one of them.",
+        "done": "The vents breathe steam again."
+      },
+      "faithful": {
+        "title": "The Faithful",
+        "summary": "Tobin wore the Smelters' robe. He says they burn the infected — and sometimes the healthy — at a shrine in the Smokestack Forest.",
+        "steps": {
+          "0": "Talk to Tobin",
+          "1": "Find the Smelters' shrine in the Smokestack Forest",
+          "2": "Kill Deacon Hask",
+          "3": "Read the sermon at the shrine",
+          "4": "Return to Tobin"
+        },
+        "offer": "Tobin came to us six weeks ago. Half-starved, robe still smoking. He knows things about the Smelters nobody else does.\nTalk to him. Then decide for yourself whether he's worth trusting.",
+        "talk0": "They call it purification. You walk the sick into the furnace and the Lumen burns with them. Clean.\nExcept the deacons choose who is sick. And lately they choose anyone who argues.\nThere's a shrine in the stacks where Deacon Hask holds the choosing. Stop him. Read what he preaches. Then you'll understand why I ran.",
+        "talk4": "\"The green and the flame are the same light.\" That's not what they taught us. That's... that's what Vire says in private.\nShe's not burning the Lumen out. She's feeding it.\nIf she holds Pump Station Delta, she controls the cooling for the whole district. We have to take it back.",
+        "done": "The shrine's fire is out. The question it raised is not."
+      },
+      "delta": {
+        "title": "Delta",
+        "summary": "Pump Station Delta controls the district's cooling. The Smelters hold it — and three technicians are still locked inside.",
+        "steps": {
+          "0": "Reach the approach to Pump Station Delta",
+          "1": "Reclaim Pump Station Delta",
+          "2": "Talk to Kofi Osei at the station"
+        },
+        "offer": "Delta's the heart of the cooling network. The Smelters took it a month ago, but there are technicians sealed in the pump room. They're still sending heartbeats on the maintenance band.\nGet in. Keep them alive while they unlock the systems. Brother Ash runs the garrison. He won't let it go quietly.",
+        "talk2": "Ash is dead? Then the pumps answer to us.\nKofi Osei. I ran this station before the robes came. Delta's open to anyone who needs it now — there's a teleporter in the yard.\nAsh kept a ledger. Names of the chosen, and where they were taken. The Cathedral Crypt. There may still be people alive down there.",
+        "done": "Pump Station Delta runs cold and clean."
+      },
+      "ashes": {
+        "title": "Ashes of the Faithful",
+        "summary": "Brother Ash's ledger names the Cathedral Crypt, where the Smelters keep the chosen until the pyres are lit.",
+        "steps": {
+          "0": "Reach the Cathedral Crypt",
+          "1": "Clear the Cathedral Crypt",
+          "2": "Tell Tobin what you found"
+        },
+        "offer": "The ledger lists forty names this month. Taken to the crypt under the cathedral. The pyres are lit at dawn and at dusk.\nI can't promise anyone's left. But if they are, they won't be for long.",
+        "talk2": "You got some of them out. Some is more than anyone got before.\nThe Warden said Vire would 'carry them to the deep'. Not burn — carry. She's been sending the chosen somewhere.\nIt ends at the cathedral. It has to.",
+        "done": "The crypt's pyres are cold."
+      },
+      "vire": {
+        "title": "Vire",
+        "summary": "High Priestess Vire waits in the Smelters' Cathedral. Whatever she is now, the district will burn until she is stopped.",
+        "steps": {
+          "0": "Reach the Cathedral Steps",
+          "1": "Defeat High Priestess Vire",
+          "2": "Return to Mara"
+        },
+        "offer": "Everyone she touched is either ash or gone. Vire is the reason.\nThe cathedral was the refinery's control hall before she put windows of fire in it. Get in, end it.\nAnd if you see the rail records — Kade shipped something out of here before the end. I want to know what.",
+        "talk2": "It's over? Then for the first time in a year, the district can cool down.\nHer journal... she wasn't the first. Kade's last shipment went south on the old service line. Down to the Hydroponic Vaults.\nWhatever he was carrying, it's still down there. And so is he, maybe.",
+        "done": "The cathedral's windows go dark. The trail leads down."
       }
     },
     "sq": {
@@ -1694,6 +1821,134 @@
         },
         "talk0": "This is my brother's hand. Martin.\nHe says he's sorry about the restaurant. That he's going to walk to Ember. That I should keep a bowl warm.\nI kept a bowl warm. Eleven days. Thank you for bringing him the rest of the way.",
         "done": "Benny keeps the letter in his apron pocket."
+      },
+      "defector": {
+        "title": "The Defector",
+        "summary": "A Smelter named Sela wants out. She'll come only if someone walks her through the stacks to the Coolant Works.",
+        "steps": {
+          "0": "Meet Sela on the stack road",
+          "1": "Escort Sela to the Coolant Works",
+          "2": "Talk to Tobin"
+        },
+        "offer": "There's another one who wants out. Sela. Nineteen, scared, good with machines.\nShe can't walk out alone — the deacons watch the stack road. Walk with her. She'll stop if you're not close.",
+        "talk2": "She made it. You made it. That's two of us now.\nShe says more want to leave. They just need to know it's possible.",
+        "done": "Sela sleeps behind the pump house, robe folded under her head.",
+        "escortName": "Sela"
+      },
+      "spare_parts": {
+        "title": "Spare Parts",
+        "summary": "Ines has a motorbike frame and no parts. The district is full of wrecks.",
+        "steps": {
+          "0": "Salvage motorbike parts ({n}/{count})",
+          "1": "Bring the parts to Ines"
+        },
+        "offer": "I've got a bike frame. Good one, pre-quarantine. It's missing everything that makes it go.\nThere's an engine in a crate by the border, a wheel near the slag road, a fuel cell west by the belts.\nBring them and I'll give you something faster than your feet.",
+        "talk1": "Engine's sound, the wheel's true, the cell holds charge. Give me an hour.\n...There. She's yours. Call it with the bike key (B) out in the open. Not in here — I just swept.",
+        "done": "You have a motorbike. Press B in the open world to ride."
+      },
+      "sabotage": {
+        "title": "Sabotage",
+        "summary": "The Smelters stockpile fuel for their flamethrowers near the cathedral. Without it, the next raid is a lot less fiery.",
+        "steps": {
+          "0": "Find the Smelters' fuel cache",
+          "1": "Destroy the fuel tanks ({n}/{count})",
+          "2": "Report to Mara"
+        },
+        "offer": "Our scouts found where the Smelters store their fuel. Near the cathedral's eastern wall.\nEvery flamethrower in the district fills up there. Open the valves, let it drain into the slag. Then get clear.",
+        "talk2": "Their raids will be cold for a while. Cold, I like.",
+        "done": "The Smelters' fuel cache is ash."
+      },
+      "shift_change": {
+        "title": "Shift Change",
+        "summary": "Osei wants to know what happened to the last refinery crew. Their shift logs are scattered across the district.",
+        "steps": {
+          "0": "Find the last shift's logs ({n}/{count})",
+          "1": "Bring them to Osei"
+        },
+        "offer": "The last crew stayed on when the rest evacuated. Management said to keep the furnaces lit no matter what.\nTheir logs are out there. I'd like to know how it ended for them. I trained half of them.",
+        "talk1": "\"Log my hours and go home.\" They kept working because nobody told them to stop.\nThank you. I'll read these to the others. They deserve to be remembered for something besides the fire.",
+        "done": "The last shift's names are read aloud at Delta."
+      },
+      "belt_rider": {
+        "title": "Belt Rider",
+        "summary": "Gus swears a smuggler hid a cache at the far end of Conveyor Line 1. You get there by riding the belt.",
+        "steps": {
+          "0": "Ride the belts to the end of Line 1",
+          "1": "Open the smuggler's cache",
+          "2": "Tell Gus what you found"
+        },
+        "offer": "Smugglers used the belts to move goods past the inspectors. One of them left a stash at the end of Line 1. Never came back for it.\nThe belts still run. Step on, let it carry you. Mind what's riding with you.",
+        "talk2": "Ha! I knew it. Keep the good stuff, I'll take the story. And maybe that bottle.",
+        "done": "Line 1's last delivery reached you."
+      },
+      "heat_sick": {
+        "title": "Heat Sick",
+        "summary": "One of Delta's technicians has a fever that won't break. A sealed coolant canister in the slag fields could save him.",
+        "steps": {
+          "0": "Recover the coolant canister in the Slag Fields",
+          "1": "Bring it to Osei"
+        },
+        "offer": "Hollis' brother is burning up. Not Lumen — heat sickness, from three weeks next to the pumps.\nThere's a sealed canister of medical coolant at the old slag lab. If it's intact, it'll bring the fever down.",
+        "talk1": "Sealed and cold. You might have just saved a life. Around here that's not a figure of speech.",
+        "done": "The fever breaks before morning."
+      },
+      "crane_operator": {
+        "title": "The Crane Operator",
+        "summary": "Someone has been living in the giant crane's cab for days. If the crane runs again, it could drop its load on the Smelters.",
+        "steps": {
+          "0": "Reach the giant crane",
+          "1": "Talk to the operator",
+          "2": "Restore the crane's fuses ({n}/{count})",
+          "3": "Talk to Rhee"
+        },
+        "offer": "There's a light in the crane cab at night. Somebody's up there.\nIf they know how to run that crane, it's worth more than a squad of rifles. Go see.",
+        "talk1": "I'm Rhee. I ran this crane for eleven years. I watched them push people into the slag from up here.\nThe fuses blew when the power died. Two of them, east and west of the tracks. Fix them and I'll show you what this old girl can do.",
+        "talk3": "Hear that? She's awake.\nUse the control box below the cab. She'll drop her load wherever the robes bunch up. Give her a minute to winch back between drops.",
+        "done": "The Crane answers to you now."
+      },
+      "red_hound": {
+        "title": "Red",
+        "summary": "A slag hound the colour of fresh iron has been killing anyone who crosses the eastern slag. Ines lost her apprentice to it.",
+        "steps": {
+          "0": "Find Red's den in the Slag Fields",
+          "1": "Kill Red",
+          "2": "Take its collar",
+          "3": "Return to Ines"
+        },
+        "offer": "It wears a collar. Somebody's pet, once. Red-hot, faster than the rest, smarter than it should be.\nIt took Pavel last week. Bring me the collar. I want to know whose dog it was.",
+        "talk3": "\"Property of the Foundry Kennels — Brutus.\" A guard dog. Somebody's good boy.\nI'll hang it over the bench. Pavel would've laughed at that.",
+        "done": "Red hunts no more."
+      },
+      "choir": {
+        "title": "Choir",
+        "summary": "A Smelter preacher has been seen singing alone near Foundry Road. Tobin says he once spoke against the burnings.",
+        "steps": {
+          "0": "Find the preacher near Foundry Road",
+          "1": "Decide Brother Lenn's fate"
+        },
+        "offer": "Brother Lenn. He sang at the burnings for a year. Then he started singing against them.\nThe deacons cast him out. He's alone near Foundry Road. The hub wants him tried. I'm not sure what I want.",
+        "done": "Brother Lenn's choir is silent. You decided why.",
+        "choice1": {
+          "prompt": "I lit the pyres with my own hands. Then I sang so I wouldn't hear the screaming.\nTake me to your people and let them judge me. Or let me go, and I'll spend what's left of my life pulling the chosen out of the crypt. Your choice. I won't run.",
+          "expose": "Come with me. The hub will judge you.",
+          "release": "Go. Save who you can."
+        },
+        "result": {
+          "expose": "Brother Lenn walks to the Coolant Works with his hands bound, singing quietly.",
+          "release": "Brother Lenn bows his head and walks toward the cathedral, alone."
+        }
+      },
+      "last_shipment": {
+        "title": "Last Shipment",
+        "summary": "Kade's dispatch records mention containers K-7 to K-19, shipped from the rail yard just before the fall.",
+        "steps": {
+          "0": "Find the Governor's shipping order",
+          "1": "Search the rail yard",
+          "2": "Recover the yard's manifest",
+          "3": "Bring the records to Mara"
+        },
+        "talk3": "K-7 to K-19, sealed, no inspection, escorted by his personal guard. South, on the old service line.\nThe only thing south of here is the Hydroponic Vaults. That's where he went. That's where it went.",
+        "done": "The governor's last shipment went south, to the Vaults."
       }
     },
     "my": {
@@ -1707,6 +1962,17 @@
           "3": "Open what the whistle was guarding"
         },
         "done": "Whoever left the whistle wanted someone to follow it."
+      },
+      "fireproof": {
+        "title": "The Fireproof Man",
+        "summary": "Fresh footprints lead straight into the molten slag. And out the other side.",
+        "steps": {
+          "0": "Follow the footprints across the slag",
+          "1": "Follow them further",
+          "2": "Follow them to where they stop",
+          "3": "Open what he left behind"
+        },
+        "done": "Whoever walks through fire here left you a gift — and a mystery."
       }
     }
   },
@@ -1807,7 +2073,28 @@
       "phase3": "The First collapses into something faster"
     },
     "defeated": "{name} defeated",
-    "reset": "The fight resets."
+    "reset": "The fight resets.",
+    "floorCollapse": "The floor collapses into molten metal!",
+    "krell": {
+      "phase2": "Krell overrides the loader's safety limits"
+    },
+    "slag_heart": {
+      "phase2": "The Slag Heart boils over"
+    },
+    "pyre_warden": {
+      "phase2": "The Pyre Warden calls down fire"
+    },
+    "frozen_welder": {
+      "phase2": "The ice cracks. The Welder moves faster."
+    },
+    "brother_ash": {
+      "phase2": "Brother Ash calls his faithful"
+    },
+    "vire": {
+      "intro": "High Priestess Vire",
+      "phase2": "Vire sets the cathedral alight",
+      "phase3": "Vire lets the Lumen take her"
+    }
   },
   "instances": {
     "names": {
@@ -1819,7 +2106,17 @@
       "bunker_2": "Pump Station Bunker",
       "bunker_3": "Storm Shelter Ash-3",
       "bunker_4": "Relay Bunker East",
-      "bunker_5": "Quarry Bunker"
+      "bunker_5": "Quarry Bunker",
+      "smelter_3": "Smelter 3",
+      "pipe_alleys": "The Pipe Alleys",
+      "cathedral_crypt": "The Cathedral Crypt",
+      "cold_hall": "The Cold Hall",
+      "rd_bunker_0": "Border Control Room",
+      "rd_bunker_1": "Belt Maintenance Tunnel",
+      "rd_bunker_2": "Slag Pump Room",
+      "rd_bunker_3": "Stack Access Shaft",
+      "rd_bunker_4": "Foundry Signal Room",
+      "rd_bunker_5": "Choir Cellar"
     },
     "objective": {
       "activate": "Restore power: generators {n}/{count}",
@@ -1827,17 +2124,42 @@
       "destroy": "Destroy spore nests: {n}/{count}",
       "clear": "Clear the bunker",
       "boss": "Defeat {name}",
-      "done": "Cleared. Take what you earned and leave."
+      "done": "Cleared. Take what you earned and leave.",
+      "valves": "Shut the pumps in order: {n}/{count} · next: {next}",
+      "follow": "Follow the maintenance robot: room {n}/{count}",
+      "followDown": "The robot is down. Hold on, it is rebooting…",
+      "rescue": "Free the prisoners: {n}/{count}",
+      "defend": "Restart the compressor",
+      "defendRunning": "Keep the compressor running: {s}s"
     },
     "progress": {
       "activate": "Generator online ({n}/{count})",
       "collect": "Keycard found ({n}/{count})",
-      "destroy": "Spore nest destroyed ({n}/{count})"
+      "destroy": "Spore nest destroyed ({n}/{count})",
+      "valves": "Pump shut ({n}/{count})"
     },
     "charging": "Generator charging. Hold the line!",
     "gateOpen": "The way to the boss is open",
     "cleared": "Bunker cleared",
-    "complete": "Instance complete"
+    "complete": "Instance complete",
+    "heat": "Heat {pct}%",
+    "valveColors": {
+      "red": "red",
+      "yellow": "yellow",
+      "blue": "blue",
+      "green": "green"
+    },
+    "wrongValve": "Wrong pump! The furnace flares and the pumps reopen.",
+    "robot": "Maintenance Robot",
+    "robotDown": "The robot is down. It will reboot in a moment.",
+    "prisoner": "Prisoner",
+    "pyreLit": "The pyre is lit: {s}s to free the prisoner",
+    "pyreIn": "next pyre in {s}s",
+    "prisonerFreed": "Prisoner freed ({n}/{count})",
+    "prisonerLost": "Too late. The pyre took them.",
+    "compressor": "Compressor",
+    "defendStart": "The compressor spins up. Hold for {s}s!",
+    "compressorDown": "The compressor is wrecked. Restart it."
   },
   "setPieces": {
     "sierra": {
@@ -1846,6 +2168,16 @@
     },
     "maw": {
       "defeated": "The First is dead. The Maw falls silent."
+    },
+    "delta": {
+      "start": "Pump Station Delta: protect the technicians while they unlock the cooling",
+      "wave": "Wave {n}/{count}",
+      "failed": "The technicians fell. The Smelters hold Delta.",
+      "reclaimed": "Pump Station Delta reclaimed",
+      "technician": "Technician"
+    },
+    "vire": {
+      "defeated": "High Priestess Vire is dead. The cathedral's fire gutters out."
     }
   },
   "worldEvents": {
@@ -1881,7 +2213,23 @@
       "silver": "Event complete: Silver",
       "bronze": "Event complete: Bronze"
     },
-    "failed": "Event failed"
+    "failed": "Event failed",
+    "runawayBelt": {
+      "title": "Runaway Belt",
+      "objective": "Destroy the explosive cargo before it reaches the end of the belt: {n}/{count} sent"
+    },
+    "slagTide": {
+      "title": "Slag Tide",
+      "objective": "Kill what crawls out of the slag: {n}/{count} · {s}s"
+    },
+    "purgeFurnace": {
+      "title": "Purge the Furnace",
+      "objective": "Destroy the igniters before the pyre is lit: {s}s"
+    },
+    "smelterRaid": {
+      "title": "Smelter Raid",
+      "objective": "Keep the pump running against the raid: {s}s"
+    }
   },
   "storm": {
     "warning": "Ash storm approaching {where}",
@@ -1898,5 +2246,33 @@
       "goldFind": "Restoration: +10% gold found for all your characters",
       "stash": "Restoration: +20 stash slots"
     }
+  },
+  "features": {
+    "autocannon": {
+      "name": "Autocannon",
+      "used": "The autocannon opens up",
+      "locked": "The autocannon has no power"
+    },
+    "fuelDepot": {
+      "name": "Fuel Depot",
+      "used": "The depot goes up!",
+      "locked": "The depot valves are rusted shut"
+    },
+    "crane": {
+      "name": "The Crane",
+      "used": "The crane drops its load",
+      "locked": "The crane has no power. Someone who knows it might get it running."
+    },
+    "coolantValve": {
+      "name": "Coolant Valve",
+      "used": "Steam floods the slag. Cross while it lasts!",
+      "locked": "The valve won't turn"
+    },
+    "noTargets": "Nothing to aim at."
+  },
+  "bike": {
+    "locked": "You don't have a motorbike yet.",
+    "notHere": "You can't ride here.",
+    "thrown": "You're thrown off the bike!"
   }
 }

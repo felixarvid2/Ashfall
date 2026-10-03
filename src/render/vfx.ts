@@ -564,11 +564,15 @@ export class VfxSystem {
         // Enemy clouds are bright green (danger); the player's own are a paler yellow-green.
         // Elite fire and snare fields bring their own colour.
         const color = hz.color ?? (mine ? '#c8ff6a' : '#5dff6a');
-        fx = this.acquire(`hazard:${color}`, () => {
+        const band = hz.inner !== undefined ? Math.round((hz.inner / hz.radius) * 50) / 50 : null;
+        fx = this.acquire(`hazard:${color}:${band ?? ''}`, () => {
           const mat = additive(color, 0.3);
           const ringMat = additive(hz.color ?? (mine ? '#e8ffb0' : '#9dff7a'), 0.5);
           const group = new THREE.Group();
-          group.add(new THREE.Mesh(this.discGeo, mat), new THREE.Mesh(this.ringGeo, ringMat));
+          // Ring hazards (a collapsing floor) cover only the band outside `inner`.
+          const fill = band !== null ? flat(new THREE.RingGeometry(band, 1, 64)) : this.discGeo;
+          const edge = band !== null ? flat(new THREE.RingGeometry(band, band + 0.02, 64)) : this.ringGeo;
+          group.add(new THREE.Mesh(fill, mat), new THREE.Mesh(edge, ringMat));
           return { group, materials: [mat, ringMat] };
         });
         fx.life = Infinity;
@@ -580,7 +584,7 @@ export class VfxSystem {
       const pulse = 1 + Math.sin(this.time * 6) * 0.04;
       fx.group.position.set(tr.x, 0.04, tr.z);
       fx.group.scale.set(hz.radius * pulse, 1, hz.radius * pulse);
-      fx.materials[0]!.opacity = (mine ? 0.1 : 0.22) * fade;
+      fx.materials[0]!.opacity = (mine ? 0.1 : hz.inner !== undefined ? 0.55 : 0.22) * fade;
       fx.materials[1]!.opacity = (mine ? 0.35 : 0.5) * fade;
     }
     for (const [e, fx] of this.hazards) {

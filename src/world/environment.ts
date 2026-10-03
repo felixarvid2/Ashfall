@@ -62,8 +62,9 @@ function hurt(world: World, ctx: GameContext, e: Entity, pct: number, damageType
 }
 
 export function environmentSystem(world: World, dt: number, ctx: GameContext): void {
-  const env = ctx.zone?.def.env;
-  if (!env || ctx.instance) return;
+  // Inside a dungeon only its own features count (the Cold Hall's frost vents).
+  const env = ctx.instance ? ctx.instance.extra.env : ctx.zone?.def.env;
+  if (!env) return;
   const player = world.first(PlayerControlled, Transform);
   if (player === undefined) return;
   const ptr = world.req(player, Transform);
@@ -91,6 +92,7 @@ export function environmentSystem(world: World, dt: number, ctx: GameContext): v
           tr.z += Math.cos(f.dir) * f.speed * dt;
         }
       } else if (f.kind === 'molten') {
+        if ((ctx.zone?.cooled.get(f.id) ?? 0) > ctx.time) continue;
         const d = Math.hypot(tr.x - f.x, tr.z - f.z);
         if (d >= f.radius) continue;
         // Enemies step back out to the shore; the player decides for themself.
@@ -144,6 +146,8 @@ function blast(world: World, ctx: GameContext, f: Vent, bodies: Entity[], level:
     } else {
       hurt(world, ctx, e, ENV_TUNING.ventPct * 0.6, 'cold', false);
       applyStatus(world, ctx, e, { status: 'chilled', duration: 2.5 }, source);
+      // Frost freezes solid for a moment (enemies too: lure them in).
+      if (f.element === 'frost') applyStatus(world, ctx, e, { status: 'stunned', duration: 1.4 }, source);
     }
   }
 }

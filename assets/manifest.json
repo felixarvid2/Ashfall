@@ -3012,6 +3012,182 @@
         "showFacing": true,
         "facingColor": "#ffd23a"
       }
+    },
+    {
+      "id": "boss.vire",
+      "category": "enemy",
+      "prompt": "tall high priestess of a fire cult in a long crimson and ash-grey robe with a burning halo-shaped headdress, ornate metal mask, green bioluminescent veins creeping up her neck, empty hands, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose, tall high priestess of a fire cult in a long crimson and ash-grey robe, burning halo-shaped headdress, ornate metal mask, faint green bioluminescent veins on her neck, dark sci-fi industrial, plain background",
+      "targetPolycount": 20000,
+      "heightMeters": 2.1,
+      "pose": "t-pose",
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#8a2a22",
+        "size": [
+          0.9,
+          2.1,
+          0.9
+        ],
+        "emissive": "#ff7a1a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ffd23a"
+      }
+    },
+    {
+      "id": "enemy.lumen_tentacle",
+      "category": "enemy",
+      "prompt": "single thick alien tentacle bursting up from cracked floor, glossy dark flesh with glowing green bioluminescent spots and crystal growths, 3 meters tall, curled tip",
+      "source": "text",
+      "targetPolycount": 5000,
+      "heightMeters": 3,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#2a3a22",
+        "size": [
+          0.8,
+          3,
+          0.8
+        ],
+        "emissive": "#7dff5a",
+        "emissiveIntensity": 0.6
+      }
+    },
+    {
+      "id": "prop.coolant_valve",
+      "category": "prop",
+      "prompt": "large industrial coolant valve on a pipe stub coming out of the ground, big blue hand wheel, frost on the pipe, pressure gauge, rusted steel",
+      "source": "text",
+      "targetPolycount": 1500,
+      "heightMeters": 1.4,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#3a5a7a",
+        "size": [
+          0.9,
+          1.4,
+          0.9
+        ],
+        "emissive": "#7ad8ff",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "prop.prisoner_cage",
+      "category": "prop",
+      "prompt": "rusted iron cage on a stone pedestal with a ragged prisoner silhouette inside, chains, kindling stacked around the base, cult symbols",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 2.4,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a3a2a",
+        "size": [
+          1.6,
+          2.4,
+          1.6
+        ],
+        "emissive": "#ffb03a",
+        "emissiveIntensity": 0.15
+      }
+    },
+    {
+      "id": "prop.compressor",
+      "category": "prop",
+      "prompt": "large industrial refrigeration compressor unit, frosted steel housing, thick insulated pipes, big fan grille, warning lights, frost and icicles",
+      "source": "text",
+      "targetPolycount": 3000,
+      "heightMeters": 2.2,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a6a7a",
+        "size": [
+          2.4,
+          2.2,
+          1.8
+        ],
+        "emissive": "#7ec8ff",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "npc.pump_engineer",
+      "category": "character",
+      "prompt": "middle-aged woman pump engineer in a frost-stained insulated work jacket and overalls, tool belt, goggles pushed up on her head, tired determined face, empty hands, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose, middle-aged woman industrial pump engineer in a frost-stained insulated work jacket and overalls, tool belt, goggles pushed up, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.72,
+      "pose": "t-pose",
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4a6a8a",
+        "size": [
+          0.7,
+          1.72,
+          0.7
+        ],
+        "showFacing": true,
+        "facingColor": "#9fd8ff"
+      }
+    },
+    {
+      "id": "npc.defector",
+      "category": "character",
+      "prompt": "young man in a torn ash-grey cult robe over refinery work clothes, burned welding mask hanging from his belt, bandaged hands, nervous, empty hands, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose, young man in a torn ash-grey cult robe over refinery work clothes, burned welding mask hanging from his belt, bandaged hands, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.78,
+      "pose": "t-pose",
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#6a6460",
+        "size": [
+          0.7,
+          1.78,
+          0.7
+        ],
+        "showFacing": true,
+        "facingColor": "#ff7a1a"
+      }
+    },
+    {
+      "id": "prop.motorbike",
+      "category": "prop",
+      "prompt": "rugged post-apocalyptic dirt motorbike built from salvaged refinery parts, knobby tyres, welded frame, jerrycan on the back, single headlight",
+      "source": "text",
+      "targetPolycount": 4000,
+      "heightMeters": 1.1,
+      "status": "planned",
+      "meshy": {},
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a4a3a",
+        "size": [
+          0.7,
+          1.1,
+          2.1
+        ],
+        "emissive": "#ffd2a1",
+        "emissiveIntensity": 0.2
+      }
     }
   ]
 }

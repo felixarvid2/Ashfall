@@ -59,6 +59,8 @@ export interface ZoneRuntime {
   storm: StormState;
   /** Border gates fire only after the player has stepped clear of them (no bounce on arrival). */
   gateReady: boolean;
+  /** Molten metal flooded with steam by a coolant valve: feature id → until (ctx.time). */
+  cooled: Map<string, number>;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
@@ -77,6 +79,7 @@ export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
     events: new Map(),
     storm: createStorm(),
     gateReady: false,
+    cooled: new Map(),
   };
   zone.events = createEvents(zone);
   return zone;
@@ -136,6 +139,7 @@ export function suspendZone(zone: ZoneRuntime): void {
   }
   zone.inHub = null;
   zone.gateReady = false;
+  zone.cooled.clear();
   zone.timer = 0;
 }
 

@@ -45,7 +45,7 @@ describe('interactables', () => {
     const zone = createZoneRuntime(CINDER_FLATS);
     spawnInteractables(world, zone);
     const barrels = CINDER_FLATS.pois.filter((p) => p.kind === 'barrel').length;
-    const usable = CINDER_FLATS.pois.filter((p) => ['chest', 'lockedChest', 'keycard', 'pylon', 'relic', 'lore', 'signalTower', 'dungeon', 'bunker'].includes(p.kind)).length;
+    const usable = CINDER_FLATS.pois.filter((p) => ['chest', 'lockedChest', 'keycard', 'pylon', 'relic', 'lore', 'signalTower', 'dungeon', 'bunker', 'feature'].includes(p.kind)).length;
     expect(world.query(Destructible).length).toBe(barrels);
     expect(world.query(Interactable).length).toBe(usable + CINDER_FLATS.teleporters.length);
     // Every zone has all six pylon types and 8–12 relics (docs/world-and-gameplay.md §3).

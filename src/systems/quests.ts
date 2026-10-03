@@ -285,8 +285,17 @@ export function spawnNpc(world: World, id: string): Entity {
 
 /** Hub NPCs that are always present, and trigger objects for quests not yet found. */
 export function spawnQuestWorld(world: World, ctx: GameContext): void {
-  for (const npc of NPCS.values()) if (!npc.questOnly && here(ctx, npc.zone)) spawnNpc(world, npc.id);
+  for (const npc of NPCS.values()) if (!npc.questOnly && here(ctx, npc.zone) && unlocked(ctx, npc.requires)) spawnNpc(world, npc.id);
   refreshTriggers(world, ctx);
+}
+
+function unlocked(ctx: GameContext, requires: string | undefined): boolean {
+  return requires === undefined || (ctx.zone?.found.has(requires) ?? false);
+}
+
+/** A stronghold was reclaimed: the people who move in appear. */
+export function spawnUnlockedNpcs(world: World, ctx: GameContext, found: string): void {
+  for (const npc of NPCS.values()) if (npc.requires === found && !npc.questOnly && here(ctx, npc.zone)) spawnNpc(world, npc.id);
 }
 
 /**

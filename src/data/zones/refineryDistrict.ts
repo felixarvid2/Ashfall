@@ -362,8 +362,44 @@ function buildPois(): PoiDef[] {
   });
   // Maintenance tunnels and control rooms.
   scaled([[-300, -230], [-200, -10], [60, -60], [-60, 230], [300, 100], [170, 300]]).forEach(([x, z], i) =>
-    pois.push({ id: `rd.bunker.${i}`, kind: 'bunker', x, z, data: { bunker: i } }),
+    pois.push({ id: `rd.bunker.${i}`, kind: 'bunker', x, z, data: { bunker: i, instance: 'rd_bunker' } }),
   );
+  const at = (x: number, z: number) => ({ x: x * S, z: z * S });
+  pois.push(
+    { id: 'rd.dungeon.smelter3', kind: 'dungeon', ...at(305, -72), data: { dungeon: 'smelter_3' } },
+    { id: 'rd.dungeon.pipes', kind: 'dungeon', ...at(-262, 312), data: { dungeon: 'pipe_alleys' } },
+    { id: 'rd.dungeon.crypt', kind: 'dungeon', ...at(130, 236), data: { dungeon: 'cathedral_crypt' } },
+    { id: 'rd.dungeon.coldhall', kind: 'dungeon', ...at(-236, -128), data: { dungeon: 'cold_hall' } },
+    { id: DELTA.id, kind: 'stronghold', x: DELTA.x, z: DELTA.z },
+    { id: CATHEDRAL.id, kind: 'boss', x: CATHEDRAL.x, z: CATHEDRAL.z },
+    {
+      id: 'rd.feature.crane',
+      kind: 'feature',
+      x: CRANE.x + 18,
+      z: CRANE.z - 12,
+      data: { feature: 'crane', drops: [[-14, 8], [0, 15], [14, 8]].map(([dx, dz]) => `${CRANE.x + dx!},${CRANE.z + dz!}`).join(';') },
+    },
+  );
+  // Coolant valves beside the slag rivers: steam a crossing open for a few seconds.
+  const rivers = DISTRICT_ENV.filter((e): e is Extract<EnvFeature, { kind: 'molten' }> => e.kind === 'molten');
+  [0.2, 0.45, 0.75].forEach((t, i) => {
+    const m = rivers[Math.floor(rivers.length * t * 0.8)]!;
+    // The first spot on the bank (around the pool, a little further out each ring) that is dry.
+    outer: for (let ring = 0; ring < 4; ring++) {
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        const x = m.x + Math.sin(a) * (m.radius + 3.5 + ring * 3);
+        const z = m.z + Math.cos(a) * (m.radius + 3.5 + ring * 3);
+        if (DISTRICT_ENV.some((f) => f.kind === 'molten' && Math.hypot(f.x - x, f.z - z) < f.radius + 1.5)) continue;
+        pois.push({ id: `rd.feature.valve.${i}`, kind: 'feature', x, z, data: { feature: 'coolantValve' } });
+        break outer;
+      }
+    }
+  });
+  const events: [string, number, number][] = [
+    ['runawayBelt', -240, -40], ['slagTide', 150, -120], ['purgeFurnace', -200, 205], ['smelterRaid', -60, -30], ['eliteHunt', 40, -230], ['supplyDrop', 250, 30],
+  ];
+  events.forEach(([type, x, z]) => pois.push({ id: `rd.event.${type}`, kind: 'event', x: x * S, z: z * S, data: { event: type } }));
   return pois;
 }
 
@@ -398,6 +434,8 @@ export const REFINERY_DISTRICT: ZoneDef = {
     { id: 'tp.foundry', x: 100 * S, z: 92 * S },
     { id: 'tp.stacks', x: -150 * S, z: 192 * S },
     { id: 'tp.cathedral', x: 228 * S, z: 190 * S },
+    // Inside Pump Station Delta: discovered when the station is reclaimed (or walked to).
+    { id: 'tp.delta', x: DELTA.x - 6, z: DELTA.z + 8 },
   ],
   packs: buildPacks(),
   pois: clearOfProps(buildPois(), PROPS),
