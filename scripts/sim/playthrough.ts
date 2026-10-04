@@ -35,6 +35,7 @@ import { collisionSystem, spatialSystem } from '../../src/systems/collision';
 import { deathSystem } from '../../src/systems/death';
 import { encounterSystem } from '../../src/systems/encounter';
 import { enemyAISystem } from '../../src/systems/enemyAI';
+import { navigationSystem } from '../../src/systems/navigation';
 import { canEquip, generateItem, itemPowerFor } from '../../src/systems/loot/generate';
 import { addToGrid, equipFromGrid, salvage } from '../../src/systems/loot/inventory';
 import { nextItemUid, pickUp, pickupSystem, rewardSystem } from '../../src/systems/loot/rewards';
@@ -95,6 +96,7 @@ export interface PlayResult {
 const SYSTEMS = [
   spatialSystem,
   skillSystem,
+  navigationSystem,
   enemyAISystem,
   minionSystem,
   statusSystem,

@@ -58,6 +58,7 @@ import type { ZoneDef } from './data/zones/zoneTypes';
 import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
+import { navigationSystem } from './systems/navigation';
 import { UNDERGROUND, litFloodlights, rockSystem, undergroundState, undergroundSystem } from './world/underground';
 import { isAlive, kill } from './systems/combat';
 import { deathSystem } from './systems/death';
@@ -252,6 +253,7 @@ export class Game {
       .add('playerControl', playerControlSystem)
       .add('vehicle', vehicleSystem)
       .add('skills', skillSystem)
+      .add('navigation', navigationSystem)
       .add('enemyAI', enemyAISystem)
       .add('elites', eliteSystem)
       .add('boss', bossSystem)

@@ -7,6 +7,7 @@
  * Def extras: a front shield raised as the target closes in, burning trails, revives.
  */
 import { HEARING, minesBehaviours } from './minesAI';
+import { nextWaypoint, type NavField } from './navigation';
 import {
   Collider,
   Dead,
@@ -78,6 +79,7 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
 }
 
 export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): void {
+  nav = ctx.nav;
   const candidates = targetCandidates(world, ctx);
   // Blind Hounds hear what they cannot see (stealth does not hide you from them).
   let heard: Candidate[] | null = null;
@@ -210,10 +212,28 @@ function wander(ai: EnemyAIData, tr: Transform, mover: Mover, ctx: GameContext, 
   steer(mover, tr, ai.wanderX - tr.x, ai.wanderZ - tr.z, mover.speed * WANDER_SPEED, 0.5);
 }
 
-/** Set velocity toward (dx, dz) unless within `stopAt` metres. */
-function steer(mover: Mover, _tr: Transform, dx: number, dz: number, speed: number, stopAt: number): void {
+/** The flow field toward the player this tick (pathfinding), if any. */
+let nav: NavField | undefined;
+
+/**
+ * Set velocity toward (dx, dz) unless within `stopAt` metres. Heading for the player (or a spot right
+ * next to them) round a wall or along a winding tunnel follows the flow field instead of the
+ * straight line.
+ */
+function steer(mover: Mover, tr: Transform, dx: number, dz: number, speed: number, stopAt: number): void {
   const d = Math.hypot(dx, dz);
   if (d <= stopAt) return;
+  if (nav && Math.hypot(tr.x + dx - nav.origin.x, tr.z + dz - nav.origin.z) < 3.5) {
+    const wp = nextWaypoint(nav, tr.x, tr.z);
+    if (wp) {
+      dx = wp.x - tr.x;
+      dz = wp.z - tr.z;
+      const w = Math.hypot(dx, dz) || 1;
+      mover.vx = (dx / w) * speed;
+      mover.vz = (dz / w) * speed;
+      return;
+    }
+  }
   mover.vx = (dx / d) * speed;
   mover.vz = (dz / d) * speed;
 }

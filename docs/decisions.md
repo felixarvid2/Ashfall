@@ -267,8 +267,7 @@ is destroyed on reset and on death.
 The Deep Mines are drawn on the same 1500 m square as the other regions, but only the tunnels (the zone's
 roads), caverns and hubs are walkable. They are rasterised into a 2 m grid (`src/data/zones/caves.ts`)
 shared by layout code, a collision step (`rockSystem`: slide back along the wall, spend bolts that hit rock)
-and the renderer (black caps over the rock, rough walls along every edge, built once per zone). Enemies
-still have no pathfinding; they slide along the walls.
+and the renderer (black caps over the rock, rough walls along every edge, built once per zone).
 
 ### 2026-10-04 — Darkness is rendering plus a light test
 Dark zones set very low ambient light and black fog; the player's existing point light is the lamp.
@@ -284,4 +283,14 @@ him Governor Kade, so the game keeps Kade.
 ### 2026-10-04 — The region 3 follower is read from the finished-quest record
 NPCs can require a choice (`choice: { quest, option }`): Okafor follows you into the mines if you spared the
 Mother Tree, Ruiz if you burned it. Each has their own side quest; no save change was needed.
+
+### 2026-10-04 — Enemy pathfinding with a flow field around the player
+While anything is chasing the player, the navigation system builds a 108 m flow field around them
+(1.5 m cells, rebuilt every 0.3 s or when they cross a cell): rock from the underground grid and every
+static collider (dungeon walls, crates, barricades, rubble, gates) block cells, and one Dijkstra pass from
+the player's cell gives each reachable cell its walking distance. An enemy heading for the player walks
+straight while the line is clear and otherwise aims a few cells down the field, so it goes round walls,
+through doorways and along winding tunnels. One field serves every enemy (≈ 0.7 ms per build in the mines,
+≈ 2.7 ms in the busiest open zones); beyond the window, or for targets other than the player (decoys,
+minions), they still walk straight.
 

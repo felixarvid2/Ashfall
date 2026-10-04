@@ -386,12 +386,8 @@ Shift + left-click to attack in place.
 - Region 2 boss arenas (and The Maw) are rings of wall segments with gaps; you can step out of them.
 - Region 3 uses only placeholder models (no Meshy credits); the Service Road walk is shorter than the
   5–7 minute target (see the playtest report); the bot does not cover levels 20–30.
-- Region 4 uses only placeholder models too; enemies have no pathfinding, so in winding tunnels they slide
-  along the rock walls toward you; the walk through is ≈ 4 min.
-- Enemies still have no pathfinding; in dungeons they slide along walls toward you.
+- Region 4 uses only placeholder models too; the walk through is ≈ 4 min.
 - No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
-- Enemies have no pathfinding around crates (they slide along them via collision); fine for the open arena,
-  needs a nav grid when dungeons arrive (Phase 5).
 - **60 FPS not verified**: only measured in a headless CPU-rendered browser (4–6 FPS there — not
   representative). Skinned enemies are not instanced (one draw call each + shadows); if 100 enemies is too
   slow, next steps are GPU-instanced crowd animation (vertex-baked) and shadow LOD.
