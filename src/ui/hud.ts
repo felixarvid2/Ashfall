@@ -40,6 +40,8 @@ export interface HudState {
   buffs?: { id: string; remaining: number; color: string }[];
   /** Spore exposure 0..1 (Hydroponic Vaults). */
   exposure?: number;
+  /** Flares left (Deep Mines). */
+  flares?: { charges: number; max: number; key: string };
   dead: boolean;
   xp: { level: number; current: number; next: number; skillPoints: number };
 }
@@ -153,6 +155,8 @@ export class Hud {
   private readonly exposure: HTMLDivElement;
   private readonly exposureFill: HTMLDivElement;
   private readonly exposureText: HTMLDivElement;
+  private readonly flares: HTMLDivElement;
+  private lastFlares = '';
   private lastExposure = -1;
   private readonly eventBox: HTMLDivElement;
   private lastEvent = '';
@@ -265,8 +269,13 @@ export class Hud {
     this.exposureText.className = 'exposure-text';
     this.exposure.append(this.exposureFill, this.exposureText);
     this.exposure.hidden = true;
+    // Flares: charges left in the dark.
+    this.flares = document.createElement('div');
+    this.flares.className = 'flare-count';
+    this.flares.dataset.testid = 'flares';
+    this.flares.hidden = true;
 
-    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip, this.buffBar, this.eventBox, this.exposure);
+    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip, this.buffBar, this.eventBox, this.exposure, this.flares);
   }
 
   updateHint(moveMode: MoveMode, bindings: Record<Action, string[]>): void {
@@ -346,6 +355,15 @@ export class Hud {
       this.exposureFill.style.width = `${exposure}%`;
       this.exposureText.textContent = t('hud.exposure', { pct: exposure });
       this.exposure.classList.toggle('high', exposure >= 70);
+    }
+    const flares = state.flares ? `${state.flares.charges}/${state.flares.max}/${state.flares.key}` : '';
+    if (flares !== this.lastFlares) {
+      this.lastFlares = flares;
+      this.flares.hidden = !state.flares;
+      if (state.flares) {
+        this.flares.textContent = t('hud.flares', { n: state.flares.charges, max: state.flares.max, key: state.flares.key });
+        this.flares.classList.toggle('empty', state.flares.charges === 0);
+      }
     }
     this.lifeOrb.set(state.life.current, state.life.max, state.life.barrier, state.life.current / state.life.max < 0.3);
     this.heatOrb.setKind(state.resource.kind, t(`resources.${state.resource.kind}`));

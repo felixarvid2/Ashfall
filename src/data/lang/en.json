@@ -23,7 +23,8 @@
     "slotEmpty": "Empty slot",
     "controlsHintClick": "{lmb} move, attack and use · {rmb} skill · 1–4 skills · Shift+{lmb} attack in place · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {map} map · {quests} quests · {debug} debug",
     "respawnTap": "Tap to rise again",
-    "exposure": "Spores {pct}%"
+    "exposure": "Spores {pct}%",
+    "flares": "Flares {n}/{max} [{key}]"
   },
   "moveMode": {
     "wasd": "WASD",
@@ -283,7 +284,19 @@
     "regrowing": "It is regrowing from its fungi — destroy them!",
     "fungus": "Lumen Fungus",
     "armorPlate": "Armour Plate",
-    "rootNode": "Root Node"
+    "rootNode": "Root Node",
+    "crystal_walker": "Crystal-Bound Walker",
+    "blind_hound": "Blind Hound",
+    "governor_drone": "Governor's Drone",
+    "ore_crusher": "Ore Crusher",
+    "shard_bloater": "Shard Bloater",
+    "burrower": "Burrower",
+    "crystal_sentinel": "Crystal Sentinel",
+    "infected_miner": "Infected Miner",
+    "echo": "Echo",
+    "security_trooper": "Security Trooper",
+    "shield_officer": "Shield Officer",
+    "drill_colossus": "Drill Colossus"
   },
   "resources": {
     "heat": "Heat",
@@ -1340,7 +1353,14 @@
         "sea": "The Green Sea",
         "seed": "Seed Bank",
         "roots": "Root Network",
-        "gamma": "Dome Gamma"
+        "gamma": "Dome Gamma",
+        "zero": "Elevator Station Zero",
+        "lift": "The Freight Lift",
+        "shafts": "The Upper Shafts",
+        "caves": "The Crystal Caves",
+        "lake": "Drill Lake",
+        "elder": "The Elder Halls",
+        "aurum": "Mining Station Aurum"
       }
     },
     "refineryDistrict": {
@@ -1365,6 +1385,18 @@
       "hub": {
         "lab9": "Lab 9",
         "gamma": "Dome Gamma (reclaimed)"
+      }
+    },
+    "deepMines": {
+      "name": "The Deep Mines",
+      "tunnels": "The Tunnels",
+      "upperShafts": "The Upper Shafts",
+      "crystalCaves": "The Crystal Caves",
+      "drillLake": "Drill Lake",
+      "elderHalls": "The Elder Halls",
+      "hub": {
+        "zero": "Elevator Station Zero",
+        "aurum": "Mining Station Aurum (reclaimed)"
       }
     }
   },
@@ -1612,6 +1644,56 @@
       "3": {
         "title": "Sleeping Lab, last log",
         "body": "Ilse has stopped sleeping. She walks between the pods and sings to them. If anyone finds this: do not wake them. Do not let her leave. And tell Amara I'm sorry about the seeds."
+      }
+    },
+    "dm": {
+      "0": {
+        "title": "Lift log, Station Zero",
+        "body": "Last cage up was eleven days ago. Cables hold. Brakes hold. We don't. Foreman says we wait for the governor's all-clear. Foreman says a lot of things."
+      },
+      "1": {
+        "title": "Shift board, Upper Shafts",
+        "body": "Shaft 13 closed until further notice. Do NOT send crews below level 4. Do NOT answer the radio if it calls you by name. — H. Brask"
+      },
+      "2": {
+        "title": "Drill operator's notebook",
+        "body": "Hit a cavity at 3,100 m. Not a void — a room. Smooth walls, right angles. The bit came up glowing and so did Pavel's hands."
+      },
+      "3": {
+        "title": "Ore assay, workings east",
+        "body": "Sample K-7: not ore. Crystalline lattice storing charge in patterns that repeat. Lab says it isn't natural. Governor's office says it's classified."
+      },
+      "4": {
+        "title": "Scratched into a crystal",
+        "body": "the light keeps them away the light keeps them away the light keeps them away do not let your lamp go out"
+      },
+      "5": {
+        "title": "Survey drone recording",
+        "body": "Crystal growth rate: four centimetres a day in the eastern caves. The crystals hum when someone walks past. They hum louder when someone is afraid."
+      },
+      "6": {
+        "title": "Governor's order 112",
+        "body": "By order of Governor Kade: the Main Drill continues at full depth. Medical cases are to be moved to Mining Station Aurum. Security has authority to enforce."
+      },
+      "7": {
+        "title": "Drill Control, shift handover",
+        "body": "Kade was down here again. He doesn't ask about yields any more. He asks how deep the drill can go before it stops being a drill and becomes a key."
+      },
+      "8": {
+        "title": "Elder glyph slab I",
+        "body": "(translated in fragments) WE WERE MANY / WE GREW TOO BRIGHT FOR OUR WORLD / SO WE BECAME THE WORLD"
+      },
+      "9": {
+        "title": "Elder glyph slab II",
+        "body": "(translated in fragments) WE SLEPT IN THE STONE AND THE ROOTS AND THE WATER / WE WAITED FOR HANDS / THE HANDS CAME WITH DRILLS"
+      },
+      "10": {
+        "title": "Elder glyph slab III",
+        "body": "(translated in fragments) WHAT WAKES US BECOMES US / WHAT FEARS US FEEDS US / THE HEART LIES WHERE THE LIGHT BEGAN"
+      },
+      "11": {
+        "title": "Security Chief Holm, private log",
+        "body": "The governor wired the sleepers from the Vaults into the drill's cooling loop. Says they're 'translators'. I've stopped sleeping. Aurum holds, for now. I don't know who for."
       }
     }
   },
@@ -2718,6 +2800,11 @@
       "name": "Air Filter",
       "used": "The filter roars to life. The spores here are clearing.",
       "locked": "The filter is already running."
+    },
+    "floodlight": {
+      "name": "Floodlight",
+      "used": "The floodlight hums and the dark draws back.",
+      "locked": "The floodlight is already on."
     }
   },
   "bike": {
@@ -2735,7 +2822,8 @@
       "map": "Map",
       "quests": "Quests",
       "mount": "Bike",
-      "fullscreen": "Full screen"
+      "fullscreen": "Full screen",
+      "flare": "Flare"
     },
     "rotate": "Turn your phone sideways to play",
     "playAnyway": "Play anyway",
@@ -2744,5 +2832,9 @@
       "on": "On",
       "off": "Off"
     }
+  },
+  "underground": {
+    "noFlares": "No flares left. They come back with time.",
+    "creak": "The roof creaks…"
   }
 }

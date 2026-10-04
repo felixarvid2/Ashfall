@@ -3,6 +3,7 @@
  * lighting) plus roads, subzones, hubs, teleporters, enemy pack spawns and points of interest.
  */
 import type { ArenaDef, PropPlacement } from './testArena';
+import type { CaveDef } from './caves';
 
 export interface Subzone {
   id: string;
@@ -66,7 +67,9 @@ export type EnvFeature =
    */
   | { kind: 'spores'; id: string; x: number; z: number; radius: number; clearedBy?: string }
   /** Shallow water: slows everyone wading through it. Drained water (dungeon levers) is gone. */
-  | { kind: 'water'; id: string; x: number; z: number; radius: number };
+  | { kind: 'water'; id: string; x: number; z: number; radius: number }
+  /** A tunnel stretch that collapses (warned with dust and creaking) when the player comes close (Deep Mines). */
+  | { kind: 'caveIn'; id: string; x: number; z: number; radius: number };
 
 export interface PackSpawn {
   id: string;
@@ -125,6 +128,8 @@ export interface ZoneDef extends ArenaDef {
   region: number;
   /** The account stash in this zone's hub. */
   stash?: { x: number; z: number };
+  /** Underground: only the roads (tunnels), caverns and hubs are walkable (Deep Mines). */
+  caves?: CaveDef;
 }
 
 export type { PropPlacement };

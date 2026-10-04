@@ -7,6 +7,7 @@
  *   crane has been restored (side quest); coolant valves flood nearby molten metal with steam for a
  *   few seconds, so it can be crossed.
  * - Hydroponic Vaults: air filters clear the spore fields around them for good once switched on.
+ * - Deep Mines: floodlights light the dark around them for good once switched on.
  */
 import { Blast, Dead, EnemyAI, Renderable, Transform, makeTransform, type Interactable } from '../core/components';
 import type { GameContext } from '../core/context';
@@ -16,7 +17,7 @@ import { monsterLevel } from '../systems/encounter';
 import type { ZoneRuntime } from './zone';
 import { signal } from '../systems/quests';
 
-export type FeatureKind = 'autocannon' | 'fuelDepot' | 'crane' | 'coolantValve' | 'airFilter';
+export type FeatureKind = 'autocannon' | 'fuelDepot' | 'crane' | 'coolantValve' | 'airFilter' | 'floodlight';
 
 export const FEATURES: Record<FeatureKind, { asset: string; scale?: number; glow: string; cooldown: number; requires?: string }> = {
   autocannon: { asset: 'prop.control_terminal', glow: '#ff9a3a', cooldown: 90 },
@@ -25,6 +26,8 @@ export const FEATURES: Record<FeatureKind, { asset: string; scale?: number; glow
   coolantValve: { asset: 'prop.coolant_valve', glow: '#7ad8ff', cooldown: 25 },
   // Hydroponic Vaults: switched on once, a filter clears the spore fields around it for good.
   airFilter: { asset: 'prop.compressor', scale: 1.3, glow: '#7dffd0', cooldown: Infinity },
+  // Deep Mines: an old work-light generator; once running it lights the area for good.
+  floodlight: { asset: 'prop.generator', scale: 1.1, glow: '#ffe2a0', cooldown: Infinity },
 };
 
 export const FEATURE_TUNING = {
@@ -127,6 +130,22 @@ export function useFeature(world: World, ctx: GameContext, zone: ZoneRuntime, ta
       }
       ctx.events.push({ type: 'vfx', kind: 'coolant', x: tr.x, z: tr.z, radius: 8, facing: 0 });
       ctx.events.push({ type: 'banner', key: 'features.airFilter.used', seconds: 2.4 });
+      signal(ctx, { type: 'interact', kind: 'feature', id: poi.id });
+      break;
+    }
+    case 'floodlight': {
+      if (zone.found.has(poi.id)) {
+        ctx.events.push({ type: 'notice', key: 'features.floodlight.locked' });
+        return false;
+      }
+      zone.found.add(poi.id);
+      it.used = true;
+      if (ctx.account) {
+        const entry = (ctx.account.restoration[zone.def.id] ??= { points: [], tiers: 0 });
+        if (!entry.points.includes(`light:${poi.id}`)) entry.points.push(`light:${poi.id}`);
+      }
+      ctx.events.push({ type: 'vfx', kind: 'flash', x: tr.x, z: tr.z, radius: 6, facing: 0 });
+      ctx.events.push({ type: 'banner', key: 'features.floodlight.used', seconds: 2.2 });
       signal(ctx, { type: 'interact', kind: 'feature', id: poi.id });
       break;
     }

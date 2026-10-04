@@ -6,6 +6,7 @@
  * Attack kinds add their own movement: flamethrower cones, lunges, grab-and-throw slams.
  * Def extras: a front shield raised as the target closes in, burning trails, revives.
  */
+import { HEARING, minesBehaviours } from './minesAI';
 import {
   Collider,
   Dead,
@@ -48,11 +49,11 @@ interface Candidate {
 }
 
 /** Living, visible player-team entities enemies may attack (player, decoys, minions). */
-function targetCandidates(world: World, ctx: GameContext): Candidate[] {
+function targetCandidates(world: World, ctx: GameContext, seeStealth = false): Candidate[] {
   const out: Candidate[] = [];
   for (const e of world.query(Faction, Health, Transform)) {
     if (world.req(e, Faction).team !== 'player' || world.has(e, Dead)) continue;
-    if (hasStatus(world, e, 'stealth')) continue;
+    if (!seeStealth && hasStatus(world, e, 'stealth')) continue;
     // Nobody is attacked inside a safe hub.
     const t = world.req(e, Transform);
     if (hubAt(ctx.zone, t.x, t.z)) continue;
@@ -78,6 +79,8 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
 
 export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): void {
   const candidates = targetCandidates(world, ctx);
+  // Blind Hounds hear what they cannot see (stealth does not hide you from them).
+  let heard: Candidate[] | null = null;
   regrowFallen(world, ctx);
 
   for (const e of world.query(EnemyAI, Transform, Mover)) {
@@ -108,7 +111,9 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
       continue;
     }
 
-    const target = chooseTarget(candidates, tr.x, tr.z);
+    if (minesBehaviours(world, ctx, e, ai, def, tr, mover, dt)) continue;
+
+    const target = chooseTarget(def.hearing ? (heard ??= targetCandidates(world, ctx, true)) : candidates, tr.x, tr.z);
     if (!target) {
       // Nobody visible (player stealthed or dead): drop the attack and wait.
       ai.state = 'idle';
@@ -121,7 +126,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     const dist = Math.hypot(dx, dz);
 
     if (!ai.aggro) {
-      if (dist < def.aggroRange) {
+      if (dist < (def.hearing ? HEARING.notice : def.aggroRange)) {
         alert(world, ctx, e, tr);
       } else {
         wander(ai, tr, mover, ctx, dt);

@@ -21,8 +21,8 @@ function place(world: World, e: Entity, x: number, z: number) {
 
 describe('zones', () => {
   it('lists the regions in order with unique ids', () => {
-    expect(ZONES.map((z) => z.id)).toEqual(['zone.cinder_flats', 'zone.refinery_district', 'zone.hydroponic_vaults']);
-    expect(ZONES.map((z) => z.region)).toEqual([1, 2, 3]);
+    expect(ZONES.map((z) => z.id)).toEqual(['zone.cinder_flats', 'zone.refinery_district', 'zone.hydroponic_vaults', 'zone.deep_mines']);
+    expect(ZONES.map((z) => z.region)).toEqual([1, 2, 3, 4]);
     expect(zoneOfTeleporter('tp.coolant')?.id).toBe('zone.refinery_district');
     expect(zoneOfTeleporter('tp.ember')?.id).toBe('zone.cinder_flats');
     expect(REFINERY_DISTRICT.levels).toEqual([10, 20]);

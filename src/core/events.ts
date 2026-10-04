@@ -40,7 +40,10 @@ export type VfxKind =
   | 'corpseBurst'
   | 'flame'
   // Hydroponic Vaults: a crystal's blinding burst.
-  | 'flash';
+  | 'flash'
+  // Deep Mines: a burning flare, and dust falling before a cave-in.
+  | 'flare'
+  | 'dust';
 
 export type GameEvent =
   | {

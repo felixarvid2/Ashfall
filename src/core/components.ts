@@ -273,6 +273,23 @@ export interface EnemyAI {
   /** Seconds to the next lobbed spore cloud, and the clouds still in the air. */
   cloudTimer?: number;
   clouds?: { x: number; z: number; t: number }[];
+  // ---- Deep Mines ----
+  /** Blind Hound: a noise it is running toward. */
+  investigate?: { x: number; z: number };
+  shieldAllyTimer?: number;
+  /** Burrower: underground until it surfaces at the warned spot. */
+  burrowed?: boolean;
+  burrowTimer?: number;
+  surfaceAt?: { x: number; z: number; t: number } | null;
+  /** Crystal Sentinel: shell left (absorbs damage until broken). */
+  shell?: number;
+  /** Infected Miner: seconds to the next stick of dynamite, and the ones lit. */
+  dynamiteTimer?: number;
+  bombs?: { x: number; z: number; t: number }[];
+  teleportTimer?: number;
+  /** Shield Officer: dome up until (ctx.time), and the next one. */
+  domeUntil?: number;
+  domeTimer?: number;
   /** Lumen Giant: its fungi, and when it rises again after falling while they stand. */
   fungi?: Entity[];
   regrowAt?: number;

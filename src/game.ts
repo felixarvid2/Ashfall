@@ -58,6 +58,7 @@ import type { ZoneDef } from './data/zones/zoneTypes';
 import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
+import { UNDERGROUND, litFloodlights, rockSystem, undergroundState, undergroundSystem } from './world/underground';
 import { isAlive, kill } from './systems/combat';
 import { deathSystem } from './systems/death';
 import { encounterSystem, startNextWave } from './systems/encounter';
@@ -262,8 +263,10 @@ export class Game {
       .add('movement', movementSystem)
       .add('forcedMove', forcedMoveSystem)
       .add('environment', environmentSystem)
+      .add('underground', undergroundSystem)
       .add('delayedStrikes', delayedStrikeSystem)
       .add('collision', collisionSystem)
+      .add('rock', rockSystem)
       .add('projectiles', projectileSystem)
       .add('traps', trapSystem)
       .add('summons', summonSystem)
@@ -798,6 +801,14 @@ export class Game {
     if (this.zone) {
       const zone = this.zone;
       this.renderer.updateCooled(zone.cooled, this.ctx.time);
+      if (zone.def.dark) {
+        // Floodlights switched on and burning flares light the dark.
+        const st = undergroundState(zone);
+        this.renderer.setDynamicLights([
+          ...litFloodlights(zone).map((f) => ({ x: f.x, z: f.z, color: '#ffe2b0', intensity: 140, distance: f.radius * 1.5, height: 6 })),
+          ...st.flares.filter((f) => f.until > this.ctx.time).map((f) => ({ x: f.x, z: f.z, color: '#ff6a4a', intensity: 90, distance: UNDERGROUND.flare.radius * 1.6, height: 1.2 })),
+        ]);
+      }
       // Spore fields only change when something new is found (a filter, a reclaimed dome).
       const sporeKey = `${zone.def.id}:${zone.found.size}`;
       if (sporeKey !== this.sporeKey) {
@@ -1334,6 +1345,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         .filter((st) => PYLON_STATUSES.has(st.id))
         .map((st) => ({ id: st.id, remaining: st.remaining, color: STATUS_DEFS[st.id].color })),
       exposure: this.ctx.instance ? 0 : sporeExposure(),
+      flares: !this.ctx.instance && this.zone?.def.dark ? { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: keyLabel(resolveKeybindings(this.settings).flare[0] ?? 'F') } : undefined,
       dead: w.has(p, Dead),
       xp: (() => {
         const prog = w.req(p, Progression);

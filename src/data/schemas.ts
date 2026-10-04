@@ -470,6 +470,8 @@ export const EnemyDefSchema = z.object({
   /** Model scale and constant emissive tint (variants of a shared model). */
   scale: z.number().positive().default(1),
   glow: z.string().optional(),
+  /** Drawn as a translucent hologram (Echoes). */
+  hologram: z.boolean().default(false),
   /** Fraction of damage blocked by a shield when hit from the front (within 60°). */
   frontShield: z.number().min(0).max(0.95).default(0),
   collider: z.object({ radius: z.number().positive(), mass: z.number().positive() }),
@@ -489,6 +491,8 @@ export const EnemyDefSchema = z.object({
         .optional(),
       /** Enemies that burst out of the body (Swarm Bloater → Spore Swarms). */
       spawn: z.object({ enemy: z.string(), count: z.number().int().positive() }).optional(),
+      /** A ring of crystal shards flies out (Shard Bloater): `count` bolts of `coefficient` × its damage. */
+      shards: z.object({ count: z.number().int().positive(), speed: z.number().positive(), range: z.number().positive(), coefficient: z.number().positive() }).optional(),
     })
     .optional(),
   /** Raises a front shield when the target closes in (Smelter): blocks `block` of frontal hits. */
@@ -520,6 +524,27 @@ export const EnemyDefSchema = z.object({
   revive: z
     .object({ targets: z.array(z.string()).min(1), radius: z.number().positive(), windup: z.number().positive(), cooldown: z.number().positive(), lifeFraction: z.number().positive().max(1), uses: z.number().int().positive() })
     .optional(),
+  // ---- Region 4 behaviours (docs/regions/deep-mines.md) ----
+  /** Chance to throw a ranged hit back at its shooter (Crystal-Bound Walker). */
+  reflect: z.number().min(0).max(0.9).default(0),
+  /** Hunts by sound: notices the player only up close (even stealthed) and runs to noise (Blind Hound). */
+  hearing: z.boolean().default(false),
+  /** Every `every` s, hardens the nearest ally in `radius` (chitin: less damage taken) (Governor's Drone). */
+  shieldAlly: z.object({ every: z.number().positive(), radius: z.number().positive(), duration: z.number().positive() }).optional(),
+  /** Travels underground (untargetable) and surfaces under the target with a warning (Burrower). */
+  burrow: z
+    .object({ every: z.number().positive(), surfaced: z.number().positive(), speed: z.number().positive(), warning: z.number().positive(), radius: z.number().positive(), coefficient: z.number().positive() })
+    .optional(),
+  /** A crystal shell worth `fraction` of its life: ignores elemental damage and reflects `reflect` of what it takes until it breaks (Crystal Sentinel). */
+  shell: z.object({ fraction: z.number().positive().max(2), reflect: z.number().min(0).max(1) }).optional(),
+  /** Throws telegraphed dynamite at the target (Infected Miner). */
+  dynamite: z.object({ every: z.number().positive(), range: z.number().positive(), radius: z.number().positive(), fuse: z.number().positive(), coefficient: z.number().positive() }).optional(),
+  /** Blinks beside the target every `every` s (Echo). */
+  teleport: z.object({ every: z.number().positive(), range: z.number().positive() }).optional(),
+  /** Damage taken multiplier while standing in light (Echo: lamp, floodlights, flares). */
+  lightVulnerable: z.number().positive().default(1),
+  /** Raises a dome that cuts ranged damage to allies inside by `reduction` (Shield Officer). */
+  dome: z.object({ every: z.number().positive(), duration: z.number().positive(), radius: z.number().positive(), reduction: z.number().min(0).max(0.95) }).optional(),
 });
 export type EnemyDef = z.infer<typeof EnemyDefSchema>;
 

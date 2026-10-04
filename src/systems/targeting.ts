@@ -11,6 +11,8 @@ export function livingInCircle(world: World, ctx: GameContext, x: number, z: num
   for (const e of ctx.spatial.queryCircle(x, z, radius, scratch)) {
     if (!world.has(e, Health) || world.has(e, Dead)) continue;
     if (world.get(e, Faction)?.team !== team) continue;
+    // Burrowers underground cannot be hit.
+    if (world.get(e, EnemyAI)?.burrowed) continue;
     result.push(e);
   }
   return result;

@@ -328,6 +328,16 @@ export class VfxSystem {
         this.spawnRing('ring:flash2', '#7affff', x, z, radius * 0.6, 0.5, 0.1);
         this.sparks.emit(x, 1.2, z, 50, '#bfffff', 9);
         break;
+      case 'flare':
+        // A flare lands and catches: red sparks (its light comes from the light pool).
+        this.spawnRing('ring:flare', '#ff5a3a', x, z, 1.6, 0.4, 0.2, 0.6);
+        this.sparks.emit(x, 0.6, z, 40, '#ff8a5a', 5);
+        break;
+      case 'dust':
+        // Grit trickling from the roof before a cave-in.
+        this.spawnRing('ring:dust', '#c8b08a', x, z, radius, 1.2, 0.6, 0.25);
+        this.sparks.emit(x, 4, z, 60, '#a89878', 2);
+        break;
       case 'coolant':
         this.spawnRing('ring:coolant', '#7ec8ff', x, z, 2.4, 0.5, 0.2, 0.3);
         this.sparks.emit(x, 1, z, 30, '#bfe8ff', 4);

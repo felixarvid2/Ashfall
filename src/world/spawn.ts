@@ -94,7 +94,7 @@ export function spawnEnemy(world: World, defId: string, x: number, z: number, op
   const e = world.create();
   world.add(e, Transform, makeTransform(x, def.hover, z, 0));
   world.add(e, Mover, { speed: def.moveSpeed, speedMul: 1, turnRate: def.turnRate, vx: 0, vz: 0 });
-  world.add(e, Renderable, { assetId: def.assetId, scale: def.scale, ...(def.glow ? { glow: def.glow } : {}) });
+  world.add(e, Renderable, { assetId: def.assetId, scale: def.scale, ...(def.glow ? { glow: def.glow } : {}), ...(def.hologram ? { hologram: true } : {}) });
   world.add(e, Faction, { team: 'enemy' });
   world.add(e, Health, { current: life, max: life });
   world.add(e, Collider, {

@@ -14,6 +14,7 @@ import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena
 import { buildGroundSplat } from './groundSplat';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnvFeature } from '../data/zones/zoneTypes';
+import { caveGrid, type CaveGrid } from '../data/zones/caves';
 import { scatterInstances } from '../world/arena';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
@@ -158,6 +159,10 @@ export class GameRenderer {
     if (env.length) this.buildEnv(s, env);
     const domes = (arena as { domes?: { x: number; z: number; radius: number }[] }).domes ?? [];
     if (domes.length) this.buildDomes(s, domes);
+    const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+    if (grid) this.buildCaveWalls(s, grid);
+    this.dark = arena.dark ?? false;
+    this.dynamicLights = [];
 
     const glowTexture = makeGlowTexture();
     // Lights come from a small pool moved to the lamps nearest the camera (hundreds of real point
@@ -625,6 +630,113 @@ export class GameRenderer {
     if (this.zoneLook) this.setLook(this.zoneLook.fog, this.zoneLook.ambient);
   }
 
+  /** Lights that come and go in the zone: floodlights switched on, burning flares (Deep Mines). */
+  setDynamicLights(spots: typeof this.lightSpots): void {
+    this.dynamicLights = spots;
+    this.lightTimer = 0;
+    const root = this.zoneRoot;
+    if (!root) return;
+    // A glow sprite marks each lit floodlight or flare.
+    const key = spots.map((l) => `${l.x.toFixed(1)},${l.z.toFixed(1)}`).join(';');
+    if (key === this.dynamicKey) return;
+    this.dynamicKey = key;
+    for (const g of this.dynamicGlows) root.remove(g);
+    this.dynamicGlows = spots.map((l) => {
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTexture(), color: l.color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
+      glow.position.set(l.x, l.height, l.z);
+      glow.scale.setScalar(1.6);
+      root.add(glow);
+      return glow;
+    });
+  }
+  private dynamicLights: typeof this.lightSpots = [];
+  private dynamicGlows: THREE.Sprite[] = [];
+  private dynamicKey = '';
+  private glowTex: THREE.Texture | null = null;
+  private glowTexture(): THREE.Texture {
+    return (this.glowTex ??= makeGlowTexture());
+  }
+  /** Dark zones: enemies carry glowing eyes so they read before the lamp reaches them. */
+  private dark = false;
+
+  /**
+   * Underground: solid rock everywhere the grid is not walkable. A flat black cap over the rock and
+   * rough walls along every edge between rock and open ground.
+   */
+  private buildCaveWalls(root: THREE.Group, grid: CaveGrid): void {
+    const H = 3.6;
+    const { n, cell, half, data } = grid;
+    const open = (i: number, j: number) => i >= 0 && j >= 0 && i < n && j < n && data[j * n + i] === 1;
+    const rng = new Rng('cave-walls');
+    // Deterministic per-corner jitter so neighbouring wall pieces share their corners.
+    const jitter = (i: number, j: number) => {
+      const h = Math.sin(i * 127.1 + j * 311.7) * 43758.5453;
+      return (h - Math.floor(h) - 0.5) * cell * 0.8;
+    };
+    const capPos: number[] = [];
+    for (let j = 0; j < n; j++) {
+      let i = 0;
+      while (i < n) {
+        if (open(i, j)) {
+          i++;
+          continue;
+        }
+        const start = i;
+        while (i < n && !open(i, j)) i++;
+        const x0 = start * cell - half;
+        const x1 = i * cell - half;
+        const z0 = j * cell - half;
+        const z1 = z0 + cell;
+        capPos.push(x0, H, z0, x0, H, z1, x1, H, z1, x0, H, z0, x1, H, z1, x1, H, z0);
+      }
+    }
+    const capGeo = new THREE.BufferGeometry();
+    capGeo.setAttribute('position', new THREE.Float32BufferAttribute(capPos, 3));
+    capGeo.computeVertexNormals();
+    const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color: '#050404' }));
+    root.add(cap);
+    const wallPos: number[] = [];
+    const wallCol: number[] = [];
+    const quad = (ax: number, az: number, bx: number, bz: number, ja: [number, number], jb: [number, number]) => {
+      // Tops lean in and wobble; bottoms stay on the wall line so the floor edge is clean.
+      const ta = jitter(ja[0], ja[1]);
+      const tb = jitter(jb[0], jb[1]);
+      const nx = bz - az;
+      const nz = -(bx - ax);
+      const len = Math.hypot(nx, nz) || 1;
+      const ox = (nx / len) * 0.6;
+      const oz = (nz / len) * 0.6;
+      const axT = ax + ox + ta * 0.4;
+      const azT = az + oz + ta * 0.4;
+      const bxT = bx + ox + tb * 0.4;
+      const bzT = bz + oz + tb * 0.4;
+      wallPos.push(ax, 0, az, bx, 0, bz, bxT, H, bzT, ax, 0, az, bxT, H, bzT, axT, H, azT);
+      const shade = 0.75 + rng.next() * 0.35;
+      for (let k = 0; k < 6; k++) wallCol.push(0.2 * shade, 0.18 * shade, 0.16 * shade);
+    };
+    for (let j = 0; j < n; j++) {
+      for (let i = 0; i < n; i++) {
+        if (!open(i, j)) continue;
+        const x0 = i * cell - half;
+        const z0 = j * cell - half;
+        const x1 = x0 + cell;
+        const z1 = z0 + cell;
+        // Faces point into the open cell.
+        if (!open(i, j - 1)) quad(x1, z0, x0, z0, [i + 1, j], [i, j]);
+        if (!open(i, j + 1)) quad(x0, z1, x1, z1, [i, j + 1], [i + 1, j + 1]);
+        if (!open(i - 1, j)) quad(x0, z0, x0, z1, [i, j], [i, j + 1]);
+        if (!open(i + 1, j)) quad(x1, z1, x1, z0, [i + 1, j + 1], [i + 1, j]);
+      }
+    }
+    const wallGeo = new THREE.BufferGeometry();
+    wallGeo.setAttribute('position', new THREE.Float32BufferAttribute(wallPos, 3));
+    wallGeo.setAttribute('color', new THREE.Float32BufferAttribute(wallCol, 3));
+    wallGeo.computeVertexNormals();
+    const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide }));
+    walls.receiveShadow = true;
+    root.add(walls);
+  }
+
   /** Fog and ambient light (Ash Storms thicken the fog; instances have their own). */
   setLook(fog: { color: string; density: number }, ambient?: { color: string; intensity: number }): void {
     this.scene.background = new THREE.Color(fog.color);
@@ -650,7 +762,7 @@ export class GameRenderer {
     this.lightTimer -= dt;
     if (this.lightTimer > 0) return;
     this.lightTimer = 0.2;
-    const nearest = this.lightSpots
+    const nearest = [...this.lightSpots, ...(this.instanceRoot ? [] : this.dynamicLights)]
       .map((l) => ({ l, d: (l.x - fx) ** 2 + (l.z - fz) ** 2 }))
       .sort((a, b) => a.d - b.d)
       .slice(0, LIGHT_POOL);
@@ -802,7 +914,11 @@ export class GameRenderer {
         if (user && world.has(e, PlayerControlled)) this.attachWeapons(obj, user.classId);
         // Rim light keeps characters readable against the dark ground (docs/world-and-gameplay.md §14).
         if (world.has(e, PlayerControlled)) addRim(obj, '#a8bcdf', 0.55);
-        else if (world.has(e, EnemyAI)) addRim(obj, '#e07a4a', 0.32);
+        else if (world.has(e, EnemyAI)) {
+          // In the dark the rim would give them away; their eyes do instead.
+          if (this.dark && !this.instanceRoot) this.addEyes(obj, r.scale ?? 1);
+          else addRim(obj, '#e07a4a', 0.32);
+        }
         this.objects.set(e, obj);
         this.scene.add(obj);
         const clips = this.assets.clips(r.assetId);
@@ -906,6 +1022,22 @@ export class GameRenderer {
   }
 
   /** Pick the animation for what the entity is doing this frame. */
+  /** Two small glowing points near the top of an enemy (dark zones). */
+  private addEyes(obj: THREE.Object3D, scale: number): void {
+    obj.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(obj);
+    const top = (box.max.y / scale) * 0.86;
+    const front = (box.max.z / scale) * 0.6;
+    const mat = new THREE.SpriteMaterial({ map: this.glowTexture(), color: '#ff4a2a', blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false });
+    for (const side of [-1, 1]) {
+      const eye = new THREE.Sprite(mat);
+      eye.position.set((side * 0.1) / scale, top, front);
+      eye.scale.setScalar(0.32 / scale);
+      eye.name = 'eye';
+      obj.add(eye);
+    }
+  }
+
   private syncBike(obj: THREE.Object3D, mounted: boolean): void {
     const bike = obj.userData.bike as THREE.Object3D | undefined;
     if (mounted && !bike) {
@@ -980,6 +1112,13 @@ export class GameRenderer {
     // Holograms (decoys) and stealthed characters are drawn see-through.
     const hologram = world.get(e, Renderable)?.hologram ?? false;
     const glow = world.has(e, Dead) ? undefined : world.get(e, Renderable)?.glow;
+    // In the dark, enemies outside the lamp lose their glow: only their eyes give them away.
+    let dim = 1;
+    if (this.dark && !this.instanceRoot && world.has(e, EnemyAI)) {
+      const t = world.get(e, Transform);
+      const f = this.rig.focusPoint;
+      if (t) dim = THREE.MathUtils.clamp((17 - Math.hypot(t.x - f.x, t.z - f.z)) / 6, 0.05, 1);
+    }
     const ai = world.get(e, EnemyAI);
     const family = ai ? enemyDef(ai.defId).family : null;
     const infected = !world.has(e, Dead) && (family === 'infected' || family === 'lumen');
@@ -995,12 +1134,12 @@ export class GameRenderer {
       slot.material.opacity = opacity;
       if (hologram) {
         slot.material.emissive.set('#3ab8ff');
-        slot.material.emissiveIntensity = 0.9;
+        slot.material.emissiveIntensity = 0.9 * Math.max(0.25, dim);
         continue;
       }
       if (glow && !flash && !active) {
         slot.material.emissive.set(glow);
-        slot.material.emissiveIntensity = 0.35 + 0.1 * Math.sin(this.time * 4 + e);
+        slot.material.emissiveIntensity = (0.35 + 0.1 * Math.sin(this.time * 4 + e)) * dim;
         continue;
       }
       if (this.stormGlow > 0 && !flash && !active && infected) {

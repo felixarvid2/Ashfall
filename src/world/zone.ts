@@ -61,6 +61,8 @@ export interface ZoneRuntime {
   gateReady: boolean;
   /** Molten metal flooded with steam by a coolant valve: feature id → until (ctx.time). */
   cooled: Map<string, number>;
+  /** Deep Mines: flares, cave-ins and noise (created on first use). */
+  underground?: import('./underground').UndergroundState;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {

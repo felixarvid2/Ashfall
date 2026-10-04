@@ -32,6 +32,8 @@ const ROADS: Road[] = [
   { id: 'crops', width: 5, points: scaled([[60, -180], [0, -200], [-60, -220], [-120, -235]]) },
   // A narrow trail winding up into the Root Network.
   { id: 'roots', width: 4, points: scaled([[-170, -20], [-175, 60], [-160, 140], [-150, 200], [-175, 260], [-210, 300]]) },
+  // Past the Great Dome to the freight lift down into the Deep Mines.
+  { id: 'lift', width: 6, points: scaled([[60, 228], [108, 232], [136, 276], [140, 334]]) },
 ];
 
 const distanceToRoad = (x: number, z: number): number => roadDistance(x, z, ROADS);
@@ -54,6 +56,16 @@ export const VAULTS_GATE = {
   radius: 7,
   to: { zone: 'zone.refinery_district', gate: 'gate.rd.vaults' },
   arrive: { x: 150 * S, z: -318 * S },
+};
+
+/** The freight lift at the north edge, down into the Deep Mines. */
+export const LIFT_GATE = {
+  id: 'gate.hv.mines',
+  x: 140 * S,
+  z: 334 * S,
+  radius: 7,
+  to: { zone: 'zone.deep_mines', gate: 'gate.dm.vaults' },
+  arrive: { x: 140 * S, z: 318 * S },
 };
 
 export const VAULT_SUBZONES = {
@@ -201,6 +213,7 @@ function buildProps(): PropPlacement[] {
   const nearPlace = (x: number, z: number, pad: number) =>
     [LAB9, GAMMA, GREAT_DOME, { ...MOTHER_TREE, radius: 16 }].some((p) => Math.hypot(x - p.x, z - p.z) < p.radius + pad) ||
     Math.hypot(x - VAULTS_GATE.x, z - VAULTS_GATE.z) < 30 ||
+    Math.hypot(x - LIFT_GATE.x, z - LIFT_GATE.z) < 30 ||
     AIR_FILTERS.some((f) => Math.hypot(x - f.x, z - f.z) < 6) ||
     TELEPORTERS.some((t) => Math.hypot(x - t.x, z - t.z) < 8);
 
@@ -499,7 +512,7 @@ export const HYDROPONIC_VAULTS: ZoneDef = {
   packs: buildPacks(),
   pois: clearOfProps(buildPois(), PROPS),
   mapCell: 8,
-  gates: [VAULTS_GATE],
+  gates: [VAULTS_GATE, LIFT_GATE],
   env: VAULTS_ENV,
   domes: [
     { ...at(40, -170), radius: 58 * S },

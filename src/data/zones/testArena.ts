@@ -33,6 +33,8 @@ export interface ArenaDef {
   ground?: GroundDef;
   /** Colour of the drifting particles (default grey ash). */
   particles?: string;
+  /** Almost no light but the player's lamp, lamps and floodlights; enemies show glowing eyes (Deep Mines). */
+  dark?: boolean;
 }
 
 /** A ground texture in public/assets/textures/ground/ (file name without .webp). */

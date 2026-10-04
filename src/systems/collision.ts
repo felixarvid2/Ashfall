@@ -3,7 +3,7 @@
  * Moving colliders push each other apart weighted by mass; static colliders
  * (crates, posts) never move. Air colliders only interact with air.
  */
-import { Collider, Dead, ForcedMove, Transform } from '../core/components';
+import { Collider, Dead, EnemyAI, ForcedMove, Transform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 
@@ -28,6 +28,7 @@ export function collisionSystem(world: World, _dt: number, ctx: GameContext): vo
     // Leaping entities fly over everything.
     const fm = world.get(a, ForcedMove);
     if (fm && fm.height > 0) continue;
+    if (world.get(a, EnemyAI)?.burrowed) continue;
     const ta = world.req(a, Transform);
     for (const b of ctx.spatial.queryCircle(ta.x, ta.z, ca.radius, scratch)) {
       if (b === a) continue;
@@ -35,6 +36,7 @@ export function collisionSystem(world: World, _dt: number, ctx: GameContext): vo
       if (cb.layer !== ca.layer) continue;
       const fmb = world.get(b, ForcedMove);
       if (fmb && fmb.height > 0) continue;
+      if (world.get(b, EnemyAI)?.burrowed) continue;
       const tb = world.req(b, Transform);
       let dx = ta.x - tb.x;
       let dz = ta.z - tb.z;

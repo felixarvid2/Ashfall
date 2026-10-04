@@ -28,6 +28,7 @@ export const ACTIONS = [
   'quickSave',
   'quickLoad',
   'mount',
+  'flare',
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -57,6 +58,7 @@ export const DEFAULT_KEYBINDINGS: Record<Action, string[]> = {
   quickSave: ['F5'],
   quickLoad: ['F9'],
   mount: ['KeyB'],
+  flare: ['KeyF'],
 };
 
 export const MoveModeSchema = z.enum(['wasd', 'click']);

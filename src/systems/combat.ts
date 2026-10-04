@@ -20,6 +20,7 @@ import {
   Level,
   Mover,
   PlayerControlled,
+  Projectile,
   QuestTag,
   Resource,
   SkillUser,
@@ -38,6 +39,7 @@ import { computeHit, computeOutgoing, computeTaken, type TargetState } from './d
 import { signal } from './quests';
 import { eliteDeath, onEliteHit } from './elites';
 import { spawnEnemy } from '../world/spawn';
+import { isLit } from '../world/underground';
 
 export function hasStatus(world: World, e: Entity, id: StatusId): boolean {
   return world.get(e, StatusEffects)?.list.some((s) => s.id === id) ?? false;
@@ -119,6 +121,17 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
       return null;
     }
   }
+  // Crystal-Bound Walkers throw some shots back at the shooter.
+  if (team === 'player' && targetAi && hit.range === 'ranged') {
+    const reflect = enemyDef(targetAi.defId).reflect;
+    if (reflect > 0 && ctx.rng.next() < reflect && isAlive(world, attacker)) {
+      const tt = world.req(target, Transform);
+      ctx.events.push({ type: 'vfx', kind: 'shield', x: tt.x, z: tt.z, radius: 1, facing: 0 });
+      const back = (world.get(target, CombatStats)?.weaponDamage ?? 0) * 0.8;
+      if (back > 0) applyDamage(world, ctx, attacker, computeTaken(back, 'energy', targetState(world, attacker, 'ranged'), world.get(target, CombatStats)?.level ?? 1).final, { crit: false, damageType: 'energy', dot: false, sourceTeam: 'enemy' });
+      return null;
+    }
+  }
   const state = targetState(world, target, hit.range);
   const conditions = new Set(state.conditions);
   for (const c of attackerConditions(world, attacker)) conditions.add(c);
@@ -137,7 +150,14 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
     ],
   };
   const result = computeHit(input, hit.damageType, { ...state, conditions }, stats.level, ctx.rng);
-  const dealt = applyDamage(world, ctx, target, result.final * frontShieldFactor(world, target, hit.fromX, hit.fromZ), {
+  // A Crystal Sentinel's shell sends part of each hit back.
+  if (team === 'player' && targetAi && (targetAi.shell ?? 0) > 0 && isAlive(world, attacker)) {
+    const shell = enemyDef(targetAi.defId).shell;
+    if (shell && shell.reflect > 0 && hit.damageType === 'physical') {
+      applyDamage(world, ctx, attacker, result.final * shell.reflect, { crit: false, damageType: 'physical', dot: true, sourceTeam: 'enemy' });
+    }
+  }
+  const dealt = applyDamage(world, ctx, target, result.final * frontShieldFactor(world, target, hit.fromX, hit.fromZ) * domeFactor(world, ctx, target, hit.range, team), {
     crit: result.crit,
     damageType: hit.damageType,
     dot: false,
@@ -158,6 +178,21 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   if (hit.knockback !== 0 && isAlive(world, target)) applyKnockback(world, target, hit.fromX, hit.fromZ, hit.knockback);
   for (const apply of hit.applies) applyStatus(world, ctx, target, apply, { team, level: stats.level, attacker });
   return dealt;
+}
+
+/** Shield Officers' domes cut ranged damage to the enemies inside them. */
+function domeFactor(world: World, ctx: GameContext, target: Entity, range: 'melee' | 'ranged', team: string): number {
+  if (team !== 'player' || range !== 'ranged' || !world.has(target, EnemyAI)) return 1;
+  const tt = world.req(target, Transform);
+  for (const e of world.query(EnemyAI, Transform)) {
+    const ai = world.req(e, EnemyAI);
+    if ((ai.domeUntil ?? 0) <= ctx.time || world.has(e, Dead)) continue;
+    const dome = enemyDef(ai.defId).dome;
+    if (!dome) continue;
+    const t = world.req(e, Transform);
+    if (Math.hypot(t.x - tt.x, t.z - tt.z) <= dome.radius) return 1 - dome.reduction;
+  }
+  return 1;
 }
 
 /** Riot shields: enemies with `frontShield` block part of hits that come from in front of them. */
@@ -190,6 +225,8 @@ export interface DamageOptions {
  */
 export function applyDamage(world: World, ctx: GameContext, target: Entity, amount: number, opts: DamageOptions): number | null {
   if (!isAlive(world, target)) return null;
+  // Burrowers underground cannot be hurt.
+  if (world.get(target, EnemyAI)?.burrowed) return null;
   if (world.has(target, Invulnerable) || hasStatus(world, target, 'aegis')) {
     // Avoiding a hit by dodging feeds Focus.
     const r = world.get(target, Resource);
@@ -202,6 +239,26 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
 
   // Armoured or rooted bosses (the Warden) take less or nothing.
   let remaining = Math.max(0, amount) * (world.get(target, Boss)?.damageTaken ?? 1);
+  const targetAi = world.get(target, EnemyAI);
+  if (targetAi && opts.sourceTeam !== 'enemy') {
+    const def = enemyDef(targetAi.defId);
+    // Echoes come apart in the light.
+    if (def.lightVulnerable !== 1 && tr && isLit(world, ctx, tr.x, tr.z)) remaining *= def.lightVulnerable;
+    // Crystal shell: elemental damage does nothing; everything else chips the shell first.
+    if ((targetAi.shell ?? 0) > 0) {
+      if (opts.damageType !== 'physical') {
+        if (!opts.dot && tr) ctx.events.push({ type: 'miss', x: tr.x, y: 1.4, z: tr.z });
+        return null;
+      }
+      const take = Math.min(targetAi.shell!, remaining);
+      targetAi.shell! -= take;
+      remaining -= take;
+      if (targetAi.shell! <= 0 && tr) {
+        ctx.events.push({ type: 'vfx', kind: 'flash', x: tr.x, z: tr.z, radius: 2.5, facing: 0 });
+        ctx.events.push({ type: 'shake', trauma: 0.2 });
+      }
+    }
+  }
   let absorbed = 0;
   const effects = world.get(target, StatusEffects);
   if (effects) {
@@ -473,6 +530,28 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
         const a = (i / def.onDeath.spawn.count) * Math.PI * 2;
         const m = spawnEnemy(world, def.onDeath.spawn.enemy, tr.x + Math.sin(a) * 1.2, tr.z + Math.cos(a) * 1.2, { level });
         world.req(m, EnemyAI).aggro = true;
+      }
+    }
+    // Crystal shards fly out in a ring.
+    if (def.onDeath?.shards && tr) {
+      const sh = def.onDeath.shards;
+      const stats = world.get(target, CombatStats);
+      const level = stats?.level ?? 1;
+      for (let i = 0; i < sh.count; i++) {
+        const a = (i / sh.count) * Math.PI * 2;
+        const p = world.create();
+        world.add(p, Transform, makeTransform(tr.x, 1, tr.z, a));
+        world.add(p, Projectile, {
+          team: 'enemy',
+          vx: Math.sin(a) * sh.speed,
+          vz: Math.cos(a) * sh.speed,
+          radius: 0.3,
+          remaining: sh.range / sh.speed,
+          damage: (stats?.weaponDamage ?? 20) * sh.coefficient,
+          damageType: 'physical',
+          attackerLevel: level,
+          owner: target,
+        });
       }
     }
     eliteDeath(world, ctx, target);

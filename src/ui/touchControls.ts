@@ -33,6 +33,7 @@ const MENU: { id: string; action: Action }[] = [
   { id: 'map', action: 'map' },
   { id: 'quests', action: 'quests' },
   { id: 'mount', action: 'mount' },
+  { id: 'flare', action: 'flare' },
 ];
 
 /** Joystick travel in CSS pixels at full deflection. */

@@ -195,6 +195,71 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     championChance: 0.14,
     rareChance: 0.12,
   },
+  // Deep Mines (docs/regions/deep-mines.md): crystal-bound variants, miners, Echoes and the governor's security.
+  {
+    id: 'dm_tunnel',
+    members: [
+      { enemy: 'crystal_walker', count: [3, 5] },
+      { enemy: 'blind_hound', count: [2, 3], chance: 0.5 },
+      { enemy: 'infected_miner', count: [1, 2], chance: 0.45 },
+      { enemy: 'shard_bloater', count: [1, 1], chance: 0.3 },
+    ],
+    championChance: 0.1,
+    rareChance: 0.08,
+  },
+  {
+    id: 'dm_shafts',
+    members: [
+      { enemy: 'infected_miner', count: [2, 4] },
+      { enemy: 'crystal_walker', count: [2, 3], chance: 0.7 },
+      { enemy: 'burrower', count: [1, 2], chance: 0.45 },
+      { enemy: 'ore_crusher', count: [1, 1], chance: 0.2 },
+    ],
+    championChance: 0.1,
+    rareChance: 0.08,
+  },
+  {
+    id: 'dm_caves',
+    members: [
+      { enemy: 'crystal_walker', count: [2, 4] },
+      { enemy: 'crystal_sentinel', count: [1, 2], chance: 0.6 },
+      { enemy: 'blind_hound', count: [3, 5], chance: 0.5 },
+      { enemy: 'shard_bloater', count: [1, 2], chance: 0.35 },
+    ],
+    championChance: 0.12,
+    rareChance: 0.1,
+  },
+  {
+    id: 'dm_lake',
+    members: [
+      { enemy: 'blind_hound', count: [3, 5] },
+      { enemy: 'burrower', count: [1, 2], chance: 0.55 },
+      { enemy: 'ore_crusher', count: [1, 1], chance: 0.3 },
+      { enemy: 'drill_colossus', count: [1, 1], chance: 0.05 },
+    ],
+    championChance: 0.12,
+    rareChance: 0.1,
+  },
+  {
+    id: 'dm_elder',
+    members: [
+      { enemy: 'echo', count: [3, 5] },
+      { enemy: 'crystal_sentinel', count: [1, 2], chance: 0.5 },
+      { enemy: 'crystal_walker', count: [2, 3], chance: 0.4 },
+    ],
+    championChance: 0.14,
+    rareChance: 0.12,
+  },
+  {
+    id: 'dm_security',
+    members: [
+      { enemy: 'security_trooper', count: [3, 4] },
+      { enemy: 'shield_officer', count: [1, 1], chance: 0.6 },
+      { enemy: 'governor_drone', count: [1, 2], chance: 0.6 },
+    ],
+    championChance: 0.14,
+    rareChance: 0.12,
+  },
 ];
 
 export function packTemplate(id: string): PackTemplate {
