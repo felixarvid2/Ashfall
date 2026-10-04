@@ -152,6 +152,8 @@ const ZONE_FADE = 0.35;
 const AUTOSAVE_INTERVAL = 60;
 /** How long the target frame keeps showing the last enemy you hit. */
 const TARGET_MEMORY = 4;
+/** ?nav in the address bar starts with the wayfinding overlay on (it can also be ticked in the debug panel). */
+const NAV_OVERLAY = typeof location !== 'undefined' && new URLSearchParams(location.search).has('nav');
 
 export class Game {
   readonly world = new World();
@@ -462,6 +464,7 @@ export class Game {
         killAll: () => this.killAllEnemies(),
         spawnHorde: () => this.spawnHorde(100),
         setGodMode: (on) => (this.ctx.debug.godMode = on),
+        setNavOverlay: (on) => this.renderer.setNavOverlay(on),
         setGraphics: (q) => this.setGraphics(q),
         addLevel: () => {
           const prog = this.world.req(this.player, Progression);
@@ -522,7 +525,9 @@ export class Game {
       this.settings.showFps,
       this.settings.screenShake,
       this.settings.graphics,
+      NAV_OVERLAY,
     );
+    this.renderer.setNavOverlay(NAV_OVERLAY);
     this.devtools.setMoveMode(this.settings.moveMode);
     this.devtools.setTouchControls(this.settings.touchControls);
     this.refreshHint();
@@ -821,6 +826,7 @@ export class Game {
         });
       }
     }
+    this.renderer.updateMinds(this.world, this.ctx.nav, this.ctx.time);
     this.renderer.sync(this.world, alpha, frameDt);
     const tr = this.playerTransform;
     const px = tr.prevX + (tr.x - tr.prevX) * alpha;

@@ -26,6 +26,8 @@ export interface DebugActions {
   killAll(): void;
   spawnHorde(): void;
   setGodMode(on: boolean): void;
+  /** Draw the flow field and every hunting enemy's intent. */
+  setNavOverlay?(on: boolean): void;
   setScreenShake(on: boolean): void;
   setGraphics(quality: Settings['graphics']): void;
   addLevel(): void;
@@ -53,6 +55,7 @@ export class DevTools {
     showFps: boolean,
     screenShake: boolean,
     graphics: Settings['graphics'],
+    navOverlay = false,
   ) {
     this.fpsEl = document.createElement('div');
     this.fpsEl.className = 'fps-meter';
@@ -137,6 +140,7 @@ export class DevTools {
     });
     gfxLabel.appendChild(gfx);
     const godLabel = checkbox(t('debug.godMode'), false, actions.setGodMode);
+    const navLabel = checkbox(t('debug.navOverlay'), navOverlay, (on) => actions.setNavOverlay?.(on));
     const shakeLabel = checkbox(t('debug.screenShake'), screenShake, actions.setScreenShake);
 
     const combatRow = document.createElement('div');
@@ -173,7 +177,7 @@ export class DevTools {
     target = regionRow;
     for (const x of actions.extra ?? []) button(x.label, x.run, x.id);
 
-    this.panel.append(h2, dl, moveLabel, touchLabel, gfxLabel, godLabel, shakeLabel, combatRow, row, regionRow, fileInput);
+    this.panel.append(h2, dl, moveLabel, touchLabel, gfxLabel, godLabel, navLabel, shakeLabel, combatRow, row, regionRow, fileInput);
     root.append(this.fpsEl, this.panel);
   }
 

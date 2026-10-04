@@ -55,7 +55,12 @@ export type GroundTexture =
   | 'frosted_concrete'
   | 'dry_silt'
   | 'overgrown_asphalt'
-  | 'lab_tiles';
+  | 'lab_tiles'
+  | 'crystal_floor'
+  | 'rail_track'
+  | 'elder_stone'
+  | 'lake_shore'
+  | 'steel_grating';
 
 /**
  * Ground textures for an open-world zone: a base that covers everything, up to six overlay

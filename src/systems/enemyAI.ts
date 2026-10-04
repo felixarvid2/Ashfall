@@ -7,7 +7,8 @@
  * Def extras: a front shield raised as the target closes in, burning trails, revives.
  */
 import { HEARING, minesBehaviours } from './minesAI';
-import { nextWaypoint, type NavField } from './navigation';
+import { cellOf, clearLine, downhill, findPath, fleeOf, freeLine, lineOfSight, nearestOpen, nextWaypoint, openAt, snipeOf, type NavField, type NavMode, type NavService } from './navigation';
+import { caveGrid, walkableAt } from '../data/zones/caves';
 import {
   Collider,
   Dead,
@@ -80,7 +81,10 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
 
 export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): void {
   nav = ctx.nav;
+  cur.world = world;
+  cur.ctx = ctx;
   const candidates = targetCandidates(world, ctx);
+  slots = assignSlots(world, ctx);
   // Blind Hounds hear what they cannot see (stealth does not hide you from them).
   let heard: Candidate[] | null = null;
   regrowFallen(world, ctx);
@@ -93,6 +97,11 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     const def = enemyDef(ai.defId);
     const tr = world.req(e, Transform);
     const mover = world.req(e, Mover);
+    cur.e = e;
+    cur.ai = ai;
+    cur.dt = dt;
+    field = ai.chasing !== undefined ? nav?.fields.get(ai.chasing) : undefined;
+    ai.intent = undefined;
     ai.cooldown = Math.max(0, ai.cooldown - dt);
     mover.vx = 0;
     mover.vz = 0;
@@ -117,7 +126,9 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
 
     const target = chooseTarget(def.hearing ? (heard ??= targetCandidates(world, ctx, true)) : candidates, tr.x, tr.z);
     if (!target) {
-      // Nobody visible (player stealthed or dead): drop the attack and wait.
+      // Nobody visible (player stealthed or dead): go and look where they were last seen, then give up.
+      ai.chasing = undefined;
+      if (ai.aggro && ai.lastSeen && search(ai, def, tr, mover, ctx, dt)) continue;
       ai.state = 'idle';
       continue;
     }
@@ -128,12 +139,24 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     const dist = Math.hypot(dx, dz);
 
     if (!ai.aggro) {
-      if (dist < (def.hearing ? HEARING.notice : def.aggroRange)) {
+      // Noticing takes a line of sight (rock and walls hide you) unless the target is right there;
+      // Blind Hounds go by ear.
+      if (dist < (def.hearing ? HEARING.notice : def.aggroRange) && (def.hearing || dist < 3 || lineOfSight(ctx, tr.x, tr.z, ptr.x, ptr.z))) {
         alert(world, ctx, e, tr);
       } else {
         wander(ai, tr, mover, ctx, dt);
         continue;
       }
+    }
+    if (ai.chasing !== player) {
+      ai.chasing = player;
+      field = nav?.fields.get(player);
+    }
+    if (dist < 4 || canSee(tr, ptr)) ai.lastSeen = { x: ptr.x, z: ptr.z, t: ctx.time };
+    if (ai.search) {
+      // Found again.
+      ai.search = undefined;
+      ai.spottedAt = ctx.time;
     }
 
     // Fire shield: raised when the target closes in from the front; the Smelter advances behind it.
@@ -195,10 +218,16 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
 
 /** Aggro this enemy and its neighbours. */
 function alert(world: World, ctx: GameContext, e: Entity, tr: Transform): void {
-  world.req(e, EnemyAI).aggro = true;
+  const self = world.req(e, EnemyAI);
+  self.aggro = true;
+  self.spottedAt = ctx.time;
   for (const other of livingInCircle(world, ctx, tr.x, tr.z, ALERT_RADIUS, 'enemy')) {
     const ai = world.get(other, EnemyAI);
-    if (ai) ai.aggro = true;
+    if (ai && !ai.aggro) {
+      ai.aggro = true;
+      // The pack hears the shout a moment later.
+      ai.spottedAt = ctx.time + 0.15;
+    }
   }
 }
 
@@ -208,34 +237,340 @@ function wander(ai: EnemyAIData, tr: Transform, mover: Mover, ctx: GameContext, 
     ai.timer = ctx.rng.range(2, 5);
     ai.wanderX = tr.x + ctx.rng.range(-4, 4);
     ai.wanderZ = tr.z + ctx.rng.range(-4, 4);
+    // Underground, mill about on open ground rather than nosing into the rock.
+    const cave = ctx.instance || !ctx.zone ? null : caveGrid(ctx.zone.def);
+    if (cave && !walkableAt(cave, ai.wanderX, ai.wanderZ)) {
+      ai.wanderX = tr.x;
+      ai.wanderZ = tr.z;
+    }
   }
   steer(mover, tr, ai.wanderX - tr.x, ai.wanderZ - tr.z, mover.speed * WANDER_SPEED, 0.5);
 }
 
-/** The flow field toward the player this tick (pathfinding), if any. */
-let nav: NavField | undefined;
+// ---- Wayfinding -------------------------------------------------------------------------------
+
+/** This tick's navigation (grid and flow fields), and the field toward the current enemy's target. */
+let nav: NavService | undefined;
+let field: NavField | undefined;
+/** Melee attackers' places round their target this tick. */
+let slots = new Map<Entity, { x: number; z: number }>();
+/** The enemy being run: steering records its intent, keeps it out of the crowd and unsticks it. */
+const cur = { world: null as unknown as World, ctx: null as unknown as GameContext, e: 0 as Entity, ai: null as unknown as EnemyAIData, dt: 0 };
+const crowd: Entity[] = [];
 
 /**
- * Set velocity toward (dx, dz) unless within `stopAt` metres. Heading for the player (or a spot right
- * next to them) round a wall or along a winding tunnel follows the flow field instead of the
- * straight line.
+ * Set velocity toward (dx, dz) unless within `stopAt` metres. Heading for the target (or a spot right
+ * next to it) round a wall, along a winding tunnel or past a fire follows its flow field.
  */
 function steer(mover: Mover, tr: Transform, dx: number, dz: number, speed: number, stopAt: number): void {
   const d = Math.hypot(dx, dz);
   if (d <= stopAt) return;
-  if (nav && Math.hypot(tr.x + dx - nav.origin.x, tr.z + dz - nav.origin.z) < 3.5) {
-    const wp = nextWaypoint(nav, tr.x, tr.z);
+  let gx = tr.x + dx;
+  let gz = tr.z + dz;
+  let mode: NavMode = 'direct';
+  if (field && Math.hypot(gx - field.origin.x, gz - field.origin.z) < 3.5) {
+    const wp = nextWaypoint(field, tr.x, tr.z);
     if (wp) {
-      dx = wp.x - tr.x;
-      dz = wp.z - tr.z;
-      const w = Math.hypot(dx, dz) || 1;
-      mover.vx = (dx / w) * speed;
-      mover.vz = (dz / w) * speed;
+      gx = wp.x;
+      gz = wp.z;
+      mode = 'field';
+    }
+  }
+  drive(mover, tr, gx, gz, speed, mode);
+}
+
+/** Walk to any spot (a noise, a search point, the pack): straight when the way is free, else by A*. */
+export function walkTo(mover: Mover, tr: Transform, x: number, z: number, speed: number, mode: NavMode = 'path'): void {
+  const ai = cur.ai;
+  const now = cur.ctx.time;
+  const g = nav?.grid;
+  if (!g || cellOf(g, tr.x, tr.z) < 0 || freeLine(g, tr.x, tr.z, x, z)) {
+    ai.path = undefined;
+    drive(mover, tr, x, z, speed, mode === 'path' ? 'direct' : mode);
+    return;
+  }
+  const goal = ai.pathGoal;
+  if (!ai.path || !goal || Math.hypot(goal.x - x, goal.z - z) > 1.5 || now - goal.t > 2) {
+    ai.path = findPath(g, tr.x, tr.z, x, z) ?? undefined;
+    ai.pathGoal = { x, z, t: now };
+  }
+  const path = ai.path;
+  if (!path?.length) {
+    drive(mover, tr, x, z, speed, mode);
+    return;
+  }
+  // Drop waypoints reached, or skip ahead when a later one is already in a straight line.
+  while (path.length > 1 && (Math.hypot(path[0]!.x - tr.x, path[0]!.z - tr.z) < 0.8 || freeLine(g, tr.x, tr.z, path[1]!.x, path[1]!.z))) path.shift();
+  drive(mover, tr, path[0]!.x, path[0]!.z, speed, mode);
+}
+
+/** Melee: take its place in the ring round the target when it has one, else close straight in. */
+function closeIn(mover: Mover, tr: Transform, ptr: Transform, speed: number, stopAt: number): void {
+  const slot = slots.get(cur.e);
+  if (slot && Math.hypot(ptr.x - tr.x, ptr.z - tr.z) < 9) {
+    const sd = Math.hypot(slot.x - tr.x, slot.z - tr.z);
+    if (sd < 0.4) {
+      cur.ai.intent = { x: slot.x, z: slot.z, mode: 'slot' };
+      return;
+    }
+    // A place on the far side: go round the target along the ring, not through it.
+    const here = Math.atan2(tr.x - ptr.x, tr.z - ptr.z);
+    const turn = angleDelta(here, Math.atan2(slot.x - ptr.x, slot.z - ptr.z));
+    let gx = slot.x;
+    let gz = slot.z;
+    if (Math.abs(turn) > 0.9) {
+      const a = here + Math.sign(turn) * 0.8;
+      const r = Math.max(Math.hypot(slot.x - ptr.x, slot.z - ptr.z), Math.hypot(tr.x - ptr.x, tr.z - ptr.z)) + 0.4;
+      gx = ptr.x + Math.sin(a) * r;
+      gz = ptr.z + Math.cos(a) * r;
+    }
+    if (!nav || freeLine(nav.grid, tr.x, tr.z, gx, gz)) {
+      drive(mover, tr, gx, gz, speed * (sd < 1.5 ? 0.7 : 1), 'slot');
       return;
     }
   }
-  mover.vx = (dx / d) * speed;
-  mover.vz = (dz / d) * speed;
+  steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, speed, stopAt);
+}
+
+/** Back off from the target down the safety map: away from it, toward open ground, not into a corner. */
+function retreat(mover: Mover, tr: Transform, ptr: Transform, speed: number): void {
+  if (field && cellOf(field, tr.x, tr.z) >= 0) {
+    const wp = downhill(field, fleeOf(field), tr.x, tr.z);
+    if (wp) {
+      drive(mover, tr, wp.x, wp.z, speed, 'flee');
+      return;
+    }
+  }
+  const dx = tr.x - ptr.x;
+  const dz = tr.z - ptr.z;
+  const d = Math.hypot(dx, dz) || 1;
+  drive(mover, tr, tr.x + (dx / d) * 3, tr.z + (dz / d) * 3, speed, 'flee');
+}
+
+/** Can this enemy see its target (rock and walls block; crates don't)? */
+function canSee(tr: Transform, ptr: Transform): boolean {
+  if (field && cellOf(field, tr.x, tr.z) >= 0) return clearLine(field, tr.x, tr.z, ptr.x, ptr.z);
+  return lineOfSight(cur.ctx, tr.x, tr.z, ptr.x, ptr.z);
+}
+
+/** Set the velocity toward (gx, gz), spaced from allies, and watch for getting stuck. */
+function drive(mover: Mover, tr: Transform, gx: number, gz: number, speed: number, mode: NavMode): void {
+  const ai = cur.ai;
+  const now = cur.ctx.time;
+  let dx = gx - tr.x;
+  let dz = gz - tr.z;
+  const len = Math.hypot(dx, dz);
+  if (len < 1e-4) return;
+  dx /= len;
+  dz /= len;
+  const esc = ai.stuck?.escape;
+  if (esc && esc.until > now) {
+    dx = esc.x;
+    dz = esc.z;
+    mode = 'escape';
+  } else if (ai.aggro) {
+    // Keep a little apart from allies so a pack fans out instead of walking in single file.
+    const [sx, sz] = separation(tr);
+    if (sx || sz) {
+      const vx = dx + sx;
+      const vz = dz + sz;
+      const l = Math.hypot(vx, vz);
+      if (l > 0.2 && (!nav || openAt(nav.grid, tr.x + (vx / l) * 0.9, tr.z + (vz / l) * 0.9))) {
+        dx = vx / l;
+        dz = vz / l;
+      }
+    }
+  }
+  mover.vx = dx * speed;
+  mover.vz = dz * speed;
+  ai.intent = { x: gx, z: gz, mode };
+  watchStuck(ai, tr, speed, dx, dz, now);
+}
+
+function separation(tr: Transform): [number, number] {
+  const { world, ctx, e } = cur;
+  const r = world.get(e, Collider)?.radius ?? 0.5;
+  let sx = 0;
+  let sz = 0;
+  for (const o of ctx.spatial.queryCircle(tr.x, tr.z, r + 1.4, crowd)) {
+    if (o === e || !world.has(o, EnemyAI) || world.has(o, Dead)) continue;
+    const ot = world.req(o, Transform);
+    const lim = r + (world.get(o, Collider)?.radius ?? 0.5) + 0.6;
+    const ox = tr.x - ot.x;
+    const oz = tr.z - ot.z;
+    const d = Math.hypot(ox, oz);
+    if (d >= lim || d < 1e-4) continue;
+    const w = (1 - d / lim) * 0.8;
+    sx += (ox / d) * w;
+    sz += (oz / d) * w;
+  }
+  return [sx, sz];
+}
+
+/** Meant to walk 2 m but barely moved: pressed against something. Slide off sideways for a moment. */
+function watchStuck(ai: EnemyAIData, tr: Transform, speed: number, dx: number, dz: number, now: number): void {
+  let st = ai.stuck;
+  if (!st || now - st.last > 0.35) st = ai.stuck = { x: tr.x, z: tr.z, want: 0, last: now, escape: st?.escape };
+  st.want += speed * cur.dt;
+  st.last = now;
+  if (st.want < 2.2) return;
+  const escaping = st.escape !== undefined && st.escape.until > now;
+  if (!escaping && Math.hypot(tr.x - st.x, tr.z - st.z) < 0.45) {
+    const side = cur.e & 1 ? 1 : -1;
+    let ex = -dz * side;
+    let ez = dx * side;
+    if (nav && !openAt(nav.grid, tr.x + ex * 1.5, tr.z + ez * 1.5)) {
+      ex = -ex;
+      ez = -ez;
+      if (!openAt(nav.grid, tr.x + ex * 1.5, tr.z + ez * 1.5)) {
+        ex = -dx;
+        ez = -dz;
+      }
+    }
+    st.escape = { x: ex, z: ez, until: now + 0.6 };
+    ai.path = undefined;
+  }
+  st.x = tr.x;
+  st.z = tr.z;
+  st.want = 0;
+}
+
+/**
+ * Melee attackers spread round their target instead of queueing on one side: each keeps roughly its
+ * bearing, neighbours are pushed apart until they fit, and whoever doesn't fit the inner ring waits
+ * a step further out. A place inside rock or a wall is dropped (in a tunnel they come straight on).
+ */
+function assignSlots(world: World, ctx: GameContext): Map<Entity, { x: number; z: number }> {
+  const out = new Map<Entity, { x: number; z: number }>();
+  type Member = { e: Entity; a: number; ring: number; w: number; d: number; pinned: boolean };
+  const groups = new Map<Entity, Member[]>();
+  for (const e of world.query(EnemyAI, Transform)) {
+    const ai = world.req(e, EnemyAI);
+    if (!ai.aggro || ai.chasing === undefined || ai.burrowed || world.has(e, Dead)) continue;
+    const def = enemyDef(ai.defId);
+    if (def.attack.kind !== 'melee' || !world.isAlive(ai.chasing)) continue;
+    const tt = world.get(ai.chasing, Transform);
+    if (!tt) continue;
+    const tr = world.req(e, Transform);
+    const d = Math.hypot(tr.x - tt.x, tr.z - tt.z);
+    if (d > 9) continue;
+    const me = world.get(e, Collider)?.radius ?? 0.5;
+    const them = world.get(ai.chasing, Collider)?.radius ?? 0.4;
+    const ring = Math.max(me + them + 0.1, def.attack.range * 0.8 + them * 0.5);
+    let list = groups.get(ai.chasing);
+    if (!list) groups.set(ai.chasing, (list = []));
+    // Mid-swing it holds its ground; the others make room round it.
+    list.push({ e, a: Math.atan2(tr.x - tt.x, tr.z - tt.z), ring, w: me * 2 + 0.35, d, pinned: ai.state === 'windup' || ai.state === 'recover' });
+  }
+  const TAU = Math.PI * 2;
+  /**
+   * Even places round the circle, in the order they already stand, turned to the rotation (and
+   * starting member) that moves them least. Whoever is mid-swing keeps its spot this tick.
+   */
+  const spread = (ring: Member[], offset: number) => {
+    const m = ring.length;
+    if (m < 2) return;
+    ring.sort((p, q) => p.a - q.a);
+    let best = Infinity;
+    let bestAngles: number[] = [];
+    for (let r = 0; r < m; r++) {
+      let sx = 0;
+      let sz = 0;
+      for (let i = 0; i < m; i++) {
+        const o = ((i - r + m) % m) * (TAU / m) + offset;
+        sx += Math.sin(ring[i]!.a - o);
+        sz += Math.cos(ring[i]!.a - o);
+      }
+      const base = Math.atan2(sx, sz);
+      let cost = 0;
+      const angles: number[] = [];
+      for (let i = 0; i < m; i++) {
+        const a = base + ((i - r + m) % m) * (TAU / m) + offset;
+        angles.push(a);
+        cost += angleDelta(ring[i]!.a, a) ** 2;
+      }
+      if (cost < best) {
+        best = cost;
+        bestAngles = angles;
+      }
+    }
+    ring.forEach((p, i) => {
+      if (!p.pinned) p.a = bestAngles[i]!;
+    });
+  };
+  for (const [t, list] of groups) {
+    if (list.length < 2) continue;
+    const tt = world.req(t, Transform);
+    list.sort((p, q) => p.d - q.d);
+    const inner: Member[] = [];
+    const outer: Member[] = [];
+    let used = 0;
+    for (const m of list) {
+      const span = (m.w / m.ring) * 1.15;
+      if (used + span <= TAU) {
+        inner.push(m);
+        used += span;
+      } else {
+        m.ring += 1.4 + m.w * 0.5;
+        outer.push(m);
+      }
+    }
+    spread(inner, 0);
+    spread(outer, Math.PI / Math.max(1, outer.length));
+    for (const m of list) {
+      const x = tt.x + Math.sin(m.a) * m.ring;
+      const z = tt.z + Math.cos(m.a) * m.ring;
+      if (ctx.nav && !openAt(ctx.nav.grid, x, z)) continue;
+      out.set(m.e, { x, z });
+    }
+  }
+  return out;
+}
+
+/** Lost the target: walk to where it was last seen, look round, check a couple of spots nearby, give up. */
+function search(ai: EnemyAIData, def: EnemyDef, tr: Transform, mover: Mover, ctx: GameContext, dt: number): boolean {
+  const seen = ai.lastSeen!;
+  const now = ctx.time;
+  if (!ai.search) {
+    if (now - seen.t > 6) return giveUp(ai);
+    const spots = [{ x: seen.x, z: seen.z }];
+    const cave = ctx.instance || !ctx.zone ? null : caveGrid(ctx.zone.def);
+    for (let i = 0; i < 2; i++) {
+      const a = cur.e * 2.39996 + i * 2.4;
+      const x = seen.x + Math.sin(a) * 5;
+      const z = seen.z + Math.cos(a) * 5;
+      if (nav ? nearestOpen(nav.grid, x, z, 1) >= 0 : !cave || walkableAt(cave, x, z)) spots.push({ x, z });
+    }
+    ai.search = { spots, until: now + 10, look: 0 };
+  }
+  const s = ai.search;
+  if (now > s.until || !s.spots.length) return giveUp(ai);
+  ai.state = 'chase';
+  if (s.look > 0) {
+    // Look round.
+    s.look -= dt;
+    tr.facing = angleDelta(0, tr.facing + dt * 2.6 * (cur.e & 1 ? 1 : -1));
+    ai.intent = { x: tr.x, z: tr.z, mode: 'search' };
+    return true;
+  }
+  const spot = s.spots[0]!;
+  if (Math.hypot(spot.x - tr.x, spot.z - tr.z) < 1.2) {
+    s.spots.shift();
+    s.look = 0.9;
+    return true;
+  }
+  face(tr, spot.x, spot.z, def.turnRate, dt);
+  walkTo(mover, tr, spot.x, spot.z, mover.speed * 0.6, 'search');
+  return true;
+}
+
+function giveUp(ai: EnemyAIData): false {
+  ai.search = undefined;
+  ai.lastSeen = undefined;
+  ai.path = undefined;
+  ai.aggro = false;
+  ai.state = 'idle';
+  return false;
 }
 
 function face(tr: Transform, x: number, z: number, turnRate: number, dt: number): void {
@@ -303,7 +638,10 @@ function rusher(
 
   ai.state = 'chase';
   face(tr, ptr.x, ptr.z, def.turnRate, dt);
-  if (dist <= atk.range + playerRadius * 0.5 && ai.cooldown <= 0) {
+  // In a pack, take its place in the ring before swinging (a lone attacker just swings).
+  const slot = slots.get(e);
+  const placed = !slot || Math.hypot(slot.x - tr.x, slot.z - tr.z) < 0.6;
+  if (dist <= atk.range + playerRadius * 0.5 && ai.cooldown <= 0 && placed) {
     ai.state = 'windup';
     ai.attackSeq++;
     ai.timer = atk.windup;
@@ -321,7 +659,7 @@ function rusher(
     });
     return;
   }
-  steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed, atk.range * 0.7);
+  closeIn(mover, tr, ptr, mover.speed, atk.range * 0.7);
 }
 
 /** Grab and fling the target along the thrower's facing; it lands stunned. */
@@ -456,7 +794,7 @@ function lunger(
     return;
   }
   // Between lunges it keeps a little distance, circling, so the next dash has room.
-  if (dist < 3) steer(mover, tr, tr.x - ptr.x, tr.z - ptr.z, mover.speed * 0.6, 0);
+  if (dist < 3) retreat(mover, tr, ptr, mover.speed * 0.6);
   else steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed, atk.range * 0.6);
 }
 
@@ -516,7 +854,9 @@ function ranged(
 
   ai.state = 'chase';
   face(tr, ptr.x, ptr.z, def.turnRate, dt);
-  if (ai.cooldown <= 0 && dist <= Math.min(atk.maxRange, maxR + 2)) {
+  // No shooting into rock: a gunner without a clear line first finds a spot that has one.
+  const sight = canSee(tr, ptr);
+  if (ai.cooldown <= 0 && dist <= Math.min(atk.maxRange, maxR + 2) && sight) {
     // Lock the aim at wind-up start so moving sideways dodges the shot.
     ai.state = 'windup';
     ai.attackSeq++;
@@ -537,17 +877,29 @@ function ranged(
 
   const nx = (ptr.x - tr.x) / (dist || 1);
   const nz = (ptr.z - tr.z) / (dist || 1);
-  if (dist > maxR) {
-    steer(mover, tr, nx, nz, mover.speed, 0);
+  if (!sight && field && cellOf(field, tr.x, tr.z) >= 0) {
+    // Down the firing-spot layer: the nearest place in sight of the target at gun range.
+    const wp = downhill(field, snipeOf(field), tr.x, tr.z);
+    if (wp) {
+      drive(mover, tr, wp.x, wp.z, mover.speed, 'snipe');
+      return;
+    }
+  }
+  if (dist > maxR || !sight) {
+    steer(mover, tr, ptr.x - tr.x, ptr.z - tr.z, mover.speed, 0);
   } else if (dist < minR) {
-    // Back away slowly: melee classes can still catch a drone that crowds them.
-    steer(mover, tr, -nx, -nz, mover.speed * 0.5, 0);
+    // Back away slowly (melee classes can still catch a drone that crowds them), toward open ground.
+    retreat(mover, tr, ptr, mover.speed * 0.5);
   } else {
     ai.strafeTimer -= dt;
     if (ai.strafeTimer <= 0) {
       ai.strafeTimer = ctx.rng.range(1.5, 3);
       ai.strafeDir = ctx.rng.chance(0.5) ? 1 : -1;
     }
+    // Turn back before strafing into a wall or out of sight.
+    const sx = tr.x - nz * ai.strafeDir * 1.5;
+    const sz = tr.z + nx * ai.strafeDir * 1.5;
+    if (nav && (!openAt(nav.grid, sx, sz) || !clearLine(nav.grid, sx, sz, ptr.x, ptr.z))) ai.strafeDir = ai.strafeDir === 1 ? -1 : 1;
     steer(mover, tr, -nz * ai.strafeDir, nx * ai.strafeDir, mover.speed * 0.6, 0);
   }
 }
@@ -722,7 +1074,7 @@ function support(
   }
 
   if (dist < minR) {
-    steer(mover, tr, tr.x - ptr.x, tr.z - ptr.z, mover.speed, 0);
+    retreat(mover, tr, ptr, mover.speed);
     return;
   }
   // Stand behind the pack's centre, on the side away from the player.
@@ -744,7 +1096,8 @@ function support(
     cx += (ax / al) * 2.5;
     cz += (az / al) * 2.5;
   }
-  steer(mover, tr, cx - tr.x, cz - tr.z, mover.speed, 1.5);
+  if (allies.length === 0) steer(mover, tr, cx - tr.x, cz - tr.z, mover.speed, 1.5);
+  else if (Math.hypot(cx - tr.x, cz - tr.z) > 1.5) walkTo(mover, tr, cx, cz, mover.speed);
 }
 
 /** The nearest corpse of these enemy types within reach. */

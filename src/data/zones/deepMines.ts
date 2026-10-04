@@ -112,16 +112,23 @@ const inWater = (x: number, z: number, pad = 0) =>
 
 function buildGround(): GroundDef {
   const CRYSTAL = 0;
-  const CONCRETE = 1;
-  const STEEL = 2;
+  const ELDER = 1;
+  const SHORE = 2;
+  const GRATING = 3;
+  const lake = MINES_ENV.filter((f) => f.kind === 'water');
   const patches: GroundPatch[] = [
-    { layer: CRYSTAL, x: MINE_SUBZONES.caves.c[0], z: MINE_SUBZONES.caves.c[1], radius: MINE_SUBZONES.caves.r * 0.8, strength: 0.7 },
-    { layer: CRYSTAL, x: MINE_SUBZONES.elder.c[0], z: MINE_SUBZONES.elder.c[1], radius: MINE_SUBZONES.elder.r * 0.6, strength: 0.4 },
-    { layer: CONCRETE, x: ZERO.x, z: ZERO.z, radius: ZERO.radius + 10 },
-    { layer: CONCRETE, x: AURUM.x, z: AURUM.z, radius: AURUM.radius + 10 },
-    { layer: STEEL, x: DRILL_CONTROL.x, z: DRILL_CONTROL.z, radius: DRILL_CONTROL.radius },
+    { layer: CRYSTAL, x: MINE_SUBZONES.caves.c[0], z: MINE_SUBZONES.caves.c[1], radius: MINE_SUBZONES.caves.r * 0.8, strength: 0.8 },
+    { layer: ELDER, x: MINE_SUBZONES.elder.c[0], z: MINE_SUBZONES.elder.c[1], radius: MINE_SUBZONES.elder.r * 0.75, strength: 0.9 },
+    // Crystal creeps in at the Elder Gate.
+    { layer: CRYSTAL, x: ELDER_GATE.x, z: ELDER_GATE.z + 20, radius: 26, strength: 0.4 },
+    // Dried silt round the water.
+    ...lake.map((w) => ({ layer: SHORE, x: w.x, z: w.z, radius: w.radius + 45, strength: 0.9 })),
+    { layer: GRATING, x: ZERO.x, z: ZERO.z, radius: ZERO.radius + 10 },
+    { layer: GRATING, x: AURUM.x, z: AURUM.z, radius: AURUM.radius + 10 },
+    { layer: GRATING, x: DRILL_CONTROL.x, z: DRILL_CONTROL.z, radius: DRILL_CONTROL.radius },
   ];
-  return { base: 'industrial_grit', tile: 9, layers: ['lumen_infested', 'military_concrete', 'steel_plating'], patches, road: 'cracked_asphalt' };
+  // The base stays region 2's grit until a mine-rock texture arrives; the tunnels carry cart rails.
+  return { base: 'industrial_grit', tile: 9, layers: ['crystal_floor', 'elder_stone', 'lake_shore', 'steel_grating'], patches, road: 'rail_track' };
 }
 
 // ---- Props ------------------------------------------------------------------------------------

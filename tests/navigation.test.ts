@@ -6,7 +6,7 @@ import { DEEP_MINES, dm } from '../src/data/zones/deepMines';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
 import { enemyAISystem } from '../src/systems/enemyAI';
 import { movementSystem } from '../src/systems/movement';
-import { buildField, clearLine, navigationSystem, nextWaypoint } from '../src/systems/navigation';
+import { buildField, clearLine, freeLine, navigationSystem, nextWaypoint } from '../src/systems/navigation';
 import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
 import { rockSystem } from '../src/world/underground';
 import { createZoneRuntime } from '../src/world/zone';
@@ -67,7 +67,9 @@ describe('enemy pathfinding', () => {
     wall(world, 5, 8);
     run(world, ctx, [spatialSystem]);
     const f = buildField(world, ctx, 0, 0);
-    expect(clearLine(f, 0, 10, 0, 0)).toBe(false);
+    expect(freeLine(f, 0, 10, 0, 0)).toBe(false);
+    // Thin posts block walking but not sight.
+    expect(clearLine(f, 0, 10, 0, 0)).toBe(true);
     const wp = nextWaypoint(f, 0, 10)!;
     expect(wp).not.toBeNull();
     // It steps sideways toward an end of the wall, not into it.

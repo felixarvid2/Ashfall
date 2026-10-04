@@ -842,3 +842,23 @@ html.touch-device .hint-mouse { display: none; }
 .exposure-meter.high { border-color: #c8ff5a; box-shadow: 0 0 10px rgba(168, 255, 90, 0.5); }
 .exposure-text { position: absolute; inset: 0; line-height: 14px; text-align: center; font-size: 0.66em; color: #e8ffe0; text-shadow: 0 0 3px #000; letter-spacing: 0.08em; }
 #ui.touch-ui .exposure-meter { bottom: 96px; width: 180px; }
+
+/* Wayfinding debug overlay legend (debug panel or ?nav). */
+.nav-legend {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  max-width: min(420px, 92vw);
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(10, 8, 6, 0.78);
+  color: #e8e0d4;
+  font: 12px/1.4 system-ui, sans-serif;
+  pointer-events: none;
+}
+.nav-legend b { flex-basis: 100%; font-weight: 600; }
+.nav-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 2px; vertical-align: -1px; }

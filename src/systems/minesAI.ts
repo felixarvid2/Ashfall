@@ -11,6 +11,7 @@ import type { EnemyDef } from '../data/schemas';
 import { caveGrid, nearestWalkable, walkableAt } from '../data/zones/caves';
 import { applyStatus } from './combat';
 import { livingInCircle } from './targeting';
+import { walkTo } from './enemyAI';
 
 /** How close a Blind Hound must be to notice someone without a sound to follow. */
 export const HEARING = { notice: 6, noiseRange: 34, confuse: 14 };
@@ -138,8 +139,8 @@ export function minesBehaviours(world: World, ctx: GameContext, e: Entity, ai: E
       if (dist < 1.5 || near <= 4) ai.investigate = undefined;
       else {
         ai.state = 'chase';
-        mover.vx = (dx / dist) * mover.speed;
-        mover.vz = (dz / dist) * mover.speed;
+        // Round the rock to the noise, not into it.
+        walkTo(mover, tr, ai.investigate.x, ai.investigate.z, mover.speed);
         tr.facing = Math.atan2(dx, dz);
         return true;
       }

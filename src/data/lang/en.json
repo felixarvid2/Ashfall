@@ -66,6 +66,19 @@
     "spawnHorde": "Spawn 100",
     "godMode": "God mode",
     "screenShake": "Screen shake",
+    "navOverlay": "Show enemy wayfinding",
+    "nav": {
+      "head": "Wayfinding · {fields} field(s) · {ms} ms",
+      "idle": "Wayfinding · idle (nobody hunting)",
+      "direct": "straight at target",
+      "field": "flow field",
+      "slot": "place in the ring",
+      "snipe": "to a firing spot",
+      "flee": "retreat (safety map)",
+      "path": "A* route",
+      "search": "searching",
+      "escape": "unsticking"
+    },
     "graphics": "Graphics",
     "quality": {
       "low": "Low",

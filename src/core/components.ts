@@ -293,6 +293,22 @@ export interface EnemyAI {
   /** Lumen Giant: its fungi, and when it rises again after falling while they stand. */
   fungi?: Entity[];
   regrowAt?: number;
+  // ---- Wayfinding ----
+  /** Who it hunted last tick (the navigation system builds a flow field toward each). */
+  chasing?: Entity;
+  /** Where it last saw its target, and when (ctx.time). */
+  lastSeen?: { x: number; z: number; t: number };
+  /** Lost the target: spots still to check, and when it gives up. */
+  search?: { spots: { x: number; z: number }[]; until: number; look: number };
+  /** When it spotted a target (the "!" above its head). */
+  spottedAt?: number;
+  /** A* route to a spot that isn't its target, and the goal it was planned for. */
+  path?: { x: number; z: number }[];
+  pathGoal?: { x: number; z: number; t: number };
+  /** Stuck check: where a stretch of walking started, how far it meant to go, and a way out. */
+  stuck?: { x: number; z: number; want: number; last: number; escape?: { x: number; z: number; until: number } };
+  /** Where it is heading this tick and why (debug overlay, tests). */
+  intent?: { x: number; z: number; mode: import('../systems/navigation').NavMode };
 }
 export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
 

@@ -25,8 +25,8 @@ export interface InputState {
 }
 
 export interface GameContext {
-  /** Enemy pathfinding: the flow field toward the player (rebuilt by the navigation system). */
-  nav?: import('../systems/navigation').NavField | undefined;
+  /** Enemy wayfinding: the grid round the player and a flow field per hunted target (navigation system). */
+  nav?: import('../systems/navigation').NavService | undefined;
   input: InputState;
   settings: Settings;
   rng: Rng;

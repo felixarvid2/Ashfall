@@ -294,3 +294,34 @@ through doorways and along winding tunnels. One field serves every enemy (≈ 0.
 ≈ 2.7 ms in the busiest open zones); beyond the window, or for targets other than the player (decoys,
 minions), they still walk straight.
 
+
+### 2026-10-04 — Enemy wayfinding: shared grid, fields per target, senses and tactics
+The flow field grew into a wayfinding system (`src/systems/navigation.ts`, steering in `enemyAI.ts`):
+- **One grid, several fields.** The 1.5 m grid round the player (now 120 m) is built once per rebuild;
+  the player and up to two decoys or minions that enemies are chasing each get a Dijkstra field on it.
+  Taunted enemies now find their way round walls to a decoy too.
+- **Danger costs, walls block.** The player's burning ground and clouds, lit fuses, molten metal, vents
+  and a tunnel about to cave in cost 90 per cell (a plain step is 10), water 6. Walking lines refuse to
+  enter danger, so enemies go round a fire patch unless every way leads through it.
+- **Sight is not walking.** Rock and colliders of radius ≥ 1 m block sight; crates block walking only.
+- **Melee ring.** Melee attackers chasing the same target get evenly spaced places round it (in the
+  order they stand, rotated to move them least); those that don't fit wait on an outer ring, places in
+  rock are dropped (in a tunnel they come straight on), and an attacker takes its place before
+  swinging. A place on the far side is reached by going round, not through, the target.
+- **Gunners need a clear line.** No wind-up without line of sight; a gunner behind rock follows a lazy
+  "firing spot" layer (cells in sight 5–11 m from the target) and turns its strafe back before walls.
+- **Retreat by safety map.** Backing off (gunners, lungers, supports) follows the field ×−1.2 relaxed
+  again, which leads away toward open ground instead of into a corner.
+- **Senses.** Noticing needs a line of sight unless the target is within 3 m (Blind Hounds still hear);
+  a "!" pops over the enemy and, a beat later, its pack. Losing the target (stealth) sends it to the
+  last place it saw you, to look round and check two spots nearby, with a "?" over it, then it gives up.
+- **A\*** (octile, danger-aware, string-pulled) takes enemies anywhere else: search spots, a Blind
+  Hound's noise, a support's place behind its pack.
+- **Crowd and stuck handling.** A light separation keeps packs from walking in single file; an enemy
+  that meant to walk 2 m but moved under 0.45 m slides off sideways for 0.6 s.
+- **Debug overlay** (debug panel, or `?nav`): flow arrows coloured by distance, danger in orange, walls
+  in red, and a line from every hunting enemy to where it is heading, coloured by why.
+
+Cost (Node, median): grid and field ≈ 1.2 ms in open zones, 0.8 ms in the mines, every 0.3 s while
+something hunts; the sight, firing-spot and safety layers add 2–4 ms only when a gunner asks, once per
+rebuild. The safety map's all-sources Dijkstra is the biggest part and the first thing to speed up if needed.

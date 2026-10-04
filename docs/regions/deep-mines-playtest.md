@@ -31,6 +31,10 @@ wind) and the map sweep covers only the open ground (≈ 10 % of the square).
   per room and a three-phase boss. It is optional.
 - **Echoes** take double damage in light. In the lamp's radius they melt; in the dark they are dangerous.
   Throwing a flare before a fight in the Elder Halls is the intended trick.
+- **Ground textures:** crystal floor (glowing cyan specks) in the Crystal Caves and at the Elder Gate,
+  alien elder stone with glowing seams in the Elder Halls, silt shore round the water, steel grating at
+  Station Zero, Aurum and Drill Control, and cart rails along every tunnel. The base is still region 2's
+  industrial grit: the `mine_rock` image that came back was the Vaults' lab tiles again.
 - **Models are placeholders.** Kade is the Bastion armour at ×1.35 with a gold glow; Echoes are the
   Spectre as a hologram; the Main Drill is the giant crane and the pillar. The plan lists what to replace
   first when credits return.

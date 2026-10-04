@@ -3,6 +3,8 @@
  * scene each frame. Game logic never imports this module.
  */
 import * as THREE from 'three';
+import { AwarenessMarkers, NavDebugOverlay } from './navOverlay';
+import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
 import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
@@ -34,6 +36,9 @@ export class GameRenderer {
   readonly loot = new LootVisuals();
   private readonly postfx: PostFx;
   private readonly objects = new Map<Entity, THREE.Object3D>();
+  /** "!" and "?" over enemies; the wayfinding debug overlay when switched on. */
+  private awareness: AwarenessMarkers | null = null;
+  private navDebug: NavDebugOverlay | null = null;
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
   private readonly animators = new Map<Entity, CharacterAnimator>();
@@ -453,7 +458,7 @@ export class GameRenderer {
    * The base texture everywhere, two samples at different scales and angles mixed by slow noise so
    * its repeat doesn't show, then up to six overlays blended in by splat maps built from the zone's
    * patches. Each texture's look (scale, brightness, glow) comes from GROUND_LOOK: Lumen spots glow
-   * green, cracks in slag glow orange.
+   * green, cracks in slag glow orange, crystal and alien seams glow cyan.
    */
   private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string): THREE.MeshStandardMaterial {
     const res = 1024;
@@ -486,6 +491,9 @@ export class GameRenderer {
         body += `groundGlow += vec3(0.36, 1.0, 0.42) * ${weight} * smoothstep(0.2, 0.6, raw${i}.g - max(raw${i}.r, raw${i}.b)) * 1.5;\n`;
       } else if (look.glow === 'orange') {
         body += `groundGlow += vec3(1.0, 0.42, 0.1) * ${weight} * smoothstep(0.3, 0.75, raw${i}.r - raw${i}.b) * 1.2;\n`;
+      } else if (look.glow === 'blue') {
+        // Bright cyan only: the spots and seams, not the blue-grey stone around them.
+        body += `groundGlow += vec3(0.3, 0.8, 1.0) * ${weight} * smoothstep(0.55, 0.85, min(raw${i}.g, raw${i}.b)) * smoothstep(0.15, 0.35, raw${i}.b - raw${i}.r) * 1.6;\n`;
       }
     });
     const samplers = layers.map((_, i) => `groundLayer${i}`).concat(splats.map((_, i) => `groundSplat${i}`));
@@ -1021,7 +1029,20 @@ export class GameRenderer {
     this.loot.update(world, frameDt);
   }
 
-  /** Pick the animation for what the entity is doing this frame. */
+  /** What the enemies are thinking: "!" and "?" markers, and the debug overlay when on. */
+  updateMinds(world: World, nav: NavService | undefined, time: number): void {
+    (this.awareness ??= new AwarenessMarkers(this.scene)).update(world, this.objects, time);
+    this.navDebug?.update(nav, world);
+  }
+
+  setNavOverlay(on: boolean): void {
+    if (on && !this.navDebug) this.navDebug = new NavDebugOverlay(this.scene);
+    else if (!on && this.navDebug) {
+      this.navDebug.dispose();
+      this.navDebug = null;
+    }
+  }
+
   /** Two small glowing points near the top of an enemy (dark zones). */
   private addEyes(obj: THREE.Object3D, scale: number): void {
     obj.updateMatrixWorld(true);
@@ -1275,7 +1296,7 @@ function makeGlowTexture(): THREE.Texture {
  * `gain`, contrast softened toward a dark colour (`soften`), and which bright pixels glow.
  */
 const GROUND_LOOK: Partial<
-  Record<GroundTexture, { scale?: number; gain?: number; soften?: { toward: [number, number, number]; keep: number }; glow?: 'green' | 'orange' }>
+  Record<GroundTexture, { scale?: number; gain?: number; soften?: { toward: [number, number, number]; keep: number }; glow?: 'green' | 'orange' | 'blue' }>
 > = {
   // Dark and blotchy: lifted, with softer contrast.
   scorched_ground: { scale: 0.6, gain: 1.6, soften: { toward: [0.045, 0.038, 0.034], keep: 0.7 } },
@@ -1293,6 +1314,11 @@ const GROUND_LOOK: Partial<
   frosted_concrete: { scale: 0.7, gain: 0.62 },
   dry_silt: { scale: 0.8, gain: 0.8 },
   lab_tiles: { scale: 0.8, gain: 0.75 },
+  // Deep Mines: the cyan spots in crystal floors and the seams in the Elder Halls' stone glow blue.
+  crystal_floor: { scale: 0.8, gain: 1.1, glow: 'blue' },
+  elder_stone: { scale: 0.55, gain: 1.5, glow: 'blue' },
+  lake_shore: { scale: 0.8, gain: 0.85 },
+  steel_grating: { scale: 0.9, gain: 0.95 },
 };
 
 /** Multiplies the painted ground textures down to the dark night look of the procedural ground. */
