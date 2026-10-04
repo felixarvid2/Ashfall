@@ -158,8 +158,10 @@ export function instanceDef(id: string): InstanceDef {
 }
 
 /** What the collect objective's objects look like. */
-const COLLECT_LOOK: Record<'keycard' | 'seed' | 'data', { asset: string; scale: number; glow: string }> = {
+const COLLECT_LOOK: Record<'keycard' | 'seed' | 'data' | 'memory', { asset: string; scale: number; glow: string }> = {
   keycard: { asset: 'prop.cargo_crate', scale: 0.3, glow: '#3ad2ff' },
+  // The Archive: memory crystals of the elder civilisation.
+  memory: { asset: 'prop.lumen_growth', scale: 0.9, glow: '#6ad8ff' },
   seed: { asset: 'prop.echo_relic', scale: 0.7, glow: '#9fffd8' },
   data: { asset: 'prop.control_terminal', scale: 0.9, glow: '#7dffd0' },
 };
@@ -293,7 +295,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
         const t = obj.target;
         const nest = world.create();
         world.add(nest, Transform, makeTransform(x, 0, z, rng.range(0, 6)));
-        world.add(nest, Renderable, { assetId: t?.asset ?? 'prop.spore_nest', scale: t?.scale ?? 1, glow: '#7dff5a' });
+        world.add(nest, Renderable, { assetId: t?.asset ?? 'prop.spore_nest', scale: t?.scale ?? 1, glow: t?.glow ?? '#7dff5a' });
         world.add(nest, Faction, { team: 'enemy' });
         world.add(nest, Health, { current: obj.life * (1 + 0.12 * (level - 1)), max: obj.life * (1 + 0.12 * (level - 1)) });
         world.add(nest, Collider, { radius: 1.2 * (t?.scale ?? 1), mass: Infinity, layer: 'ground', isStatic: true });
@@ -386,7 +388,7 @@ export function instanceSystem(world: World, dt: number, ctx: GameContext): void
       const dead = world.query(Targetable).filter((e) => world.has(e, Dead) && inInstance(world.req(e, Transform).x)).length;
       if (dead !== rt.objective.progress) {
         rt.objective.progress = dead;
-        ctx.events.push({ type: 'banner', key: 'instances.progress.destroy', params: { n: dead, count: obj.count }, seconds: 1.6 });
+        ctx.events.push({ type: 'banner', key: obj.target?.progress ?? 'instances.progress.destroy', params: { n: dead, count: obj.count }, seconds: 1.6 });
       }
     } else if (obj.kind === 'activate' && rt.objective.charging) {
       const ch = rt.objective.charging;
@@ -478,6 +480,8 @@ export function instanceInteract(world: World, ctx: GameContext, target: Entity,
       ctx.events.push({ type: 'banner', key: `instances.progress.${obj.item && obj.item !== 'keycard' ? obj.item : 'collect'}`, params: { n: rt.objective.progress, count: obj.count }, seconds: 1.6 });
       // The Sleeping Lab: each terminal plays one of the dead team's logs.
       if (obj.item === 'data') ctx.events.push({ type: 'interact', kind: 'lore', id: it.poi, detail: `hvlab.${rt.objective.progress - 1}` });
+      // The Archive: each memory crystal plays a fragment of the revelation.
+      if (obj.item === 'memory') ctx.events.push({ type: 'interact', kind: 'lore', id: it.poi, detail: `dmarc.${rt.objective.progress - 1}` });
       return true;
     case 'cache':
       it.used = true;
@@ -494,6 +498,7 @@ export function instanceInteract(world: World, ctx: GameContext, target: Entity,
     case 'cage':
     case 'compressor':
     case 'lever':
+    case 'mirror':
       return objectiveInteract(world, ctx, rt, target, it);
     default:
       return false;
@@ -519,6 +524,6 @@ export function objectiveText(rt: InstanceRuntime, t: (key: string, params?: Rec
   if (obj.kind === 'clear') return t('instances.objective.clear');
   const params = { n: rt.objective.progress, count: objectiveCount(obj) };
   if (obj.kind === 'collect' && obj.item && obj.item !== 'keycard') return t(`instances.objective.${obj.item}`, params);
-  if (obj.kind === 'destroy' && obj.target) return t('instances.objective.motherCocoon', params);
+  if (obj.kind === 'destroy' && obj.target) return t(obj.target.objective ?? 'instances.objective.motherCocoon', params);
   return t(`instances.objective.${obj.kind}`, params);
 }

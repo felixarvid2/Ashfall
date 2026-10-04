@@ -284,8 +284,13 @@ export function spawnNpc(world: World, id: string): Entity {
 
 /** Hub NPCs that are always present, and trigger objects for quests not yet found. */
 export function spawnQuestWorld(world: World, ctx: GameContext): void {
-  for (const npc of NPCS.values()) if (!npc.questOnly && here(ctx, npc.zone) && unlocked(ctx, npc.requires)) spawnNpc(world, npc.id);
+  for (const npc of NPCS.values()) if (!npc.questOnly && here(ctx, npc.zone) && unlocked(ctx, npc.requires) && chosen(ctx, npc.choice)) spawnNpc(world, npc.id);
   refreshTriggers(world, ctx);
+}
+
+/** The follower from the last region: only the one your choice sent with you. */
+function chosen(ctx: GameContext, choice: { quest: string; option: string } | undefined): boolean {
+  return choice === undefined || ctx.quests?.done.get(choice.quest) === choice.option;
 }
 
 function unlocked(ctx: GameContext, requires: string | undefined): boolean {
@@ -294,7 +299,7 @@ function unlocked(ctx: GameContext, requires: string | undefined): boolean {
 
 /** A stronghold was reclaimed: the people who move in appear. */
 export function spawnUnlockedNpcs(world: World, ctx: GameContext, found: string): void {
-  for (const npc of NPCS.values()) if (npc.requires === found && !npc.questOnly && here(ctx, npc.zone)) spawnNpc(world, npc.id);
+  for (const npc of NPCS.values()) if (npc.requires === found && !npc.questOnly && here(ctx, npc.zone) && chosen(ctx, npc.choice)) spawnNpc(world, npc.id);
 }
 
 /**

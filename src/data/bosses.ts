@@ -16,13 +16,28 @@ export interface BossPhase {
   /** Spore fields around the arena (burning spore fields in the Cathedral). */
   sporeFields?: { every: number; count: number; radius: number; duration: number; dpsOfWeapon: number; status?: 'poisoned' | 'burning'; color?: string };
   /** Warned fireballs at and around the player (no cover left behind); root slams are green ones. */
-  fireballs?: { every: number; count: number; radius: number; warning: number; damageOfWeapon: number; color?: string; vfx?: 'vent' | 'slam' };
+  fireballs?: { every: number; count: number; radius: number; warning: number; damageOfWeapon: number; color?: string; vfx?: 'vent' | 'slam' | 'explosion' };
   /** A telegraphed spore beam: a line from the boss toward the player, hitting all along it. */
   beams?: { every: number; length: number; width: number; warning: number; damageOfWeapon: number; color?: string };
   /** Armour plates: separate targets on the boss; until all are broken it takes `reduction` less damage. */
   armor?: { plates: number; reduction: number; plateLife: number };
   /** It takes root and cannot be hurt or move until `nodes` Root Nodes around the arena are destroyed; vines slow the floor. */
-  rooted?: { nodes: number; nodeLife: number; ring: number; vines: number; vineRadius: number };
+  rooted?: {
+    nodes: number;
+    nodeLife: number;
+    ring: number;
+    vines: number;
+    vineRadius: number;
+    /** Look and name of the nodes (default: Root Nodes) and the banner when they are gone. */
+    asset?: string;
+    glow?: string;
+    name?: string;
+    freed?: string;
+  };
+  /** A slow beam turning around the arena centre (the Main Drill's head); everyone it crosses is hit. */
+  sweep?: { length: number; width: number; speed: number; dpsOfWeapon: number; color?: string };
+  /** Blinks to a spot near the player every `every` s and sends out a pulse where it lands. */
+  teleport?: { every: number; radius: number; warning: number; damageOfWeapon: number; color?: string };
   /** The floor collapses from the edge inward: each step leaves a safe circle of this fraction of the arena. */
   shrink?: { steps: number[]; every: number; warning: number; dpsOfWeapon: number };
   /** Spawned once when the phase starts (bodyguards). */
@@ -133,6 +148,62 @@ export const BOSS_SCRIPTS: Record<string, BossPhase[]> = {
       speedMul: 1.3,
       adds: { enemy: 'cocoon_warden', count: 1, every: 20 },
       sporeFields: { every: 7, count: 3, radius: 3.5, duration: 9, dpsOfWeapon: 0.35 },
+    },
+  ],
+  // ---- Region 4 ----
+  dray: [
+    { below: 1, adds: { enemy: 'infected_miner', count: 2, every: 16 } },
+    { below: 0.5, banner: 'bosses.dray.phase2', tempo: 1.25, fireballs: { every: 5, count: 3, radius: 2.8, warning: 1.3, damageOfWeapon: 1.3, color: '#ffb23a', vfx: 'explosion' } },
+  ],
+  prism: [
+    { below: 1, adds: { enemy: 'crystal_walker', count: 2, every: 15 } },
+    { below: 0.5, banner: 'bosses.prism.phase2', beams: { every: 4.5, length: 22, width: 2, warning: 1, damageOfWeapon: 1.3, color: '#bfffff' } },
+  ],
+  drowned_engine: [
+    { below: 1, adds: { enemy: 'burrower', count: 2, every: 16 } },
+    { below: 0.5, banner: 'bosses.drowned_engine.phase2', tempo: 1.2, sweep: { length: 24, width: 2.6, speed: 0.6, dpsOfWeapon: 0.8, color: '#ffb23a' } },
+  ],
+  archivist: [
+    { below: 1, adds: { enemy: 'echo', count: 2, every: 14 } },
+    { below: 0.5, banner: 'bosses.archivist.phase2', teleport: { every: 5, radius: 3.5, warning: 1, damageOfWeapon: 1.3 }, adds: { enemy: 'echo', count: 3, every: 12 } },
+  ],
+  elder_guardian: [
+    { below: 1, adds: { enemy: 'crystal_sentinel', count: 1, every: 20 }, beams: { every: 6, length: 24, width: 2.4, warning: 1.1, damageOfWeapon: 1.4, color: '#6ad8ff' } },
+    { below: 0.6, banner: 'bosses.elder_guardian.phase2', teleport: { every: 6, radius: 4, warning: 1.1, damageOfWeapon: 1.5 }, adds: { enemy: 'echo', count: 3, every: 14 } },
+    {
+      below: 0.3,
+      banner: 'bosses.elder_guardian.phase3',
+      speedMul: 1.2,
+      tempo: 1.25,
+      transform: { scale: 1.2, glow: '#bfffff' },
+      sweep: { length: 26, width: 2.6, speed: 0.5, dpsOfWeapon: 0.9, color: '#6ad8ff' },
+      fireballs: { every: 5, count: 3, radius: 3, warning: 1.2, damageOfWeapon: 1.4, color: '#6ad8ff', vfx: 'slam' },
+    },
+  ],
+  holm: [
+    { below: 1, guards: { enemy: 'security_trooper', count: 2 } },
+    { below: 0.5, banner: 'bosses.holm.phase2', adds: { enemy: 'governor_drone', count: 2, every: 14 }, fireballs: { every: 5, count: 3, radius: 2.6, warning: 1.2, damageOfWeapon: 1.3, color: '#ffd23a', vfx: 'explosion' } },
+  ],
+  kade: [
+    // Phase 1: the control room. A frontal shield, his drones and a telegraphed energy cannon.
+    { below: 1, adds: { enemy: 'governor_drone', count: 2, every: 14 }, beams: { every: 5, length: 26, width: 2.4, warning: 1.2, damageOfWeapon: 1.5, color: '#ffd23a' } },
+    // Phase 2: he plugs into the Main Drill (immune) while its head sweeps the room; cut the four conduits.
+    {
+      below: 0.6,
+      banner: 'bosses.kade.phase2',
+      rooted: { nodes: 4, nodeLife: 900, ring: 0.7, vines: 0, vineRadius: 1, asset: 'prop.generator', glow: '#ffb23a', name: 'enemies.conduit', freed: 'bosses.kade.freed' },
+      sweep: { length: 30, width: 3, speed: 0.45, dpsOfWeapon: 0.9, color: '#ffb23a' },
+    },
+    // Phase 3: Lumen takes him. He blinks around the room; Echoes join.
+    {
+      below: 0.3,
+      banner: 'bosses.kade.phase3',
+      speedMul: 1.25,
+      tempo: 1.25,
+      transform: { scale: 1.3, glow: '#6ad8ff' },
+      teleport: { every: 6, radius: 4, warning: 1, damageOfWeapon: 1.5 },
+      adds: { enemy: 'echo', count: 3, every: 12 },
+      beams: { every: 8, length: 26, width: 2.4, warning: 1.1, damageOfWeapon: 1.5, color: '#6ad8ff' },
     },
   ],
   warden: [

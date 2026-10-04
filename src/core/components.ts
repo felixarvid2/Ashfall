@@ -534,7 +534,7 @@ export const Turret = defineComponent<Turret>('Turret');
 export interface Interactable {
   /** Point-of-interest id (or teleporter id). */
   poi: string;
-  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject' | 'valve' | 'cage' | 'compressor' | 'lever';
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject' | 'valve' | 'cage' | 'compressor' | 'lever' | 'mirror';
   /** Use radius (m). */
   radius: number;
   /** Spent for good (opened, read, claimed). */
@@ -639,7 +639,7 @@ export const Targetable = defineComponent<Targetable>('Targetable');
 export interface Boss {
   script: string | null;
   phase: number;
-  timers: { adds: number; plates: number; spores: number; fireballs?: number; shrink?: number; tentacles?: number; beams?: number };
+  timers: { adds: number; plates: number; spores: number; fireballs?: number; shrink?: number; tentacles?: number; beams?: number; sweep?: number; sweepTick?: number; teleport?: number };
   engaged: boolean;
   /** Arena centre and radius (spore fields, resets). */
   arena: { x: number; z: number; radius: number };
@@ -647,7 +647,7 @@ export interface Boss {
   /** Cover plates thrown in phase 2, and other arena changes (the collapsing floor); removed on reset. */
   plates: Entity[];
   /** Warned impacts: plates (leave cover), fireballs (don't), the next floor collapse, or a spore beam along `facing`. */
-  pending: { x: number; z: number; t: number; kind?: 'plate' | 'fireball' | 'shrink' | 'beam'; facing?: number }[];
+  pending: { x: number; z: number; t: number; kind?: 'plate' | 'fireball' | 'shrink' | 'beam' | 'pulse'; facing?: number }[];
   baseSpeed: number;
   /** Collapse steps taken (shrinking arena). */
   shrinkStep?: number;

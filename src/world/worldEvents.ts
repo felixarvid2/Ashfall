@@ -44,7 +44,12 @@ export type EventType =
   // Hydroponic Vaults
   | 'sporeBloom'
   | 'swarmMigration'
-  | 'rootEruption';
+  | 'rootEruption'
+  // Deep Mines
+  | 'caveRescue'
+  | 'burrowerSwarm'
+  | 'lightsOut'
+  | 'securityPatrol';
 export type Tier = 'gold' | 'silver' | 'bronze';
 
 export const EVENT_TUNING = {
@@ -71,6 +76,14 @@ export const EVENT_TUNING = {
   swarmMigration: { kills: 20, time: 70, gold: 40, silver: 58, waveEvery: 5 },
   /** Roots erupt from the floor; tear them all out before the patch is overgrown. */
   rootEruption: { roots: 5, time: 75, gold: 40, silver: 60, waveEvery: 10 },
+  /** Miners trapped under fallen rock: dig them out while Burrowers come for them. */
+  caveRescue: { miners: 3, time: 90, gold: 45, silver: 65, waveEvery: 9 },
+  /** A Burrower nest stirs: kill what comes up before the tunnel fills. */
+  burrowerSwarm: { kills: 16, time: 75, gold: 40, silver: 58, waveEvery: 6 },
+  /** Keep the work lights' generator running against the things that hate the light. */
+  lightsOut: { time: 60, life: 800, waveEvery: 8 },
+  /** A security patrol escorts a cargo of sleepers: stop them before they reach the far tunnel. */
+  securityPatrol: { time: 70, gold: 35, silver: 52 },
   /** XP per tier, × monster level. */
   xp: { gold: 40, silver: 28, bronze: 18 } as Record<Tier, number>,
 };
@@ -127,6 +140,12 @@ const WAVE_ROSTER: Record<string, { item: string; weight: number }[]> = {
     { item: 'smelter', weight: 1 },
     { item: 'welder', weight: 1 },
     { item: 'fire_bloater', weight: 1 },
+  ],
+  'zone.deep_mines': [
+    { item: 'crystal_walker', weight: 5 },
+    { item: 'blind_hound', weight: 2 },
+    { item: 'infected_miner', weight: 2 },
+    { item: 'shard_bloater', weight: 1 },
   ],
   'zone.hydroponic_vaults': [
     { item: 'overgrown_walker', weight: 5 },
@@ -223,7 +242,7 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
       break;
     }
     case 'eliteHunt': {
-      const prey = ({ 'zone.refinery_district': 'welder', 'zone.hydroponic_vaults': 'vine_weaver' } as Record<string, string>)[ctx.zone?.def.id ?? ''] ?? 'spore_hound';
+      const prey = ({ 'zone.refinery_district': 'welder', 'zone.hydroponic_vaults': 'vine_weaver', 'zone.deep_mines': 'ore_crusher' } as Record<string, string>)[ctx.zone?.def.id ?? ''] ?? 'spore_hound';
       const e = spawnEnemy(world, prey, ev.x, ev.z, { level: level + 1 });
       makeElite(world, e, 'rare', new Rng(`${id}-${ctx.tick}`));
       world.req(e, EnemyAI).aggro = true;
@@ -269,6 +288,27 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
     case 'swarmMigration':
       ev.waveTimer = 0;
       break;
+    case 'caveRescue':
+      for (let i = 0; i < T.caveRescue.miners; i++) {
+        const a = (i / T.caveRescue.miners) * Math.PI * 2 + 0.4;
+        ev.objects.push(eventObject(world, `${id}.miner.${i}`, ev.x + Math.sin(a) * 8, ev.z + Math.cos(a) * 8, 'env.slag_rock', 1.2, '#ffc890'));
+      }
+      ev.waveTimer = 3;
+      break;
+    case 'burrowerSwarm':
+      ev.waveTimer = 0;
+      break;
+    case 'lightsOut':
+      ev.objects.push(target(world, ev.x, ev.z, 'prop.generator', 'player', T.lightsOut.life, 1.2, '#ffe2a0'));
+      break;
+    case 'securityPatrol': {
+      // The patrol: troopers round a shield officer; they head off down the tunnel.
+      const lead = spawnEnemy(world, 'shield_officer', ev.x, ev.z, { level: level + 1 });
+      makeElite(world, lead, 'champion', ctx.rng);
+      world.req(lead, EnemyAI).aggro = true;
+      ev.objects.push(lead, ...wave(world, ctx, ev.x, ev.z, 4, level, 3, [{ item: 'security_trooper', weight: 1 }]));
+      break;
+    }
     case 'rootEruption': {
       for (let i = 0; i < T.rootEruption.roots; i++) {
         const a = ctx.rng.range(0, Math.PI * 2);
@@ -485,6 +525,62 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
         }
         break;
       }
+      case 'caveRescue': {
+        const R = T.caveRescue;
+        if ((ev.waveTimer -= dt) <= 0) {
+          ev.waveTimer = R.waveEvery;
+          wave(world, ctx, ev.x, ev.z, 3, level, 12, [{ item: 'burrower', weight: 2 }, { item: 'blind_hound', weight: 1 }]);
+        }
+        if (ev.progress >= R.miners) finish(world, ctx, zone, id, ev, ev.elapsed < R.gold ? 'gold' : ev.elapsed < R.silver ? 'silver' : 'bronze');
+        else if (ev.elapsed >= R.time) finish(world, ctx, zone, id, ev, ev.progress >= 2 ? 'bronze' : 'failed');
+        break;
+      }
+      case 'burrowerSwarm': {
+        const M = T.burrowerSwarm;
+        if ((ev.waveTimer -= dt) <= 0) {
+          ev.waveTimer = M.waveEvery;
+          ev.objects.push(...wave(world, ctx, ev.x, ev.z, 3, level, 10, [{ item: 'burrower', weight: 3 }, { item: 'crystal_walker', weight: 1 }]));
+        }
+        ev.progress = countKills(world, ev);
+        if (ev.progress >= M.kills) {
+          ev.banked = 0;
+          finish(world, ctx, zone, id, ev, ev.elapsed < M.gold ? 'gold' : ev.elapsed < M.silver ? 'silver' : 'bronze');
+        } else if (ev.elapsed >= M.time) {
+          ev.banked = 0;
+          finish(world, ctx, zone, id, ev, 'failed');
+        }
+        break;
+      }
+      case 'lightsOut': {
+        const L = T.lightsOut;
+        const gen = ev.objects[0];
+        if (!alive(world, gen)) {
+          finish(world, ctx, zone, id, ev, 'failed');
+          break;
+        }
+        if ((ev.waveTimer -= dt) <= 0) {
+          ev.waveTimer = L.waveEvery;
+          wave(world, ctx, ev.x, ev.z, 3, level, 20, [{ item: 'echo', weight: 3 }, { item: 'blind_hound', weight: 1 }]);
+        }
+        if (ev.elapsed >= L.time) {
+          const h = world.req(gen!, Health);
+          const frac = h.current / h.max;
+          finish(world, ctx, zone, id, ev, frac >= 0.7 ? 'gold' : frac >= 0.35 ? 'silver' : 'bronze');
+        }
+        break;
+      }
+      case 'securityPatrol': {
+        const P = T.securityPatrol;
+        const left = ev.objects.filter((o) => alive(world, o));
+        if (!left.length) finish(world, ctx, zone, id, ev, ev.elapsed < P.gold ? 'gold' : ev.elapsed < P.silver ? 'silver' : 'bronze');
+        else if (ev.elapsed >= P.time) {
+          // They got away down the tunnel.
+          for (const o of left) world.destroyDeferred(o);
+          ev.objects = [];
+          finish(world, ctx, zone, id, ev, 'failed');
+        }
+        break;
+      }
       case 'sporeBloom': {
         const B = T.sporeBloom;
         const pods = ev.objects.filter((o) => alive(world, o));
@@ -568,6 +664,15 @@ export function eventInteract(world: World, ctx: GameContext, target: Entity, it
       ctx.events.push({ type: 'banner', key: 'worldEvents.rescue.freed', params: { n: ev.progress, count: EVENT_TUNING.rescue.survivors }, seconds: 1.6 });
       return true;
     }
+    if (ev.type === 'caveRescue') {
+      it.used = true;
+      ev.progress++;
+      world.destroyDeferred(target);
+      ev.objects = ev.objects.filter((o) => o !== target);
+      ctx.events.push({ type: 'vfx', kind: 'dust', x: tr.x, z: tr.z, radius: 2, facing: 0 });
+      ctx.events.push({ type: 'banner', key: 'worldEvents.caveRescue.freed', params: { n: ev.progress, count: EVENT_TUNING.caveRescue.miners }, seconds: 1.6 });
+      return true;
+    }
     if (ev.type === 'supplyDrop') {
       // You have to drive the scavengers off first.
       const near = world.query(EnemyAI, Transform).some((e) => {
@@ -629,6 +734,14 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
       return { type: best.type, text: 'worldEvents.sporeBloom.objective', params: { n: best.progress, count: T.sporeBloom.pods, s: left(T.sporeBloom.time) } };
     case 'swarmMigration':
       return { type: best.type, text: 'worldEvents.swarmMigration.objective', params: { n: best.progress, count: T.swarmMigration.kills, s: left(T.swarmMigration.time) } };
+    case 'caveRescue':
+      return { type: best.type, text: 'worldEvents.caveRescue.objective', params: { n: best.progress, count: T.caveRescue.miners, s: left(T.caveRescue.time) } };
+    case 'burrowerSwarm':
+      return { type: best.type, text: 'worldEvents.burrowerSwarm.objective', params: { n: best.progress, count: T.burrowerSwarm.kills, s: left(T.burrowerSwarm.time) } };
+    case 'lightsOut':
+      return { type: best.type, text: 'worldEvents.lightsOut.objective', params: { s: left(T.lightsOut.time) } };
+    case 'securityPatrol':
+      return { type: best.type, text: 'worldEvents.securityPatrol.objective', params: { s: left(T.securityPatrol.time) } };
     case 'rootEruption':
       return { type: best.type, text: 'worldEvents.rootEruption.objective', params: { n: best.progress, count: T.rootEruption.roots, s: left(T.rootEruption.time) } };
   }

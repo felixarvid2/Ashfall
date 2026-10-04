@@ -138,6 +138,37 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
       boss.pending.push({ x: tr.x, z: tr.z, t: b.warning, kind: 'beam', facing });
       ctx.events.push({ type: 'telegraph', owner: null, x: tr.x, z: tr.z, shape: { kind: 'line', length: b.length, width: b.width, facing }, duration: b.warning, color: b.color ?? '#7dff5a' });
     }
+    // The drill head: a slow beam turning around the arena centre.
+    if (ph.sweep) {
+      const s = ph.sweep;
+      boss.timers.sweep = (boss.timers.sweep ?? 0) + s.speed * dt;
+      if ((boss.timers.sweepTick = (boss.timers.sweepTick ?? 0) - dt) <= 0) {
+        boss.timers.sweepTick = 0.25;
+        const facing = boss.timers.sweep;
+        ctx.events.push({ type: 'telegraph', owner: null, x: boss.arena.x, z: boss.arena.z, shape: { kind: 'line', length: s.length, width: s.width, facing }, duration: 0.3, color: s.color ?? '#ffb23a' });
+        beam(world, ctx, boss.arena.x, boss.arena.z, facing, { every: 0, length: s.length, width: s.width, warning: 0, damageOfWeapon: s.dpsOfWeapon * 0.25 }, weapon, level, false);
+      }
+    }
+    // Blink next to the player; a pulse goes off where it lands.
+    if (ph.teleport && (boss.timers.teleport = (boss.timers.teleport ?? ph.teleport.every) - dt) <= 0) {
+      const t = ph.teleport;
+      boss.timers.teleport = t.every;
+      const a = ctx.rng.range(0, Math.PI * 2);
+      let x = ptr.x + Math.sin(a) * 5;
+      let z = ptr.z + Math.cos(a) * 5;
+      const fromArena = Math.hypot(x - boss.arena.x, z - boss.arena.z);
+      if (fromArena > boss.arena.radius - 2) {
+        const k = (boss.arena.radius - 2) / fromArena;
+        x = boss.arena.x + (x - boss.arena.x) * k;
+        z = boss.arena.z + (z - boss.arena.z) * k;
+      }
+      ctx.events.push({ type: 'vfx', kind: 'blink', x: tr.x, z: tr.z, radius: 2, facing: 0 });
+      tr.x = tr.prevX = x;
+      tr.z = tr.prevZ = z;
+      ctx.events.push({ type: 'vfx', kind: 'blink', x, z, radius: 2, facing: 0 });
+      boss.pending.push({ x, z, t: t.warning, kind: 'pulse' });
+      ctx.events.push({ type: 'telegraph', owner: null, x, z, shape: { kind: 'circle', radius: t.radius }, duration: t.warning, color: t.color ?? '#6ad8ff' });
+    }
     if (ph.shrink && (boss.shrinkStep ?? 0) < ph.shrink.steps.length && (boss.timers.shrink = (boss.timers.shrink ?? 0) - dt) <= 0) {
       boss.timers.shrink = Infinity;
       const frac = ph.shrink.steps[boss.shrinkStep ?? 0]!;
@@ -181,6 +212,15 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
         const b = ph.beams ?? list.find((x) => x.beams)?.beams;
         if (!b) continue;
         beam(world, ctx, p.x, p.z, p.facing ?? 0, b, weapon, level);
+        continue;
+      }
+      if (p.kind === 'pulse') {
+        const t = ph.teleport ?? list.find((x) => x.teleport)?.teleport;
+        if (!t) continue;
+        const blast = world.create();
+        world.add(blast, Transform, makeTransform(p.x, 0, p.z));
+        world.add(blast, Blast, { fuse: 0, radius: t.radius, owner: null, coefficient: 0, flat: 0, hurtsEnemies: false, player: { fraction: 0, damage: weapon * t.damageOfWeapon, level } });
+        ctx.events.push({ type: 'vfx', kind: 'flash', x: p.x, z: p.z, radius: t.radius, facing: 0 });
         continue;
       }
       if (p.kind === 'shrink') {
@@ -274,13 +314,13 @@ function phaseStart(world: World, ctx: GameContext, e: Entity, boss: Boss, index
       const a = (i / r.nodes) * Math.PI * 2 + 0.4;
       const n = world.create();
       world.add(n, Transform, makeTransform(boss.arena.x + Math.sin(a) * boss.arena.radius * r.ring, 0, boss.arena.z + Math.cos(a) * boss.arena.radius * r.ring, a));
-      world.add(n, Renderable, { assetId: 'prop.spore_nest', scale: 1.4, glow: '#7dff5a' });
+      world.add(n, Renderable, { assetId: r.asset ?? 'prop.spore_nest', scale: 1.4, glow: r.glow ?? '#7dff5a' });
       world.add(n, Faction, { team: 'enemy' });
       const life = r.nodeLife * (1 + 0.15 * (level - 1));
       world.add(n, Health, { current: life, max: life });
       world.add(n, Collider, { radius: 1.5, mass: Infinity, layer: 'ground', isStatic: true });
       world.add(n, Targetable, {});
-      world.add(n, DisplayName, { key: 'enemies.rootNode' });
+      world.add(n, DisplayName, { key: r.name ?? 'enemies.rootNode' });
       boss.nodes.push(n);
     }
     for (let i = 0; i < r.vines; i++) {
@@ -324,7 +364,7 @@ function wardenParts(world: World, ctx: GameContext, e: Entity, boss: Boss, tr: 
       boss.vines = [];
       const ph = list[boss.phase];
       world.req(e, Mover).speed = boss.baseSpeed * (ph?.speedMul ?? 1);
-      ctx.events.push({ type: 'banner', key: 'bosses.warden.freed', seconds: 2.2 });
+      ctx.events.push({ type: 'banner', key: list.find((p) => p.rooted)?.rooted?.freed ?? 'bosses.warden.freed', seconds: 2.2 });
       ctx.events.push({ type: 'shake', trauma: 0.5 });
     }
   }
@@ -332,10 +372,10 @@ function wardenParts(world: World, ctx: GameContext, e: Entity, boss: Boss, tr: 
 }
 
 /** A spore beam lands: everything on the player's side along the line is hit. */
-function beam(world: World, ctx: GameContext, x: number, z: number, facing: number, b: NonNullable<BossPhase['beams']>, weapon: number, level: number): void {
+function beam(world: World, ctx: GameContext, x: number, z: number, facing: number, b: NonNullable<BossPhase['beams']>, weapon: number, level: number, puffs = true): void {
   const dx = Math.sin(facing);
   const dz = Math.cos(facing);
-  for (let k = 1; k <= 4; k++) ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: x + dx * (b.length * k) / 4, z: z + dz * (b.length * k) / 4, radius: b.width, facing: 0 });
+  if (puffs) for (let k = 1; k <= 4; k++) ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: x + dx * (b.length * k) / 4, z: z + dz * (b.length * k) / 4, radius: b.width, facing: 0 });
   for (const p of world.query(PlayerControlled, Transform)) {
     if (world.has(p, Dead)) continue;
     const pt = world.req(p, Transform);
