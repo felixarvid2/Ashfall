@@ -263,3 +263,25 @@ component. The boss's own `damageTaken` multiplier (applied in `applyDamage`) is
 stands and 0 while rooted; destroying the last node restores its speed and removes the vines. Everything
 is destroyed on reset and on death.
 
+### 2026-10-04 — Underground zones: a walkable grid instead of hand-built corridors
+The Deep Mines are drawn on the same 1500 m square as the other regions, but only the tunnels (the zone's
+roads), caverns and hubs are walkable. They are rasterised into a 2 m grid (`src/data/zones/caves.ts`)
+shared by layout code, a collision step (`rockSystem`: slide back along the wall, spend bolts that hit rock)
+and the renderer (black caps over the rock, rough walls along every edge, built once per zone). Enemies
+still have no pathfinding; they slide along the walls.
+
+### 2026-10-04 — Darkness is rendering plus a light test
+Dark zones set very low ambient light and black fog; the player's existing point light is the lamp.
+Enemies get two small glowing "eye" sprites, and their glow and rim fade with distance from the camera
+focus, so they read as eyes in the dark. Floodlights (saved as found POIs) and flares feed the pooled point
+lights. Gameplay asks `isLit(x, z)` (lamp radius, lit floodlights, burning flares) — Echoes take double
+damage in light.
+
+### 2026-10-04 — The governor is called Kade
+The design document names the region 4 boss Governor Castellan; every earlier region's text already named
+him Governor Kade, so the game keeps Kade.
+
+### 2026-10-04 — The region 3 follower is read from the finished-quest record
+NPCs can require a choice (`choice: { quest, option }`): Okafor follows you into the mines if you spared the
+Mother Tree, Ruiz if you burned it. Each has their own side quest; no save change was needed.
+

@@ -44,6 +44,25 @@ tint, scale, behaviour or affixes (docs/world-and-gameplay.md §4).
 | Dr. Ilse Varga | ilse_varga | enemy.smelter (×1.3, green) | Dungeon boss | human | The Sleeping Lab | Botanist guards; phase 2 spore fields and walkers |
 | The Gamma Bloom | gamma_bloom | boss.the_first (×0.95, green) | Stronghold boss | lumen | Dome Gamma | spore spreader; phase 2 spore fields and a Cocoon Warden |
 | The Warden of the Mother Tree | warden | enemy.cargo_loader (×2.1, green glow) | Region boss | machine | The Great Dome | 3 phases (armour plates + spore beams; rooted, immune until 4 Root Nodes die; Mother Tree roots, slams and beams) |
+| Crystal-Bound Walker | crystal_walker | enemy.infected_colonist (crystal-blue glow) | Charger | infected | Deep Mines (tunnels, caves, event waves) | throws some ranged hits back at the shooter |
+| Blind Hound | blind_hound | enemy.spore_hound (pale) | Flanker | beast | Deep Mines (caves, lake, Cave-in Rescue) | hunts by sound: notices you only up close (even stealthed), runs to flares and explosions; Old Ears (named) |
+| Governor's Drone | governor_drone | enemy.security_drone (gold) | Shooter | machine | Deep Mines (Aurum, Kade adds) | hardens the nearest ally (chitin) |
+| Ore Crusher | ore_crusher | enemy.cargo_loader (×1.3, rust) | Heavy | machine | Deep Mines (shafts, lake, Elite Hunt) | wide ground slam that knocks back |
+| Shard Bloater | shard_bloater | enemy.spore_carrier (crystal blue) | Kamikaze | infected | Deep Mines (tunnels, caves) | bursts into a ring of crystal shards |
+| Burrower | burrower | enemy.lumen_tentacle (×0.8, dark) | Ambusher | lumen | Deep Mines (shafts, lake, Burrower Swarm, Sunken Drill) | travels underground (untargetable), surfaces under you after a warning |
+| Crystal Sentinel | crystal_sentinel | enemy.slagborn (crystal glow) | Tank | lumen | Deep Mines (caves, Elder Halls, Burial Chamber) | shell ignores elemental damage and reflects part of each hit until it breaks |
+| Infected Miner | infected_miner | enemy.welder (amber glow) | Brawler / thrower | infected | Deep Mines (shafts, tunnels) | drill lunge and telegraphed dynamite |
+| Echo | echo | char.spectre (hologram) | Skirmisher | lumen | Deep Mines (Elder Halls, Lights Out, Kade phase 3) | blinks beside you; double damage taken in light |
+| Security Trooper | security_trooper | enemy.sergeant (blue) | Human shooter | human | Deep Mines (Aurum, Security Patrol) | three-round bursts |
+| Shield Officer | shield_officer | enemy.sergeant (×1.05, blue) | Human support | human | Deep Mines (Aurum, Security Patrol) | dome that cuts ranged damage to allies inside |
+| Drill Colossus | drill_colossus | enemy.cargo_loader (×1.9, Lumen glow) | Elite | machine | Deep Mines (lake) | drill spins all the way round |
+| Foreman Dray | foreman_dray | enemy.welder (×1.3) | Dungeon boss | infected | Shaft 13 | lunges, dynamite; phase 2 dynamite volleys |
+| The Prism | the_prism | enemy.slagborn (×1.3, white glow) | Dungeon boss | lumen | The Crystal Labyrinth | crystal shell; phase 2 light beams |
+| The Drowned Engine | drowned_engine | enemy.cargo_loader (×1.95) | Dungeon boss | machine | The Sunken Drill | spinning drill; phase 2 sweeping drill head |
+| The Archivist | archivist | char.spectre (hologram, ×1.3) | Dungeon boss | lumen | The Archive | blinks; phase 2 blinking pulses and Echoes |
+| The Elder Guardian | elder_guardian | boss.the_first (×1.6, cyan) | Dungeon boss (hard) | lumen | The Burial Chamber | beams; blinking pulses; sweeping storm |
+| Security Chief Holm | security_chief_holm | enemy.sergeant (×1.4) | Stronghold boss | human | Mining Station Aurum | bursts, dome; phase 2 drones and grenade barrages |
+| Governor Kade | governor_kade | char.bastion (×1.75 with boss scaling, gold glow) | Region boss | human | Drill Control | 3 phases (frontal shield, drones, energy cannon; plugged into the drill, four conduits, sweeping drill head; Lumen form that blinks with Echoes) |
 
 ## Elites (all regions)
 Champions (blue, packs of up to 4 sharing 1–2 affixes) and rare elites (yellow, generated name, 2–4

@@ -4,8 +4,20 @@
 
 ## Current phase
 
-**Phase 7 – Region 3: The Hydroponic Vaults ✅ built — waiting for your playtest feedback** before
-Region 4. Plan: docs/regions/hydroponic-vaults.md, measurements and checklist:
+**Phase 8 – Region 4: The Deep Mines ✅ built — waiting for your playtest feedback** before Region 5.
+Plan: docs/regions/deep-mines.md, measurements and checklist: docs/regions/deep-mines-playtest.md. No new
+Meshy models (credits are used up).
+- A freight lift past the Great Dome drops into the mines. Underground, only tunnels and caverns are
+  walkable; the renderer draws solid rock and rough walls along every edge.
+- Darkness: the lamp, glowing eyes on enemies in the dark, 10 floodlights that light an area for good,
+  flares on F (3 charges). Cave-ins creak and drop dust before they fall.
+- Elevator Station Zero, the Upper Shafts, the Crystal Caves and the crystal pillar, Drill Lake and the
+  Main Drill, the Elder Halls and the Elder Gate. 12 new enemy types (5 returning variants), Mining Station
+  Aurum (shield generators, Security Chief Holm), Governor Kade (frontal shield; plugged into the drill
+  with a sweeping drill head; a blinking Lumen form), 5 dungeons with new objectives, 6 bunkers, 6 events
+  (4 new), 6 main + 10 side quests + a mystery; the follower from the Vaults depends on the Mother Tree.
+
+### Earlier: Phase 7 – Region 3: The Hydroponic Vaults (levels 20–30). Plan: docs/regions/hydroponic-vaults.md, measurements and checklist:
 docs/regions/hydroponic-vaults-playtest.md. **No new Meshy models** (credits are used up): every model is
 an earlier one at a new size, tint and glow; the glass domes are drawn by the renderer.
 - A road from the Cathedral steps to a border gate on the district's north edge loads the Vaults.
@@ -223,6 +235,21 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
 
+## What to test (Phase 8 – The Deep Mines)
+1. Finish the Vaults (or F3 → skip quest step) and follow *Going Down*: a road past the Great Dome leads to
+   the freight lift at the north edge.
+2. Station Zero: Foreman Brask (story), Oona (trade), Gerd (blacksmith), Nils (aspects), stash, and whoever
+   followed you from the Vaults.
+3. *Lights in the Dark*: switch on a floodlight; throw flares with F (the count is above the skill bar).
+   Watch for red eyes in the dark.
+4. Walk under a creaking roof: dust falls, a circle shows, then the rocks come down.
+5. New enemies: Burrowers come up under you, Blind Hounds run to your flares, Crystal Sentinels ignore
+   fire/frost/poison until their shell breaks, Echoes melt in the light, Shield Officers raise domes.
+6. Mining Station Aurum (break the shield generators first), the five dungeons (hold the elevator, turn the
+   mirrors, break the power cores, wake the memory crystals, survive the Burial Chamber) and Governor Kade.
+7. **Tell me:** is the darkness right (too dark, not dark enough?), are the tunnels fun to move through,
+   and is Kade fair?
+
 ## What to test (Phase 7 – The Hydroponic Vaults)
 1. Finish the district's story (or F3 → skip quest step) and follow *The Green Door*: a new road runs
    north from the Cathedral steps to the border gate. The screen fades and you are in the Vaults.
@@ -359,6 +386,8 @@ Shift + left-click to attack in place.
 - Region 2 boss arenas (and The Maw) are rings of wall segments with gaps; you can step out of them.
 - Region 3 uses only placeholder models (no Meshy credits); the Service Road walk is shorter than the
   5–7 minute target (see the playtest report); the bot does not cover levels 20–30.
+- Region 4 uses only placeholder models too; enemies have no pathfinding, so in winding tunnels they slide
+  along the rock walls toward you; the walk through is ≈ 4 min.
 - Enemies still have no pathfinding; in dungeons they slide along walls toward you.
 - No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
 - Enemies have no pathfinding around crates (they slide along them via collision); fine for the open arena,
@@ -376,8 +405,8 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 
 ## Next steps
-- **Your playtest feedback on the Hydroponic Vaults** (and the earlier regions) → then Region 4 (the Deep
-  Mines) with the same process. Replace the Vaults' placeholder models when Meshy credits are available.
+- **Your playtest feedback on the Deep Mines** (and the earlier regions) → then Region 5 (The Core) with the
+  same process. Replace the placeholder models of regions 3–4 when Meshy credits are available.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
 - Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).

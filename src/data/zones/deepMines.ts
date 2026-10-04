@@ -390,6 +390,18 @@ export const MINES_TELEPORTERS = [
 ];
 
 const PROPS = buildProps();
+function insideProp(x: number, z: number): boolean {
+  return PROPS.some((prop) => {
+    const rot = prop.rot ?? 0;
+    const scale = prop.scale ?? 1;
+    if (prop.collider && Math.hypot(prop.x - x, prop.z - z) < prop.collider + 0.6) return true;
+    return (prop.colliders ?? []).some((c) => {
+      const cx = prop.x + (c.x * Math.cos(rot) + c.z * Math.sin(rot)) * scale;
+      const cz = prop.z + (-c.x * Math.sin(rot) + c.z * Math.cos(rot)) * scale;
+      return Math.hypot(cx - x, cz - z) < c.r * scale + 0.6;
+    });
+  });
+}
 
 export const DEEP_MINES: ZoneDef = {
   id: 'zone.deep_mines',
@@ -418,8 +430,11 @@ export const DEEP_MINES: ZoneDef = {
   hubs: [ZERO],
   teleporters: MINES_TELEPORTERS,
   packs: buildPacks(),
-  // Props can push a point of interest into the rock: snap it back onto open ground.
-  pois: clearOfProps(buildPois(), PROPS).map((p) => (openGround(p.x, p.z) ? p : { ...p, ...(nearestWalkable(GRID, p.x, p.z) ?? p) })),
+  // Props can push a point of interest into the rock: snap it back onto open ground (a crate that
+  // still lands in a prop is dropped).
+  pois: clearOfProps(buildPois(), PROPS)
+    .map((p) => (openGround(p.x, p.z) ? p : { ...p, ...(nearestWalkable(GRID, p.x, p.z) ?? p) }))
+    .filter((p) => p.kind !== 'chest' || !insideProp(p.x, p.z)),
   mapCell: 8,
   gates: [MINES_GATE],
   env: MINES_ENV,
