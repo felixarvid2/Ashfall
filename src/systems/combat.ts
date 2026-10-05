@@ -360,10 +360,12 @@ export interface StatusSource {
 }
 
 /**
- * Poison on a player lasts at most `max` seconds in a row however often it is reapplied (clouds tick,
- * swarms keep biting), then can't take hold for `rest` seconds, so it always wears off.
+ * Damage over time on a player never runs on and on: each kind (burning, poison) lasts at most `max`
+ * seconds in a row however often it is reapplied (fire fields, flamethrowers, clouds, biting swarms),
+ * then can't take hold for `rest` seconds, so it always wears off. Poison also stacks only
+ * `poisonStacks` deep on a player. Enemies are not capped.
  */
-export const PLAYER_POISON = { max: 5, rest: 2 };
+export const PLAYER_DOT = { max: 4, rest: 1.5, poisonStacks: 3 };
 
 export function applyStatus(world: World, ctx: GameContext, target: Entity, apply: StatusApply, source: StatusSource): void {
   if (!isAlive(world, target)) return;
@@ -371,11 +373,14 @@ export function applyStatus(world: World, ctx: GameContext, target: Entity, appl
   if (!effects) return;
   const def = STATUS_DEFS[apply.status];
   let duration = apply.duration;
-  if (apply.status === 'poisoned' && world.has(target, PlayerControlled)) {
-    const { max, rest } = PLAYER_POISON;
-    const poisoned = effects.list.some((s) => s.id === 'poisoned' && s.remaining > 0);
-    if (!poisoned && (effects.poisonSince === undefined || ctx.time >= effects.poisonSince + max + rest)) effects.poisonSince = ctx.time;
-    const end = (effects.poisonSince ?? ctx.time) + max;
+  const player = world.has(target, PlayerControlled);
+  if (def.kind === 'dot' && player) {
+    const { max, rest } = PLAYER_DOT;
+    const since = (effects.dotSince ??= {});
+    const active = effects.list.some((s) => s.id === apply.status && s.remaining > 0);
+    const start = since[apply.status];
+    if (!active && (start === undefined || ctx.time >= start + max + rest)) since[apply.status] = ctx.time;
+    const end = (since[apply.status] ?? ctx.time) + max;
     if (ctx.time >= end) return;
     duration = Math.min(duration, end - ctx.time);
   }
@@ -415,7 +420,7 @@ export function applyStatus(world: World, ctx: GameContext, target: Entity, appl
       }
     } else {
       const stacks = effects.list.filter((s) => s.id === apply.status);
-      if (stacks.length >= def.maxStacks) {
+      if (stacks.length >= (player ? Math.min(def.maxStacks, PLAYER_DOT.poisonStacks) : def.maxStacks)) {
         // Replace the stack with the least damage left (weak or nearly expired).
         const weakest = stacks.reduce((a, b) => (a.dps * a.remaining <= b.dps * b.remaining ? a : b));
         if (weakest.dps * weakest.remaining > instance.dps * instance.remaining) return;

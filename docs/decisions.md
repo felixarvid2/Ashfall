@@ -375,3 +375,16 @@ backgrounds, decals with stickers, one flagged prompt).
   cleaner); stickers the model kept adding under some decals are cut off by a per-decal `keep`; the
   painted art falls back to the old icons when a file is missing. The camera never shows the sky, so
   the "backdrops" became the region cards and map paintings.
+
+### 2026-10-05 — Damage over time on the player stops after 4 s; drones are marked
+
+- **DoT cap:** burning and poison used to be refreshed or stacked for as long as an enemy kept
+  hitting, so standing near a fire field or a spore swarm could kill you with no way out but running.
+  Now each damage-over-time status on the player (`PLAYER_DOT` in `src/systems/combat.ts`) lasts at
+  most 4 s from when it first took hold, however often it is reapplied; after it wears off it can take
+  hold again 1.5 s later. Poison stacks at most 3 deep on a player (still 10 on enemies). Enemies
+  are not capped: the players' own DoT builds are unchanged.
+- **Drones:** hovering enemies are drawn 25 % larger with a stronger rim, carry a blinking beacon
+  in their glow colour (gold for the Governor) and cast a shadow with a coloured ring on the ground
+  right beneath them, so you can tell where a drone is, not just see a speck above the clutter. The
+  marks hide when the drone dies.

@@ -925,9 +925,12 @@ export class GameRenderer {
         // Rim light keeps characters readable against the dark ground (docs/world-and-gameplay.md §14).
         if (world.has(e, PlayerControlled)) addRim(obj, '#a8bcdf', 0.55);
         else if (world.has(e, EnemyAI)) {
+          const drone = tr.y > 0.5;
+          if (drone) obj.scale.multiplyScalar(DRONE_SCALE);
           // In the dark the rim would give them away; their eyes do instead.
-          if (this.dark && !this.instanceRoot) this.addEyes(obj, r.scale ?? 1);
-          else addRim(obj, '#e07a4a', 0.32);
+          if (this.dark && !this.instanceRoot) this.addEyes(obj, obj.scale.x);
+          else addRim(obj, drone ? '#ffb080' : '#e07a4a', drone ? 0.65 : 0.32);
+          if (drone) this.addDroneMarks(obj, tr.y, r.glow ?? '#ff3a2a');
         }
         this.objects.set(e, obj);
         this.scene.add(obj);
@@ -955,7 +958,18 @@ export class GameRenderer {
       // The motorbike rides under the player while mounted.
       if (world.has(e, PlayerControlled)) this.syncBike(obj, world.has(e, Mounted));
       // Hovering machines bob gently (procedural animation, brief §9.4).
-      if (tr.y > 0.5 && world.has(e, EnemyAI)) obj.position.y += Math.sin(this.time * 3 + e) * 0.08;
+      if (tr.y > 0.5 && world.has(e, EnemyAI)) {
+        const bob = Math.sin(this.time * 3 + e) * 0.08;
+        obj.position.y += bob;
+        // The shadow stays on the ground; the beacon blinks.
+        const marks = obj.userData.droneMarks as { ground: THREE.Object3D; beacon: THREE.Sprite } | undefined;
+        if (marks) {
+          marks.ground.visible = marks.beacon.visible = !world.has(e, Dead);
+          marks.ground.position.y = -(tr.y + bob - 0.03) / obj.scale.x;
+          const blink = 0.55 + 0.45 * Math.max(0, Math.sin(this.time * 5 + e * 1.7)) ** 3;
+          marks.beacon.material.opacity = blink;
+        }
+      }
 
       const turret = world.get(e, Turret);
       if (turret) {
@@ -1052,6 +1066,42 @@ export class GameRenderer {
       this.navDebug.dispose();
       this.navDebug = null;
     }
+  }
+
+  /**
+   * Hovering drones are small and float above the clutter, so they get a blinking beacon on top and a
+   * shadow with a coloured ring on the ground beneath them: you see where they are, not just a speck.
+   */
+  private addDroneMarks(obj: THREE.Object3D, hover: number, color: string): void {
+    const s = obj.scale.x || 1;
+    obj.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(obj);
+    const top = (box.max.y - obj.position.y) / s;
+    const beacon = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: this.glowTexture(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false }),
+    );
+    beacon.position.set(0, top + 0.15 / s, 0);
+    beacon.scale.setScalar(0.9 / s);
+    beacon.renderOrder = 3;
+    obj.add(beacon);
+
+    const ground = new THREE.Group();
+    const shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.75, 24).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: this.glowTexture(), color: '#000000', transparent: true, opacity: 0.55, depthWrite: false }),
+    );
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.62, 0.74, 32).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
+    );
+    ring.position.y = 0.005;
+    ground.add(shadow, ring);
+    ground.scale.setScalar(1 / s);
+    ground.position.y = -hover / s;
+    ground.renderOrder = 2;
+    ground.traverse((o) => (o.userData.noTint = true));
+    obj.add(ground);
+    obj.userData.droneMarks = { ground, beacon };
   }
 
   /** Two small glowing points near the top of an enemy (dark zones). */
@@ -1471,6 +1521,9 @@ function makeGroundTexture(): THREE.Texture {
   tex.anisotropy = 4;
   return tex;
 }
+
+/** Drones are drawn a little larger than their model so they read at gameplay distance. */
+const DRONE_SCALE = 1.25;
 
 /** Fresnel rim on a character's (own, cloned) standard materials. */
 function addRim(obj: THREE.Object3D, color: string, strength: number): void {
