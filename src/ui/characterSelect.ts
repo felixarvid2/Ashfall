@@ -4,6 +4,7 @@
  */
 import { CLASSES } from '../data/db';
 import { t } from '../data/i18n';
+import { artUrl } from './art';
 
 export interface SlotSummary {
   index: number;
@@ -42,6 +43,9 @@ export class CharacterSelect {
     this.body = document.createElement('div');
     this.body.className = 'char-select-body';
     this.root.append(title, sub, this.body);
+    // The painted title scene behind the menu.
+    const backdrop = artUrl('menu/title');
+    if (backdrop) this.root.style.setProperty('--menu-art', `url("${backdrop}")`);
     parent.appendChild(this.root);
     this.showSlots();
   }
@@ -128,7 +132,9 @@ export class CharacterSelect {
     const render = () => {
       for (const el of classes.children) el.classList.toggle('selected', (el as HTMLElement).dataset.classId === chosen);
       const res = CLASSES.get(chosen)?.resource.id ?? 'heat';
+      const splash = artUrl(`menu/${chosen}`);
       details.replaceChildren(
+        ...(splash ? [Object.assign(document.createElement('img'), { src: splash, alt: '', className: 'char-class-splash', draggable: false })] : []),
         Object.assign(document.createElement('div'), { className: 'char-class-title', textContent: t(`items.classes.${chosen}`) }),
         Object.assign(document.createElement('div'), { className: 'char-class-tagline', textContent: t(`select.classes.${chosen}.tagline`) }),
         Object.assign(document.createElement('p'), { textContent: t(`select.classes.${chosen}.desc`) }),

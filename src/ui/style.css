@@ -519,6 +519,7 @@ html, body {
   padding: 6vh 16px 16px;
   overflow-y: auto;
   background: radial-gradient(ellipse at 50% 30%, #2a1a10 0%, #0d0a08 60%, #050403 100%);
+  background: linear-gradient(to bottom, rgba(8, 6, 5, 0.35), rgba(8, 6, 5, 0.85) 55%, #050403), var(--menu-art, none) center top / cover no-repeat, #050403;
   color: var(--ui-text);
 }
 .char-select h1 { font-size: 3em; letter-spacing: 0.4em; margin: 0; color: #e8c8a0; text-shadow: 0 0 24px rgba(255, 120, 40, 0.4); }
@@ -862,3 +863,39 @@ html.touch-device .hint-mouse { display: none; }
 }
 .nav-legend b { flex-basis: 100%; font-weight: 600; }
 .nav-legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 2px; vertical-align: -1px; }
+
+/* ---- Painted art (FLUX.2 Turbo) ---- */
+/* Rarity frames sit over the item icon; the icon is inset so the frame never covers it. */
+.inv-cell img.rarity-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; z-index: 1; }
+.inv-cell:has(img.rarity-frame) { border-color: transparent; }
+.inv-cell:has(img.rarity-frame) > img:not(.rarity-frame) { position: absolute; inset: 9%; width: 82%; height: 82%; }
+.inv-cell .sockets { z-index: 2; }
+.item-tip-icon { float: right; width: 64px; height: 64px; margin: 0 0 6px 10px; border: 1px solid color-mix(in srgb, var(--rarity) 60%, #000); background: #0c0a09; }
+.aspect-icon { width: 28px; height: 28px; vertical-align: middle; margin-right: 6px; border-radius: 50%; }
+.item-tip-aspect .aspect-icon { width: 24px; height: 24px; float: left; margin: 0 6px 2px 0; }
+.aspect-row .aspect-icon { float: left; width: 38px; height: 38px; margin: 0 8px 4px 0; }
+.aspect-row::after { content: ''; display: block; clear: both; }
+.tree-node img.tree-node-emblem { width: 34px; height: 34px; border-radius: 50%; }
+/* Boss portrait in the target frame. */
+.target-frame.has-portrait { padding-left: 56px; text-align: left; }
+.target-portrait { position: absolute; left: 0; top: -6px; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #8a2a1a; object-fit: cover; box-shadow: 0 0 10px rgba(255, 60, 30, 0.5); }
+.target-portrait[hidden] { display: none; }
+/* Boss intro card: portrait and name sweep in, hold, and fade. */
+.boss-card, .region-card { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 20; opacity: 0; }
+.boss-card[hidden], .region-card[hidden] { display: none; }
+.boss-card.show, .region-card.show { animation: boss-card var(--card-time, 3.2s) ease-out forwards; }
+.region-card { top: 14%; }
+.region-card img { width: min(620px, 86vw); aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid #5a4a3a; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8); -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent); mask-image: linear-gradient(to bottom, #000 70%, transparent); }
+.region-card .card-name { margin-top: -28px; font-size: clamp(1.4em, 5vw, 2.4em); letter-spacing: 0.22em; text-transform: uppercase; color: #f0dcc0; text-shadow: 0 2px 14px #000; text-align: center; }
+.region-card .card-sub { font-size: 0.8em; letter-spacing: 0.4em; text-transform: uppercase; color: #c8a878; text-shadow: 0 1px 6px #000; }
+.boss-card img { width: min(220px, 40vw); height: min(220px, 40vw); border-radius: 50%; object-fit: cover; border: 3px solid #a03020; box-shadow: 0 0 40px rgba(255, 50, 20, 0.55), inset 0 0 20px #000; }
+.boss-card .card-name { margin-top: 12px; font-size: clamp(1.2em, 4vw, 2em); letter-spacing: 0.18em; text-transform: uppercase; color: #ffd8b0; text-shadow: 0 2px 12px #000, 0 0 18px rgba(255, 80, 30, 0.6); text-align: center; }
+.boss-card .card-sub { font-size: 0.8em; letter-spacing: 0.4em; text-transform: uppercase; color: #ff6a4a; text-shadow: 0 1px 6px #000; }
+@keyframes boss-card {
+  0% { opacity: 0; transform: translateX(-50%) scale(1.25); }
+  12% { opacity: 1; transform: translateX(-50%) scale(1); }
+  78% { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) scale(0.96); }
+}
+
+.char-class-splash { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid #3a2e24; margin-bottom: 8px; -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent); mask-image: linear-gradient(to bottom, #000 75%, transparent); }

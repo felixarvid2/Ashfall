@@ -1,0 +1,1233 @@
+{
+  "spent": 1.7120000000000013,
+  "images": 209,
+  "tries": {
+    "textures/mine_rock": 1,
+    "bosses/governor_kade": 1,
+    "items/hydraulic_hammer_1": 1,
+    "items/hydraulic_hammer_2": 1,
+    "items/hydraulic_hammer_3": 1,
+    "aspects/fissure": 1,
+    "stats/damage": 1,
+    "stats/damageVsElite": 1,
+    "stats/damageVsVulnerable": 1,
+    "stats/damageReduction": 1,
+    "decals/oil_stain": 1,
+    "decals/moss_patch": 1,
+    "vfx/magic_circle_red": 1,
+    "regions/deep_mines": 1,
+    "menu/bastion": 3,
+    "maps/deep_mines": 2,
+    "frames/legendary": 1,
+    "bosses/foreman_dray": 1,
+    "bosses/the_prism": 1,
+    "bosses/drowned_engine": 1,
+    "bosses/archivist": 1,
+    "bosses/elder_guardian": 1,
+    "bosses/security_chief_holm": 1,
+    "bosses/brood_mother": 1,
+    "bosses/commandant_hale": 1,
+    "bosses/the_first": 1,
+    "bosses/brother_ash": 1,
+    "bosses/pyre_warden": 1,
+    "bosses/frozen_welder": 1,
+    "bosses/vire": 1,
+    "bosses/the_keeper": 1,
+    "bosses/brood_warden": 1,
+    "bosses/vine_matriarch": 1,
+    "bosses/ilse_varga": 1,
+    "bosses/gamma_bloom": 1,
+    "bosses/warden": 1,
+    "items/power_sword_1": 1,
+    "items/power_sword_2": 2,
+    "items/power_sword_3": 2,
+    "items/hydraulic_knuckles_1": 1,
+    "items/hydraulic_knuckles_2": 1,
+    "items/hydraulic_knuckles_3": 1,
+    "items/riot_shield_1": 1,
+    "items/riot_shield_2": 1,
+    "items/riot_shield_3": 1,
+    "items/marksman_rifle_1": 1,
+    "items/marksman_rifle_2": 2,
+    "items/marksman_rifle_3": 2,
+    "items/twin_pistols_1": 1,
+    "items/twin_pistols_2": 1,
+    "items/twin_pistols_3": 2,
+    "items/vibroblade_1": 1,
+    "items/vibroblade_2": 2,
+    "items/vibroblade_3": 2,
+    "items/scalpel_blade_1": 1,
+    "items/scalpel_blade_2": 2,
+    "items/scalpel_blade_3": 2,
+    "items/bio_focus_1": 1,
+    "items/bio_focus_2": 1,
+    "items/bio_focus_3": 1,
+    "items/injector_rig_1": 1,
+    "items/injector_rig_2": 1,
+    "items/injector_rig_3": 1,
+    "items/combat_helm_1": 1,
+    "items/combat_helm_2": 1,
+    "items/combat_helm_3": 1,
+    "items/plated_vest_1": 1,
+    "items/plated_vest_2": 1,
+    "items/plated_vest_3": 1,
+    "items/servo_gauntlets_1": 1,
+    "items/servo_gauntlets_2": 1,
+    "items/servo_gauntlets_3": 1,
+    "items/armored_greaves_1": 1,
+    "items/armored_greaves_2": 1,
+    "items/armored_greaves_3": 1,
+    "items/mag_boots_1": 1,
+    "items/mag_boots_2": 1,
+    "items/mag_boots_3": 1,
+    "items/signal_pendant_1": 1,
+    "items/signal_pendant_2": 1,
+    "items/signal_pendant_3": 1,
+    "items/conduit_ring_1": 1,
+    "items/conduit_ring_2": 1,
+    "items/conduit_ring_3": 1,
+    "items/unique_governors_crucible": 2,
+    "items/unique_ashwalker_treads": 1,
+    "items/unique_fist_of_kharos": 1,
+    "items/unique_heart_of_lumen": 1,
+    "items/unique_widowmaker": 1,
+    "items/unique_echo_holsters": 1,
+    "items/unique_mother_of_spores": 1,
+    "items/unique_crown_of_the_hive": 1,
+    "items/unique_ashen_heartwood": 1,
+    "items/unique_seed_of_accord": 1,
+    "aspects/furnace": 1,
+    "aspects/momentum": 1,
+    "aspects/aegis": 1,
+    "aspects/echo": 1,
+    "aspects/molten_fists": 1,
+    "aspects/brutality": 1,
+    "aspects/bulwark": 1,
+    "aspects/wrecking_ball": 1,
+    "aspects/vulnerability_matrix": 1,
+    "aspects/heat_sink": 1,
+    "aspects/gravity_well": 1,
+    "aspects/orbital_uplink": 1,
+    "aspects/cinder_core": 1,
+    "aspects/ricochet": 1,
+    "aspects/marksman": 1,
+    "aspects/bullet_storm": 1,
+    "aspects/trapper": 1,
+    "aspects/demolition": 1,
+    "aspects/phantom": 1,
+    "aspects/ambusher": 1,
+    "aspects/predator": 1,
+    "aspects/blade_dancer": 1,
+    "aspects/plague": 1,
+    "aspects/swarm": 1,
+    "aspects/leech": 1,
+    "aspects/parasitic": 1,
+    "aspects/detonation": 1,
+    "aspects/carapace": 1,
+    "aspects/hive": 1,
+    "aspects/virulent": 1,
+    "aspects/ancient_wrath": 1,
+    "aspects/lifeblood": 1,
+    "aspects/unbroken": 1,
+    "stats/resourceGen": 1,
+    "stats/maxLife": 1,
+    "stats/armor": 1,
+    "stats/potionHealing": 1,
+    "stats/moveSpeed": 1,
+    "stats/critChance": 1,
+    "stats/cooldownReduction": 1,
+    "stats/critDamage": 1,
+    "stats/attackSpeed": 1,
+    "stats/generic": 1,
+    "decals/blood_stain": 1,
+    "decals/scorch_mark": 1,
+    "decals/puddle": 1,
+    "decals/rubble": 3,
+    "decals/hazard_stripes": 1,
+    "decals/manhole": 3,
+    "decals/floor_grate": 3,
+    "decals/tire_tracks": 1,
+    "decals/footprints": 1,
+    "decals/lumen_growth": 1,
+    "decals/cracked_asphalt": 3,
+    "decals/rust_plate": 3,
+    "decals/bones": 3,
+    "decals/crystal_shards": 3,
+    "vfx/lumen_beam": 1,
+    "vfx/lightning_0": 1,
+    "vfx/lightning_1": 1,
+    "vfx/magic_circle_green": 1,
+    "vfx/magic_circle_cyan": 1,
+    "vfx/void_rift": 1,
+    "vfx/blood_burst": 1,
+    "vfx/ichor_burst": 1,
+    "vfx/energy_ring": 1,
+    "vfx/rock_debris": 1,
+    "vfx/muzzle_flash": 1,
+    "vfx/ash_flake": 2,
+    "vfx/electric_ball": 1,
+    "vfx/green_flame": 2,
+    "vfx/shockwave_dust": 1,
+    "regions/cinder_flats": 1,
+    "regions/refinery_district": 1,
+    "regions/hydroponic_vaults": 1,
+    "menu/title": 2,
+    "menu/spectre": 1,
+    "menu/xenomant": 2,
+    "maps/cinder_flats": 1,
+    "maps/refinery_district": 1,
+    "maps/hydroponic_vaults": 1,
+    "frames/common": 1,
+    "frames/magic": 1,
+    "frames/rare": 1,
+    "frames/unique": 1,
+    "frames/mythic": 1
+  },
+  "log": [
+    {
+      "key": "items/hydraulic_hammer_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:05:54.715Z"
+    },
+    {
+      "key": "bosses/governor_kade",
+      "cost": 0.008,
+      "at": "2026-10-05T12:05:54.883Z"
+    },
+    {
+      "key": "textures/mine_rock",
+      "cost": 0.008,
+      "at": "2026-10-05T12:05:55.008Z"
+    },
+    {
+      "key": "items/hydraulic_hammer_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:05:55.017Z"
+    },
+    {
+      "key": "aspects/fissure",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:15.715Z"
+    },
+    {
+      "key": "stats/damage",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:16.217Z"
+    },
+    {
+      "key": "items/hydraulic_hammer_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:16.400Z"
+    },
+    {
+      "key": "stats/damageVsElite",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:16.515Z"
+    },
+    {
+      "key": "stats/damageVsVulnerable",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:18.990Z"
+    },
+    {
+      "key": "stats/damageReduction",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:19.158Z"
+    },
+    {
+      "key": "decals/oil_stain",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:19.435Z"
+    },
+    {
+      "key": "decals/moss_patch",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:19.924Z"
+    },
+    {
+      "key": "vfx/magic_circle_red",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:21.945Z"
+    },
+    {
+      "key": "regions/deep_mines",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:22.111Z"
+    },
+    {
+      "key": "frames/legendary",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:22.802Z"
+    },
+    {
+      "key": "maps/deep_mines",
+      "cost": 0.016,
+      "at": "2026-10-05T12:06:25.151Z"
+    },
+    {
+      "key": "bosses/foreman_dray",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:55.667Z"
+    },
+    {
+      "key": "bosses/the_prism",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:55.791Z"
+    },
+    {
+      "key": "bosses/drowned_engine",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:55.834Z"
+    },
+    {
+      "key": "bosses/archivist",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:55.882Z"
+    },
+    {
+      "key": "bosses/commandant_hale",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:58.840Z"
+    },
+    {
+      "key": "bosses/security_chief_holm",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:58.915Z"
+    },
+    {
+      "key": "bosses/brood_mother",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:58.963Z"
+    },
+    {
+      "key": "bosses/elder_guardian",
+      "cost": 0.008,
+      "at": "2026-10-05T12:06:59.061Z"
+    },
+    {
+      "key": "bosses/the_first",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:01.759Z"
+    },
+    {
+      "key": "bosses/pyre_warden",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:01.840Z"
+    },
+    {
+      "key": "bosses/brother_ash",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:01.855Z"
+    },
+    {
+      "key": "bosses/frozen_welder",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:02.043Z"
+    },
+    {
+      "key": "bosses/vire",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:04.622Z"
+    },
+    {
+      "key": "bosses/brood_warden",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:04.966Z"
+    },
+    {
+      "key": "bosses/the_keeper",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:05.018Z"
+    },
+    {
+      "key": "bosses/vine_matriarch",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:05.074Z"
+    },
+    {
+      "key": "bosses/ilse_varga",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:07.705Z"
+    },
+    {
+      "key": "items/power_sword_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:07.982Z"
+    },
+    {
+      "key": "bosses/warden",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:08.060Z"
+    },
+    {
+      "key": "bosses/gamma_bloom",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:08.210Z"
+    },
+    {
+      "key": "items/power_sword_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:10.626Z"
+    },
+    {
+      "key": "items/hydraulic_knuckles_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:10.952Z"
+    },
+    {
+      "key": "items/hydraulic_knuckles_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:11.023Z"
+    },
+    {
+      "key": "items/power_sword_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:11.191Z"
+    },
+    {
+      "key": "items/hydraulic_knuckles_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:13.721Z"
+    },
+    {
+      "key": "items/riot_shield_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:13.876Z"
+    },
+    {
+      "key": "items/riot_shield_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:14.001Z"
+    },
+    {
+      "key": "items/riot_shield_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:14.027Z"
+    },
+    {
+      "key": "items/marksman_rifle_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:16.706Z"
+    },
+    {
+      "key": "items/marksman_rifle_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:16.710Z"
+    },
+    {
+      "key": "items/twin_pistols_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:16.951Z"
+    },
+    {
+      "key": "items/marksman_rifle_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:17.000Z"
+    },
+    {
+      "key": "items/twin_pistols_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:19.693Z"
+    },
+    {
+      "key": "items/twin_pistols_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:19.707Z"
+    },
+    {
+      "key": "items/vibroblade_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:19.855Z"
+    },
+    {
+      "key": "items/vibroblade_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:19.952Z"
+    },
+    {
+      "key": "items/scalpel_blade_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:22.681Z"
+    },
+    {
+      "key": "items/scalpel_blade_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:22.794Z"
+    },
+    {
+      "key": "items/vibroblade_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:22.835Z"
+    },
+    {
+      "key": "items/scalpel_blade_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:22.939Z"
+    },
+    {
+      "key": "items/bio_focus_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:25.483Z"
+    },
+    {
+      "key": "items/bio_focus_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:25.849Z"
+    },
+    {
+      "key": "items/bio_focus_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:25.862Z"
+    },
+    {
+      "key": "items/injector_rig_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:25.920Z"
+    },
+    {
+      "key": "items/injector_rig_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:28.308Z"
+    },
+    {
+      "key": "items/combat_helm_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:28.760Z"
+    },
+    {
+      "key": "items/injector_rig_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:28.883Z"
+    },
+    {
+      "key": "items/combat_helm_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:28.940Z"
+    },
+    {
+      "key": "items/combat_helm_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:31.269Z"
+    },
+    {
+      "key": "items/plated_vest_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:31.647Z"
+    },
+    {
+      "key": "items/plated_vest_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:31.797Z"
+    },
+    {
+      "key": "items/plated_vest_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:32.077Z"
+    },
+    {
+      "key": "items/servo_gauntlets_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:34.232Z"
+    },
+    {
+      "key": "items/servo_gauntlets_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:34.690Z"
+    },
+    {
+      "key": "items/servo_gauntlets_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:34.706Z"
+    },
+    {
+      "key": "items/armored_greaves_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:35.076Z"
+    },
+    {
+      "key": "items/armored_greaves_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:37.056Z"
+    },
+    {
+      "key": "items/armored_greaves_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:37.769Z"
+    },
+    {
+      "key": "items/mag_boots_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:37.779Z"
+    },
+    {
+      "key": "items/mag_boots_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:38.111Z"
+    },
+    {
+      "key": "items/mag_boots_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:40.212Z"
+    },
+    {
+      "key": "items/signal_pendant_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:40.624Z"
+    },
+    {
+      "key": "items/signal_pendant_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:40.670Z"
+    },
+    {
+      "key": "items/signal_pendant_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:41.096Z"
+    },
+    {
+      "key": "items/conduit_ring_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:43.011Z"
+    },
+    {
+      "key": "items/conduit_ring_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:43.490Z"
+    },
+    {
+      "key": "items/conduit_ring_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:43.880Z"
+    },
+    {
+      "key": "items/unique_governors_crucible",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:44.063Z"
+    },
+    {
+      "key": "items/unique_ashwalker_treads",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:45.882Z"
+    },
+    {
+      "key": "items/unique_fist_of_kharos",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:46.287Z"
+    },
+    {
+      "key": "items/unique_heart_of_lumen",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:46.851Z"
+    },
+    {
+      "key": "items/unique_widowmaker",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:46.901Z"
+    },
+    {
+      "key": "items/unique_echo_holsters",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:48.872Z"
+    },
+    {
+      "key": "items/unique_mother_of_spores",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:49.164Z"
+    },
+    {
+      "key": "items/unique_crown_of_the_hive",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:49.670Z"
+    },
+    {
+      "key": "items/unique_ashen_heartwood",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:49.758Z"
+    },
+    {
+      "key": "items/unique_seed_of_accord",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:52.018Z"
+    },
+    {
+      "key": "aspects/aegis",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:52.646Z"
+    },
+    {
+      "key": "aspects/momentum",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:52.656Z"
+    },
+    {
+      "key": "aspects/furnace",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:52.717Z"
+    },
+    {
+      "key": "aspects/echo",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:54.893Z"
+    },
+    {
+      "key": "aspects/molten_fists",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:55.556Z"
+    },
+    {
+      "key": "aspects/bulwark",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:55.609Z"
+    },
+    {
+      "key": "aspects/brutality",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:55.629Z"
+    },
+    {
+      "key": "aspects/wrecking_ball",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:57.653Z"
+    },
+    {
+      "key": "aspects/gravity_well",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:58.437Z"
+    },
+    {
+      "key": "aspects/heat_sink",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:58.447Z"
+    },
+    {
+      "key": "aspects/vulnerability_matrix",
+      "cost": 0.008,
+      "at": "2026-10-05T12:07:58.494Z"
+    },
+    {
+      "key": "aspects/orbital_uplink",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:01.240Z"
+    },
+    {
+      "key": "aspects/ricochet",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:01.321Z"
+    },
+    {
+      "key": "aspects/cinder_core",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:01.353Z"
+    },
+    {
+      "key": "aspects/marksman",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:02.108Z"
+    },
+    {
+      "key": "aspects/bullet_storm",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:04.150Z"
+    },
+    {
+      "key": "aspects/demolition",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:04.194Z"
+    },
+    {
+      "key": "aspects/trapper",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:04.207Z"
+    },
+    {
+      "key": "aspects/phantom",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:05.073Z"
+    },
+    {
+      "key": "aspects/predator",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:07.015Z"
+    },
+    {
+      "key": "aspects/ambusher",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:07.186Z"
+    },
+    {
+      "key": "aspects/blade_dancer",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:07.465Z"
+    },
+    {
+      "key": "aspects/plague",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:07.922Z"
+    },
+    {
+      "key": "aspects/swarm",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:10.027Z"
+    },
+    {
+      "key": "aspects/leech",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:10.111Z"
+    },
+    {
+      "key": "aspects/parasitic",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:10.365Z"
+    },
+    {
+      "key": "aspects/detonation",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:10.844Z"
+    },
+    {
+      "key": "aspects/carapace",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:12.850Z"
+    },
+    {
+      "key": "aspects/hive",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:12.988Z"
+    },
+    {
+      "key": "aspects/virulent",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:13.278Z"
+    },
+    {
+      "key": "aspects/ancient_wrath",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:13.820Z"
+    },
+    {
+      "key": "aspects/lifeblood",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:15.685Z"
+    },
+    {
+      "key": "aspects/unbroken",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:15.980Z"
+    },
+    {
+      "key": "stats/resourceGen",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:16.198Z"
+    },
+    {
+      "key": "stats/maxLife",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:16.889Z"
+    },
+    {
+      "key": "stats/armor",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:18.716Z"
+    },
+    {
+      "key": "stats/potionHealing",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:18.974Z"
+    },
+    {
+      "key": "stats/moveSpeed",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:19.028Z"
+    },
+    {
+      "key": "stats/critChance",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:19.759Z"
+    },
+    {
+      "key": "stats/cooldownReduction",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:21.528Z"
+    },
+    {
+      "key": "stats/critDamage",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:21.667Z"
+    },
+    {
+      "key": "stats/attackSpeed",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:21.998Z"
+    },
+    {
+      "key": "stats/generic",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:22.487Z"
+    },
+    {
+      "key": "decals/blood_stain",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:24.430Z"
+    },
+    {
+      "key": "decals/scorch_mark",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:24.587Z"
+    },
+    {
+      "key": "decals/puddle",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:24.922Z"
+    },
+    {
+      "key": "decals/rubble",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:25.357Z"
+    },
+    {
+      "key": "decals/hazard_stripes",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:27.361Z"
+    },
+    {
+      "key": "decals/manhole",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:27.695Z"
+    },
+    {
+      "key": "decals/floor_grate",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:28.405Z"
+    },
+    {
+      "key": "decals/tire_tracks",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:29.654Z"
+    },
+    {
+      "key": "decals/footprints",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:30.312Z"
+    },
+    {
+      "key": "decals/lumen_growth",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:30.690Z"
+    },
+    {
+      "key": "decals/cracked_asphalt",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:31.395Z"
+    },
+    {
+      "key": "decals/rust_plate",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:32.528Z"
+    },
+    {
+      "key": "decals/bones",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:33.420Z"
+    },
+    {
+      "key": "decals/crystal_shards",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:33.788Z"
+    },
+    {
+      "key": "vfx/lumen_beam",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:34.085Z"
+    },
+    {
+      "key": "vfx/lightning_0",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:35.232Z"
+    },
+    {
+      "key": "vfx/lightning_1",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:36.293Z"
+    },
+    {
+      "key": "vfx/magic_circle_green",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:36.680Z"
+    },
+    {
+      "key": "vfx/magic_circle_cyan",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:36.997Z"
+    },
+    {
+      "key": "vfx/void_rift",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:37.980Z"
+    },
+    {
+      "key": "vfx/blood_burst",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:39.096Z"
+    },
+    {
+      "key": "vfx/ichor_burst",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:39.461Z"
+    },
+    {
+      "key": "vfx/energy_ring",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:39.707Z"
+    },
+    {
+      "key": "vfx/rock_debris",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:40.632Z"
+    },
+    {
+      "key": "vfx/muzzle_flash",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:41.860Z"
+    },
+    {
+      "key": "vfx/ash_flake",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:42.324Z"
+    },
+    {
+      "key": "vfx/electric_ball",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:42.467Z"
+    },
+    {
+      "key": "vfx/green_flame",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:43.544Z"
+    },
+    {
+      "key": "vfx/shockwave_dust",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:44.780Z"
+    },
+    {
+      "key": "regions/cinder_flats",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:44.987Z"
+    },
+    {
+      "key": "regions/refinery_district",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:45.366Z"
+    },
+    {
+      "key": "regions/hydroponic_vaults",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:46.244Z"
+    },
+    {
+      "key": "menu/title",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:47.630Z"
+    },
+    {
+      "key": "menu/spectre",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:48.131Z"
+    },
+    {
+      "key": "menu/xenomant",
+      "cost": 0.008,
+      "at": "2026-10-05T12:08:48.281Z"
+    },
+    {
+      "key": "maps/cinder_flats",
+      "cost": 0.016,
+      "at": "2026-10-05T12:08:56.897Z"
+    },
+    {
+      "key": "maps/refinery_district",
+      "cost": 0.016,
+      "at": "2026-10-05T12:08:58.507Z"
+    },
+    {
+      "key": "maps/hydroponic_vaults",
+      "cost": 0.016,
+      "at": "2026-10-05T12:08:59.408Z"
+    },
+    {
+      "key": "maps/deep_mines",
+      "cost": 0.016,
+      "at": "2026-10-05T12:08:59.422Z"
+    },
+    {
+      "key": "frames/common",
+      "cost": 0.008,
+      "at": "2026-10-05T12:09:00.252Z"
+    },
+    {
+      "key": "frames/magic",
+      "cost": 0.008,
+      "at": "2026-10-05T12:09:01.562Z"
+    },
+    {
+      "key": "frames/rare",
+      "cost": 0.008,
+      "at": "2026-10-05T12:09:04.314Z"
+    },
+    {
+      "key": "frames/mythic",
+      "cost": 0.008,
+      "at": "2026-10-05T12:09:04.612Z"
+    },
+    {
+      "key": "frames/unique",
+      "cost": 0.008,
+      "at": "2026-10-05T12:09:04.622Z"
+    },
+    {
+      "key": "menu/bastion",
+      "cost": 0.008,
+      "at": "2026-10-05T12:09:17.798Z"
+    },
+    {
+      "key": "items/marksman_rifle_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:19.169Z"
+    },
+    {
+      "key": "items/power_sword_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:19.194Z"
+    },
+    {
+      "key": "items/power_sword_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:19.231Z"
+    },
+    {
+      "key": "items/marksman_rifle_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:19.239Z"
+    },
+    {
+      "key": "items/vibroblade_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:22.022Z"
+    },
+    {
+      "key": "items/scalpel_blade_2",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:22.048Z"
+    },
+    {
+      "key": "items/vibroblade_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:22.216Z"
+    },
+    {
+      "key": "items/twin_pistols_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:22.295Z"
+    },
+    {
+      "key": "items/unique_governors_crucible",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:24.967Z"
+    },
+    {
+      "key": "items/scalpel_blade_3",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:25.010Z"
+    },
+    {
+      "key": "decals/manhole",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:25.097Z"
+    },
+    {
+      "key": "decals/rubble",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:25.447Z"
+    },
+    {
+      "key": "decals/rust_plate",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:27.865Z"
+    },
+    {
+      "key": "decals/floor_grate",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:27.902Z"
+    },
+    {
+      "key": "decals/cracked_asphalt",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:28.065Z"
+    },
+    {
+      "key": "decals/bones",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:28.494Z"
+    },
+    {
+      "key": "decals/crystal_shards",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:30.666Z"
+    },
+    {
+      "key": "vfx/ash_flake",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:30.671Z"
+    },
+    {
+      "key": "vfx/green_flame",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:30.789Z"
+    },
+    {
+      "key": "menu/title",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:31.273Z"
+    },
+    {
+      "key": "menu/xenomant",
+      "cost": 0.008,
+      "at": "2026-10-05T12:10:33.627Z"
+    },
+    {
+      "key": "decals/cracked_asphalt",
+      "cost": 0.008,
+      "at": "2026-10-05T12:11:01.947Z"
+    },
+    {
+      "key": "decals/rubble",
+      "cost": 0.008,
+      "at": "2026-10-05T12:11:02.046Z"
+    },
+    {
+      "key": "decals/manhole",
+      "cost": 0.008,
+      "at": "2026-10-05T12:11:02.067Z"
+    },
+    {
+      "key": "decals/floor_grate",
+      "cost": 0.008,
+      "at": "2026-10-05T12:11:02.585Z"
+    },
+    {
+      "key": "decals/crystal_shards",
+      "cost": 0.008,
+      "at": "2026-10-05T12:11:04.958Z"
+    },
+    {
+      "key": "decals/bones",
+      "cost": 0.008,
+      "at": "2026-10-05T12:11:05.039Z"
+    },
+    {
+      "key": "decals/rust_plate",
+      "cost": 0.008,
+      "at": "2026-10-05T12:11:05.380Z"
+    }
+  ]
+}

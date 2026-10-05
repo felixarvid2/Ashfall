@@ -349,3 +349,29 @@ instead of being plain discs and points.
   dust before cave-ins, smoke screens and embers off molten metal. Rings and telegraphs stay as exact
   shapes so attack areas keep reading clearly; under painted hazards the disc is faint and only the
   edge shows.
+
+### 2026-10-05 — Painted art from FLUX.2 Turbo: icons, portraits, frames, decals, cards and maps
+At the owner's request a second batch of art was generated (`scripts/art/catalog.ts`,
+`npm run art:generate`, `npm run art:process`; budget cap $2.60, log in `scripts/art/ledger.json`).
+209 generations cost **$1.712** in total (180 pictures plus re-rolls for items that came with
+backgrounds, decals with stickers, one flagged prompt).
+- **Item icons:** every base in three looks — worn (common, magic), military (rare, legendary) and
+  masterwork (mythic) — plus one icon per unique. Rarity frames (one per rarity) sit over every slot.
+  Tooltips show the icon; aspects show their emblem in tooltips and at the Technician.
+- **Skill tree:** passive nodes show an emblem for the stat they raise.
+- **Bosses:** a portrait for each of the 20 bosses, in the target frame and on an intro card when the
+  boss engages.
+- **World:** `mine_rock` is the Deep Mines base ground; 14 decals (stains, scorch, puddles, rubble,
+  stripes, grates, manholes, tracks, moss, crystal shards, bones) are scattered per zone along roads,
+  around hubs and across open ground; 16 more effect sprites joined the particle atlas (now 9 × 9):
+  rune circles under big telegraphed attacks, the orbital beam, lightning, a void rift for teleports,
+  muzzle flashes, rock debris and dust waves on slams, ash after explosions, green Lumen fire, ichor.
+- **Cards and menus:** a painting per region on a card when you arrive; the title scene behind the
+  menu and a splash per class in the class picker.
+- **Maps:** each region's map was painted with the edit endpoint from a drawing of its real layout
+  (roads, caverns, hubs, water, domes), so it lines up with the world; the full map and minimap show
+  it only where you have explored.
+- **Notes:** decals use a chroma key (green, or magenta where the decal is green; magenta keyed
+  cleaner); stickers the model kept adding under some decals are cut off by a per-decal `keep`; the
+  painted art falls back to the old icons when a file is missing. The camera never shows the sky, so
+  the "backdrops" became the region cards and map paintings.

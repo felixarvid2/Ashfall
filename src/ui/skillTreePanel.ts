@@ -4,6 +4,7 @@
  * bar editor and a full respec for gold.
  */
 import { t } from '../data/i18n';
+import { artUrl } from './art';
 import { classDef, skill } from '../data/db';
 import type { SkillTree, TreeNode } from '../data/skillTree/schema';
 import { BRANCHES } from '../data/skillTree/schema';
@@ -171,6 +172,12 @@ export class SkillTreePanel {
     const card = document.createElement('div');
     card.className = `tree-node t-${n.type}${rank > 0 ? ' learned' : ''}${check.ok ? ' available' : ''}`;
     if (n.type === 'skill') card.appendChild(this.icon(n.skill, skillIconId(n.skill)));
+    else if (n.type === 'passive') {
+      // Passives show an emblem for the stat they raise.
+      const stat = n.effects.find((e) => e.kind === 'stat');
+      const url = (stat && 'stat' in stat && artUrl(`stats/${stat.stat}`)) || artUrl('stats/generic');
+      if (url) card.appendChild(Object.assign(document.createElement('img'), { src: url, alt: '', draggable: false, className: 'tree-node-emblem' }));
+    }
     const name = document.createElement('div');
     name.className = 'tree-node-name';
     name.textContent = nodeName(n);

@@ -6,6 +6,7 @@
 import type { Inventory } from '../core/components';
 import { t } from '../data/i18n';
 import { BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
+import { itemArtUrl, rarityFrameUrl } from './art';
 import { SLOTS, slotsFor, type Item, type Slot } from '../data/loot/schemas';
 import { itemDisplayName, renderItemTooltip, type Comparison } from './itemTooltip';
 
@@ -191,7 +192,9 @@ export function renderItemCell(item: Item | null, iconUrl: (id: string) => strin
   cell.style.setProperty('--rarity', color);
   cell.classList.add(`r-${item.rarity}`);
   const iconId = item.crystal ? (CRYSTAL_DEFS.get(item.crystal.id)?.icon ?? '') : (BASE_ITEMS.get(item.base)?.icon ?? '');
-  const url = iconUrl(iconId);
+  const url = itemArtUrl(item) ?? iconUrl(iconId);
+  const frame = rarityFrameUrl(item);
+  if (frame) cell.appendChild(Object.assign(document.createElement('img'), { src: frame, alt: '', draggable: false, className: 'rarity-frame' }));
   if (url) {
     cell.appendChild(Object.assign(document.createElement('img'), { src: url, alt: '', draggable: false }));
   } else {

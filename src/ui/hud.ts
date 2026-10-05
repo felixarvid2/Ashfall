@@ -33,7 +33,7 @@ export interface HudState {
   wave: { wave: number; alive: number; phase: 'intermission' | 'active'; timer: number } | null;
   /** Open world: region and subzone name, shown where the wave tracker sits in the arena. */
   location?: { title: string; sub: string };
-  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[] } | null;
+  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; portrait?: string } | null;
   /** World event in progress near the player. */
   event?: { title: string; text: string };
   /** Timed buffs on the player (Stim Pylons). */
@@ -161,6 +161,10 @@ export class Hud {
   private readonly eventBox: HTMLDivElement;
   private lastEvent = '';
   private readonly banner: HTMLDivElement;
+  /** Boss portrait in the target frame, and the intro card when a boss joins the fight. */
+  private readonly targetPortrait: HTMLImageElement;
+  private readonly bossCard: HTMLDivElement;
+  private bossCardTimer = 0;
   private readonly death: HTMLDivElement;
   private readonly deathHint: HTMLDivElement;
   private readonly tooltip: HTMLDivElement;
@@ -232,8 +236,13 @@ export class Hud {
     track.appendChild(this.targetFill);
     this.targetStatus = document.createElement('div');
     this.targetStatus.className = 'target-status';
-    this.target.append(this.targetName, track, this.targetStatus);
+    this.targetPortrait = Object.assign(document.createElement('img'), { className: 'target-portrait', alt: '' });
+    this.targetPortrait.hidden = true;
+    this.target.append(this.targetPortrait, this.targetName, track, this.targetStatus);
     this.target.hidden = true;
+    this.bossCard = document.createElement('div');
+    this.bossCard.className = 'boss-card';
+    this.bossCard.hidden = true;
 
     this.banner = document.createElement('div');
     this.banner.className = 'center-banner';
@@ -275,7 +284,7 @@ export class Hud {
     this.flares.dataset.testid = 'flares';
     this.flares.hidden = true;
 
-    root.append(title, bar, wave, this.target, this.banner, this.death, this.tooltip, this.buffBar, this.eventBox, this.exposure, this.flares);
+    root.append(title, bar, wave, this.target, this.bossCard, this.banner, this.death, this.tooltip, this.buffBar, this.eventBox, this.exposure, this.flares);
   }
 
   updateHint(moveMode: MoveMode, bindings: Record<Action, string[]>): void {
@@ -321,7 +330,37 @@ export class Hud {
     this.bannerTimer = seconds;
   }
 
+  /** Entering a region: its painting and name, cinema-style, for a few seconds. */
+  regionCard(image: string, name: string, subtitle: string): void {
+    this.bossIntroCard('region-card', image, name, subtitle, 4);
+  }
+
+  /** A boss joins the fight: its portrait and name sweep in for a few seconds. */
+  bossIntro(name: string, portrait: string, subtitle: string): void {
+    this.bossIntroCard('boss-card', portrait, name, subtitle, 3.2);
+  }
+
+  private bossIntroCard(kind: 'boss-card' | 'region-card', portrait: string, name: string, subtitle: string, seconds: number): void {
+    this.bossCard.className = kind;
+    this.bossCard.style.setProperty('--card-time', `${seconds}s`);
+    this.bossCard.replaceChildren(
+      Object.assign(document.createElement('img'), { src: portrait, alt: '' }),
+      Object.assign(document.createElement('div'), { className: 'card-name', textContent: name }),
+      Object.assign(document.createElement('div'), { className: 'card-sub', textContent: subtitle }),
+    );
+    this.bossCard.hidden = false;
+    // Restart the CSS animation.
+    this.bossCard.classList.remove('show');
+    void this.bossCard.offsetWidth;
+    this.bossCard.classList.add('show');
+    this.bossCardTimer = seconds;
+  }
+
   update(state: HudState, dt: number): void {
+    if (this.bossCardTimer > 0) {
+      this.bossCardTimer -= dt;
+      if (this.bossCardTimer <= 0) this.bossCard.hidden = true;
+    }
     const evKey = state.event ? `${state.event.title}|${state.event.text}` : '';
     if (evKey !== this.lastEvent) {
       this.lastEvent = evKey;
@@ -407,6 +446,9 @@ export class Hud {
       this.target.hidden = !state.target;
       if (state.target) {
         this.targetName.textContent = state.target.name;
+        this.targetPortrait.hidden = !state.target.portrait;
+        if (state.target.portrait && this.targetPortrait.getAttribute('src') !== state.target.portrait) this.targetPortrait.src = state.target.portrait;
+        this.target.classList.toggle('has-portrait', !!state.target.portrait);
         this.targetName.style.color = state.target.color ?? '';
         this.targetFill.style.width = `${Math.max(0, state.target.current / state.target.max) * 100}%`;
         // Elite affixes first (in the elite's colour), then statuses.

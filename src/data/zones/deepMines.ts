@@ -127,8 +127,8 @@ function buildGround(): GroundDef {
     { layer: GRATING, x: AURUM.x, z: AURUM.z, radius: AURUM.radius + 10 },
     { layer: GRATING, x: DRILL_CONTROL.x, z: DRILL_CONTROL.z, radius: DRILL_CONTROL.radius },
   ];
-  // The base stays region 2's grit until a mine-rock texture arrives; the tunnels carry cart rails.
-  return { base: 'industrial_grit', tile: 9, layers: ['crystal_floor', 'elder_stone', 'lake_shore', 'steel_grating'], patches, road: 'rail_track' };
+  // Worn bedrock everywhere; the tunnels carry cart rails.
+  return { base: 'mine_rock', tile: 9, layers: ['crystal_floor', 'elder_stone', 'lake_shore', 'steel_grating'], patches, road: 'rail_track' };
 }
 
 // ---- Props ------------------------------------------------------------------------------------

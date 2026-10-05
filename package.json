@@ -18,7 +18,9 @@
     "region:report": "tsx scripts/sim/regionReport.ts",
     "build:artifact": "tsx scripts/artifact/build.ts",
     "vfx:generate": "NODE_USE_ENV_PROXY=1 tsx scripts/vfx/generate.ts",
-    "vfx:pack": "tsx scripts/vfx/pack.ts"
+    "vfx:pack": "tsx scripts/vfx/pack.ts",
+    "art:generate": "NODE_USE_ENV_PROXY=1 tsx scripts/art/generate.ts",
+    "art:process": "tsx scripts/art/process.ts"
   },
   "dependencies": {
     "three": "^0.186.1",

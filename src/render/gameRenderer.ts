@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { AwarenessMarkers, NavDebugOverlay } from './navOverlay';
+import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
 import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
@@ -158,6 +159,7 @@ export class GameRenderer {
       }
       for (const road of roads) s.add(roadMesh(road.points, road.width, roadMat));
     }
+    buildDecals(s, arena);
 
     const env = (arena as { env?: EnvFeature[] }).env ?? [];
     this.sporeFields = null;

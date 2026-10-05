@@ -5,6 +5,8 @@
     "loading": "Loading assets… {done}/{total}"
   },
   "hud": {
+    "bossIntro": "Boss",
+    "regionNumber": "Region {n}",
     "controlsHint": "{move} move · {lmb}/{rmb} attack · 1–4 skills · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {map} map · {quests} quests · {pickup} interact · {debug} debug",
     "life": "Life",
     "heat": "Heat",

@@ -3,6 +3,7 @@ import { t } from '../data/i18n';
 import { ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
 import { PERCENT_STATS, type Item, type StatKey } from '../data/loot/schemas';
 import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/generate';
+import { artUrl, itemArtUrl } from './art';
 
 export function formatStat(stat: StatKey, value: number): string {
   const sign = value >= 0 ? '+' : '−';
@@ -49,6 +50,9 @@ export function renderItemTooltip(item: Item, classId: string, opts: { equipped?
   root.style.setProperty('--rarity', rarity.color);
   const base = BASE_ITEMS.get(item.base);
 
+  // The painted icon beside the name, in its rarity's look.
+  const art = itemArtUrl(item);
+  if (art) root.appendChild(Object.assign(document.createElement('img'), { src: art, alt: '', className: 'item-tip-icon' }));
   root.appendChild(el('div', 'item-tip-name', itemDisplayName(item)));
   const typeLine = item.crystal
     ? t('items.types.crystal')
@@ -86,6 +90,8 @@ export function renderItemTooltip(item: Item, classId: string, opts: { equipped?
     }
     if (item.aspect) {
       const asp = el('div', 'item-tip-aspect', `✦ ${aspectText(item.aspect.id, item.aspect.value)}`);
+      const icon = artUrl(`aspects/${item.aspect.id}`);
+      if (icon) asp.prepend(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
       root.appendChild(asp);
     }
     if (item.unique) {

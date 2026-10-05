@@ -300,12 +300,14 @@ export class VfxSystem {
         this.sparks.emit(x, 0.2, z, 20, '#ff9a40', 9);
         this.sprites.dustRing(x, z, radius * 0.6);
         this.sprites.cracks(x, z, radius * 0.7);
+        this.sprites.debris(x, z, radius * 0.5);
         break;
       case 'leapLand':
         this.spawnRing('ring:shock', '#ff9a40', x, z, radius, 0.42);
         this.sparks.emit(x, 0.2, z, 24, '#ffb070', 10);
         this.sprites.dustRing(x, z, radius * 0.7, '#8a7a64', 12);
         this.sprites.cracks(x, z, radius * 0.8);
+        this.sprites.debris(x, z, radius * 0.6);
         break;
       case 'sporePulse':
         this.spawnRing('ring:spore', '#6bff7a', x, z, radius, 0.5);
@@ -331,6 +333,7 @@ export class VfxSystem {
           const a = (i / 4) * Math.PI * 2 + this.time;
           this.sprites.arc(x + Math.sin(a) * radius, 0.4, z + Math.cos(a) * radius, x, 0.4, z, '#bfe0ff');
         }
+        this.sprites.lightning(x, z, '#cfe0ff');
         break;
       case 'vent':
         this.spawnRing('ring:vent', '#ff6a1a', x, z, radius, 0.5, 0.1);
@@ -372,7 +375,7 @@ export class VfxSystem {
       case 'muzzle':
         this.sparks.emit(x, 1.2, z, 5, '#bff4ff', 3);
         this.sprites.glow(x, 1.2, z, 1.1, '#bff4ff', 0.1);
-        this.sprites.hit(x, 1.2, z, '#dff8ff', 0.7);
+        this.sprites.muzzle(x, 1.2, z);
         break;
       case 'shotHit':
         this.sparks.emit(x, 1.2, z, 8, '#9fe8ff', 4);
@@ -414,6 +417,7 @@ export class VfxSystem {
         this.sparks.emit(x, 0.3, z, 24, '#6bff7a', 9);
         this.sprites.cracks(x, z, radius, '#9aff7a');
         this.sprites.dustRing(x, z, radius * 0.6, '#5a6a48', 10);
+        this.sprites.debris(x, z, radius * 0.5, '#5a6048');
         this.sprites.sporeBurst(x, z, radius * 0.5);
         break;
       case 'corpseBurst':
@@ -429,6 +433,8 @@ export class VfxSystem {
   }
 
   private spawnTelegraph(owner: Entity | null, x: number, z: number, shape: TelegraphShape, duration: number, color: string): void {
+    // Big area attacks (bosses, slams) get a rune circle turning under the warning.
+    if (shape.kind === 'circle' && shape.radius >= 3.5) this.sprites.magicCircle(x, z, shape.radius, color, duration);
     const key = shape.kind === 'cone' ? `tele:cone:${shape.arcDeg}` : `tele:${shape.kind}`;
     const fx = this.acquire(key, () => {
       const geo = shape.kind === 'cone' ? this.coneGeometry(shape.arcDeg) : shape.kind === 'line' ? this.lineGeo : this.discGeo;
@@ -641,7 +647,7 @@ export class VfxSystem {
       fx.materials[1]!.opacity = (painted ? 0.3 : mine ? 0.35 : 0.5) * fade;
       // Gas stops puffing a moment before the cloud ends, so nothing lingers after it is gone.
       if (painted && fade > 0.3 && (look !== 'gas' || hz.remaining > 0.9)) {
-        if (look === 'fire') this.sprites.fireField(`h${e}`, tr.x, tr.z, hz.radius, dt, fade);
+        if (look === 'fire') this.sprites.fireField(`h${e}`, tr.x, tr.z, hz.radius, dt, fade, isGreen(hz.color));
         else if (look === 'gas') this.sprites.sporeField(`h${e}`, tr.x, tr.z, hz.radius, dt, mine, hz.color);
         else this.sprites.chilled(`h${e}`, tr.x, 0, tr.z, hz.radius, dt * hz.radius, false);
       }
@@ -717,6 +723,14 @@ export class VfxSystem {
       map.delete(e);
     }
   }
+}
+
+/** Lumen fire burns green. */
+function isGreen(color: string | undefined): boolean {
+  if (!color) return false;
+  const hsl = { h: 0, s: 0, l: 0 };
+  new THREE.Color(color).getHSL(hsl);
+  return hsl.h > 0.2 && hsl.h < 0.45 && hsl.s > 0.3;
 }
 
 /** How a ground hazard is painted: by what it does to whoever stands in it. */

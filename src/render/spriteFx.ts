@@ -72,13 +72,13 @@ export class SpriteFx {
 
   // ---- Fire -------------------------------------------------------------------------------------
 
-  private flame(x: number, y: number, z: number, size: number, rise = 1.6, life = 0.6): void {
+  private flame(x: number, y: number, z: number, size: number, rise = 1.6, life = 0.6, green = false): void {
     // Now and then a bushy clump instead of a single tongue, so a fire has body.
-    const clump = R() < 0.3;
+    const clump = !green && R() < 0.3;
     this.spawn({
-      sprite: clump ? 'fire_core_1' : pick(FLAMES), x, y, z, vx: rr(-0.2, 0.2), vy: rise, vz: rr(-0.2, 0.2),
+      sprite: green ? 'green_flame' : clump ? 'fire_core_1' : pick(FLAMES), x, y, z, vx: rr(-0.2, 0.2), vy: rise, vz: rr(-0.2, 0.2),
       life: rr(life * 0.75, life * 1.25), size: size * rr(0.85, 1.15), size1: size * 0.45, aspect: clump ? 1.2 : 0.9,
-      rot: rr(-0.2, 0.2), spin: rr(-0.5, 0.5), color: '#ffe8c0', color1: '#ff4010', fadeIn: 0.12, fadeOut: 0.45,
+      rot: rr(-0.2, 0.2), spin: rr(-0.5, 0.5), color: green ? '#e8ffe0' : '#ffe8c0', color1: green ? '#40ff60' : '#ff4010', fadeIn: 0.12, fadeOut: 0.45,
       gravity: -1.2,
     });
   }
@@ -120,6 +120,10 @@ export class SpriteFx {
       this.smoke(x + rr(-0.5, 0.5) * r, 0.6 + rr(0, 0.6) * r, z + rr(-0.5, 0.5) * r, r * rr(0.7, 1.1), '#2a2420', 0.6, rr(1.4, 2.2));
     }
     if (opts.scorch ?? true) this.scorch(x, z, r * 1.1);
+    // Ash settling afterwards.
+    for (let i = 0; i < Math.round(4 * this.density); i++) {
+      this.spawn({ sprite: 'ash_flake', x: x + rr(-r, r), y: rr(2, 4), z: z + rr(-r, r), vx: rr(-0.4, 0.4), vy: rr(-0.6, -0.2), vz: rr(-0.4, 0.4), life: rr(2, 3), size: rr(0.4, 0.7), rot: rr(0, TAU), spin: rr(-1, 1), color: '#ffd0a0', alpha: 0.8, fadeIn: 0.2 });
+    }
   }
 
   /** Glowing cracks and dark soot left on the ground, cooling from orange to nothing. */
@@ -129,12 +133,12 @@ export class SpriteFx {
   }
 
   /** Burning ground (fire hazards): flames all over the patch, embers and smoke. */
-  fireField(key: string, x: number, z: number, r: number, dt: number, strength = 1): void {
+  fireField(key: string, x: number, z: number, r: number, dt: number, strength = 1, green = false): void {
     const area = Math.min(50, r * r * 4.5) * strength;
     for (let i = this.due(`${key}:f`, 6 + area, dt); i > 0; i--) {
       const a = rr(0, TAU);
       const d = Math.sqrt(R()) * r * 0.9;
-      this.flame(x + Math.cos(a) * d, 0.45, z + Math.sin(a) * d, rr(1, 1.7) * Math.min(1.8, 0.8 + r * 0.3));
+      this.flame(x + Math.cos(a) * d, 0.45, z + Math.sin(a) * d, rr(1, 1.7) * Math.min(1.8, 0.8 + r * 0.3), 1.6, 0.6, green);
     }
     for (let i = this.due(`${key}:s`, 1 + area * 0.08, dt); i > 0; i--) this.smoke(x + rr(-r, r) * 0.6, 1.2, z + rr(-r, r) * 0.6, rr(0.8, 1.4), '#1e1a17', 0.4);
     for (let i = this.due(`${key}:e`, 2 + area * 0.15, dt); i > 0; i--) this.embers(x + rr(-r, r) * 0.7, 0.4, z + rr(-r, r) * 0.7, 1, 0.6);
@@ -220,6 +224,7 @@ export class SpriteFx {
     this.spawn({ sprite: 'splat_0', x, y: 0.045, z, life: 5, size: r * 1.4, flat: true, rot: rr(0, TAU), color: '#3a0a06', alpha: 0.85, additive: 0, fadeIn: 0.02, fadeOut: 0.7 });
     this.spawn({ sprite: 'toxic_splat_0', x, y: 0.05, z, life: 2.4, size: r * 1.2, flat: true, rot: rr(0, TAU), color: '#c8ff9a', alpha: 0.8, fadeIn: 0.02, fadeOut: 0.4 });
     this.sporeBurst(x, z, r * 0.8);
+    this.spawn({ sprite: 'ichor_burst', x, y: 0.8, z, life: 0.35, size: r * 0.8, size1: r * 1.8, rot: rr(0, TAU), color: '#e0ffc0', fadeIn: 0.05, fadeOut: 0.4 });
   }
 
   // ---- Cold -------------------------------------------------------------------------------------
@@ -276,6 +281,9 @@ export class SpriteFx {
     this.spawn({ sprite: 'energy_glow_1', x, y: 1.2, z, life: 0.5, size: r * 3, size1: r * 4, color: '#ffffff', fadeIn: 0.03, fadeOut: 0.3 });
     this.explosion(x, z, r * 0.9, { tint: '#d8f0ff' });
     this.spawn({ sprite: 'hex_shield_0', x, y: 0.08, z, life: 0.6, size: r * 1.2, size1: r * 2.6, flat: true, color: '#9fd8ff', fadeOut: 0.3 });
+    // The beam from orbit, and a ring of light racing out.
+    this.spawn({ sprite: 'lumen_beam', x, y: 9, z, life: 0.55, size: 18, size1: 18, aspect: 0.32, color: '#ffffff', fadeIn: 0.05, fadeOut: 0.3 });
+    this.spawn({ sprite: 'energy_ring', x, y: 0.1, z, life: 0.5, size: r * 0.6, size1: r * 3, flat: true, color: '#cfefff', fadeIn: 0.02, fadeOut: 0.3 });
   }
 
   /** A crystal shatters: a blinding white-cyan flash. */
@@ -327,6 +335,36 @@ export class SpriteFx {
     }
   }
 
+  /** Broken rock flying out and a low wall of dust (heavy slams and landings). */
+  debris(x: number, z: number, r: number, color = '#7a6a58'): void {
+    for (let i = 0; i < Math.round(6 * this.density); i++) {
+      const a = rr(0, TAU);
+      const sp = rr(3, 6) + r;
+      this.spawn({ sprite: 'rock_debris', x, y: 0.4, z, vx: Math.cos(a) * sp, vy: rr(3, 6), vz: Math.sin(a) * sp, life: rr(0.6, 0.9), size: rr(0.6, 1), rot: rr(0, TAU), spin: rr(-8, 8), color, additive: 0, gravity: 14, drag: 0.5, fadeIn: 0.02, fadeOut: 0.7 });
+    }
+    this.spawn({ sprite: 'shockwave_dust', x, y: 0.5, z, life: 0.7, size: r * 0.9, size1: r * 2.2, aspect: 2.4, color, alpha: 0.6, additive: 0, fadeIn: 0.05, fadeOut: 0.4 });
+  }
+
+  /** A gun's flash at the muzzle. */
+  muzzle(x: number, y: number, z: number, color = '#ffe8b0'): void {
+    this.spawn({ sprite: 'muzzle_flash', x, y, z, life: 0.07, size: 0.9, size1: 1.2, rot: rr(0, TAU), color, fadeIn: 0.01, fadeOut: 0.2 });
+  }
+
+  /** A rune circle under a big telegraphed attack, turning slowly until it lands. */
+  magicCircle(x: number, z: number, r: number, color: string, life: number): void {
+    const c = new THREE.Color(color);
+    const hsl = { h: 0, s: 0, l: 0 };
+    c.getHSL(hsl);
+    const sprite: SpriteKey = hsl.h > 0.2 && hsl.h < 0.45 ? 'magic_circle_green' : hsl.h >= 0.45 && hsl.h < 0.75 ? 'magic_circle_cyan' : 'magic_circle_red';
+    this.spawn({ sprite, x, y: 0.06, z, life, size: r * 2.15, size1: r * 2.2, flat: true, spin: 0.5, color: '#ffffff', alpha: 0.65, fadeIn: 0.15, fadeOut: 0.85 });
+  }
+
+  /** Lightning striking down at a point. */
+  lightning(x: number, z: number, color = '#ffffff'): void {
+    this.spawn({ sprite: pick(['lightning_0', 'lightning_1'] as const), x, y: 3, z, life: 0.16, size: 6, aspect: 0.45, color, fadeIn: 0.02, fadeOut: 0.4 });
+    this.spawn({ sprite: 'electric_ball', x, y: 0.6, z, life: 0.25, size: 1.4, size1: 2, rot: rr(0, TAU), color, fadeIn: 0.02, fadeOut: 0.3 });
+  }
+
   // ---- Other ------------------------------------------------------------------------------------
 
   heal(x: number, z: number): void {
@@ -335,6 +373,7 @@ export class SpriteFx {
   }
 
   blink(x: number, z: number, r: number): void {
+    this.spawn({ sprite: 'void_rift', x, y: 1, z, life: 0.5, size: r * 0.8, size1: r * 1.6, spin: -6, color: '#ffffff', alpha: 0.9, fadeIn: 0.05, fadeOut: 0.5 });
     this.spawn({ sprite: 'blink_0', x, y: 1, z, life: 0.45, size: r * 1.2, size1: r * 2, spin: 8, color: '#ffffff', fadeIn: 0.05, fadeOut: 0.4 });
   }
 
@@ -345,6 +384,7 @@ export class SpriteFx {
 
   /** Spirit wisps rising (a corpse raised). */
   wisps(x: number, z: number, r: number): void {
+    for (let i = 0; i < 3; i++) this.flame(x + rr(-r, r) * 0.4, 0.3, z + rr(-r, r) * 0.4, rr(0.8, 1.2), 1.8, 0.6, true);
     for (let i = 0; i < Math.round(5 * this.density); i++) {
       this.spawn({ sprite: pick(['wisp_0', 'wisp_1'] as const), x: x + rr(-r, r) * 0.5, y: 0.4, z: z + rr(-r, r) * 0.5, vy: rr(1.5, 2.6), life: rr(0.8, 1.2), size: rr(0.9, 1.4), size1: 0.5, aspect: 0.6, color: '#ffffff', fadeIn: 0.15 });
     }

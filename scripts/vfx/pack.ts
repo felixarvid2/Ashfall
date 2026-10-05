@@ -4,7 +4,7 @@
  * Each sprite's black background becomes transparency: colour sprites (fire, sparks, glows) take
  * their brightest channel as alpha and keep their colour; mask sprites (smoke, dust, cracks, splats)
  * become white shapes the game tints. Colours are stored premultiplied (so filtering never makes dark
- * fringes), edges fade out so no square shows, and the sprites go into an 8 × 8 grid of 256 px cells:
+ * fringes), edges fade out so no square shows, and the sprites go into a square grid of 256 px cells:
  * public/assets/vfx/atlas.webp, with src/render/vfxAtlas.ts naming the cells.
  *
  * Sources: the raw 992 px images in assets-src/vfx/raw/ (gitignored) when present, else the processed
@@ -13,13 +13,18 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import { SPRITES } from './sprites';
+import { VFX_EXTRA } from '../art/catalog';
+import { SPRITES as BASE_SPRITES } from './sprites';
+
+/** The first batch plus the extra effects from scripts/art/catalog.ts. */
+const SPRITES = [...BASE_SPRITES, ...VFX_EXTRA];
+const EXTRA = new Set(VFX_EXTRA.map((s) => s.key));
 
 const ROOT = new URL('../..', import.meta.url).pathname;
 const RAW = join(ROOT, 'assets-src', 'vfx', 'raw');
 const KEEP = join(ROOT, 'assets-src', 'vfx');
 const CELL = 256;
-const COLS = 8;
+const COLS = Math.ceil(Math.sqrt(SPRITES.length));
 
 /** Black point: the generator's "black" isn't quite 0. */
 const BLACK = 12 / 255;
@@ -32,7 +37,7 @@ const smooth = (e0: number, e1: number, x: number) => {
 };
 
 async function processed(key: string, mask: boolean, size: number): Promise<Buffer> {
-  const raw = join(RAW, `${key}.png`);
+  const raw = EXTRA.has(key) ? join(ROOT, 'assets-src', 'art', 'raw', 'vfx', `${key}.png`) : join(RAW, `${key}.png`);
   const src = existsSync(raw) ? raw : join(KEEP, `${key}.webp`);
   if (existsSync(raw)) {
     // Refresh the committed 512 px copy (straight colour on black, as generated).

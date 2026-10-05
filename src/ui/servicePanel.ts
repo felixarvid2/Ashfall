@@ -15,6 +15,7 @@ import {
   sellPrice,
 } from '../systems/hub/services';
 import { renderItemCell } from './inventoryPanel';
+import { artUrl } from './art';
 import { aspectText, formatStat, itemDisplayName, renderItemTooltip } from './itemTooltip';
 import { rarityDef } from '../data/loot/db';
 
@@ -210,6 +211,8 @@ export class ServicePanel {
     if (cache.length === 0) out.push(div('inv-hint', t('services.technician.empty')));
     cache.forEach((a, i) => {
       const row = div('aspect-row', '');
+      const icon = artUrl(`aspects/${a.id}`);
+      if (icon) row.append(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
       row.append(div('aspect-name', t(`aspects.${a.id}.name`)), div('aspect-desc', aspectText(a.id, a.value)));
       if (item && canImprint(item, a.id)) {
         const cost = imprintCost(item);

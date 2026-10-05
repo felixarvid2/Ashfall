@@ -60,7 +60,8 @@ export type GroundTexture =
   | 'rail_track'
   | 'elder_stone'
   | 'lake_shore'
-  | 'steel_grating';
+  | 'steel_grating'
+  | 'mine_rock';
 
 /**
  * Ground textures for an open-world zone: a base that covers everything, up to six overlay

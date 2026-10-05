@@ -7,6 +7,7 @@ import { t } from '../data/i18n';
 import type { PoiKind } from '../data/zones/zoneTypes';
 import { revealedFraction, type ZoneRuntime } from '../world/zone';
 import { extraHubs } from '../world/setPieces';
+import { artUrl } from './art';
 
 const MINI_SIZE = 180;
 /** Metres shown from the centre of the minimap to its edge. */
@@ -62,7 +63,9 @@ export class MapUi {
   private readonly fullCtx: CanvasRenderingContext2D;
   private readonly fullInfo: HTMLDivElement;
   /** Fog of war per zone, one pixel per map cell, scaled up when drawn. */
-  private readonly fog = new Map<string, { canvas: HTMLCanvasElement; dirty: number }>();
+  private readonly fog = new Map<string, { canvas: HTMLCanvasElement; dirty: number; version: number }>();
+  /** Painted region maps (FLUX.2 Turbo), shown only where you have explored. */
+  private readonly painted = new Map<string, { image: HTMLImageElement; ready: boolean; masked: HTMLCanvasElement; version: number } | null>();
   private readonly tabs: HTMLDivElement;
   /** Zone shown on the full map (null = the one you are in). */
   private viewing: string | null = null;
@@ -248,7 +251,7 @@ export class MapUi {
     if (!fog) {
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = n;
-      this.fog.set(zone.def.id, (fog = { canvas, dirty: 0 }));
+      this.fog.set(zone.def.id, (fog = { canvas, dirty: 0, version: 0 }));
     }
     // Repaint at most every ~0.6 s (the reveal is coarse anyway).
     if (fog.dirty-- <= 0) {
@@ -263,8 +266,47 @@ export class MapUi {
         img.data[i * 4 + 3] = 255;
       }
       fc.putImageData(img, 0, 0);
+      fog.version++;
     }
     return fog.canvas;
+  }
+
+  /** The painted map cut to the explored area (redrawn when the fog changes), or null. */
+  private paintedMap(zone: ZoneRuntime, fogCanvas: HTMLCanvasElement): HTMLCanvasElement | null {
+    const id = zone.def.id;
+    let p = this.painted.get(id);
+    if (p === undefined) {
+      const url = artUrl(`maps/${id.replace(/^zone\./, '')}`);
+      if (url) {
+        const image = new Image();
+        const masked = document.createElement('canvas');
+        masked.width = masked.height = 512;
+        p = { image, ready: false, masked, version: -1 };
+        const entry = p;
+        image.onload = () => (entry.ready = true);
+        image.src = url;
+      } else p = null;
+      this.painted.set(id, p);
+    }
+    if (!p || !p.ready) return null;
+    const version = this.fog.get(id)?.version ?? 0;
+    if (p.version !== version) {
+      p.version = version;
+      const c = p.masked.getContext('2d')!;
+      const size = p.masked.width;
+      // The painting covers the zone's square; the fog grid may reach a little past it.
+      const span = (zone.def.halfSize * 2) / (zone.cells * zone.def.mapCell);
+      c.globalCompositeOperation = 'source-over';
+      c.clearRect(0, 0, size, size);
+      c.globalAlpha = 0.9;
+      c.drawImage(p.image, 0, 0, size * span, size * span);
+      c.globalAlpha = 1;
+      c.globalCompositeOperation = 'destination-in';
+      c.imageSmoothingEnabled = true;
+      c.drawImage(fogCanvas, 0, 0, size, size);
+      c.globalCompositeOperation = 'source-over';
+    }
+    return p.masked;
   }
 
   private drawWorld(c: CanvasRenderingContext2D, zone: ZoneRuntime, v: View, range: number, here = true): void {
@@ -284,7 +326,13 @@ export class MapUi {
     c.setTransform(a, b, -b, a, v.cx - (a * v.px - b * v.pz), v.cy - (b * v.px + a * v.pz));
     c.imageSmoothingEnabled = false;
     // Fog image row j is world z = −half + j·cell, which is canvas y: no flip needed.
-    c.drawImage(this.fogCanvas(zone), -half, -half, zone.cells * cell, zone.cells * cell);
+    const fog = this.fogCanvas(zone);
+    const painted = this.paintedMap(zone, fog);
+    if (painted) {
+      c.imageSmoothingEnabled = true;
+      c.drawImage(painted, -half, -half, zone.cells * cell, zone.cells * cell);
+      c.imageSmoothingEnabled = false;
+    } else c.drawImage(fog, -half, -half, zone.cells * cell, zone.cells * cell);
     // Roads (only revealed segments).
     c.strokeStyle = '#7a6a54';
     c.lineCap = 'round';

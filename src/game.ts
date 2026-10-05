@@ -89,6 +89,7 @@ import { monsterLevel } from './systems/encounter';
 import { learn, learnedSkills, pointsSpent, resetTree, respecCost, tree } from './systems/skillTree';
 import { DevTools } from './ui/devtools';
 import { MapUi } from './ui/minimap';
+import { artUrl } from './ui/art';
 import { Hud, type HudState } from './ui/hud';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
@@ -685,6 +686,11 @@ export class Game {
     this.closeDialogue();
     this.servicePanel.close();
     this.lastTarget = null;
+    // Arriving in another region: its painting and name sweep in, once the zone is drawing.
+    if (old?.def.id !== id) {
+      const card = artUrl(`regions/${id.replace(/^zone\./, '')}`);
+      if (card) this.pendingCard = { image: card, name: t(`zones.${def.key}.name`), sub: t('hud.regionNumber', { n: def.region }), frames: 4 };
+    }
   }
 
   /** Remove every entity but the player and their minions. */
@@ -838,6 +844,11 @@ export class Game {
     );
     if (this.characterPanel.open && Math.floor(this.realTime * 4) !== Math.floor((this.realTime - frameDt) * 4)) {
       this.characterPanel.refresh();
+    }
+    this.announceBosses();
+    if (this.pendingCard && --this.pendingCard.frames <= 0) {
+      this.hud.regionCard(this.pendingCard.image, this.pendingCard.name, this.pendingCard.sub);
+      this.pendingCard = null;
     }
     this.hud.update(this.hudState(), frameDt);
     this.mapUi.markers = this.ctx.instance
@@ -1319,11 +1330,13 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       const dn = w.get(te, DisplayName);
       const elite = w.get(te, Elite);
       const name = dn ? (dn.literal ? dn.key : t(dn.key)) : t(`enemies.${ai.defId}`);
+      const portrait = artUrl(`bosses/${ai.defId}`);
       target = {
         name,
         current: th.current,
         max: th.max,
         statuses,
+        ...(portrait ? { portrait } : {}),
         ...(elite ? { color: ELITE_COLORS[elite.kind], affixes: elite.affixes.map((a) => t(`elites.affixes.${a}`)) } : {}),
       };
     }
@@ -1532,6 +1545,27 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   }
 
   /** Stress test: spawn a large crowd around the player. */
+  /** A region card waiting for the new zone's first frames (building it can stall the page). */
+  private pendingCard: { image: string; name: string; sub: string; frames: number } | null = null;
+
+  /** Bosses already announced with the intro card (once per spawn). */
+  private readonly announced = new Set<Entity>();
+
+  /** A boss engaging the player gets its portrait and name swept onto the screen. */
+  private announceBosses(): void {
+    for (const e of this.world.query(Boss, EnemyAI)) {
+      if (this.announced.has(e) || !this.world.req(e, Boss).engaged || this.world.has(e, Dead)) continue;
+      this.announced.add(e);
+      const ai = this.world.req(e, EnemyAI);
+      const portrait = artUrl(`bosses/${ai.defId}`);
+      if (!portrait) continue;
+      const dn = this.world.get(e, DisplayName);
+      const name = dn ? (dn.literal ? dn.key : t(dn.key)) : t(`enemies.${ai.defId}`);
+      this.hud.bossIntro(name, portrait, t('hud.bossIntro'));
+    }
+    for (const e of this.announced) if (!this.world.isAlive(e)) this.announced.delete(e);
+  }
+
   spawnHorde(count: number): void {
     const tr = this.playerTransform;
     const rng = this.ctx.rng.fork(`horde-${this.ctx.tick}`);
