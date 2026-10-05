@@ -183,17 +183,18 @@ export class SpriteFx {
   sporeField(key: string, x: number, z: number, r: number, dt: number, mine: boolean, color?: string): void {
     const tint = color ?? (mine ? '#d8ffa0' : '#9aff7a');
     const area = Math.min(30, r * r * 1.4);
-    for (let i = this.due(`${key}:c`, 1.2 + area * 0.35, dt); i > 0; i--) {
+    // Short-lived puffs emitted faster: the cloud looks as thick but clears soon after it ends.
+    for (let i = this.due(`${key}:c`, 2 + area * 0.6, dt); i > 0; i--) {
       const a = rr(0, TAU);
       const d = Math.sqrt(R()) * r * 0.75;
       this.spawn({
         sprite: pick(SPORES), x: x + Math.cos(a) * d, y: rr(0.3, 1.1), z: z + Math.sin(a) * d, vx: rr(-0.25, 0.25), vy: rr(0.05, 0.25), vz: rr(-0.25, 0.25),
-        life: rr(2, 3), size: r * rr(0.45, 0.7), size1: r * rr(0.8, 1.1), rot: rr(0, TAU), spin: rr(-0.2, 0.2),
-        color: tint, alpha: mine ? 0.22 : 0.32, fadeIn: 0.3, fadeOut: 0.55, additive: 0.75, drag: 0.4,
+        life: rr(1.1, 1.6), size: r * rr(0.45, 0.7), size1: r * rr(0.8, 1.1), rot: rr(0, TAU), spin: rr(-0.2, 0.2),
+        color: tint, alpha: mine ? 0.22 : 0.32, fadeIn: 0.25, fadeOut: 0.45, additive: 0.75, drag: 0.4,
       });
     }
     for (let i = this.due(`${key}:p`, 1 + area * 0.12, dt); i > 0; i--) {
-      this.spawn({ sprite: 'spores_0', x: x + rr(-r, r) * 0.7, y: rr(0.4, 1.8), z: z + rr(-r, r) * 0.7, vy: rr(0.1, 0.4), life: rr(1.5, 2.5), size: rr(0.8, 1.4), rot: rr(0, TAU), spin: rr(-0.5, 0.5), color: tint, alpha: 0.7, fadeIn: 0.3 });
+      this.spawn({ sprite: 'spores_0', x: x + rr(-r, r) * 0.7, y: rr(0.4, 1.8), z: z + rr(-r, r) * 0.7, vy: rr(0.1, 0.4), life: rr(0.9, 1.3), size: rr(0.8, 1.4), rot: rr(0, TAU), spin: rr(-0.5, 0.5), color: tint, alpha: 0.7, fadeIn: 0.3 });
     }
   }
 

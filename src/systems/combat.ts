@@ -359,16 +359,31 @@ export interface StatusSource {
   attacker?: Entity;
 }
 
+/**
+ * Poison on a player lasts at most `max` seconds in a row however often it is reapplied (clouds tick,
+ * swarms keep biting), then can't take hold for `rest` seconds, so it always wears off.
+ */
+export const PLAYER_POISON = { max: 5, rest: 2 };
+
 export function applyStatus(world: World, ctx: GameContext, target: Entity, apply: StatusApply, source: StatusSource): void {
   if (!isAlive(world, target)) return;
   const effects = world.get(target, StatusEffects);
   if (!effects) return;
   const def = STATUS_DEFS[apply.status];
+  let duration = apply.duration;
+  if (apply.status === 'poisoned' && world.has(target, PlayerControlled)) {
+    const { max, rest } = PLAYER_POISON;
+    const poisoned = effects.list.some((s) => s.id === 'poisoned' && s.remaining > 0);
+    if (!poisoned && (effects.poisonSince === undefined || ctx.time >= effects.poisonSince + max + rest)) effects.poisonSince = ctx.time;
+    const end = (effects.poisonSince ?? ctx.time) + max;
+    if (ctx.time >= end) return;
+    duration = Math.min(duration, end - ctx.time);
+  }
 
   const instance: StatusInstance = {
     id: apply.status,
-    remaining: apply.duration,
-    duration: apply.duration,
+    remaining: duration,
+    duration,
     dps: 0,
     amount: 0,
     pending: 0,

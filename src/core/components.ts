@@ -147,6 +147,8 @@ export interface StatusEffects {
   canAct: boolean;
   /** Time until the next DoT damage tick. */
   dotTimer: number;
+  /** Players: when the current stretch of poison began (ctx.time), for its time cap. */
+  poisonSince?: number;
 }
 export const StatusEffects = defineComponent<StatusEffects>('StatusEffects');
 

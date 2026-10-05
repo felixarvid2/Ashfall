@@ -639,7 +639,8 @@ export class VfxSystem {
       const painted = look !== 'plain' && hz.inner === undefined;
       fx.materials[0]!.opacity = (painted ? 0.05 : mine ? 0.1 : hz.inner !== undefined ? 0.55 : 0.22) * fade;
       fx.materials[1]!.opacity = (painted ? 0.3 : mine ? 0.35 : 0.5) * fade;
-      if (painted && fade > 0.3) {
+      // Gas stops puffing a moment before the cloud ends, so nothing lingers after it is gone.
+      if (painted && fade > 0.3 && (look !== 'gas' || hz.remaining > 0.9)) {
         if (look === 'fire') this.sprites.fireField(`h${e}`, tr.x, tr.z, hz.radius, dt, fade);
         else if (look === 'gas') this.sprites.sporeField(`h${e}`, tr.x, tr.z, hz.radius, dt, mine, hz.color);
         else this.sprites.chilled(`h${e}`, tr.x, 0, tr.z, hz.radius, dt * hz.radius, false);
