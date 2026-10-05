@@ -1,6 +1,7 @@
 /**
- * Combat visual effects built from simple pooled meshes (brief §9.5: effects are
- * made in code, not with Meshy). Every effect object is reused, never freed, so
+ * Combat visual effects: pooled meshes for shapes that must read exactly (rings,
+ * telegraphs, beams) and painted sprite particles (spriteFx.ts) for fire, smoke,
+ * spores, frost, sparks and dust. Every effect object is reused, never freed, so
  * heavy fights don't churn the garbage collector.
  */
 import * as THREE from 'three';
@@ -18,6 +19,7 @@ import {
 } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import type { GameEvent, TelegraphShape, VfxKind } from '../core/events';
+import { SpriteFx } from './spriteFx';
 
 interface TimedFx {
   group: THREE.Group;
@@ -86,12 +88,16 @@ export class VfxSystem {
   private readonly stunGeo = new THREE.TorusGeometry(0.35, 0.05, 6, 24).rotateX(Math.PI / 2);
 
   private readonly sparks: Sparks;
+  /** Painted sprite particles (fire, smoke, spores, frost...). */
+  readonly sprites: SpriteFx;
   private time = 0;
+  private frameDt = 0;
 
   constructor() {
     this.root.name = 'vfx';
     this.sparks = new Sparks(500);
-    this.root.add(this.sparks.points);
+    this.sprites = new SpriteFx(`${import.meta.env.BASE_URL}assets/vfx/atlas.webp`);
+    this.root.add(this.sparks.points, this.sprites.mesh);
   }
 
   /** React to logic events (call once per frame with the drained queue). */
@@ -107,10 +113,14 @@ export class VfxSystem {
         if (!event.dot && event.amount + event.absorbed > 0) {
           const color = event.toPlayer ? '#ff5544' : event.crit ? '#ffd27a' : '#ffb070';
           this.sparks.emit(event.x, event.y - 0.8, event.z, event.crit ? 16 : 8, color, event.crit ? 7 : 5);
+          this.sprites.hit(event.x, event.y - 0.8, event.z, color, event.crit ? 1.4 : 0.8);
         }
         break;
       case 'death':
-        if (!event.isPlayer) this.sparks.emit(event.x, 0.8, event.z, 20, '#9a8a70', 4);
+        if (!event.isPlayer) {
+          this.sparks.emit(event.x, 0.8, event.z, 20, '#9a8a70', 4);
+          this.sprites.dustRing(event.x, event.z, 0.7, '#6a5e50', 5);
+        }
         break;
       default:
         break;
@@ -120,6 +130,7 @@ export class VfxSystem {
   /** Per-frame update: timed effects plus effects mirrored from ECS state. */
   update(world: World, dt: number, alpha: number): void {
     this.time += dt;
+    this.frameDt = dt;
     for (const pool of this.pools.values()) {
       for (const fx of pool) {
         if (!fx.active) continue;
@@ -141,9 +152,10 @@ export class VfxSystem {
     this.syncGrenades(world);
     this.syncTraps(world);
     this.syncTethers(world, alpha);
-    this.syncHazards(world);
-    this.syncStatuses(world, alpha);
+    this.syncHazards(world, dt);
+    this.syncStatuses(world, alpha, dt);
     this.sparks.update(dt);
+    this.sprites.update(dt);
   }
 
   // ---- Timed effects ---------------------------------------------------------
@@ -257,9 +269,10 @@ export class VfxSystem {
         fx.update = (f, t) => {
           const r = radius * (0.75 + 0.25 * t);
           f.group.scale.set(r, 1, r);
-          f.materials[0]!.opacity = (1 - t) * 0.85;
+          f.materials[0]!.opacity = (1 - t) * 0.45;
         };
         fx.update(fx, 0);
+        this.sprites.slash(x, z, radius, facing, kind === 'slash' ? '#ffe2b8' : '#ff6a5a');
         break;
       }
       case 'flame': {
@@ -276,124 +289,141 @@ export class VfxSystem {
         fx.update = (f, t) => {
           const r = radius * (0.55 + 0.45 * t);
           f.group.scale.set(r, 1, r);
-          f.materials[0]!.opacity = (1 - t) * 0.6;
+          f.materials[0]!.opacity = (1 - t) * 0.15;
         };
         fx.update(fx, 0);
-        const d = radius * 0.6;
-        this.sparks.emit(x + Math.sin(facing) * d, 0.9, z + Math.cos(facing) * d, 8, '#ffb040', 4);
+        this.sprites.flameCone(x, z, radius, facing, arcDeg);
         break;
       }
       case 'shockwave':
         this.spawnRing('ring:shock', '#ff9a40', x, z, radius, 0.38);
-        this.spawnRing('ring:shock2', '#ffd9a0', x, z, radius * 0.7, 0.25, 0.1);
-        this.sparks.emit(x, 0.2, z, 30, '#ff9a40', 9);
+        this.sparks.emit(x, 0.2, z, 20, '#ff9a40', 9);
+        this.sprites.dustRing(x, z, radius * 0.6);
+        this.sprites.cracks(x, z, radius * 0.7);
         break;
       case 'leapLand':
         this.spawnRing('ring:shock', '#ff9a40', x, z, radius, 0.42);
-        this.spawnRing('ring:dust', '#b8a48a', x, z, radius * 1.3, 0.6, 0.4);
-        this.sparks.emit(x, 0.2, z, 36, '#ffb070', 10);
+        this.sparks.emit(x, 0.2, z, 24, '#ffb070', 10);
+        this.sprites.dustRing(x, z, radius * 0.7, '#8a7a64', 12);
+        this.sprites.cracks(x, z, radius * 0.8);
         break;
       case 'sporePulse':
         this.spawnRing('ring:spore', '#6bff7a', x, z, radius, 0.5);
+        this.sprites.sporeBurst(x, z, radius * 0.6);
         break;
       case 'shield':
         this.spawnRing('ring:shield', '#9fd8ff', x, z, 2.2, 0.35, 0.3, 1);
+        this.sprites.shield(x, z);
         break;
       case 'heal':
         this.spawnRing('ring:heal', '#7dff9a', x, z, 1.6, 0.45, 0.2, 0.1);
-        this.sparks.emit(x, 1, z, 14, '#7dff9a', 2.5);
+        this.sprites.heal(x, z);
         break;
       case 'dodge':
         this.spawnRing('ring:dodge', '#c9c2b6', x, z, 1.2, 0.3, 0.3);
+        this.sprites.dustRing(x, z, 0.5, '#7a6e60', 5);
         break;
       case 'pull':
-        // Inward ring: starts wide and collapses onto the caster.
+        // Inward ring: starts wide and collapses onto the caster, with lightning reaching in.
         this.spawnPullRing(x, z, radius);
         this.sparks.emit(x, 0.4, z, 20, '#7ec8ff', 6);
+        for (let i = 0; i < 4; i++) {
+          const a = (i / 4) * Math.PI * 2 + this.time;
+          this.sprites.arc(x + Math.sin(a) * radius, 0.4, z + Math.cos(a) * radius, x, 0.4, z, '#bfe0ff');
+        }
         break;
       case 'vent':
         this.spawnRing('ring:vent', '#ff6a1a', x, z, radius, 0.5, 0.1);
-        this.spawnRing('ring:vent2', '#ffd27a', x, z, radius * 0.6, 0.35, 0.05);
-        this.sparks.emit(x, 0.4, z, 60, '#ff7a1a', 12);
+        this.sparks.emit(x, 0.4, z, 30, '#ff7a1a', 12);
+        this.sprites.fireVent(x, z, radius);
         break;
       case 'orbital':
         this.spawnRing('ring:orbital', '#9fd8ff', x, z, radius * 1.2, 0.6, 0.1);
-        this.spawnRing('ring:orbital2', '#ffffff', x, z, radius * 0.7, 0.3, 0.05);
         this.spawnBeam(x, z, radius * 0.45);
-        this.sparks.emit(x, 0.5, z, 80, '#bfe8ff', 14);
+        this.sparks.emit(x, 0.5, z, 50, '#bfe8ff', 14);
+        this.sprites.orbital(x, z, radius);
         break;
       case 'flash':
         // A crystal shatters: a blinding white-cyan burst.
         this.spawnRing('ring:flash', '#e8ffff', x, z, radius, 0.35, 0.05, 1);
-        this.spawnRing('ring:flash2', '#7affff', x, z, radius * 0.6, 0.5, 0.1);
-        this.sparks.emit(x, 1.2, z, 50, '#bfffff', 9);
+        this.sparks.emit(x, 1.2, z, 30, '#bfffff', 9);
+        this.sprites.flash(x, z, radius);
         break;
       case 'flare':
         // A flare lands and catches: red sparks (its light comes from the light pool).
         this.spawnRing('ring:flare', '#ff5a3a', x, z, 1.6, 0.4, 0.2, 0.6);
-        this.sparks.emit(x, 0.6, z, 40, '#ff8a5a', 5);
+        this.sparks.emit(x, 0.6, z, 20, '#ff8a5a', 5);
+        this.sprites.flare(x, z);
         break;
       case 'dust':
         // Grit trickling from the roof before a cave-in.
         this.spawnRing('ring:dust', '#c8b08a', x, z, radius, 1.2, 0.6, 0.25);
-        this.sparks.emit(x, 4, z, 60, '#a89878', 2);
+        this.sprites.fallingDust(x, z, radius);
         break;
       case 'coolant':
         this.spawnRing('ring:coolant', '#7ec8ff', x, z, 2.4, 0.5, 0.2, 0.3);
-        this.sparks.emit(x, 1, z, 30, '#bfe8ff', 4);
+        this.sparks.emit(x, 1, z, 20, '#bfe8ff', 4);
+        this.sprites.frostBurst(x, z, Math.max(2.4, radius));
         break;
       case 'boltHit':
         this.sparks.emit(x, 1.2, z, 10, '#ff7a3a', 4);
+        this.sprites.hit(x, 1.2, z, '#ffb070', 1.1);
         break;
       case 'muzzle':
-        this.spawnRing('ring:muzzle', '#bff4ff', x, z, 0.6, 0.12, 0.3, 1.2);
         this.sparks.emit(x, 1.2, z, 5, '#bff4ff', 3);
+        this.sprites.glow(x, 1.2, z, 1.1, '#bff4ff', 0.1);
+        this.sprites.hit(x, 1.2, z, '#dff8ff', 0.7);
         break;
       case 'shotHit':
         this.sparks.emit(x, 1.2, z, 8, '#9fe8ff', 4);
+        this.sprites.hit(x, 1.2, z, '#bff0ff', 1);
         break;
       case 'explosion':
         this.spawnRing('ring:explode', '#ff8a2a', x, z, radius, 0.4, 0.15);
-        this.spawnRing('ring:explode2', '#ffe0a0', x, z, radius * 0.6, 0.25, 0.1, 0.1);
-        this.sparks.emit(x, 0.4, z, 40, '#ff9a40', 9);
+        this.sparks.emit(x, 0.4, z, 24, '#ff9a40', 9);
+        this.sprites.explosion(x, z, radius);
         break;
       case 'bomblet':
-        this.spawnRing('ring:bomblet', '#ffb060', x, z, radius, 0.25, 0.2);
-        this.sparks.emit(x, 0.3, z, 12, '#ffb060', 6);
+        this.sparks.emit(x, 0.3, z, 8, '#ffb060', 6);
+        this.sprites.explosion(x, z, radius * 0.8, { scorch: false });
         break;
       case 'trapPlace':
         this.spawnRing('ring:trap', '#ff5a4a', x, z, radius, 0.35, 0.6);
+        this.sprites.rune('rune_trap_0', x, z, radius);
         break;
       case 'blink':
         this.spawnRing('ring:blink', '#5ad2ff', x, z, radius, 0.3, 0.2, 0.6);
-        this.sparks.emit(x, 1, z, 18, '#5ad2ff', 4);
+        this.sparks.emit(x, 1, z, 12, '#5ad2ff', 4);
+        this.sprites.blink(x, z, Math.max(1.2, radius));
         break;
       case 'smoke':
         this.spawnRing('ring:smoke', '#8a96a8', x, z, 3.2, 0.9, 0.2, 0.4);
-        this.spawnRing('ring:smoke2', '#5a6678', x, z, 2.2, 1.2, 0.3, 0.8);
-        this.sparks.emit(x, 1, z, 30, '#6a7688', 2);
+        this.sprites.smokeScreen(x, z, 3);
         break;
       case 'raise':
         this.spawnRing('ring:raise', '#6bff7a', x, z, radius * 1.4, 0.6, 0.2);
-        this.sparks.emit(x, 0.6, z, 26, '#8aff6a', 3.5);
+        this.sparks.emit(x, 0.6, z, 16, '#8aff6a', 3.5);
+        this.sprites.wisps(x, z, radius);
         break;
       case 'minionSlash':
         this.sparks.emit(x + Math.sin(facing) * 1, 1, z + Math.cos(facing) * 1, 6, '#8aff6a', 3);
+        this.sprites.slash(x, z, 1.6, facing, '#9aff7a');
         break;
       case 'slam':
         this.spawnRing('ring:slam', '#6bff7a', x, z, radius, 0.45, 0.2);
-        this.spawnRing('ring:slam2', '#d4ffb0', x, z, radius * 0.6, 0.3, 0.1);
-        this.sparks.emit(x, 0.3, z, 40, '#6bff7a', 9);
+        this.sparks.emit(x, 0.3, z, 24, '#6bff7a', 9);
+        this.sprites.cracks(x, z, radius, '#9aff7a');
+        this.sprites.dustRing(x, z, radius * 0.6, '#5a6a48', 10);
+        this.sprites.sporeBurst(x, z, radius * 0.5);
         break;
       case 'corpseBurst':
         this.spawnRing('ring:corpse', '#9aff5a', x, z, radius, 0.4, 0.15);
-        this.spawnRing('ring:corpse2', '#c83a2a', x, z, radius * 0.5, 0.3, 0.1);
-        this.sparks.emit(x, 0.5, z, 40, '#9aff5a', 8);
-        this.sparks.emit(x, 0.5, z, 20, '#a82a1a', 6);
+        this.sparks.emit(x, 0.5, z, 24, '#9aff5a', 8);
+        this.sprites.corpseBurst(x, z, radius);
         break;
       case 'mark':
         this.spawnRing('ring:mark', '#ff4a6a', x, z, radius, 0.5, 1, 0.08);
-        this.spawnRing('ring:mark2', '#ff4a6a', x, z, radius * 0.5, 0.5, 0.2);
+        this.sprites.rune('rune_mark_0', x, z, radius, 0.7);
         break;
     }
   }
@@ -463,6 +493,9 @@ export class VfxSystem {
         tr.prevZ + (tr.z - tr.prevZ) * alpha,
       );
       mesh.rotation.y = tr.facing;
+      // A glowing trail: the shot's colour for players, hot orange for enemy bolts.
+      const color = world.req(e, Projectile).skill?.color;
+      this.sprites.trail(`p${e}`, mesh.position.x, mesh.position.y, mesh.position.z, color ?? '#ff8a3a', this.frameDt, color ? 0.45 : 0.7);
     }
     for (const [e, mesh] of this.projectiles) {
       if (seen.has(e)) continue;
@@ -503,6 +536,7 @@ export class VfxSystem {
         1.2 * (1 - t) + 0.15 + (1.5 + dist * 0.25) * 4 * t * (1 - t),
         strike.fromZ + (tr.z - strike.fromZ) * t,
       );
+      this.sprites.trail(`g${e}`, mesh.position.x, mesh.position.y, mesh.position.z, '#ffc070', this.frameDt, 0.4);
     }
     this.release(this.grenades, seen, this.grenadePool);
   }
@@ -569,11 +603,12 @@ export class VfxSystem {
     }
   }
 
-  private syncHazards(world: World): void {
+  private syncHazards(world: World, dt: number): void {
     const seen = new Set<Entity>();
     for (const e of world.query(Hazard, Transform)) {
       seen.add(e);
       const hz = world.req(e, Hazard);
+      const look = hazardLook(hz);
       let fx = this.hazards.get(e);
       const mine = hz.team === 'player';
       if (!fx) {
@@ -600,8 +635,15 @@ export class VfxSystem {
       const pulse = 1 + Math.sin(this.time * 6) * 0.04;
       fx.group.position.set(tr.x, 0.04, tr.z);
       fx.group.scale.set(hz.radius * pulse, 1, hz.radius * pulse);
-      fx.materials[0]!.opacity = (mine ? 0.1 : hz.inner !== undefined ? 0.55 : 0.22) * fade;
-      fx.materials[1]!.opacity = (mine ? 0.35 : 0.5) * fade;
+      // Painted fire, gas and frost do the filling; the disc stays faint to show the exact edge.
+      const painted = look !== 'plain' && hz.inner === undefined;
+      fx.materials[0]!.opacity = (painted ? 0.05 : mine ? 0.1 : hz.inner !== undefined ? 0.55 : 0.22) * fade;
+      fx.materials[1]!.opacity = (painted ? 0.3 : mine ? 0.35 : 0.5) * fade;
+      if (painted && fade > 0.3) {
+        if (look === 'fire') this.sprites.fireField(`h${e}`, tr.x, tr.z, hz.radius, dt, fade);
+        else if (look === 'gas') this.sprites.sporeField(`h${e}`, tr.x, tr.z, hz.radius, dt, mine, hz.color);
+        else this.sprites.chilled(`h${e}`, tr.x, 0, tr.z, hz.radius, dt * hz.radius, false);
+      }
     }
     for (const [e, fx] of this.hazards) {
       if (seen.has(e)) continue;
@@ -611,7 +653,7 @@ export class VfxSystem {
     }
   }
 
-  private syncStatuses(world: World, alpha: number): void {
+  private syncStatuses(world: World, alpha: number, dt: number): void {
     const bubbleSeen = new Set<Entity>();
     const stunSeen = new Set<Entity>();
     for (const e of world.query(StatusEffects, Transform)) {
@@ -628,6 +670,10 @@ export class VfxSystem {
       for (const s of effects.list) {
         if (s.id === 'barrier') barrier += s.amount;
         if (s.id === 'stunned' || s.id === 'frozen') stunned = true;
+        // Painted status effects: fire on the burning, bubbles on the poisoned, frost on the cold.
+        if (s.id === 'burning') this.sprites.burning(`b${e}`, x, y, z, radius, dt);
+        else if (s.id === 'poisoned') this.sprites.poisoned(`t${e}`, x, y, z, radius, dt);
+        else if (s.id === 'chilled' || s.id === 'frozen') this.sprites.chilled(`c${e}`, x, y, z, radius, dt, s.id === 'frozen');
       }
 
       if (barrier > 0) {
@@ -670,6 +716,15 @@ export class VfxSystem {
       map.delete(e);
     }
   }
+}
+
+/** How a ground hazard is painted: by what it does to whoever stands in it. */
+function hazardLook(hz: Hazard): 'fire' | 'gas' | 'frost' | 'plain' {
+  const ids = hz.applies.map((a) => a.status);
+  if (ids.includes('burning')) return 'fire';
+  if (ids.includes('poisoned')) return 'gas';
+  if (ids.includes('chilled') || ids.includes('frozen')) return 'frost';
+  return 'plain';
 }
 
 /** Tiny CPU particle system for hit sparks (one draw call). */

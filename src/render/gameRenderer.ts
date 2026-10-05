@@ -1025,6 +1025,15 @@ export class GameRenderer {
         this.lastHitAnim.delete(e);
       }
     }
+    // Embers rise off molten metal near the camera (not off pools cooled by a valve).
+    if (this.molten && !this.instanceRoot) {
+      const f = this.rig.focusPoint;
+      const off = new Set(this.molten.key.split(','));
+      for (const p of this.molten.pools) {
+        if (off.has(p.id) || Math.hypot(p.x - f.x, p.z - f.z) > 40) continue;
+        this.vfx.sprites.moltenEmbers(`m${p.id}`, p.x, p.z, p.r, frameDt);
+      }
+    }
     this.vfx.update(world, frameDt, alpha);
     this.loot.update(world, frameDt);
   }
@@ -1212,6 +1221,7 @@ export class GameRenderer {
   /** Apply a graphics preset: post-processing, shadow resolution and pixel ratio. */
   setQuality(quality: GraphicsQuality): void {
     this.postfx.setQuality(quality);
+    this.vfx.sprites.setQuality(quality);
     this.renderer.shadowMap.enabled = quality !== 'low';
     const size = quality === 'high' ? 2048 : 1024;
     if (this.moon.shadow.mapSize.x !== size) {

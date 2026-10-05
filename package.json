@@ -16,7 +16,9 @@
     "play": "tsx scripts/sim/play.ts",
     "assets:check": "tsx scripts/assets/check.ts",
     "region:report": "tsx scripts/sim/regionReport.ts",
-    "build:artifact": "tsx scripts/artifact/build.ts"
+    "build:artifact": "tsx scripts/artifact/build.ts",
+    "vfx:generate": "NODE_USE_ENV_PROXY=1 tsx scripts/vfx/generate.ts",
+    "vfx:pack": "tsx scripts/vfx/pack.ts"
   },
   "dependencies": {
     "three": "^0.186.1",

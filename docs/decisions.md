@@ -325,3 +325,27 @@ The flow field grew into a wayfinding system (`src/systems/navigation.ts`, steer
 Cost (Node, median): grid and field ≈ 1.2 ms in open zones, 0.8 ms in the mines, every 0.3 s while
 something hunts; the sight, firing-spot and safety layers add 2–4 ms only when a gunner asks, once per
 rebuild. The safety map's all-sources Dijkstra is the biggest part and the first thing to speed up if needed.
+
+### 2026-10-05 — Painted sprite effects generated with FLUX.2 Turbo (deviation from brief §9.5)
+At the owner's request the flat coloured effects (fire, spore clouds, explosions, hits) gained painted
+sprites. Brief §9.5 asks for effects made with particle systems and shaders; this keeps that — every
+effect is still a code-driven particle system — but the particles now carry 59 generated textures
+instead of being plain discs and points.
+- **Generation:** `npm run vfx:generate` (fal.ai `fal-ai/flux-2/turbo`, key `FAL_KEY` in the gitignored
+  `.env`, never imported under `src/`). 992 × 992 keeps each image under one megapixel: $0.008 each.
+  All 59 were usable on the first pass: **$0.472** in total (`scripts/vfx/ledger.json`); the script
+  has a hard $1.50 budget.
+- **Packing:** `npm run vfx:pack` turns black into transparency (brightest channel = alpha for colour
+  sprites; white masks for smoke, dust, cracks and splats that the game tints), fades the edges and
+  packs an 8 × 8 atlas of 256 px cells (`public/assets/vfx/atlas.webp`, ≈ 1 MB) plus
+  `src/render/vfxAtlas.ts`. Processed 512 px copies are kept in `assets-src/vfx/` for repacking.
+- **Rendering:** `src/render/particles.ts` — one instanced draw call; premultiplied colours with
+  (one, one-minus-src-alpha) blending let additive fire and alpha-blended smoke share it. Caps
+  900 / 2200 / 4000 particles for low / medium / high graphics (low also emits half as many).
+- **Effects** (`src/render/spriteFx.ts`): burning ground and burning creatures, explosions with smoke,
+  heat ring and a cooling scorch, flamethrower cones, fire vents, spore and toxic clouds, poison
+  bubbles, frost bursts and chill glints, hit sparks, projectile trails, slashes, dust rings and
+  ground cracks on slams, healing light, teleport swirls, trap and mark runes, spirit wisps, falling
+  dust before cave-ins, smoke screens and embers off molten metal. Rings and telegraphs stay as exact
+  shapes so attack areas keep reading clearly; under painted hazards the disc is faint and only the
+  edge shows.
