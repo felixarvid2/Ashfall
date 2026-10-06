@@ -15,6 +15,7 @@
     "sim": "tsx scripts/sim/cli.ts",
     "play": "tsx scripts/sim/play.ts",
     "assets:check": "tsx scripts/assets/check.ts",
+    "assets:export": "tsx scripts/assets/exportLibrary.ts",
     "region:report": "tsx scripts/sim/regionReport.ts",
     "build:artifact": "tsx scripts/artifact/build.ts",
     "vfx:generate": "NODE_USE_ENV_PROXY=1 tsx scripts/vfx/generate.ts",
