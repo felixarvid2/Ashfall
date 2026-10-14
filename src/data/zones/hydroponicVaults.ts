@@ -497,7 +497,17 @@ export const HYDROPONIC_VAULTS: ZoneDef = {
   // Drifting spores instead of ash.
   particles: '#8aff6a',
   props: PROPS,
-  scatter: [{ asset: 'env.debris_rock', count: 22000, seed: 'vaults-debris', minScale: 0.4, maxScale: 1.8 }],
+  scatter: [
+    { asset: 'env.debris_rock', count: 22000, seed: 'vaults-debris', minScale: 0.4, maxScale: 1.8 },
+    { asset: 'env.old_tyre', count: 40, seed: 'vaults-old_tyre', minScale: 0.9, maxScale: 1.15, near: 'roads', spread: 6 },
+    { asset: 'env.wheel_rim', count: 30, seed: 'vaults-wheel_rim', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 6 },
+    { asset: 'env.trash_bag', count: 40, seed: 'vaults-trash_bag', minScale: 0.8, maxScale: 1.2, near: 'roads', spread: 4 },
+    { asset: 'env.jerrycan', count: 25, seed: 'vaults-jerrycan', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 4 },
+    { asset: 'env.trash_can', count: 25, seed: 'vaults-trash_can', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 4 },
+    { asset: 'env.military_crate', count: 14, seed: 'vaults-military_crate', minScale: 0.9, maxScale: 1.1, near: 'hubs', spread: 4 },
+    { asset: 'env.ammo_box', count: 14, seed: 'vaults-ammo_box', minScale: 0.9, maxScale: 1.1, near: 'hubs', spread: 4 },
+    { asset: 'env.propane_tank', count: 10, seed: 'vaults-propane_tank', minScale: 0.9, maxScale: 1.1, near: 'hubs', spread: 4 },
+  ],
   ground: buildGround(PROPS),
   subzones: [
     { id: 'serviceRoad', center: [0, 0], radius: 0 },

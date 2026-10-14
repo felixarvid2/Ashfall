@@ -2,6 +2,9 @@ import { validateGameData } from './data/validate';
 import { Game } from './game';
 import { t } from './data/i18n';
 import { CharacterSelect } from './ui/characterSelect';
+import { registerFonts } from './ui/fonts';
+
+registerFonts();
 
 if (import.meta.env.DEV) {
   const errors = validateGameData();

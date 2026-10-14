@@ -12,3 +12,4 @@ assets/.manifest.lock
 dist-artifact
 assets-src/vfx/raw/
 assets-src/art/raw/
+assets-src/third-party/

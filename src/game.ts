@@ -91,6 +91,7 @@ import { DevTools } from './ui/devtools';
 import { MapUi } from './ui/minimap';
 import { artUrl } from './ui/art';
 import { Hud, type HudState } from './ui/hud';
+import { playerStatuses } from './ui/statusTiles';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
@@ -142,7 +143,6 @@ import { STORM, stormSystem } from './world/storm';
 import { RESTORATION, grantRestorationPoints, restorationBonuses, restorationSystem, tierFor } from './systems/restoration';
 import { ELITE_COLORS } from './data/elites';
 
-const PYLON_STATUSES = new Set<string>(Object.values(PYLONS).map((p) => p.status));
 import { spawnEnemy, spawnPlayer } from './world/spawn';
 
 /** Placeholder class for the player entity before a character is chosen. */
@@ -1361,10 +1361,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         return ev ? { event: { title: t(`worldEvents.${ev.type}.title`), text: t(ev.text, ev.params) } } : {};
       })(),
       target,
-      // Pylon buffs (and other timed boons) above the action bar.
-      buffs: (w.get(p, StatusEffects)?.list ?? [])
-        .filter((st) => PYLON_STATUSES.has(st.id))
-        .map((st) => ({ id: st.id, remaining: st.remaining, color: STATUS_DEFS[st.id].color })),
+      // Everything affecting the player, boons first, above the action bar.
+      buffs: playerStatuses(w.get(p, StatusEffects)?.list ?? []),
       exposure: this.ctx.instance ? 0 : sporeExposure(),
       flares: !this.ctx.instance && this.zone?.def.dark ? { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: keyLabel(resolveKeybindings(this.settings).flare[0] ?? 'F') } : undefined,
       dead: w.has(p, Dead),

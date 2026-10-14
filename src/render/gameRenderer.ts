@@ -169,6 +169,7 @@ export class GameRenderer {
     const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
     if (grid) this.buildCaveWalls(s, grid);
     this.dark = arena.dark ?? false;
+    this.useEnvironment(this.dark ? ENV_LIGHT.dark : ENV_LIGHT.surface);
     this.dynamicLights = [];
 
     const glowTexture = makeGlowTexture();
@@ -203,7 +204,9 @@ export class GameRenderer {
     // parts of a big region that are off screen.
     const CHUNK = 48;
     arena.scatter.forEach((def, index) => {
-      const { geometry, material } = this.assets.instancingParts(def.asset);
+      // Clutter by the roads and hubs is seen close up: full detail, true proportions, on the ground.
+      const clutter = def.near !== undefined;
+      const parts = this.assets.instancingParts(def.asset, clutter ? 'full' : 'low');
       const chunks = new Map<string, ReturnType<typeof scatterInstances>>();
       for (const inst of scatterInstances(arena, index)) {
         const key = `${Math.floor(inst.x / CHUNK)},${Math.floor(inst.z / CHUNK)}`;
@@ -215,16 +218,18 @@ export class GameRenderer {
       const q = new THREE.Quaternion();
       const up = new THREE.Vector3(0, 1, 0);
       for (const instances of chunks.values()) {
-        const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
-        instances.forEach((inst, i) => {
-          q.setFromAxisAngle(up, inst.rot);
-          m.compose(new THREE.Vector3(inst.x, -0.05, inst.z), q, new THREE.Vector3(inst.scale, inst.scale * 0.8, inst.scale));
-          mesh.setMatrixAt(i, m);
-        });
-        mesh.computeBoundingSphere();
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        s.add(mesh);
+        for (const { geometry, material } of parts) {
+          const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
+          instances.forEach((inst, i) => {
+            q.setFromAxisAngle(up, inst.rot);
+            m.compose(new THREE.Vector3(inst.x, clutter ? -0.01 : -0.05, inst.z), q, new THREE.Vector3(inst.scale, inst.scale * (clutter ? 1 : 0.8), inst.scale));
+            mesh.setMatrixAt(i, m);
+          });
+          mesh.computeBoundingSphere();
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          s.add(mesh);
+        }
       }
     });
   }
@@ -707,6 +712,9 @@ export class GameRenderer {
     root.add(cap);
     const wallPos: number[] = [];
     const wallCol: number[] = [];
+    const wallUv: number[] = [];
+    // The walls run along grid lines, so x + z measures the distance along each one.
+    const TILE = 3;
     const quad = (ax: number, az: number, bx: number, bz: number, ja: [number, number], jb: [number, number]) => {
       // Tops lean in and wobble; bottoms stay on the wall line so the floor edge is clean.
       const ta = jitter(ja[0], ja[1]);
@@ -721,8 +729,12 @@ export class GameRenderer {
       const bxT = bx + ox + tb * 0.4;
       const bzT = bz + oz + tb * 0.4;
       wallPos.push(ax, 0, az, bx, 0, bz, bxT, H, bzT, ax, 0, az, bxT, H, bzT, axT, H, azT);
+      const ua = (ax + az) / TILE;
+      const ub = (bx + bz) / TILE;
+      const top = H / TILE;
+      wallUv.push(ua, 0, ub, 0, ub, top, ua, 0, ub, top, ua, top);
       const shade = 0.75 + rng.next() * 0.35;
-      for (let k = 0; k < 6; k++) wallCol.push(0.2 * shade, 0.18 * shade, 0.16 * shade);
+      for (let k = 0; k < 6; k++) wallCol.push(0.95 * shade, 0.88 * shade, 0.8 * shade);
     };
     for (let j = 0; j < n; j++) {
       for (let i = 0; i < n; i++) {
@@ -741,10 +753,51 @@ export class GameRenderer {
     const wallGeo = new THREE.BufferGeometry();
     wallGeo.setAttribute('position', new THREE.Float32BufferAttribute(wallPos, 3));
     wallGeo.setAttribute('color', new THREE.Float32BufferAttribute(wallCol, 3));
+    wallGeo.setAttribute('uv', new THREE.Float32BufferAttribute(wallUv, 2));
     wallGeo.computeVertexNormals();
-    const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide }));
+    const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide, ...this.rockMaps() }));
     walls.receiveShadow = true;
     root.add(walls);
+  }
+
+  private rockTextures: { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture } | null = null;
+
+  /** Rock PBR maps for the cave walls (ambientCG Rock035, CC0), shared by every cave. */
+  private rockMaps(): { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture } {
+    if (!this.rockTextures) {
+      const load = (name: string, srgb: boolean) => {
+        const t = new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}assets/textures/rock/${name}.webp`);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.anisotropy = 4;
+        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+        t.userData.shared = true;
+        return t;
+      };
+      this.rockTextures = { map: load('color', true), normalMap: load('normal', false), roughnessMap: load('roughness', false) };
+    }
+    return this.rockTextures;
+  }
+
+  private envMap: THREE.Texture | null = null;
+
+  /**
+   * Image-based light from a Poly Haven HDRI (a burnt-out warehouse), blurred into an environment
+   * map: metal and wet surfaces pick up soft reflections instead of looking flat. Loaded once for
+   * all zones; dark zones keep it faint so the lamp still rules.
+   */
+  private useEnvironment(intensity: number): void {
+    this.scene.environmentIntensity = intensity;
+    if (this.envMap) return;
+    const url = `${import.meta.env.BASE_URL}assets/env/burnt_warehouse.webp`;
+    new THREE.TextureLoader().load(url, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.envMap = pmrem.fromEquirectangular(texture).texture;
+      this.scene.environment = this.envMap;
+      texture.dispose();
+      pmrem.dispose();
+    });
   }
 
   /** Fog and ambient light (Ash Storms thicken the fog; instances have their own). */
@@ -1521,6 +1574,9 @@ function makeGroundTexture(): THREE.Texture {
   tex.anisotropy = 4;
   return tex;
 }
+
+/** How strongly the environment map lights the scene on the surface and underground. */
+const ENV_LIGHT = { surface: 0.35, dark: 0.05 };
 
 /** Drones are drawn a little larger than their model so they read at gameplay distance. */
 const DRONE_SCALE = 1.25;

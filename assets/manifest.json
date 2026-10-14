@@ -3668,6 +3668,429 @@
         "emissive": "#ffd2a1",
         "emissiveIntensity": 0.2
       }
+    },
+    {
+      "id": "env.oil_drum",
+      "category": "environment",
+      "prompt": "rusty oil drum",
+      "source": "external",
+      "credit": "Poly Haven barrel_03 (CC0)",
+      "targetPolycount": 2500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/oil_drum.glb",
+      "lods": [
+        "environment/oil_drum_lod1.glb",
+        "environment/oil_drum_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1473,
+        "bytes": 93168,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a4a6a",
+        "size": [
+          0.6,
+          0.9,
+          0.6
+        ]
+      }
+    },
+    {
+      "id": "env.steel_drum",
+      "category": "environment",
+      "prompt": "red hazard drum",
+      "source": "external",
+      "credit": "Poly Haven Barrel_01 (CC0)",
+      "targetPolycount": 2500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/steel_drum.glb",
+      "lods": [
+        "environment/steel_drum_lod1.glb",
+        "environment/steel_drum_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2682,
+        "bytes": 126804,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#8a2a1a",
+        "size": [
+          0.6,
+          0.9,
+          0.6
+        ]
+      }
+    },
+    {
+      "id": "env.trash_can",
+      "category": "environment",
+      "prompt": "rusted metal trash can",
+      "source": "external",
+      "credit": "Poly Haven metal_trash_can (CC0)",
+      "targetPolycount": 3000,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/trash_can.glb",
+      "lods": [
+        "environment/trash_can_lod1.glb",
+        "environment/trash_can_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2994,
+        "bytes": 281936,
+        "textures": 6
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a4a3a",
+        "size": [
+          0.5,
+          0.75,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "env.old_tyre",
+      "category": "environment",
+      "prompt": "old car tyre lying flat",
+      "source": "external",
+      "credit": "Poly Haven old_tyre (CC0)",
+      "targetPolycount": 1500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/old_tyre.glb",
+      "lods": [
+        "environment/old_tyre_lod1.glb",
+        "environment/old_tyre_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1500,
+        "bytes": 109560,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#1a1a1a",
+        "size": [
+          0.65,
+          0.2,
+          0.65
+        ]
+      }
+    },
+    {
+      "id": "env.wheel_rim",
+      "category": "environment",
+      "prompt": "rusted wheel rim lying flat",
+      "source": "external",
+      "credit": "Poly Haven rusted_wheel_rim_01 (CC0)",
+      "targetPolycount": 2000,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/wheel_rim.glb",
+      "lods": [
+        "environment/wheel_rim_lod1.glb",
+        "environment/wheel_rim_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2000,
+        "bytes": 101628,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a3a1a",
+        "size": [
+          0.4,
+          0.15,
+          0.4
+        ]
+      }
+    },
+    {
+      "id": "env.jerrycan",
+      "category": "environment",
+      "prompt": "green metal jerrycan",
+      "source": "external",
+      "credit": "Poly Haven metal_jerrycan_green (CC0)",
+      "targetPolycount": 1500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/jerrycan.glb",
+      "lods": [
+        "environment/jerrycan_lod1.glb",
+        "environment/jerrycan_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1495,
+        "bytes": 145160,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a4a2a",
+        "size": [
+          0.35,
+          0.47,
+          0.16
+        ]
+      }
+    },
+    {
+      "id": "env.propane_tank",
+      "category": "environment",
+      "prompt": "red propane tank",
+      "source": "external",
+      "credit": "Poly Haven propane_tank (CC0)",
+      "targetPolycount": 1500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/propane_tank.glb",
+      "lods": [
+        "environment/propane_tank_lod1.glb",
+        "environment/propane_tank_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1500,
+        "bytes": 91032,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#8a2a1a",
+        "size": [
+          0.3,
+          0.6,
+          0.3
+        ]
+      }
+    },
+    {
+      "id": "env.military_crate",
+      "category": "environment",
+      "prompt": "old military crate with a tarp",
+      "source": "external",
+      "credit": "Poly Haven old_military_crate (CC0)",
+      "targetPolycount": 2500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/military_crate.glb",
+      "lods": [
+        "environment/military_crate_lod1.glb",
+        "environment/military_crate_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2492,
+        "bytes": 111624,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a5a3a",
+        "size": [
+          0.8,
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "env.ammo_box",
+      "category": "environment",
+      "prompt": "ammo box",
+      "source": "external",
+      "credit": "Poly Haven ammo_box (CC0)",
+      "targetPolycount": 1500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/ammo_box.glb",
+      "lods": [
+        "environment/ammo_box_lod1.glb",
+        "environment/ammo_box_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1492,
+        "bytes": 67784,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a3a2a",
+        "size": [
+          0.3,
+          0.2,
+          0.15
+        ]
+      }
+    },
+    {
+      "id": "env.trash_bag",
+      "category": "environment",
+      "prompt": "black rubbish bag",
+      "source": "external",
+      "credit": "Poly Haven trashbag (CC0)",
+      "targetPolycount": 1500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/trash_bag.glb",
+      "lods": [
+        "environment/trash_bag_lod1.glb",
+        "environment/trash_bag_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1500,
+        "bytes": 104088,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#111111",
+        "size": [
+          0.5,
+          0.6,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "env.utility_box",
+      "category": "environment",
+      "prompt": "grey electrical utility box",
+      "source": "external",
+      "credit": "Poly Haven utility_box_01 (CC0)",
+      "targetPolycount": 1500,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/utility_box.glb",
+      "lods": [
+        "environment/utility_box_lod1.glb",
+        "environment/utility_box_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1500,
+        "bytes": 82104,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a6a72",
+        "size": [
+          0.6,
+          1.2,
+          0.35
+        ]
+      }
+    },
+    {
+      "id": "env.moon_rock_a",
+      "category": "environment",
+      "prompt": "grey rock",
+      "source": "external",
+      "credit": "Poly Haven moon_rock_01 (CC0)",
+      "targetPolycount": 2000,
+      "textureSize": 512,
+      "heightMeters": 0.6,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/moon_rock_a.glb",
+      "lods": [
+        "environment/moon_rock_a_lod1.glb",
+        "environment/moon_rock_a_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1996,
+        "bytes": 66788,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a6a66",
+        "size": [
+          1,
+          0.6,
+          1
+        ]
+      }
+    },
+    {
+      "id": "env.moon_rock_b",
+      "category": "environment",
+      "prompt": "grey rock",
+      "source": "external",
+      "credit": "Poly Haven moon_rock_03 (CC0)",
+      "targetPolycount": 2000,
+      "textureSize": 512,
+      "heightMeters": 0.6,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/moon_rock_b.glb",
+      "lods": [
+        "environment/moon_rock_b_lod1.glb",
+        "environment/moon_rock_b_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2000,
+        "bytes": 64944,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a6a66",
+        "size": [
+          1,
+          0.6,
+          1
+        ]
+      }
+    },
+    {
+      "id": "env.moon_rock_c",
+      "category": "environment",
+      "prompt": "grey rock",
+      "source": "external",
+      "credit": "Poly Haven moon_rock_06 (CC0)",
+      "targetPolycount": 2000,
+      "textureSize": 512,
+      "heightMeters": 0.6,
+      "status": "optimized",
+      "meshy": {},
+      "file": "environment/moon_rock_c.glb",
+      "lods": [
+        "environment/moon_rock_c_lod1.glb",
+        "environment/moon_rock_c_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2000,
+        "bytes": 62720,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a6a66",
+        "size": [
+          1,
+          0.6,
+          1
+        ]
+      }
     }
   ]
 }

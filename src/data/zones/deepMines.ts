@@ -424,7 +424,17 @@ export const DEEP_MINES: ZoneDef = {
   dark: true,
   particles: '#6a6460',
   props: PROPS,
-  scatter: [{ asset: 'env.debris_rock', count: 9000, seed: 'mines-debris', minScale: 0.3, maxScale: 1.3 }],
+  scatter: [
+    { asset: 'env.debris_rock', count: 9000, seed: 'mines-debris', minScale: 0.3, maxScale: 1.3 },
+    { asset: 'env.moon_rock_a', count: 160, seed: 'mines-moon_rock_a', minScale: 0.4, maxScale: 1.6, near: 'roads', spread: 3 },
+    { asset: 'env.moon_rock_b', count: 160, seed: 'mines-moon_rock_b', minScale: 0.4, maxScale: 1.6, near: 'roads', spread: 3 },
+    { asset: 'env.moon_rock_c', count: 160, seed: 'mines-moon_rock_c', minScale: 0.4, maxScale: 1.6, near: 'roads', spread: 3 },
+    { asset: 'env.oil_drum', count: 40, seed: 'mines-oil_drum', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 2 },
+    { asset: 'env.ammo_box', count: 40, seed: 'mines-ammo_box', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 2 },
+    { asset: 'env.military_crate', count: 30, seed: 'mines-military_crate', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 2 },
+    { asset: 'env.propane_tank', count: 20, seed: 'mines-propane_tank', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 2 },
+    { asset: 'env.jerrycan', count: 20, seed: 'mines-jerrycan', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 2 },
+  ],
   ground: buildGround(),
   subzones: [
     { id: 'tunnels', center: [0, 0], radius: 0 },

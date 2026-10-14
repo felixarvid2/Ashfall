@@ -28,13 +28,26 @@ export interface ArenaDef {
   fog: { color: string; density: number };
   playerLight: { color: string; intensity: number; distance: number };
   props: PropPlacement[];
-  scatter: { asset: string; count: number; seed: string; minScale: number; maxScale: number }[];
+  scatter: ScatterDef[];
   /** Painted ground textures (zones without one keep the procedural ash ground). */
   ground?: GroundDef;
   /** Colour of the drifting particles (default grey ash). */
   particles?: string;
   /** Almost no light but the player's lamp, lamps and floodlights; enemies show glowing eyes (Deep Mines). */
   dark?: boolean;
+}
+
+/** Visual-only instanced clutter (no collision). */
+export interface ScatterDef {
+  asset: string;
+  count: number;
+  seed: string;
+  minScale: number;
+  maxScale: number;
+  /** Where it lies: anywhere (default), on the shoulders of the roads, or round the hubs. */
+  near?: 'roads' | 'hubs';
+  /** For `near`: how far beyond the road edge or the hub's radius it may lie (m). */
+  spread?: number;
 }
 
 /** A ground texture in public/assets/textures/ground/ (file name without .webp). */

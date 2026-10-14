@@ -1350,7 +1350,8 @@
         "tagline": "Scientist who tamed the Lumen",
         "desc": "A former biologist infected with Lumen who can command it. Biomass gathered from the dead raises servants and spreads spores. Forbidden power, with a price."
       }
-    }
+    },
+    "credits": "Art: Meshy and FLUX (generated) · Props, HDRI and rock: Poly Haven, ambientCG (CC0) · Status icons: Lorc, Delapouite, Carl Olsen – game-icons.net (CC BY 3.0) · Fonts: Rajdhani, Share Tech Mono (OFL)"
   },
   "zones": {
     "cinderFlats": {

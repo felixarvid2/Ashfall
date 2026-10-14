@@ -42,7 +42,11 @@ export class CharacterSelect {
     sub.textContent = t('game.subtitle');
     this.body = document.createElement('div');
     this.body.className = 'char-select-body';
-    this.root.append(title, sub, this.body);
+    // Third-party art and fonts, credited as their licences ask (docs/credits.md).
+    const credits = document.createElement('div');
+    credits.className = 'char-select-credits';
+    credits.textContent = t('select.credits');
+    this.root.append(title, sub, this.body, credits);
     // The painted title scene behind the menu.
     const backdrop = artUrl('menu/title');
     if (backdrop) this.root.style.setProperty('--menu-art', `url("${backdrop}")`);

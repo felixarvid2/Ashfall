@@ -173,27 +173,33 @@ export class AssetLibrary {
   }
 
   /** Shared geometry + material, for InstancedMesh use (debris, rocks, scrap). */
-  instancingParts(id: string): { geometry: THREE.BufferGeometry; material: THREE.Material } {
+  /**
+   * Geometry and material for instanced scatter, one part per mesh with its normalised transform
+   * baked in. Thousands of debris instances use the lightest LOD; a few hundred pieces of clutter
+   * lying by the roads (`detail: 'full'`) use the close-up mesh.
+   */
+  instancingParts(id: string, detail: 'low' | 'full' = 'low'): { geometry: THREE.BufferGeometry; material: THREE.Material }[] {
     const model = this.models.get(id);
     if (model && !model.skinned) {
-      // Bake the first mesh's normalised transform into a geometry copy. Scatter uses the lightest
-      // LOD: thousands of instances don't need the close-up mesh.
-      const root = model.levels[model.levels.length - 1]!;
+      const root = detail === 'full' ? model.levels[0]! : model.levels[model.levels.length - 1]!;
       root.updateMatrixWorld(true);
-      let found: { geometry: THREE.BufferGeometry; material: THREE.Material } | null = null;
+      const parts: { geometry: THREE.BufferGeometry; material: THREE.Material }[] = [];
       root.traverse((o) => {
         const mesh = o as THREE.Mesh;
-        if (found || !mesh.isMesh) return;
-        found = {
-          geometry: mesh.geometry.clone().applyMatrix4(mesh.matrixWorld),
+        if (!mesh.isMesh) return;
+        const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+        // Instancing has no morph targets.
+        geometry.morphAttributes = {};
+        parts.push({
+          geometry,
           material: Array.isArray(mesh.material) ? mesh.material[0]! : mesh.material,
-        };
+        });
       });
-      if (found) return found;
+      if (parts.length) return parts;
     }
     const p = this.entry(id).placeholder;
     if (!p) throw new Error(`Asset ${id} has no placeholder`);
-    return { geometry: this.geometry(p), material: this.material(p) };
+    return [{ geometry: this.geometry(p), material: this.material(p) }];
   }
 
   private buildPlaceholder(id: string, p: Placeholder): THREE.Object3D {

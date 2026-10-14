@@ -388,3 +388,22 @@ backgrounds, decals with stickers, one flagged prompt).
   in their glow colour (gold for the Governor) and cast a shadow with a coloured ring on the ground
   right beneath them, so you can tell where a drone is, not just see a speck above the clutter. The
   marks hide when the drone dies.
+
+### 2026-10-14 — Free library assets: environment light, rock walls, road clutter, fonts, status icons
+
+- **Environment light:** the scene had no environment map, so metal looked flat. A Poly Haven HDRI
+  (a burnt-out warehouse, CC0) is blurred into one; it lights every zone at 0.35 and the dark Deep
+  Mines at 0.05, so the lamp still rules underground. It is stored as an 8-bit equirect (WebP): the
+  map is blurred anyway, and artifacts only serve standard web formats.
+- **Cave walls:** ambientCG's Rock035 (colour, normal and roughness maps, CC0) on the Deep Mines
+  walls, with UVs along the walls; the old dark vertex shading now only varies the texture.
+- **Road clutter:** 14 Poly Haven models (oil drums, tyres, wheel rims, jerrycans, crates, ammo
+  boxes, trash, a utility box and three rocks) go through the same optimizer as the Meshy models
+  (`source: "external"`, `credit`, 512 px textures). Scatter can now lie along the road shoulders
+  (`near: 'roads'`) or round the hubs (`near: 'hubs'`); that clutter uses the full-detail mesh and
+  every mesh of a model, not just the first. It is visual only: no collision.
+- **Interface:** Rajdhani for text and Share Tech Mono for numbers (OFL, self-hosted). The bar
+  above the action bar now shows everything affecting the player as an icon tile with a countdown,
+  stacks for poison, boons first and harm in red frames; the icons are game-icons.net glyphs (CC BY
+  3.0) used as CSS masks so each takes its status colour. Credits are on the character select
+  screen and in docs/credits.md.

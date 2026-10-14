@@ -59,15 +59,20 @@ export const AssetEntrySchema = z.object({
   /**
    * "text": text-to-3D preview → refine. "image": a concept image (text-to-image) is the cheap
    * preview; image-to-3D with textures is the refine step. Use "image" for creatures that
-   * text-to-3D keeps turning into plain humans.
+   * text-to-3D keeps turning into plain humans. "external": a free model from elsewhere (see
+   * `credit` and scripts/assets/thirdParty.ts), optimized like the rest.
    */
-  source: z.enum(['text', 'image']).default('text'),
+  source: z.enum(['text', 'image', 'external']).default('text'),
+  /** Where an external model comes from and its licence, e.g. "Poly Haven barrel_03 (CC0)". */
+  credit: z.string().optional(),
   /** Prompt for the concept image when source is "image". */
   conceptPrompt: z.string().optional(),
   negativePrompt: z.string().optional(),
   /** Overrides the shared texture style for the refine step. */
   texturePrompt: z.string().optional(),
   targetPolycount: z.number().int().positive(),
+  /** Largest texture side after optimizing (default GAME_TEXTURE_SIZE; small clutter uses less). */
+  textureSize: z.number().int().positive().optional(),
   /** Real-world height after normalisation (metres). Characters: standing height. */
   heightMeters: z.number().positive().optional(),
   /** Apply the T-pose prompt/parameter (characters that will be rigged). */

@@ -5,8 +5,8 @@
   --ui-muted: #8c8378;
   --ui-accent: #ff8a2a;
   --ui-lumen: #6bff7a;
-  --ui-font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --ui-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --ui-font: 'Rajdhani', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --ui-mono: 'Share Tech Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   --text-scale: 1;
 }
 
@@ -19,7 +19,8 @@ html, body {
   background: #0b0b0c;
   color: var(--ui-text);
   font-family: var(--ui-font);
-  font-size: calc(14px * var(--text-scale));
+  font-weight: 500;
+  font-size: calc(15px * var(--text-scale));
 }
 
 #app { position: fixed; inset: 0; }
@@ -600,7 +601,19 @@ html, body {
 .lore-panel button { font: inherit; font-size: 0.85em; color: var(--ui-text); background: #24201c; border: 1px solid var(--ui-border); padding: 4px 14px; cursor: pointer; margin-top: 10px; }
 .lore-body { line-height: 1.55; color: #d8cdb8; font-style: italic; white-space: pre-wrap; }
 .buff-bar { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
-.buff { padding: 2px 8px; border: 1px solid; background: rgba(10, 9, 8, 0.8); font-size: 0.8em; letter-spacing: 0.05em; white-space: nowrap; }
+.buff {
+  position: relative; width: 34px; height: 34px; border: 1px solid var(--status-color); border-radius: 3px;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--status-color) 22%, transparent), rgba(10, 9, 8, 0.85) 70%);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--status-color) 35%, transparent);
+}
+.buff.harmful { border-color: #d0402a; box-shadow: 0 0 7px rgba(208, 64, 42, 0.55); }
+.buff-icon {
+  position: absolute; inset: 4px; background: var(--status-color);
+  -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
+}
+.buff-time, .buff-stacks { position: absolute; font-family: var(--ui-mono); font-size: 11px; line-height: 1; text-shadow: 0 0 2px #000, 0 0 3px #000; }
+.buff-time { left: 0; right: 0; bottom: -13px; text-align: center; color: var(--ui-text); }
+.buff-stacks { right: 1px; top: 1px; color: #fff; }
 
 /* Conversations, NPC plates, quest tracker and log (Region 1). */
 .dialogue-panel { left: 50%; top: auto; bottom: 150px; transform: translateX(-50%); width: min(620px, calc(100vw - 40px)); max-height: 50vh; }
@@ -899,3 +912,5 @@ html.touch-device .hint-mouse { display: none; }
 }
 
 .char-class-splash { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid #3a2e24; margin-bottom: 8px; -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent); mask-image: linear-gradient(to bottom, #000 75%, transparent); }
+
+.char-select-credits { position: absolute; left: 0; right: 0; bottom: 8px; padding: 0 16px; text-align: center; font-size: 0.72em; color: var(--ui-muted); opacity: 0.8; pointer-events: none; }

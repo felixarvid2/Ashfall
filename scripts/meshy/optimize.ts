@@ -202,7 +202,7 @@ export async function optimizeAssets(manifest: AssetManifest, entries: AssetEntr
     if (doc.getRoot().listAnimations().length) await doc.transform(resample());
     await doc.transform(
       prune(),
-      textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [GAME_TEXTURE_SIZE, GAME_TEXTURE_SIZE] }),
+      textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [entry.textureSize ?? GAME_TEXTURE_SIZE, entry.textureSize ?? GAME_TEXTURE_SIZE] }),
     );
 
     // LODs for static meshes only (skinned characters use one level; see docs/decisions.md).

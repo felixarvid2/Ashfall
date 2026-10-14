@@ -24,6 +24,21 @@ export interface SlotState {
   affordable: boolean;
 }
 
+/** One status tile above the action bar. */
+/** A status effect's icon (public/assets/ui/status/, from game-icons.net). */
+export const statusIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/status/${id}.svg`;
+
+export interface HudStatus {
+  id: string;
+  remaining: number;
+  color: string;
+  /** Harmful (burning, slowed, stunned…): drawn with a red frame after the boons. */
+  harmful?: boolean;
+  /** Show the countdown (statuses refreshed every tick have none). */
+  timed?: boolean;
+  stacks?: number;
+}
+
 export interface HudState {
   life: { current: number; max: number; barrier: number };
   resource: { kind: string; current: number; max: number; overheating: boolean };
@@ -36,8 +51,8 @@ export interface HudState {
   target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; portrait?: string } | null;
   /** World event in progress near the player. */
   event?: { title: string; text: string };
-  /** Timed buffs on the player (Stim Pylons). */
-  buffs?: { id: string; remaining: number; color: string }[];
+  /** Statuses on the player: pylon buffs, wards, and harm like burning or poison. */
+  buffs?: HudStatus[];
   /** Spore exposure 0..1 (Hydroponic Vaults). */
   exposure?: number;
   /** Flares left (Deep Mines). */
@@ -373,16 +388,23 @@ export class Hud {
       }
     }
     const buffs = state.buffs ?? [];
-    const buffKey = buffs.map((b) => `${b.id}:${Math.ceil(b.remaining)}`).join('|');
+    const buffKey = buffs.map((b) => `${b.id}:${b.timed ? Math.ceil(b.remaining) : ''}:${b.stacks ?? 1}`).join('|');
     if (buffKey !== this.lastBuffs) {
       this.lastBuffs = buffKey;
       this.buffBar.replaceChildren(
         ...buffs.map((b) => {
           const el = document.createElement('div');
-          el.className = 'buff';
-          el.style.borderColor = b.color;
-          el.style.color = b.color;
-          el.textContent = `${t(`statuses.${b.id}`)} ${Math.ceil(b.remaining)}s`;
+          el.className = b.harmful ? 'buff harmful' : 'buff';
+          el.dataset.status = b.id;
+          el.style.setProperty('--status-color', b.color);
+          el.title = t(`statuses.${b.id}`);
+          // The icon is a white game-icons.net glyph used as a mask, so it takes the status colour.
+          const icon = document.createElement('div');
+          icon.className = 'buff-icon';
+          icon.style.setProperty('--icon', `url("${statusIconUrl(b.id)}")`);
+          el.append(icon);
+          if (b.timed) el.append(Object.assign(document.createElement('div'), { className: 'buff-time', textContent: `${Math.ceil(b.remaining)}` }));
+          if ((b.stacks ?? 1) > 1) el.append(Object.assign(document.createElement('div'), { className: 'buff-stacks', textContent: `${b.stacks}` }));
           return el;
         }),
       );
