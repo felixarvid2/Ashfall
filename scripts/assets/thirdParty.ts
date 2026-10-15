@@ -7,10 +7,12 @@
  *                      (then `npm run meshy -- optimize --ids …` like any other model)
  *  ambientCG (CC0)     rock PBR maps for the cave walls            → public/assets/textures/rock/
  *  game-icons.net      status effect icons (CC BY 3.0)             → public/assets/ui/status/
+ *  game-icons.net,     touch menu icons (CC BY 3.0; Kenney is CC0) → public/assets/ui/menu/
+ *  Kenney Game Icons
  *  Google Fonts (OFL)  Rajdhani and Share Tech Mono                → public/assets/fonts/
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
@@ -70,6 +72,24 @@ export const STATUS_ICONS: Record<string, string> = {
   magnet: 'lorc/magnet',
   overclock: 'lorc/stopwatch',
 };
+
+/**
+ * Touch menu icon per button: game-icons.net author/name, or `kenney:<name>` for a Kenney Game Icons
+ * PNG (CC0, white 2x) copied from the asset library in assets/ui/game-icons/.
+ */
+export const MENU_ICONS: Record<string, string> = {
+  inventory: 'lorc/knapsack',
+  character: 'lorc/visored-helm',
+  skills: 'delapouite/skills',
+  map: 'lorc/treasure-map',
+  quests: 'lorc/scroll-unfurled',
+  mount: 'delapouite/scooter',
+  flare: 'delapouite/torch',
+  fullscreen: 'kenney:larger',
+  close: 'kenney:cross',
+};
+
+const KENNEY_ICONS = join(ROOT, '..', 'assets', 'ui', 'game-icons', 'PNG', 'White', '2x');
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap';
 
@@ -176,6 +196,17 @@ async function icons(): Promise<void> {
     writeFileSync(join(outDir, `${status}.svg`), svg);
   }
   console.log(`✓ ui/status (${Object.keys(STATUS_ICONS).length} icons)`);
+
+  const menuDir = join(PUBLIC, 'ui', 'menu');
+  mkdirSync(menuDir, { recursive: true });
+  for (const [id, icon] of Object.entries(MENU_ICONS)) {
+    if (icon.startsWith('kenney:')) {
+      copyFileSync(join(KENNEY_ICONS, `${icon.slice('kenney:'.length)}.png`), join(menuDir, `${id}.png`));
+    } else {
+      writeFileSync(join(menuDir, `${id}.svg`), await fetchTo(`https://game-icons.net/icons/ffffff/transparent/1x1/${icon}.svg`, join(CACHE, 'game-icons', `${icon}.svg`)));
+    }
+  }
+  console.log(`✓ ui/menu (${Object.keys(MENU_ICONS).length} icons)`);
 }
 
 async function fonts(): Promise<void> {

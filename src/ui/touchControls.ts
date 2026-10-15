@@ -1,8 +1,9 @@
 /**
  * On-screen controls for phones and tablets: a floating joystick on the left, the action bar turned
  * into thumb buttons on the right (attack, five skills, dodge, potion), a menu row for the panels,
- * a tappable interact prompt, long-press as right-click inside panels, and a hint to turn the phone
- * sideways. The `.touch-ui` class on the UI root switches the HUD to the touch layout.
+ * a tappable interact prompt and long-press as right-click inside panels. The `.touch-ui` class on the
+ * UI root switches the HUD to the touch layout; `.portrait` on top of it (phone held upright) moves
+ * everything out of the thumbs' way.
  */
 import type { Input } from '../core/input';
 import { t } from '../data/i18n';
@@ -26,6 +27,9 @@ const SLOT_ACTIONS: ({ hold: Action } | { button: number } | { attack: true } | 
   { tap: 'potion' },
 ];
 
+/** Menu button icons live in public/assets/ui/menu/ (white glyphs, tinted through a CSS mask). */
+const menuIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/menu/${id}.${id === 'fullscreen' || id === 'close' ? 'png' : 'svg'}`;
+
 const MENU: { id: string; action: Action }[] = [
   { id: 'inventory', action: 'inventory' },
   { id: 'character', action: 'character' },
@@ -34,6 +38,15 @@ const MENU: { id: string; action: Action }[] = [
   { id: 'quests', action: 'quests' },
   { id: 'mount', action: 'mount' },
   { id: 'flare', action: 'flare' },
+];
+
+/** The panels the menu buttons toggle, by the class of their root element. */
+const TOGGLE_PANELS: { selector: string; action: Action }[] = [
+  { selector: '.inventory-panel', action: 'inventory' },
+  { selector: '.character-panel', action: 'character' },
+  { selector: '.tree-panel', action: 'skills' },
+  { selector: '.map-panel', action: 'map' },
+  { selector: '.quest-log', action: 'quests' },
 ];
 
 /** Joystick travel in CSS pixels at full deflection. */
@@ -45,10 +58,8 @@ export class TouchControls {
   private readonly elements: HTMLElement[] = [];
   private readonly stickBase: HTMLDivElement;
   private readonly stickKnob: HTMLDivElement;
-  private readonly rotate: HTMLDivElement;
   private stickPointer: number | null = null;
   private stickOrigin = { x: 0, y: 0 };
-  private rotateDismissed = false;
   private active = false;
   private readonly cleanups: (() => void)[] = [];
 
@@ -72,52 +83,56 @@ export class TouchControls {
     zone.addEventListener('pointerup', (e) => this.stickUp(e));
     zone.addEventListener('pointercancel', (e) => this.stickUp(e));
 
-    // Menu row: one button per panel.
+    // Menu row: one icon button per panel.
     const menu = document.createElement('div');
     menu.className = 'touch-menu';
-    for (const m of MENU) {
+    const menuButton = (id: string, label: string, onClick: () => void): HTMLButtonElement => {
       const b = document.createElement('button');
       b.className = 'touch-menu-btn';
-      b.textContent = t(`touch.menu.${m.id}`);
-      b.dataset.testid = `touch-menu-${m.id}`;
-      b.addEventListener('click', () => this.input.pressAction(m.action));
-      menu.appendChild(b);
-    }
+      b.title = label;
+      b.setAttribute('aria-label', label);
+      b.dataset.testid = `touch-menu-${id}`;
+      const icon = document.createElement('span');
+      icon.className = 'touch-menu-icon';
+      icon.style.setProperty('--icon', `url("${menuIconUrl(id)}")`);
+      b.appendChild(icon);
+      b.addEventListener('click', onClick);
+      return b;
+    };
+    for (const m of MENU) menu.appendChild(menuButton(m.id, t(`touch.menu.${m.id}`), () => this.input.pressAction(m.action)));
     if (document.fullscreenEnabled) {
-      const full = document.createElement('button');
-      full.className = 'touch-menu-btn';
-      full.textContent = t('touch.menu.fullscreen');
-      full.addEventListener('click', () => {
-        if (document.fullscreenElement) void document.exitFullscreen();
-        else void document.documentElement.requestFullscreen().catch(() => {});
-      });
-      menu.appendChild(full);
+      menu.appendChild(
+        menuButton('fullscreen', t('touch.menu.fullscreen'), () => {
+          if (document.fullscreenElement) void document.exitFullscreen();
+          else void document.documentElement.requestFullscreen().catch(() => {});
+        }),
+      );
     }
 
-    // Turn-sideways hint for portrait screens.
-    this.rotate = document.createElement('div');
-    this.rotate.className = 'touch-rotate';
-    const msg = document.createElement('p');
-    msg.textContent = t('touch.rotate');
-    const anyway = document.createElement('button');
-    anyway.className = 'btn';
-    anyway.textContent = t('touch.playAnyway');
-    anyway.addEventListener('click', () => {
-      this.rotateDismissed = true;
-      this.updateRotate();
+    // Portrait panels cover the menu and a phone has no Escape key: a close button floats over them.
+    const close = menuButton('close', t('touch.menu.close'), () => {
+      for (const p of TOGGLE_PANELS) if (this.panelOpen(p.selector)) this.input.pressAction(p.action);
     });
-    this.rotate.append(msg, anyway);
+    close.classList.add('touch-close');
 
-    this.elements.push(zone, menu, this.rotate);
+    this.elements.push(zone, menu, close);
     root.append(...this.elements);
     for (const el of this.elements) el.hidden = true;
 
     // The action bar's slots become thumb buttons.
     slotElements.forEach((el, i) => this.bindSlot(el, SLOT_ACTIONS[i]!));
 
-    const onResize = () => this.updateRotate();
+    const onResize = () => this.updatePortrait();
     window.addEventListener('resize', onResize);
-    this.cleanups.push(() => window.removeEventListener('resize', onResize));
+    window.addEventListener('orientationchange', onResize);
+    this.cleanups.push(() => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    });
+    // Panels show and hide through the `hidden` attribute; keep `.touch-panel-open` in step with it.
+    const watch = new MutationObserver(() => this.updatePanelOpen());
+    watch.observe(root, { attributes: true, attributeFilter: ['hidden'], subtree: true });
+    this.cleanups.push(() => watch.disconnect());
     this.installLongPress();
   }
 
@@ -133,7 +148,7 @@ export class TouchControls {
     for (const el of this.elements) el.hidden = !on;
     this.input.touch = on ? { stick: null, attack: false } : null;
     this.resetStick();
-    this.updateRotate();
+    this.updatePortrait();
   }
 
   private bindSlot(el: HTMLElement, action: (typeof SLOT_ACTIONS)[number]): void {
@@ -202,9 +217,18 @@ export class TouchControls {
     if (this.input.touch) this.input.touch.stick = null;
   }
 
-  private updateRotate(): void {
-    const portrait = window.innerHeight > window.innerWidth;
-    this.rotate.hidden = !(this.active && portrait && !this.rotateDismissed);
+  private panelOpen(selector: string): boolean {
+    const el = this.root.querySelector(selector);
+    return !!el && !el.hasAttribute('hidden');
+  }
+
+  private updatePanelOpen(): void {
+    this.root.classList.toggle('touch-panel-open', TOGGLE_PANELS.some((p) => this.panelOpen(p.selector)));
+  }
+
+  /** `.portrait` on the UI root while a touch screen is held upright (the camera follows the canvas aspect itself). */
+  private updatePortrait(): void {
+    this.root.classList.toggle('portrait', this.active && window.innerHeight > window.innerWidth);
   }
 
   /**

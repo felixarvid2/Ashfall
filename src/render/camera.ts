@@ -25,6 +25,33 @@ const DEFAULTS: CameraRigOptions = {
   followSharpness: 8,
 };
 
+/** How far (as a fraction of the screen height) the picture is pushed up in portrait. */
+const PORTRAIT_SHIFT = 0.25;
+
+export interface AspectView {
+  /** Vertical FOV of what is on screen, degrees. */
+  fovDeg: number;
+  /** Vertical FOV of the full (taller) frustum, degrees; equals `fovDeg` when `shift` is 0. */
+  fullFovDeg: number;
+  /** Multiplier for the follow distance range. */
+  distanceScale: number;
+  /** Extra frustum height above the visible slice, as a fraction of the screen height. */
+  shift: number;
+}
+
+/**
+ * Landscape keeps the base FOV. A portrait screen widens the vertical FOV (the horizontal view would
+ * otherwise be a quarter of landscape), pulls the camera back a little, and slides the picture up so
+ * the player sits about 38% from the top, clear of the thumbs on the lower third.
+ */
+export function viewForAspect(aspect: number, baseFovDeg: number = DEFAULTS.fovDeg): AspectView {
+  if (!(aspect < 1)) return { fovDeg: baseFovDeg, fullFovDeg: baseFovDeg, distanceScale: 1, shift: 0 };
+  const fovDeg = baseFovDeg + (1 - aspect) * 34;
+  const s = PORTRAIT_SHIFT;
+  const fullFovDeg = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(fovDeg) / 2) * (1 + s)));
+  return { fovDeg, fullFovDeg, distanceScale: 1.15, shift: s };
+}
+
 export class CameraRig {
   readonly camera: THREE.PerspectiveCamera;
   readonly yaw: number;
@@ -33,6 +60,8 @@ export class CameraRig {
   private readonly focus = new THREE.Vector3();
   private distance: number;
   private targetDistance: number;
+  /** Portrait screens scale the follow distance range (see `viewForAspect`). */
+  private distanceScale = 1;
   /** Screen-shake trauma in [0, 1]; shake strength is trauma². */
   private trauma = 0;
   private shakeTime = 0;
@@ -43,6 +72,7 @@ export class CameraRig {
     this.yaw = THREE.MathUtils.degToRad(this.opts.yawDeg);
     this.pitch = THREE.MathUtils.degToRad(this.opts.pitchDeg);
     this.distance = this.targetDistance = (this.opts.minDistance + this.opts.maxDistance) / 2;
+    this.setAspect(aspect);
   }
 
   /** Jump straight to a target (on spawn / load) with no easing. */
@@ -54,12 +84,9 @@ export class CameraRig {
 
   /** Wheel steps: positive zooms out. */
   zoom(steps: number): void {
-    const range = this.opts.maxDistance - this.opts.minDistance;
-    this.targetDistance = THREE.MathUtils.clamp(
-      this.targetDistance + steps * range * 0.15,
-      this.opts.minDistance,
-      this.opts.maxDistance,
-    );
+    const min = this.opts.minDistance * this.distanceScale;
+    const max = this.opts.maxDistance * this.distanceScale;
+    this.targetDistance = THREE.MathUtils.clamp(this.targetDistance + steps * (max - min) * 0.15, min, max);
   }
 
   addTrauma(amount: number): void {
@@ -81,9 +108,27 @@ export class CameraRig {
     return this.focus;
   }
 
+  /** Fit the projection to a screen aspect (width / height); portrait gets its own FOV, distance and framing. */
   setAspect(aspect: number): void {
-    this.camera.aspect = aspect;
-    this.camera.updateProjectionMatrix();
+    const view = viewForAspect(aspect, this.opts.fovDeg);
+    const ratio = view.distanceScale / this.distanceScale;
+    this.distanceScale = view.distanceScale;
+    this.distance *= ratio;
+    this.targetDistance *= ratio;
+    const cam = this.camera;
+    if (view.shift > 0) {
+      // The frustum is (1 + shift) times taller than the screen and the screen shows its lower part,
+      // so the focus point (centre of the full frustum) lands above the middle of the screen. Picking
+      // and projection both go through the projection matrix, so they stay in step.
+      cam.fov = view.fullFovDeg;
+      cam.aspect = aspect / (1 + view.shift);
+      cam.setViewOffset(aspect, 1 + view.shift, 0, view.shift, aspect, 1);
+    } else {
+      cam.fov = view.fovDeg;
+      cam.aspect = aspect;
+      cam.clearViewOffset();
+    }
+    cam.updateProjectionMatrix();
   }
 
   private apply(): void {

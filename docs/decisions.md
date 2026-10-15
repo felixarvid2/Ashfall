@@ -242,8 +242,7 @@ The game plays like Diablo: left-click moves, attacks the enemy under the cursor
 or object and uses it (`InteractTarget`). Settings saved before this switch once to click mode
 (`controlsVersion`); WASD stays available. Touch screens (`pointer: coarse`, or the first touch with
 "auto") get a floating joystick, the action bar restyled as thumb buttons (attack and skills auto-aim at
-the nearest enemy), a menu row, a tappable interact prompt, long-press as right-click in panels, and a
-turn-sideways hint. Taps on the canvas are left-clicks, so everything a click does works by touch too.
+the nearest enemy), a menu row, a tappable interact prompt, long-press as right-click in panels. Taps on the canvas are left-clicks, so everything a click does works by touch too.
 
 ### 2026-10-03 — Region 3 reuses every model
 Meshy credits ran out, so the Hydroponic Vaults are built entirely from existing models: enemies are
@@ -422,3 +421,15 @@ backgrounds, decals with stickers, one flagged prompt).
   side of its heading, not one it already hit), and turns toward it. Xenomant's basic Spore Dart
   homes (420°/s, 7 m) and flies 30 % longer for the curved path. The melee basic (Scalpel Slash)
   is unchanged.
+
+### 2026-10-15 — Touch works held upright
+The turn-sideways hint is gone. When the screen is taller than wide, `TouchControls` adds `.portrait` to
+`#ui` and the HUD rearranges: life and resource as bars top left (the orb fill is driven by `--fill` and
+`--shield` custom properties, so the same element grows upwards as an orb and sideways as a bar), the
+menu as a 4-column grid of icon buttons (`public/assets/ui/menu/`, CSS masks like the status icons), the
+minimap top right, the joystick on the left half of the lower 40 % and the thumb buttons on an arc
+(r 118, 46 px) around the attack button with dodge and potion above it. Panels span the screen and
+cover the menu, so a close button floats over them (there is no Escape on a phone). The camera reads the
+canvas aspect itself (`viewForAspect` in `camera.ts`): below 1 the vertical FOV grows by 34° per unit of
+missing aspect, the follow distance ×1.15, and `setViewOffset` pushes the picture up so the player sits
+at 37.5 % from the top, clear of the thumbs. This applies to any portrait window, touch or not.

@@ -101,8 +101,9 @@ class Orb {
     if (key === this.last) return;
     this.last = key;
     const pct = max > 0 ? Math.max(0, Math.min(1, current / max)) : 0;
-    this.fill.style.height = `${pct * 100}%`;
-    this.shield.style.height = `${Math.min(1, extra / Math.max(1, max)) * 100}%`;
+    // Fractions as custom properties: the orb grows its fill upwards, the portrait bar sideways.
+    this.el.style.setProperty('--fill', String(pct));
+    this.el.style.setProperty('--shield', String(Math.min(1, extra / Math.max(1, max))));
     this.text.textContent = `${Math.ceil(current)} / ${Math.round(max)}`;
     this.el.classList.toggle('warn', warn);
   }
