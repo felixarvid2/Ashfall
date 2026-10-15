@@ -187,6 +187,11 @@ export const SkillEffectSchema = z.discriminatedUnion('kind', [
     /** Explode on impact, hitting everything in this radius instead of only the target. */
     explodeRadius: z.number().nonnegative().default(0),
     color: z.string().default('#9fe8ff'),
+    /**
+     * Homing: the shot locks onto the enemy nearest the cursor (or the first one that comes within
+     * `seek` m ahead of it) and turns toward it at up to `turnDeg` degrees per second.
+     */
+    homing: z.object({ turnDeg: z.number().positive(), seek: z.number().positive() }).optional(),
   }),
   // Thrown in an arc to the cursor, explodes on landing, optionally into bomblets.
   ImpactSchema.extend({

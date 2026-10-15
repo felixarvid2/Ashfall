@@ -6,7 +6,7 @@ import { applyDamage, applyStatus, gainResource, isAlive, kill, targetState } fr
 import { computeTaken } from './damage';
 import { hitOne, impactArea, spawnHazards } from './impact';
 import { skillOf } from './skills';
-import { livingInCircle, opposingTeam } from './targeting';
+import { livingInCircle, nearestOpposing, opposingTeam } from './targeting';
 import { hitDestructibles } from '../world/interactables';
 import { onEliteHit } from './elites';
 
@@ -20,6 +20,7 @@ export function projectileSystem(world: World, dt: number, ctx: GameContext): vo
     tr.prevY = tr.y;
     tr.prevZ = tr.z;
     tr.prevFacing = tr.facing;
+    if (p.skill?.homing) steer(world, ctx, p, tr, dt);
     tr.x += p.vx * dt;
     tr.z += p.vz * dt;
     p.remaining -= dt;
@@ -45,6 +46,34 @@ export function projectileSystem(world: World, dt: number, ctx: GameContext): vo
     }
   }
 }
+
+/**
+ * Homing shots turn toward their target, at most `turn` rad/s. A shot without a living target looks
+ * for the nearest enemy within `seek` m that lies ahead of it (within 80° of its heading) and that
+ * it hasn't already hit.
+ */
+function steer(world: World, ctx: GameContext, p: Projectile, tr: Transform, dt: number): void {
+  const h = p.skill!.homing!;
+  const heading = Math.atan2(p.vx, p.vz);
+  const ahead = (e: Entity) => {
+    const t = world.get(e, Transform);
+    if (!t || p.skill!.hit.includes(e)) return false;
+    return Math.abs(angleTo(Math.atan2(t.x - tr.x, t.z - tr.z) - heading)) < (80 * Math.PI) / 180;
+  };
+  if (h.target !== null && (!isAlive(world, h.target) || p.skill!.hit.includes(h.target))) h.target = null;
+  h.target ??= nearestOpposing(world, ctx, tr.x, tr.z, h.seek, opposingTeam(p.team), ahead);
+  const t = h.target !== null ? world.get(h.target, Transform) : undefined;
+  if (!t) return;
+  const delta = angleTo(Math.atan2(t.x - tr.x, t.z - tr.z) - heading);
+  const a = heading + Math.max(-h.turn * dt, Math.min(h.turn * dt, delta));
+  const speed = Math.hypot(p.vx, p.vz);
+  p.vx = Math.sin(a) * speed;
+  p.vz = Math.cos(a) * speed;
+  tr.facing = a;
+}
+
+/** Wrap an angle to (-π, π]. */
+const angleTo = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 /** Player skill projectile step. Returns true when it is spent. */
 function skillProjectile(world: World, ctx: GameContext, e: Entity, p: Projectile, tr: Transform): boolean {

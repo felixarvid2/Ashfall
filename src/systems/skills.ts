@@ -38,7 +38,7 @@ import { applyStatus, gainResource, hasStatus, heal, kill, removeStatuses } from
 import { impactArea, spawnHazards } from './impact';
 import { hubAt } from '../world/zone';
 import { consumeCorpse, findCorpses, minionsOf, raiseCorpse } from './minions';
-import { livingInCircle } from './targeting';
+import { livingInCircle, nearestOpposing, opposingTeam } from './targeting';
 
 /** Seconds of the "evasive" window after a dodge or blink (Ghost key passive). */
 export const EVASIVE_WINDOW = 2.5;
@@ -318,6 +318,8 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
       const spread = (effect.spreadDeg * Math.PI) / 180;
       const team = world.get(caster, Faction)?.team ?? 'player';
       const level = world.get(caster, CombatStats)?.level ?? 1;
+      // Homing shots lock onto the enemy nearest the aim point, if one is close to it.
+      const lock = effect.homing ? nearestOpposing(world, ctx, aimX, aimZ, effect.homing.seek, opposingTeam(team)) : null;
       for (let i = 0; i < effect.count; i++) {
         const a = effect.count === 1 ? base : base - spread / 2 + (spread * i) / (effect.count - 1);
         const dx = Math.sin(a);
@@ -329,7 +331,8 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
           vx: dx * effect.speed,
           vz: dz * effect.speed,
           radius: effect.radius,
-          remaining: effect.maxRange / effect.speed,
+          // A homing shot curves, so it gets a little more flight time for the longer path.
+          remaining: (effect.maxRange / effect.speed) * (effect.homing ? 1.3 : 1),
           damage: 0,
           damageType: effect.damageType,
           attackerLevel: level,
@@ -342,6 +345,7 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
             gain: gain / effect.count,
             hit: [],
             color: effect.color,
+            ...(effect.homing ? { homing: { turn: (effect.homing.turnDeg * Math.PI) / 180, seek: effect.homing.seek, target: lock } } : {}),
           },
         });
       }

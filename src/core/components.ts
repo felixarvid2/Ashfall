@@ -336,6 +336,8 @@ export interface Projectile {
     gain: number;
     hit: Entity[];
     color: string;
+    /** Homing shots: turn rate (rad/s), how far ahead they look for a target, and the target. */
+    homing?: { turn: number; seek: number; target: Entity | null };
   };
 }
 export const Projectile = defineComponent<Projectile>('Projectile');

@@ -568,7 +568,7 @@ export class GameRenderer {
   /** Dungeon interiors: their own floor, fog, ambient light and lamps (the zone stays loaded). */
   enterInstance(
     bounds: { minX: number; maxX: number; minZ: number; maxZ: number },
-    theme: { floor: string; fog: { color: string; density: number }; ambient: { color: string; intensity: number } },
+    theme: { floor: string; ground?: string; fog: { color: string; density: number }; ambient: { color: string; intensity: number } },
     lights: typeof this.lightSpots,
     water: { id: string; x: number; z: number; r: number }[] = [],
   ): void {
@@ -592,10 +592,12 @@ export class GameRenderer {
     }
     const w = bounds.maxX - bounds.minX;
     const d = bounds.maxZ - bounds.minZ;
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, d),
-      new THREE.MeshStandardMaterial({ map: makeGroundTexture(), color: theme.floor, roughness: 1, metalness: 0.1 }),
-    );
+    // The theme's painted floor, tiled every few metres and tinted toward the theme colour. (It was
+    // one procedural texture stretched over the whole layout and multiplied by the dark theme
+    // colour, which read as a black floor.)
+    const map = this.instanceFloorTexture(theme.ground ?? 'military_concrete', w, d);
+    const tint = new THREE.Color(theme.floor).lerp(new THREE.Color('#ffffff'), 0.7);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map, color: tint, roughness: 0.95, metalness: 0.05 }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set((bounds.minX + bounds.maxX) / 2, 0.01, (bounds.minZ + bounds.maxZ) / 2);
     floor.receiveShadow = true;
@@ -603,9 +605,24 @@ export class GameRenderer {
     this.scene.add(root);
     this.instanceRoot = root;
     this.setLook(theme.fog, theme.ambient);
+    // Indoors the lamp is all that lights the floor between the fixtures: brighter and wider than
+    // under the open sky (back to the zone's lamp on the way out).
+    this.zonePlayerLight ??= { intensity: this.playerLight.intensity, distance: this.playerLight.distance };
+    this.playerLight.intensity = Math.max(this.zonePlayerLight.intensity, INSTANCE_LAMP.intensity);
+    this.playerLight.distance = Math.max(this.zonePlayerLight.distance, INSTANCE_LAMP.distance);
     this.zoneLightSpots = this.lightSpots;
     this.lightSpots = lights;
     this.lightTimer = 0;
+  }
+
+  /** A ground texture repeated across an instance floor of w × d metres (one tile per 7 m). */
+  private instanceFloorTexture(name: string, w: number, d: number): THREE.Texture {
+    const texture = new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}assets/textures/ground/${name}.webp`);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(w / 7, d / 7);
+    texture.anisotropy = 8;
+    return texture;
   }
 
   private instanceWater: { mesh: THREE.InstancedMesh; water: { id: string; x: number; z: number; r: number }[]; drained: number } | null = null;
@@ -635,6 +652,7 @@ export class GameRenderer {
     this.instanceRoot.traverse((o) => {
       const m = o as THREE.Mesh;
       m.geometry?.dispose();
+      (m.material as THREE.MeshStandardMaterial | undefined)?.map?.dispose();
       (m.material as THREE.Material | undefined)?.dispose();
     });
     this.instanceRoot = null;
@@ -643,7 +661,14 @@ export class GameRenderer {
     this.zoneLightSpots = null;
     this.lightTimer = 0;
     if (this.zoneLook) this.setLook(this.zoneLook.fog, this.zoneLook.ambient);
+    if (this.zonePlayerLight) {
+      this.playerLight.intensity = this.zonePlayerLight.intensity;
+      this.playerLight.distance = this.zonePlayerLight.distance;
+      this.zonePlayerLight = null;
+    }
   }
+
+  private zonePlayerLight: { intensity: number; distance: number } | null = null;
 
   /** Lights that come and go in the zone: floodlights switched on, burning flares (Deep Mines). */
   setDynamicLights(spots: typeof this.lightSpots): void {
@@ -1574,6 +1599,9 @@ function makeGroundTexture(): THREE.Texture {
   tex.anisotropy = 4;
   return tex;
 }
+
+/** The player's lamp inside dungeons and bunkers. */
+const INSTANCE_LAMP = { intensity: 160, distance: 18 };
 
 /** How strongly the environment map lights the scene on the surface and underground. */
 const ENV_LIGHT = { surface: 0.35, dark: 0.05 };

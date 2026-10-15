@@ -407,3 +407,18 @@ backgrounds, decals with stickers, one flagged prompt).
   stacks for poison, boons first and harm in red frames; the icons are game-icons.net glyphs (CC BY
   3.0) used as CSS masks so each takes its status colour. Credits are on the character select
   screen and in docs/credits.md.
+
+### 2026-10-15 — Instance floors you can see; homing Spore Darts
+
+- **Floors:** dungeon and bunker floors were one procedural texture stretched over the whole layout
+  and multiplied by a dark theme colour, and the player's lamp (sized for the open world) barely
+  reached them: the Drainage Tunnels read as a black floor. Each instance theme now names one of the
+  painted ground textures (`ground`: grit for the tunnels, steel plating on the freighter, concrete
+  in bunkers, flagstones in the crypt, lab tiles, mine rock, crystal floor…), tiled every 7 m and
+  only tinted toward the theme colour; indoors the lamp is brighter and wider (160, 18 m), and
+  goes back to the zone's on the way out.
+- **Homing:** projectile skills can home (`homing: { turnDeg, seek }`). A shot locks onto the
+  enemy nearest the aim point, or else the nearest one within `seek` m ahead of it (80° either
+  side of its heading, not one it already hit), and turns toward it. Xenomant's basic Spore Dart
+  homes (420°/s, 7 m) and flies 30 % longer for the curved path. The melee basic (Scalpel Slash)
+  is unchanged.

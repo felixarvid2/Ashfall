@@ -3,6 +3,7 @@
  * from a seed, a main objective that opens the boss room, and a final boss (bunkers: a cache).
  */
 import type { EliteAffix } from './elites';
+import type { GroundTexture } from './zones/testArena';
 
 export type InstanceObjective =
   /** Power up generators; each charges while enemies attack. */
@@ -59,7 +60,10 @@ export interface InstanceDef {
   objective: InstanceObjective;
   boss: InstanceBoss | null;
   theme: {
+    /** Floor tint, multiplied over the floor texture. */
     floor: string;
+    /** Painted floor texture (public/assets/textures/ground/), tiled across the rooms. */
+    ground?: GroundTexture;
     fog: { color: string; density: number };
     ambient: { color: string; intensity: number };
     /** Props scattered along room walls. */
@@ -76,80 +80,93 @@ export interface InstanceDef {
   cocoons?: number;
 }
 
-const FREIGHTER = {
+type InstanceTheme = InstanceDef['theme'];
+
+const FREIGHTER: InstanceTheme = {
   floor: '#3a3632',
+  ground: 'steel_plating',
   fog: { color: '#0c0b0b', density: 0.026 },
   ambient: { color: '#6a6058', intensity: 0.5 },
   decor: ['prop.cargo_crate', 'prop.pipe_section', 'prop.control_terminal', 'prop.fuel_tank'],
   light: { asset: 'prop.emergency_light', color: '#ff6a3a', intensity: 40 },
 };
-const BUNKER = {
+const BUNKER: InstanceTheme = {
   floor: '#34363a',
+  ground: 'military_concrete',
   fog: { color: '#0a0b0d', density: 0.028 },
   ambient: { color: '#5a6472', intensity: 0.5 },
   decor: ['prop.cargo_crate', 'prop.barricade', 'prop.control_terminal', 'prop.supply_chest'],
   light: { asset: 'prop.emergency_light', color: '#ffd2a1', intensity: 36 },
 };
-const SEWER = {
+const SEWER: InstanceTheme = {
   floor: '#2c322a',
+  ground: 'industrial_grit',
   fog: { color: '#0a0d0a', density: 0.028 },
   ambient: { color: '#5a6a54', intensity: 0.48 },
   decor: ['prop.pipe_section', 'prop.lumen_growth', 'prop.cargo_crate', 'prop.lumen_growth'],
   light: { asset: 'prop.lumen_growth', color: '#7dff8a', intensity: 30 },
 };
 
-const FOUNDRY = {
+const FOUNDRY: InstanceTheme = {
   floor: '#3a2c24',
+  ground: 'steel_grating',
   fog: { color: '#1a0e08', density: 0.024 },
   ambient: { color: '#8a5a40', intensity: 0.5 },
   decor: ['env.pipe_cluster', 'prop.fuel_tank', 'prop.cargo_crate', 'env.furnace_block'],
   light: { asset: 'prop.emergency_light', color: '#ff6a1a', intensity: 44 },
 };
-const PIPES = {
+const PIPES: InstanceTheme = {
   floor: '#30302c',
+  ground: 'industrial_grit',
   fog: { color: '#0e0d0b', density: 0.03 },
   ambient: { color: '#6a6458', intensity: 0.45 },
   decor: ['env.pipe_cluster', 'prop.pipe_section', 'prop.pipe_section', 'prop.control_terminal'],
   light: { asset: 'prop.emergency_light', color: '#ffb04a', intensity: 34 },
 };
-const CRYPT = {
+const CRYPT: InstanceTheme = {
   floor: '#2e2420',
+  ground: 'scorched_flagstones',
   fog: { color: '#120a08', density: 0.028 },
   ambient: { color: '#7a4a3a', intensity: 0.45 },
   decor: ['env.furnace_block', 'prop.barricade', 'prop.cargo_crate', 'prop.fuel_tank'],
   light: { asset: 'prop.emergency_light', color: '#ff8a3a', intensity: 40 },
 };
-const COLD = {
+const COLD: InstanceTheme = {
   floor: '#3a4048',
+  ground: 'frosted_concrete',
   fog: { color: '#0a0e14', density: 0.026 },
   ambient: { color: '#7a90b0', intensity: 0.55 },
   decor: ['env.pipe_cluster', 'prop.generator', 'prop.control_terminal', 'prop.cargo_crate'],
   light: { asset: 'prop.emergency_light', color: '#9fd8ff', intensity: 36 },
 };
 
-const SEEDVAULT = {
+const SEEDVAULT: InstanceTheme = {
   floor: '#3a4446',
+  ground: 'lab_tiles',
   fog: { color: '#0a1012', density: 0.026 },
   ambient: { color: '#7aa0b0', intensity: 0.55 },
   decor: ['prop.generator', 'prop.control_terminal', 'prop.lumen_growth', 'prop.cargo_crate'],
   light: { asset: 'prop.emergency_light', color: '#9fd8ff', intensity: 36 },
 };
-const BROOD = {
+const BROOD: InstanceTheme = {
   floor: '#28301e',
+  ground: 'fungal_moss',
   fog: { color: '#0a1006', density: 0.03 },
   ambient: { color: '#5a7a44', intensity: 0.48 },
   decor: ['prop.spore_nest', 'prop.lumen_growth', 'prop.lumen_growth', 'env.slag_rock'],
   light: { asset: 'prop.lumen_growth', color: '#7dff5a', intensity: 30 },
 };
-const FLOODED = {
+const FLOODED: InstanceTheme = {
   floor: '#2c3434',
+  ground: 'dry_silt',
   fog: { color: '#0a0e0e', density: 0.028 },
   ambient: { color: '#5a7a80', intensity: 0.5 },
   decor: ['prop.pipe_section', 'env.pipe_cluster', 'prop.lumen_growth', 'prop.generator'],
   light: { asset: 'prop.emergency_light', color: '#7ad8c8', intensity: 34 },
 };
-const SLEEPING_LAB = {
+const SLEEPING_LAB: InstanceTheme = {
   floor: '#343838',
+  ground: 'lab_tiles',
   fog: { color: '#0b0d0d', density: 0.026 },
   ambient: { color: '#7a8a84', intensity: 0.5 },
   decor: ['prop.control_terminal', 'prop.cargo_crate', 'prop.lumen_growth', 'prop.generator'],
@@ -157,36 +174,41 @@ const SLEEPING_LAB = {
 };
 
 // Deep Mines: timbered shafts, blue crystal, the flooded drill, cold elder halls.
-const SHAFT = {
+const SHAFT: InstanceTheme = {
   floor: '#2e2a26',
+  ground: 'mine_rock',
   fog: { color: '#060505', density: 0.034 },
   ambient: { color: '#5a5048', intensity: 0.32 },
   decor: ['prop.cargo_crate', 'env.wall_segment', 'prop.pipe_section', 'env.slag_rock'],
   light: { asset: 'prop.emergency_light', color: '#ffc890', intensity: 36 },
 };
-const CRYSTAL = {
+const CRYSTAL: InstanceTheme = {
   floor: '#262c36',
+  ground: 'crystal_floor',
   fog: { color: '#05080c', density: 0.03 },
   ambient: { color: '#4a6a8a', intensity: 0.4 },
   decor: ['prop.lumen_growth', 'prop.lumen_growth', 'env.slag_rock', 'prop.lumen_growth'],
   light: { asset: 'prop.lumen_growth', color: '#7ad8ff', intensity: 34 },
 };
-const SUNKEN = {
+const SUNKEN: InstanceTheme = {
   floor: '#2a3032',
+  ground: 'lake_shore',
   fog: { color: '#050809', density: 0.032 },
   ambient: { color: '#4a6068', intensity: 0.36 },
   decor: ['env.pipe_cluster', 'prop.pipe_section', 'prop.compressor', 'env.catwalk'],
   light: { asset: 'prop.emergency_light', color: '#ffb04a', intensity: 36 },
 };
-const ARCHIVE = {
+const ARCHIVE: InstanceTheme = {
   floor: '#24283a',
+  ground: 'elder_stone',
   fog: { color: '#05060c', density: 0.028 },
   ambient: { color: '#5a6aa8', intensity: 0.42 },
   decor: ['env.wall_segment', 'env.wall_segment', 'prop.lumen_growth', 'prop.control_terminal'],
   light: { asset: 'prop.lumen_growth', color: '#6ad8ff', intensity: 32 },
 };
-const BURIAL = {
+const BURIAL: InstanceTheme = {
   floor: '#1e2230',
+  ground: 'elder_stone',
   fog: { color: '#04050a', density: 0.032 },
   ambient: { color: '#4a5a90', intensity: 0.36 },
   decor: ['env.wall_segment', 'prop.lumen_wrath', 'env.wall_segment', 'env.slag_rock'],

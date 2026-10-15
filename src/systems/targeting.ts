@@ -18,6 +18,20 @@ export function livingInCircle(world: World, ctx: GameContext, x: number, z: num
   return result;
 }
 
+/** The living member of `team` nearest (x, z) within `radius`, optionally only those `accept` allows. */
+export function nearestOpposing(world: World, ctx: GameContext, x: number, z: number, radius: number, team: Team, accept?: (e: Entity) => boolean): Entity | null {
+  let best: Entity | null = null;
+  let bestD = Infinity;
+  for (const e of livingInCircle(world, ctx, x, z, radius, team)) {
+    if (accept && !accept(e)) continue;
+    const t = world.get(e, Transform);
+    if (!t) continue;
+    const d = (t.x - x) ** 2 + (t.z - z) ** 2;
+    if (d < bestD) [best, bestD] = [e, d];
+  }
+  return best;
+}
+
 export function opposingTeam(team: Team): Team {
   return team === 'player' ? 'enemy' : 'player';
 }

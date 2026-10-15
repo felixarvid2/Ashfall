@@ -26,6 +26,8 @@ export const XENOMANT_SKILLS: Skill[] = [
       applies: [{ status: 'poisoned', duration: 3, coefficient: 0.22 }],
       hitstopMs: 10,
       color: '#8aff6a',
+      // The dart seeks its target, so a moving enemy (or a sloppy aim) still gets hit.
+      homing: { turnDeg: 420, seek: 7 },
     },
   },
   {

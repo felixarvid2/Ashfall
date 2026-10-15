@@ -111,6 +111,21 @@ describe('Xenomant skills', () => {
     expect(hasStatus(world, enemy, 'poisoned')).toBe(true);
   });
 
+  it('Spore Dart homes in on an enemy it was only roughly aimed at', () => {
+    const { world, ctx, player } = setup(['xenomant.spore_dart']);
+    const enemy = tough(world, spawnEnemy(world, 'spore_carrier', 0, 6));
+    // Aimed almost 60° to the side of the enemy: a straight shot would miss by metres.
+    cast(world, ctx, player, 0, 5, 3, 40);
+    expect(hasStatus(world, enemy, 'poisoned')).toBe(true);
+  });
+
+  it('Spore Dart does not turn round for an enemy behind it', () => {
+    const { world, ctx, player } = setup(['xenomant.spore_dart']);
+    const enemy = tough(world, spawnEnemy(world, 'spore_carrier', 0, -6));
+    cast(world, ctx, player, 0, 0, 8, 40);
+    expect(hasStatus(world, enemy, 'poisoned')).toBe(false);
+  });
+
   it('Scalpel Slash heals for part of the damage dealt', () => {
     const { world, ctx, player } = setup(['xenomant.scalpel_slash']);
     tough(world, spawnEnemy(world, 'spore_carrier', 0, 1.6));
