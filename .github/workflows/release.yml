@@ -1,0 +1,55 @@
+name: Release
+
+# Push a tag like v1.0.0 (or run by hand with a tag name) to build the game and publish a GitHub
+# release with the playable web build as a zip.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (e.g. v1.0.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run
+      - run: npm run build
+      - name: Zip the web build
+        run: |
+          cp docs/credits.md dist/CREDITS.md
+          cat > dist/HOW-TO-PLAY.txt <<'TXT'
+          Ashfall - web build
+
+          The game is a web page, but browsers block it when opened straight from disk (file://),
+          so serve this folder with any static web server and open the address it prints:
+
+            npx serve .                  (Node.js)
+            python3 -m http.server 8000  (Python, then open http://localhost:8000)
+
+          Controls: left mouse moves and attacks, right mouse and 1-4 are skills, Space dodges,
+          Q drinks a stim pack, I/K/M/J open inventory, skills, map and quests. On a phone the
+          game shows touch controls.
+          TXT
+          (cd dist && zip -qr "../ashfall-${TAG}-web.zip" .)
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Ashfall ${{ env.TAG }}
+          files: ashfall-${{ env.TAG }}-web.zip
+          body: |
+            Playable web build of Ashfall. Unzip `ashfall-${{ env.TAG }}-web.zip` and serve the folder
+            with any static web server (see HOW-TO-PLAY.txt inside), e.g. `npx serve .`.
