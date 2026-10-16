@@ -5,6 +5,7 @@
  * UI root switches the HUD to the touch layout; `.portrait` on top of it (phone held upright) moves
  * everything out of the thumbs' way.
  */
+import { cssUrl } from './art';
 import type { Input } from '../core/input';
 import { t } from '../data/i18n';
 import type { Action } from '../data/settings';
@@ -94,7 +95,7 @@ export class TouchControls {
       b.dataset.testid = `touch-menu-${id}`;
       const icon = document.createElement('span');
       icon.className = 'touch-menu-icon';
-      icon.style.setProperty('--icon', `url("${menuIconUrl(id)}")`);
+      icon.style.setProperty('--icon', cssUrl(menuIconUrl(id)));
       b.appendChild(icon);
       b.addEventListener('click', onClick);
       return b;

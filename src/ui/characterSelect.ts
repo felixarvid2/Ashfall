@@ -4,7 +4,7 @@
  */
 import { CLASSES } from '../data/db';
 import { t } from '../data/i18n';
-import { artUrl } from './art';
+import { artUrl, cssUrl } from './art';
 
 export interface SlotSummary {
   index: number;
@@ -49,7 +49,7 @@ export class CharacterSelect {
     this.root.append(title, sub, this.body, credits);
     // The painted title scene behind the menu.
     const backdrop = artUrl('menu/title');
-    if (backdrop) this.root.style.setProperty('--menu-art', `url("${backdrop}")`);
+    if (backdrop) this.root.style.setProperty('--menu-art', cssUrl(backdrop));
     parent.appendChild(this.root);
     this.showSlots();
   }

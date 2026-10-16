@@ -2,6 +2,7 @@
  * In-game HUD: life and resource orbs, action bar with cooldowns, wave tracker,
  * target frame and death screen. DOM is only touched when a value changes.
  */
+import { cssUrl } from './art';
 import { classDef, skill } from '../data/db';
 import { t } from '../data/i18n';
 import type { Action, MoveMode } from '../data/settings';
@@ -402,7 +403,7 @@ export class Hud {
           // The icon is a white game-icons.net glyph used as a mask, so it takes the status colour.
           const icon = document.createElement('div');
           icon.className = 'buff-icon';
-          icon.style.setProperty('--icon', `url("${statusIconUrl(b.id)}")`);
+          icon.style.setProperty('--icon', cssUrl(statusIconUrl(b.id)));
           el.append(icon);
           if (b.timed) el.append(Object.assign(document.createElement('div'), { className: 'buff-time', textContent: `${Math.ceil(b.remaining)}` }));
           if ((b.stacks ?? 1) > 1) el.append(Object.assign(document.createElement('div'), { className: 'buff-stacks', textContent: `${b.stacks}` }));

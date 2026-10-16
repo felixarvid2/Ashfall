@@ -7,6 +7,15 @@
 import { ART_FILES } from '../data/artFiles';
 import type { Item } from '../data/loot/schemas';
 
+/**
+ * A CSS `url()` for a custom property (`--icon`, `--menu-art`). A relative URL inside a custom
+ * property resolves against the stylesheet that uses it (assets/index-….css), not the page, so the
+ * relative build (base './', the artifact) would look in assets/assets/…: make it absolute first.
+ */
+export function cssUrl(path: string): string {
+  return `url("${new URL(path, document.baseURI).href}")`;
+}
+
 export function artUrl(key: string): string | null {
   return ART_FILES.has(key) ? `${import.meta.env.BASE_URL}assets/art/${key}.webp` : null;
 }
