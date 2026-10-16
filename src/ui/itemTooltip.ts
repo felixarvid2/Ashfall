@@ -44,6 +44,21 @@ function el(tag: string, cls?: string, text?: string): HTMLElement {
 }
 
 /** Build tooltip contents for an item. `equipped` marks the item as currently worn. */
+/**
+ * Phones held upright: a tooltip beside its item would run off the narrow screen, so it spans the
+ * width instead, on the half of the screen away from the finger (CSS `.tip-top` / `.tip-bottom`).
+ * Returns false when the caller should place it beside the anchor as usual.
+ */
+export function placeTooltipForPortrait(tooltip: HTMLElement, anchor: DOMRect): boolean {
+  const portrait = tooltip.closest('#ui')?.classList.contains('portrait') ?? false;
+  tooltip.classList.toggle('tip-top', portrait && anchor.top + anchor.height / 2 > window.innerHeight / 2);
+  tooltip.classList.toggle('tip-bottom', portrait && !tooltip.classList.contains('tip-top'));
+  if (!portrait) return false;
+  tooltip.style.left = '';
+  tooltip.style.top = '';
+  return true;
+}
+
 export function renderItemTooltip(item: Item, classId: string, opts: { equipped?: boolean; comparison?: Comparison | null } = {}): HTMLElement {
   const root = el('div', 'item-tip');
   const rarity = rarityDef(item.rarity);

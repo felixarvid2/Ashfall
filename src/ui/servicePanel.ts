@@ -16,7 +16,7 @@ import {
 } from '../systems/hub/services';
 import { renderItemCell } from './inventoryPanel';
 import { artUrl } from './art';
-import { aspectText, formatStat, itemDisplayName, renderItemTooltip } from './itemTooltip';
+import { aspectText, formatStat, itemDisplayName, placeTooltipForPortrait, renderItemTooltip } from './itemTooltip';
 import { rarityDef } from '../data/loot/db';
 
 export type ServiceKind = 'vendor' | 'blacksmith' | 'technician' | 'stash';
@@ -237,6 +237,7 @@ export class ServicePanel {
       this.tooltip.replaceChildren(tip);
       this.tooltip.hidden = false;
       const rect = cell.getBoundingClientRect();
+      if (placeTooltipForPortrait(this.tooltip, rect)) return;
       const tipRect = this.tooltip.getBoundingClientRect();
       this.tooltip.style.left = `${Math.min(window.innerWidth - tipRect.width - 8, rect.right + 10)}px`;
       this.tooltip.style.top = `${Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, rect.top - 20))}px`;

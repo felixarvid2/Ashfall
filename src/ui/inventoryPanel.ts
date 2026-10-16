@@ -8,7 +8,7 @@ import { t } from '../data/i18n';
 import { BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
 import { itemArtUrl, rarityFrameUrl } from './art';
 import { SLOTS, slotsFor, type Item, type Slot } from '../data/loot/schemas';
-import { itemDisplayName, renderItemTooltip, type Comparison } from './itemTooltip';
+import { itemDisplayName, placeTooltipForPortrait, renderItemTooltip, type Comparison } from './itemTooltip';
 
 export interface InventoryActions {
   equip(index: number): void;
@@ -165,6 +165,7 @@ export class InventoryPanel {
       this.tooltip.replaceChildren(tip);
       this.tooltip.hidden = false;
       const rect = cell.getBoundingClientRect();
+      if (placeTooltipForPortrait(this.tooltip, rect)) return;
       const tipRect = this.tooltip.getBoundingClientRect();
       let left = rect.left - tipRect.width - 10;
       if (left < 8) left = rect.right + 10;

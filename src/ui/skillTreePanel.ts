@@ -3,6 +3,7 @@
  * enhancement → choose-one modifiers, ranked passives, one key passive, the 6-slot action
  * bar editor and a full respec for gold.
  */
+import { placeTooltipForPortrait } from './itemTooltip';
 import { t } from '../data/i18n';
 import { artUrl } from './art';
 import { classDef, skill } from '../data/db';
@@ -228,6 +229,7 @@ export class SkillTreePanel {
     this.tooltip.replaceChildren(tip);
     this.tooltip.hidden = false;
     const rect = anchor.getBoundingClientRect();
+    if (placeTooltipForPortrait(this.tooltip, rect)) return;
     const tr = this.tooltip.getBoundingClientRect();
     let left = rect.right + 10;
     if (left + tr.width > window.innerWidth - 8) left = rect.left - tr.width - 10;
