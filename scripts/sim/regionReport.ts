@@ -16,9 +16,10 @@ import { DELTA_TUNING } from '../../src/world/districtSetPieces';
 import { CATHEDRAL, DELTA, DISTRICT_GATE, REFINERY_DISTRICT, rd } from '../../src/data/zones/refineryDistrict';
 import { GAMMA, GREAT_DOME, HYDROPONIC_VAULTS, VAULTS_GATE, hv } from '../../src/data/zones/hydroponicVaults';
 import { GAMMA_TUNING } from '../../src/world/vaultSetPieces';
+import { BASE_TUNING } from '../../src/world/elevatorBase';
 import { AURUM, DEEP_MINES, DRILL_CONTROL, MINES_GATE, dm } from '../../src/data/zones/deepMines';
 import { AURUM_TUNING } from '../../src/world/mineSetPieces';
-import { CORE_GATE, ELEVATOR_BASE, LUMEN_HEART, THE_CORE, island } from '../../src/data/zones/theCore';
+import { BRIDGES, CORE_GATE, CORE_SUBZONES, ELEVATOR_BASE, ISLANDS, LAST_CAMP, LUMEN_HEART, THE_CORE, cr, island } from '../../src/data/zones/theCore';
 import { ENEMY_DEFS } from '../../src/data/db';
 import { rollDrops } from '../../src/systems/loot/generate';
 import { generateLayout } from '../../src/world/instance';
@@ -161,12 +162,13 @@ const minesRoute: Leg[] = [
   { label: 'Governor Kade', to: at(DRILL_CONTROL.x, DRILL_CONTROL.z), extra: 330 },
   { label: 'Brask', to: npc('brask') },
 ];
-// The Core (R5-A greybox): the walk up from the bore. Dungeons, quests and the fights at the Base and the Heart arrive in R5-C.
+// The Core: the walk up from the bore, the Memory of Ember dungeon (main quest 4), the Elevator Base waves and Lumen.
 const coreRoute: Leg[] = [
   { label: 'The Last Camp', to: tp('tp.camp'), discover: 'tp.camp' },
   { label: 'Garden Landing', to: tp('tp.gardens'), discover: 'tp.gardens' },
   { label: 'Across the Hanging Gardens', to: at(island('g6').x, island('g6').z), extra: 4 * 8 },
   { label: 'Hall of First Memory', to: tp('tp.halls'), discover: 'tp.halls' },
+  { label: 'Memory of Ember', to: (([x, z]) => at(x, z))(cr(258, 128)), extra: 0 },
   // The Base: waves of shades and Lumen creatures with three minibosses (placeholder estimate).
   { label: 'The Elevator Base', to: at(ELEVATOR_BASE.x, ELEVATOR_BASE.z), extra: 420, discover: 'tp.base' },
   { label: 'Heart Causeway', to: tp('tp.heart'), discover: 'tp.heart' },
@@ -174,7 +176,7 @@ const coreRoute: Leg[] = [
 ];
 const route: Leg[] = which === 'core' ? coreRoute : which === 'district' ? districtRoute : which === 'vaults' ? vaultsRoute : which === 'mines' ? minesRoute : cinderRoute;
 const CONFIG = which === 'core'
-  ? { name: 'The Core', dungeons: [] as string[], bunker: '', story: '', storyLeg: -1, start: CORE_GATE.arrive, hub: 'tp.camp', guaranteed: 0 }
+  ? { name: 'The Core', dungeons: ['core_memory_of_ember', 'core_endless_shaft', 'core_singing_halls', 'core_chamber_of_creation'], bunker: '', story: 'core_memory_of_ember', storyLeg: 4, start: CORE_GATE.arrive, hub: 'tp.camp', guaranteed: 4 + 2 }
   : which === 'mines'
   ? { name: 'The Deep Mines', dungeons: ['shaft_13', 'crystal_labyrinth', 'sunken_drill', 'archive', 'burial_chamber'], bunker: 'dm_bunker', story: 'archive', storyLeg: 8, start: MINES_GATE.arrive, hub: 'tp.zero', guaranteed: 5 + 2 }
   : which === 'vaults'
@@ -209,6 +211,8 @@ function dungeonTime(id: string): { rooms: number; seconds: number } {
       : o.kind === 'drain' ? o.count * 8
       : o.kind === 'collect' ? o.count * 4
       : o.kind === 'mirrors' ? o.count * 14
+      // Portals: each is destroyed (~20 s with the hatchlings it spawns) before the Brood Engine.
+      : o.kind === 'portals' ? o.count * 20
       : 0;
     seconds += walk + packs * avgPack + obj + (def.boss ? 60 : 0);
   }
@@ -249,7 +253,10 @@ const mainQuestSeconds = walkSeconds + fightSeconds + setPieceSeconds;
 const openShare = cave ? cave.data.reduce((a, v) => a + v, 0) / cave.data.length : 1;
 const sweep = ((zone.halfSize * 2) ** 2 * openShare) / (2 * 36);
 const allPacks = zone.packs.reduce((s, p) => s + packClear(p.template), 0);
-const instances = CONFIG.dungeons.reduce((sum, id) => sum + dungeonTime(id).seconds, 0) + (CONFIG.bunker ? 6 * dungeonTime(CONFIG.bunker).seconds : 0);
+// The Core's three Memory Mirrors (bunker-sized) take the place of the bunkers.
+const MIRRORS = ['core_mirror_ash', 'core_mirror_refinery', 'core_mirror_vault'];
+const bunkerIds = which === 'core' ? MIRRORS : CONFIG.bunker ? Array<string>(6).fill(CONFIG.bunker) : [];
+const instances = CONFIG.dungeons.reduce((sum, id) => sum + dungeonTime(id).seconds, 0) + bunkerIds.reduce((sum, id) => sum + dungeonTime(id).seconds, 0);
 const exploreSeconds = sweep / speed + allPacks + instances + setPieceSeconds;
 
 // ---- Time between fights on the roads ----------------------------------------------------
@@ -324,9 +331,59 @@ const reused = manifest.assets.filter((a) => !newAssets.includes(a.id) && !a.id.
 console.log(`# ${CONFIG.name} measurements (estimates from layout + bot kill rate)\n`);
 console.log(`Bot kill rate (test arena, ${PLANS[0]!.name}): ${botKillsPerSecond.toFixed(2)} kills/s, ${bot.deaths} deaths to level ${bot.reached}; against this roster ≈ ${killsPerSecond.toFixed(2)} kills/s`);
 console.log(`Main quests: ${mmss(mainQuestSeconds)} (walk ${mmss(walkSeconds)}, fights ${mmss(fightSeconds)}, stronghold/dungeon/boss ${mmss(setPieceSeconds)})`);
-console.log(`Full exploration: ${mmss(exploreSeconds)} (sweep ${mmss(sweep / speed)}, all ${zone.packs.length} packs ${mmss(allPacks)}, ${CONFIG.dungeons.length} dungeons + 6 bunkers ${mmss(instances)})`);
+console.log(`Full exploration: ${mmss(exploreSeconds)} (sweep ${mmss(sweep / speed)}, all ${zone.packs.length} packs ${mmss(allPacks)}, ${CONFIG.dungeons.length} dungeons + ${bunkerIds.length} ${which === 'core' ? 'mirrors' : 'bunkers'} ${mmss(instances)})`);
 for (const id of CONFIG.dungeons) console.log(`Dungeon ${id}: ~${dungeonTime(id).rooms.toFixed(1)} rooms, ${mmss(dungeonTime(id).seconds)}`);
 console.log(`Average time between fights on the roads: ${betweenFights.toFixed(1)} s of walking`);
 console.log(`Legendary (or better) items in one playthrough: ${legendaryRuns.join(', ')} (5 runs; mean ${(legendaryRuns.reduce((a, b) => a + b, 0) / legendaryRuns.length).toFixed(1)})`);
 console.log(`Possible stuck spots: ${stuck.length ? stuck.join('; ') : 'none found'}`);
 console.log(`Meshy: ${credits} credits on ${newAssets.length} new assets; ${reused} earlier assets reused in the layout`);
+
+if (which === 'core') {
+  // Packs per subzone (the same precedence as the zone's pack templates), enemy mix and returning share.
+  const inS = (x: number, z: number, sz: { c: [number, number]; r: number }) => Math.hypot(x - sz.c[0], z - sz.c[1]) < sz.r;
+  const subOf = (x: number, z: number) =>
+    inS(x, z, CORE_SUBZONES.heart) ? 'Heart'
+    : inS(x, z, CORE_SUBZONES.gardens) ? 'Hanging Gardens'
+    : inS(x, z, CORE_SUBZONES.halls) ? 'Memory Halls'
+    : inS(x, z, CORE_SUBZONES.borderland) || z < -60 * 2.2 ? 'Borderland'
+    : 'Great Cavern (Elevator Base)';
+  const perSub = new Map<string, number>();
+  for (const pk of zone.packs) perSub.set(subOf(pk.x, pk.z), (perSub.get(subOf(pk.x, pk.z)) ?? 0) + 1);
+  console.log(`\nPacks per subzone (${zone.packs.length} total): ${[...perSub].map(([k, n]) => `${k} ${n}`).join(' · ')}`);
+  const returning = (id: string) => id.startsWith('shade_');
+  const types = new Map<string, number>();
+  let members = 0;
+  let returningMembers = 0;
+  for (const pk of zone.packs) {
+    for (const mem of packTemplate(pk.template).members) {
+      const n = ((mem.count[0] + mem.count[1]) / 2) * (mem.chance ?? 1);
+      types.set(mem.enemy, (types.get(mem.enemy) ?? 0) + n);
+      members += n;
+      if (returning(mem.enemy)) returningMembers += n;
+    }
+  }
+  const typeIds = [...types.keys()];
+  const retTypes = typeIds.filter(returning);
+  const absorbed = typeIds.filter((id) => id.startsWith('absorbed_'));
+  const regular = typeIds.filter((id) => !id.startsWith('absorbed_') && id !== 'choir_singer');
+  console.log(`Enemy types in the world packs: ${typeIds.length} (${regular.length} regular, ${absorbed.length} Absorbed, ${typeIds.includes('choir_singer') ? 1 : 0} Choir); returning (memory shades): ${retTypes.length} of ${regular.length} regular types (${Math.round((retTypes.length / regular.length) * 100)} %), ${Math.round((returningMembers / members) * 100)} % of expected spawns (~${Math.round(members)} enemies in packs)`);
+  const dungeonIds = CONFIG.dungeons;
+  const rooms = (id: string) => dungeonTime(id).rooms.toFixed(1);
+  console.log(`Dungeons: ${dungeonIds.map((id) => `${id} ${rooms(id)} rooms ${mmss(dungeonTime(id).seconds)}`).join(' · ')}`);
+  console.log(`Mirrors: ${MIRRORS.map((id) => `${id} ${rooms(id)} rooms ${mmss(dungeonTime(id).seconds)}`).join(' · ')}`);
+  const waves = BASE_TUNING.waves;
+  console.log(`Elevator Base: ${waves.length} waves, ${waves.reduce((s, w) => s + w.enemies.reduce((a, [, n]) => a + n, 0), 0)} enemies, ${waves.filter((w) => w.boss).length} shade minibosses, ${BASE_TUNING.allies.length} allies`);
+  console.log(`Islands: ${ISLANDS.length} (${ISLANDS.filter((i) => i.cycleOnly).length} reachable only by switching bridges); bridges: ${BRIDGES.length} (${BRIDGES.filter((b) => b.cycle).length} switching)`);
+  console.log(`Gravity fields: ${(zone.env ?? []).filter((e) => e.kind === 'gravity' && e.id.includes('.garden.')).length} in the Gardens, ${(zone.env ?? []).filter((e) => e.kind === 'gravity' && e.id.includes('.heart.')).length} in the Heart`);
+  // Straight walk: arrive at the bore, up the camp drift and the spine, through the Base, over the causeway to Lumen.
+  const pathPts: [number, number][] = [[CORE_GATE.arrive.x, CORE_GATE.arrive.z], [LAST_CAMP.x, LAST_CAMP.z], [0, 20 * 2.2], [LUMEN_HEART.x, LUMEN_HEART.z - 20]];
+  const segLen = (pts: [number, number][]) => pts.slice(1).reduce((sum, pt, i) => sum + Math.hypot(pt[0] - pts[i]![0], pt[1] - pts[i]![1]), 0);
+  const gateToHub = segLen(pathPts.slice(0, 2));
+  const hubToHeart = segLen(pathPts.slice(1));
+  console.log(`Walk straight through, gate to Lumen (no fights): ${Math.round(gateToHub + hubToHeart)} m ≈ ${mmss((gateToHub + hubToHeart) / speed)} (x1.15 for winding ${mmss(((gateToHub + hubToHeart) * 1.15) / speed)}); hub to Heart ${Math.round(hubToHeart)} m ≈ ${mmss(hubToHeart / speed)} (x1.15 ${mmss((hubToHeart * 1.15) / speed)})`);
+  const cq = [...QUESTS.values()].filter((q) => q.zone === zone.id);
+  const xpOf = (list: typeof cq) => list.reduce((sum, q) => sum + q.rewards.xp, 0);
+  const mainQ = cq.filter((q) => q.kind === 'main');
+  const sideQ = cq.filter((q) => q.kind === 'side');
+  console.log(`Quests: ${cq.length} (${mainQ.length} main, ${sideQ.length} side, ${cq.length - mainQ.length - sideQ.length} other); XP total ${xpOf(cq)}, main ${xpOf(mainQ)}, side ${xpOf(sideQ)}; legendary rewards ${cq.filter((q) => q.rewards.item === 'legendary').length}`);
+}
