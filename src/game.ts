@@ -78,7 +78,14 @@ import { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
 import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
 import { LootLabels } from './ui/lootLabels';
-import { playDropSound, playGoldSound, playPickupSound, unlockAudio } from './audio/lootSounds';
+import { playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
+import { audio } from './audio/engine';
+import { soundsForEvent } from './audio/eventSounds';
+import { FOOTSTEP_VOLUME, FootstepClock } from './audio/footsteps';
+import { MusicController } from './audio/music';
+import { installUiSounds } from './audio/uiSounds';
+import { MENU_SCENE, type AudioScene } from './data/audio';
+import { SoundUi } from './ui/soundPanel';
 import { PROGRESSION, BASE_ITEMS } from './data/loot/db';
 import { slotsFor, type Item, type Slot } from './data/loot/schemas';
 import { generateItem, itemPowerFor, xpToNext } from './systems/loot/generate';
@@ -196,6 +203,12 @@ export class Game {
   private cursor = '';
   private sporeKey = '';
   private readonly touchControls: TouchControls;
+  private readonly soundUi: SoundUi;
+  private readonly music = new MusicController(audio);
+  private readonly footsteps = new FootstepClock();
+  private lastFoot = { x: 0, z: 0 };
+  /** False until a character is played (the select screen has its own music). */
+  private playing = false;
 
   private hasStoredSettings(): boolean {
     try {
@@ -218,6 +231,8 @@ export class Game {
     if (firstRun && isTouchDevice()) this.settings.graphics = 'medium';
     document.documentElement.style.setProperty('--text-scale', String(this.settings.textScale));
     this.saves = new SaveStore(this.storage);
+    audio.bind(this.settings.audio);
+    audio.install();
 
     this.renderer = new GameRenderer(canvas);
     this.renderer.screenShake = this.settings.screenShake;
@@ -302,7 +317,15 @@ export class Game {
       (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       () => this.input.pressAction('pickup'),
     );
-    this.touchControls = new TouchControls(uiRoot, this.input, this.hud.slotElements);
+    this.soundUi = new SoundUi(uiRoot, () => this.settings.audio, {
+      apply: () => audio.refresh(),
+      save: () => saveSettings(this.storage, this.settings),
+      toggleMute: () => this.toggleMute(),
+      muteKey: () => keyLabel(resolveKeybindings(this.settings).toggleMute[0] ?? 'KeyN'),
+    });
+    this.touchControls = new TouchControls(uiRoot, this.input, this.hud.slotElements, this.soundUi.touchEntries());
+    this.soundUi.refresh();
+    installUiSounds(uiRoot, audio);
     this.applyTouchControls();
     // "Auto" also switches the touch layout on at the first touch (tablets that report a mouse).
     window.addEventListener(
@@ -365,11 +388,16 @@ export class Game {
       iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       stock: () => this.vendorStock,
       stash: () => stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots),
-      buy: (i) => this.serviceResult(buyItem(this.world.req(this.player, Inventory), this.vendorStock, i)),
+      buy: (i) => {
+        const r = buyItem(this.world.req(this.player, Inventory), this.vendorStock, i);
+        if (r.ok) audio.play('ui.coins');
+        this.serviceResult(r);
+      },
       sell: (i) => {
         const gold = sellItem(this.world.req(this.player, Inventory), i);
         if (gold > 0) {
           playGoldSound();
+          audio.play('ui.coins');
           this.toasts.show(t('loot.salvaged', { gold }));
         }
         this.afterInventoryChange();
@@ -444,8 +472,6 @@ export class Game {
       (id) => this.world.get(this.player, SkillUser)?.compiled[id]?.def ?? skill(id),
       (id) => this.renderer.assets.iconUrl(skillIconId(id), import.meta.env.BASE_URL),
     );
-    canvas.addEventListener('mousedown', unlockAudio, { once: true });
-    window.addEventListener('keydown', unlockAudio, { once: true });
     this.devtools = new DevTools(
       uiRoot,
       {
@@ -558,6 +584,7 @@ export class Game {
   }
 
   start(): void {
+    this.playing = true;
     this.loop.start();
     window.addEventListener('beforeunload', () => this.autosave());
     document.addEventListener('visibilitychange', () => {
@@ -782,6 +809,7 @@ export class Game {
     if (input.wasPressed('skills')) this.skillTreePanel.toggle();
     if (input.wasPressed('map')) this.mapUi.toggle();
     if (input.wasPressed('quests')) this.questLog.toggle();
+    if (input.wasPressed('toggleMute')) this.toggleMute();
     if (this.loreReader.open && (input.wasPressed('pickup') || input.wasPressed('map'))) this.loreReader.close();
 
     this.scheduler.tick(this.world, dt, this.ctx);
@@ -838,6 +866,8 @@ export class Game {
     const px = tr.prevX + (tr.x - tr.prevX) * alpha;
     const pz = tr.prevZ + (tr.z - tr.prevZ) * alpha;
     this.renderer.render(frameDt, px, 0, pz);
+    audio.setListener(px, pz, this.ctx.cameraYaw);
+    this.updateAudio(px, pz, frameDt);
     this.damageNumbers.update(frameDt, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
     this.lootLabels.update(this.world, px, pz, this.input.isDown('showLabels'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
@@ -874,6 +904,7 @@ export class Game {
     this.renderer.handleEvents(events);
     for (const event of events) {
       this.damageNumbers.handle(event);
+      for (const cue of soundsForEvent(event)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
       switch (event.type) {
         case 'hitstop':
           this.hitstop = Math.max(this.hitstop, event.ms / 1000);
@@ -899,6 +930,7 @@ export class Game {
           this.inventoryPanel.refresh();
           break;
         case 'levelUp':
+          this.music.sting();
           this.vendorRestockAt = -Infinity;
           this.hud.showBanner(t('ui.levelUp', { level: event.level }), 2.5);
           this.toasts.show(t('ui.skillPoint'));
@@ -907,7 +939,7 @@ export class Game {
           this.autosave();
           break;
         case 'overheat':
-          this.notice('combat.overheat', 'error');
+          this.notice('combat.overheat', 'error', false);
           break;
         case 'notice':
           this.notice(event.key, 'error');
@@ -1149,7 +1181,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         this.hud.showBanner(t('questUi.completedBanner'), 2.2);
         this.toasts.show(t('questUi.completed', { title }));
         this.toasts.show(t(`quests.${id}.done`));
-        playDropSound('rare');
+        this.music.sting();
         this.autosave();
         break;
       case 'failed':
@@ -1254,11 +1286,62 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   }
 
   /** Toast with a per-key cooldown so spammed buttons don't flood the screen. */
-  private notice(key: string, kind: 'info' | 'error'): void {
+  /** A toast; errors also play the interface error sound unless the event already has its own. */
+  private notice(key: string, kind: 'info' | 'error', sound = true): void {
     const last = this.lastNotice.get(key) ?? -Infinity;
     if (this.realTime - last < 1.5) return;
     this.lastNotice.set(key, this.realTime);
     this.toasts.show(t(key), kind);
+    if (kind === 'error' && sound) audio.play('ui.error');
+  }
+
+  // ---- Sound ---------------------------------------------------------------------
+
+  toggleMute(): void {
+    audio.setMuted(!this.settings.audio.muted);
+    saveSettings(this.storage, this.settings);
+    this.soundUi.refresh();
+    // The toast stays readable even though the sound is off.
+    this.toasts.show(t(this.settings.audio.muted ? 'sound.off' : 'sound.on'));
+  }
+
+  /** What the music controller needs to know about the game right now. */
+  private audioScene(): AudioScene {
+    if (!this.playing) return MENU_SCENE;
+    const zone = this.zone;
+    const inInstance = !!this.ctx.instance;
+    let bossEngaged = false;
+    for (const b of this.world.query(Boss)) {
+      if (this.world.req(b, Boss).engaged && !this.world.has(b, Dead)) {
+        bossEngaged = true;
+        break;
+      }
+    }
+    return {
+      phase: 'play',
+      zoneId: zone?.def.id ?? '',
+      inHub: !inInstance && !!zone?.inHub,
+      bossEngaged,
+      playerDead: this.world.has(this.player, Dead),
+      storm: inInstance ? 0 : (zone?.storm.exposure ?? 0),
+    };
+  }
+
+  /** Per frame: music and ambience follow the scene, and the player's footsteps keep time. */
+  private updateAudio(px: number, pz: number, dt: number): void {
+    this.music.update(this.audioScene(), dt);
+    const moved = dt > 0 ? Math.hypot(px - this.lastFoot.x, pz - this.lastFoot.z) / dt : 0;
+    this.lastFoot.x = px;
+    this.lastFoot.z = pz;
+    const p = this.player;
+    const walking = !this.world.has(p, Dead) && !this.world.has(p, Mounted) && !this.world.has(p, ForcedMove) && !this.fading;
+    // A jump of many metres in one frame is a teleport or zone change, not a stride.
+    if (this.footsteps.update(dt, walking && moved < 25 ? moved : 0)) audio.play('footstep', { volume: FOOTSTEP_VOLUME });
+  }
+
+  /** Audio state for the ?debug API: format, sprite, music, voices and the last sounds played. */
+  get audioDebug(): ReturnType<typeof audio.debugState> {
+    return audio.debugState();
   }
 
   private get encounter(): EncounterState | undefined {
@@ -1703,6 +1786,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const user = this.world.req(this.player, SkillUser);
     const r = equipFromGrid(this.world.req(this.player, Inventory), index, user.classId);
     if (!r.ok) this.notice(`loot.cannot.${r.reason}`, 'error');
+    else audio.play('ui.equip');
     this.afterInventoryChange();
   }
 

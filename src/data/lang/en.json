@@ -3189,6 +3189,19 @@
     "notHere": "You can't ride here.",
     "thrown": "You're thrown off the bike!"
   },
+  "sound": {
+    "title": "Sound",
+    "mute": "Mute sound ({key})",
+    "unmute": "Turn sound on ({key})",
+    "settings": "Sound settings",
+    "close": "Close",
+    "master": "Master",
+    "music": "Music",
+    "sfx": "Effects",
+    "ui": "Interface",
+    "off": "Sound off",
+    "on": "Sound on"
+  },
   "touch": {
     "attack": "Attack",
     "use": "Use",
@@ -3201,7 +3214,9 @@
       "mount": "Bike",
       "fullscreen": "Full screen",
       "close": "Close",
-      "flare": "Flare"
+      "flare": "Flare",
+      "sound": "Sound",
+      "soundSettings": "Volume"
     },
     "modes": {
       "auto": "Auto",

@@ -4,7 +4,7 @@
  * once per frame.
  */
 import type { Entity } from './ecs';
-import type { DamageType, StatusId } from '../data/schemas';
+import type { DamageType, EnemyDef, StatusId } from '../data/schemas';
 import type { Rarity } from '../data/loot/schemas';
 
 export type TelegraphShape =
@@ -63,7 +63,8 @@ export type GameEvent =
   /** A hit that an evasive enemy slipped (Spore Swarm). */
   | { type: 'miss'; x: number; y: number; z: number }
   | { type: 'status'; target: Entity; status: StatusId }
-  | { type: 'death'; target: Entity; x: number; z: number; isPlayer: boolean }
+  /** `family` is set for enemies (machines and organic bodies sound different). */
+  | { type: 'death'; target: Entity; x: number; z: number; isPlayer: boolean; family?: EnemyDef['family'] }
   | { type: 'hitstop'; ms: number }
   | { type: 'shake'; trauma: number }
   | { type: 'telegraph'; owner: Entity | null; x: number; z: number; shape: TelegraphShape; duration: number; color: string }

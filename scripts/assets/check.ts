@@ -8,6 +8,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { CLASSES, SKILLS } from '../../src/data/db';
+import { AMBIENCE_IDS, MUSIC_IDS, SFX_IDS } from '../../src/audio/soundIds';
 import { ZONES } from '../../src/data/zones';
 
 const root = new URL('../..', import.meta.url).pathname;
@@ -31,8 +32,8 @@ const derived = new Set<string>([
 ]);
 const used = (id: string) => derived.has(id) || text.includes(`'${id}'`) || text.includes(`"${id}"`);
 const unused = manifest.assets.filter((a) => !used(a.id)).map((a) => `${a.id} (${a.category})`);
-// Point-of-interest ids look like asset ids ("boss.first") but aren't.
-const notAssets = new Set(ZONES.flatMap((z) => z.pois.map((p) => p.id)));
+// Point-of-interest ids look like asset ids ("boss.first") but aren't, nor are sound ids ("boss.banner").
+const notAssets = new Set<string>([...ZONES.flatMap((z) => z.pois.map((p) => p.id)), ...SFX_IDS, ...AMBIENCE_IDS, ...MUSIC_IDS]);
 
 const mentioned = new Set<string>();
 for (const m of text.matchAll(/['"]((?:prop|env|npc|boss|enemy|char|icon)\.[a-z0-9_]+)['"]/g)) mentioned.add(m[1]!);

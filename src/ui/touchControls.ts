@@ -9,6 +9,7 @@ import { cssUrl } from './art';
 import type { Input } from '../core/input';
 import { t } from '../data/i18n';
 import type { Action } from '../data/settings';
+import type { TouchMenuEntry } from './soundPanel';
 
 /** Touch screens without a precise pointer (phones, tablets). */
 export function isTouchDevice(): boolean {
@@ -68,6 +69,8 @@ export class TouchControls {
     private readonly root: HTMLElement,
     private readonly input: Input,
     slotElements: HTMLElement[],
+    /** Extra buttons at the end of the menu row (sound). */
+    extraMenu: TouchMenuEntry[] = [],
   ) {
     // Joystick: a zone over the lower left; the base jumps to wherever the thumb lands.
     const zone = document.createElement('div');
@@ -108,6 +111,12 @@ export class TouchControls {
           else void document.documentElement.requestFullscreen().catch(() => {});
         }),
       );
+    }
+
+    for (const entry of extraMenu) {
+      const b = menuButton(entry.id, entry.label, entry.onClick);
+      entry.onBuilt?.(b);
+      menu.appendChild(b);
     }
 
     // Portrait panels cover the menu and a phone has no Escape key: a close button floats over them.
