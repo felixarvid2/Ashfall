@@ -82,7 +82,7 @@ export function soundsForEvent(event: GameEvent): SoundCue[] {
       if (event.isPlayer) return [{ id: 'death.player', ...at }];
       // Only enemies carry a family; summons, turrets and props die silently.
       if (event.family === undefined) return [];
-      return [{ id: event.family === 'machine' ? 'death.machine' : 'death.organic', ...at }];
+      return [{ id: event.family === 'machine' ? 'death.machine' : event.family === 'light' ? 'explosion.small' : 'death.organic', ...at }];
     }
     case 'vfx': {
       const sound = VFX_SOUNDS[event.kind];

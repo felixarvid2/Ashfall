@@ -57,6 +57,8 @@ export interface Renderable {
   glow?: string;
   /** Huge landmark: never distance-culled and ignores fog. */
   landmark?: boolean;
+  /** The Core: Lumen's creations (`lumen`) and memory shades (`shade`) are drawn with their own materials. */
+  look?: import('../data/schemas').EnemyLook;
 }
 export const Renderable = defineComponent<Renderable>('Renderable');
 
@@ -295,6 +297,16 @@ export interface EnemyAI {
   /** Lumen Giant: its fungi, and when it rises again after falling while they stand. */
   fungi?: Entity[];
   regrowAt?: number;
+  // ---- The Core ----
+  /** Seconds alive (lifespan), and the one-off flags: spoke its line, a blink being prepared. */
+  age?: number;
+  spoke?: boolean;
+  blinkTimer?: number;
+  blinkAt?: { x: number; z: number; t: number; fromX: number; fromZ: number };
+  /** Things it called in (Absorbed technician's turrets). */
+  spawned?: Entity[];
+  /** Seconds to the next Choir pulse. */
+  choirTimer?: number;
   // ---- Wayfinding ----
   /** Who it hunted last tick (the navigation system builds a flow field toward each). */
   chasing?: Entity;
@@ -325,6 +337,8 @@ export interface Projectile {
   damageType: DamageType;
   attackerLevel: number;
   owner: Entity;
+  /** Enemy bolts that bend toward the player (Shade Drone): degrees per second. */
+  curveDeg?: number;
   /** Player skill projectiles: the hit is computed on impact with the owner's stats. */
   skill?: {
     skillId: string;
@@ -355,6 +369,8 @@ export interface Hazard {
   attackerLevel: number;
   /** A ring: only the band between `inner` and `radius` hurts (a collapsing arena floor). */
   inner?: number;
+  /** Drifts with Unstable Gravity (Shade Smelter's fire pools). */
+  drift?: boolean;
 }
 export const Hazard = defineComponent<Hazard>('Hazard');
 

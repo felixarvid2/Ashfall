@@ -52,20 +52,17 @@ export function minesBehaviours(world: World, ctx: GameContext, e: Entity, ai: E
     ai.shieldAllyTimer = (ai.shieldAllyTimer ?? s.every * 0.5) - dt;
     if (ai.shieldAllyTimer <= 0) {
       ai.shieldAllyTimer = s.every;
-      let best: Entity | null = null;
-      let bestD = Infinity;
+      // The `count` nearest allies get the ward.
+      const near: { ally: Entity; d: number }[] = [];
       for (const ally of livingInCircle(world, ctx, tr.x, tr.z, s.radius, 'enemy')) {
         if (ally === e || !world.has(ally, EnemyAI)) continue;
         const at = world.req(ally, Transform);
-        const d = Math.hypot(at.x - tr.x, at.z - tr.z);
-        if (d < bestD) {
-          bestD = d;
-          best = ally;
-        }
+        near.push({ ally, d: Math.hypot(at.x - tr.x, at.z - tr.z) });
       }
-      if (best !== null) {
-        applyStatus(world, ctx, best, { status: 'chitin', duration: s.duration }, { team: 'enemy', level });
-        const bt = world.req(best, Transform);
+      near.sort((a, b) => a.d - b.d);
+      for (const { ally } of near.slice(0, s.count)) {
+        applyStatus(world, ctx, ally, { status: 'chitin', duration: s.duration }, { team: 'enemy', level });
+        const bt = world.req(ally, Transform);
         ctx.events.push({ type: 'vfx', kind: 'shield', x: bt.x, z: bt.z, radius: 1.4, facing: 0 });
       }
     }

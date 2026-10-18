@@ -1,7 +1,8 @@
 /** Projectiles, ground hazards (spore clouds), mines and expiring summons (decoys). */
-import { Dead, Hazard, Projectile, Resource, SkillUser, Summon, Transform, Trap, CombatStats } from '../core/components';
+import { CombatStats, Dead, EnemyAI, Hazard, PlayerControlled, Projectile, Resource, SkillUser, Summon, Transform, Trap } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
+import { enemyDef } from '../data/db';
 import { applyDamage, applyStatus, gainResource, isAlive, kill, targetState } from './combat';
 import { computeTaken } from './damage';
 import { hitOne, impactArea, spawnHazards } from './impact';
@@ -21,6 +22,7 @@ export function projectileSystem(world: World, dt: number, ctx: GameContext): vo
     tr.prevZ = tr.z;
     tr.prevFacing = tr.facing;
     if (p.skill?.homing) steer(world, ctx, p, tr, dt);
+    if (p.curveDeg) curveToPlayer(world, p, tr, dt);
     tr.x += p.vx * dt;
     tr.z += p.vz * dt;
     p.remaining -= dt;
@@ -72,6 +74,51 @@ function steer(world: World, ctx: GameContext, p: Projectile, tr: Transform, dt:
   tr.facing = a;
 }
 
+/** Enemy bolts with `curveDeg` bend toward the player, at most that many degrees per second (Shade Drone). */
+function curveToPlayer(world: World, p: Projectile, tr: Transform, dt: number): void {
+  const player = world.first(PlayerControlled, Transform);
+  if (player === undefined || !isAlive(world, player) || p.team !== 'enemy') return;
+  const t = world.req(player, Transform);
+  const heading = Math.atan2(p.vx, p.vz);
+  const delta = angleTo(Math.atan2(t.x - tr.x, t.z - tr.z) - heading);
+  const max = ((p.curveDeg ?? 0) * Math.PI * dt) / 180;
+  const a = heading + Math.max(-max, Math.min(max, delta));
+  const speed = Math.hypot(p.vx, p.vz);
+  p.vx = Math.sin(a) * speed;
+  p.vz = Math.cos(a) * speed;
+  tr.facing = a;
+}
+
+/**
+ * A Shade Sentinel's shell throws the player's bolts back while it holds: the shot turns into an enemy bolt aimed
+ * at whoever fired it (0.4 x the sentinel's damage, so a fan of bolts stings without being a one-shot).
+ */
+function reflectBolt(world: World, ctx: GameContext, p: Projectile, tr: Transform, sentinel: Entity): void {
+  const spec = p.skill!;
+  const owner = world.get(p.owner, Transform);
+  const dx = (owner?.x ?? tr.x - p.vx) - tr.x;
+  const dz = (owner?.z ?? tr.z - p.vz) - tr.z;
+  const len = Math.hypot(dx, dz) || 1;
+  const speed = Math.hypot(p.vx, p.vz) || 12;
+  p.vx = (dx / len) * speed;
+  p.vz = (dz / len) * speed;
+  p.team = 'enemy';
+  p.damage = (world.get(sentinel, CombatStats)?.weaponDamage ?? 20) * 0.4;
+  p.damageType = spec.impact.damageType;
+  p.attackerLevel = world.get(sentinel, CombatStats)?.level ?? 1;
+  p.owner = sentinel;
+  p.remaining = Math.max(p.remaining, 1.2);
+  delete p.skill;
+  tr.facing = Math.atan2(p.vx, p.vz);
+  ctx.events.push({ type: 'vfx', kind: 'shield', x: tr.x, z: tr.z, radius: 1.1, facing: 0 });
+}
+
+/** Does this enemy's intact shell reflect bolts? */
+export function reflectsBolts(world: World, target: Entity): boolean {
+  const ai = world.get(target, EnemyAI);
+  return !!ai && (ai.shell ?? 0) > 0 && enemyDef(ai.defId).shell?.bolts === true;
+}
+
 /** Wrap an angle to (-π, π]. */
 const angleTo = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -84,6 +131,10 @@ function skillProjectile(world: World, ctx: GameContext, e: Entity, p: Projectil
   if (p.team === 'player' && hitDestructibles(world, tr.x, tr.z, p.radius, ctx) > 0 && spec.pierce <= 0) return true;
   for (const target of livingInCircle(world, ctx, tr.x, tr.z, p.radius, opposingTeam(p.team))) {
     if (spec.hit.includes(target)) continue;
+    if (reflectsBolts(world, target)) {
+      reflectBolt(world, ctx, p, tr, target);
+      return false;
+    }
     spec.hit.push(target);
     if (spec.explodeRadius > 0) {
       impactArea(world, ctx, p.owner, tr.x, tr.z, spec.explodeRadius, null, spec.impact, [], compiled.bonuses);

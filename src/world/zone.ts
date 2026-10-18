@@ -6,6 +6,7 @@ import { Dead, EnemyAI, Health, PlayerControlled, Renderable, Transform, CombatS
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { Rng } from '../core/rng';
+import { enemyDef } from '../data/db';
 import { packTemplate } from '../data/packs';
 import type { HubDef, ZoneDef } from '../data/zones/zoneTypes';
 import { monsterLevel } from '../systems/encounter';
@@ -181,7 +182,13 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
     for (let i = 0; i < n; i++) ids.push(m.enemy);
   }
   const champion = rng.chance(template.championChance);
-  const rareIndex = !champion && rng.chance(template.rareChance) ? rng.int(0, ids.length - 1) : -1;
+  // Named elites (the Absorbed), the Choir and rooted turrets are groups of their own: no affixes, no copies.
+  const plain = (enemy: string) => {
+    const d = enemyDef(enemy);
+    return !d.named && !d.choir && !d.rooted && d.lifespan === undefined;
+  };
+  const rarePicks = ids.flatMap((enemy, i) => (plain(enemy) ? [i] : []));
+  const rareIndex = !champion && rng.chance(template.rareChance) && rarePicks.length ? rarePicks[rng.int(0, rarePicks.length - 1)]! : -1;
   const shared = champion ? championAffixes(rng) : [];
   const extra: Entity[] = [];
   state.members = ids.map((enemy, i) => {
@@ -192,7 +199,7 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
     const z = Math.max(-lim, Math.min(lim, spawn.z + Math.cos(a) * d));
     const e = spawnEnemy(world, enemy, x, z, { level });
     world.req(e, EnemyAI).pack = id;
-    if (champion && i < 4) makeElite(world, e, 'champion', rng, shared);
+    if (champion && i < 4 && plain(enemy)) makeElite(world, e, 'champion', rng, shared);
     if (i === rareIndex) extra.push(...makeElite(world, e, 'rare', rng));
     return e;
   });

@@ -6,7 +6,7 @@
  *   at about a third of walking speed. Walls and drops still block (the pull only moves things, the rock
  *   system keeps them on the ground), and bolts curve. `gravityPull` is the pure step.
  */
-import { Collider, Dead, ForcedMove, Mover, PlayerControlled, Projectile, Transform } from '../core/components';
+import { Collider, Dead, ForcedMove, Hazard, Mover, PlayerControlled, Projectile, Transform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { World } from '../core/ecs';
 import { CAVE_CELL, airAt, caveGrid, nearestWalkable, setBridges, type CaveGrid } from '../data/zones/caves';
@@ -27,6 +27,8 @@ export const CORE_TUNING = {
     lookFor: 70,
     /** Fields further than this from the player stay quiet. */
     range: 110,
+    /** Drifting hazards (Shade Smelter's fire pools) slide at this speed (m/s) while a field pulls. */
+    driftSpeed: 1.2,
   },
 };
 
@@ -146,6 +148,20 @@ export function gravitySystem(world: World, dt: number, ctx: GameContext): void 
       const speed = world.req(e, Mover).speed * G.speedShare;
       tr.x += pull.dx * speed * dt;
       tr.z += pull.dz * speed * dt;
+      break;
+    }
+  }
+  // Fire pools left by shades slide along with the pull.
+  for (const e of world.query(Hazard, Transform)) {
+    if (!world.req(e, Hazard).drift) continue;
+    const tr = world.req(e, Transform);
+    for (const f of near) {
+      const pull = gravityPull(f, ctx.time, tr.x, tr.z, grid);
+      if (pull.dx === 0 && pull.dz === 0) continue;
+      tr.prevX = tr.x;
+      tr.prevZ = tr.z;
+      tr.x += pull.dx * G.driftSpeed * dt;
+      tr.z += pull.dz * G.driftSpeed * dt;
       break;
     }
   }

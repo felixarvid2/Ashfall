@@ -260,15 +260,16 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     championChance: 0.14,
     rareChance: 0.12,
   },
-  // The Core (docs/regions/the-core.md): placeholders built from earlier regions' enemies until the Core
-  // roster (shades, Light Beings, Core Guardians) arrives in R5-B.
+  // The Core (docs/regions/the-core.md): at least half of every pack is returning types (memory shades).
+  // The Absorbed (one per pack at most) and the Choir (always three) are elite groups, never given affixes.
   {
     id: 'core_borderland',
     members: [
-      { enemy: 'infected_miner', count: [2, 4] },
-      { enemy: 'crystal_walker', count: [2, 3], chance: 0.7 },
-      { enemy: 'shard_bloater', count: [1, 2], chance: 0.4 },
-      { enemy: 'security_drone', count: [1, 2], chance: 0.4 },
+      { enemy: 'shade_walker', count: [3, 5] },
+      { enemy: 'shade_hound', count: [2, 3], chance: 0.6 },
+      { enemy: 'light_mote', count: [5, 8], chance: 0.5 },
+      { enemy: 'shade_drone', count: [1, 2], chance: 0.4 },
+      { enemy: 'shade_smelter', count: [1, 1], chance: 0.25 },
     ],
     championChance: 0.12,
     rareChance: 0.1,
@@ -276,10 +277,11 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'core_gardens',
     members: [
-      { enemy: 'spore_hound', count: [3, 5] },
-      { enemy: 'vine_weaver', count: [1, 2], chance: 0.6 },
-      { enemy: 'security_drone', count: [1, 3], chance: 0.55 },
-      { enemy: 'crystal_sentinel', count: [1, 1], chance: 0.3 },
+      { enemy: 'light_being', count: [2, 3] },
+      { enemy: 'shade_weaver', count: [1, 2], chance: 0.6 },
+      { enemy: 'light_mote', count: [5, 8], chance: 0.5 },
+      { enemy: 'shade_hound', count: [2, 3], chance: 0.4 },
+      { enemy: 'guardian_lancer', count: [1, 1], chance: 0.45 },
     ],
     championChance: 0.14,
     rareChance: 0.12,
@@ -287,9 +289,10 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'core_halls_ash',
     members: [
-      { enemy: 'infected_colonist', count: [3, 5] },
-      { enemy: 'spore_hound', count: [2, 3], chance: 0.6 },
-      { enemy: 'security_drone', count: [1, 2], chance: 0.4 },
+      { enemy: 'shade_walker', count: [3, 5] },
+      { enemy: 'shade_hound', count: [2, 4], chance: 0.7 },
+      { enemy: 'shade_drone', count: [1, 2], chance: 0.4 },
+      { enemy: 'absorbed_tobin', count: [1, 1], chance: 0.15 },
     ],
     championChance: 0.14,
     rareChance: 0.12,
@@ -297,9 +300,10 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'core_halls_fire',
     members: [
-      { enemy: 'smelter', count: [1, 2] },
-      { enemy: 'slagborn', count: [1, 2], chance: 0.6 },
-      { enemy: 'infected_colonist', count: [2, 3], chance: 0.6 },
+      { enemy: 'shade_smelter', count: [1, 2] },
+      { enemy: 'shade_sentinel', count: [1, 1], chance: 0.5 },
+      { enemy: 'shade_walker', count: [2, 3], chance: 0.6 },
+      { enemy: 'absorbed_gerd', count: [1, 1], chance: 0.15 },
     ],
     championChance: 0.14,
     rareChance: 0.12,
@@ -307,9 +311,11 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'core_halls_jungle',
     members: [
-      { enemy: 'vine_weaver', count: [1, 2] },
-      { enemy: 'spore_hound', count: [3, 4] },
-      { enemy: 'infected_colonist', count: [1, 3], chance: 0.5 },
+      { enemy: 'shade_weaver', count: [1, 2] },
+      { enemy: 'shade_hound', count: [3, 4] },
+      { enemy: 'shade_walker', count: [1, 3], chance: 0.5 },
+      { enemy: 'absorbed_dace', count: [1, 1], chance: 0.1 },
+      { enemy: 'absorbed_oona', count: [1, 1], chance: 0.1 },
     ],
     championChance: 0.14,
     rareChance: 0.12,
@@ -317,9 +323,11 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'core_halls_dark',
     members: [
-      { enemy: 'echo', count: [2, 4] },
-      { enemy: 'crystal_sentinel', count: [1, 1], chance: 0.5 },
-      { enemy: 'infected_colonist', count: [2, 3], chance: 0.5 },
+      { enemy: 'shade_sentinel', count: [1, 1], chance: 0.5 },
+      { enemy: 'shade_hound', count: [2, 3] },
+      { enemy: 'shade_walker', count: [2, 3], chance: 0.6 },
+      { enemy: 'shade_drone', count: [1, 2], chance: 0.4 },
+      { enemy: 'absorbed_rhee', count: [1, 1], chance: 0.15 },
     ],
     championChance: 0.14,
     rareChance: 0.12,
@@ -327,10 +335,11 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'core_base',
     members: [
-      { enemy: 'security_trooper', count: [2, 3] },
-      { enemy: 'governor_drone', count: [1, 2], chance: 0.6 },
-      { enemy: 'smelter', count: [1, 1], chance: 0.35 },
-      { enemy: 'infected_colonist', count: [2, 3], chance: 0.5 },
+      { enemy: 'shade_walker', count: [2, 4] },
+      { enemy: 'shade_drone', count: [1, 2], chance: 0.6 },
+      { enemy: 'core_guardian', count: [1, 1], chance: 0.6 },
+      { enemy: 'guardian_lancer', count: [1, 2], chance: 0.55 },
+      { enemy: 'choir_singer', count: [3, 3], chance: 0.25 },
     ],
     championChance: 0.14,
     rareChance: 0.12,
@@ -338,11 +347,12 @@ export const PACK_TEMPLATES: PackTemplate[] = [
   {
     id: 'core_heart',
     members: [
-      { enemy: 'crystal_sentinel', count: [1, 2] },
-      { enemy: 'slagborn', count: [1, 2], chance: 0.6 },
-      { enemy: 'governor_drone', count: [1, 2], chance: 0.6 },
-      { enemy: 'echo', count: [2, 3], chance: 0.5 },
-      { enemy: 'smelter', count: [1, 1], chance: 0.35 },
+      { enemy: 'shade_sentinel', count: [1, 2], chance: 0.6 },
+      { enemy: 'shade_walker', count: [2, 3], chance: 0.6 },
+      { enemy: 'core_guardian', count: [1, 2] },
+      { enemy: 'guardian_lancer', count: [1, 2], chance: 0.7 },
+      { enemy: 'light_being', count: [1, 2], chance: 0.5 },
+      { enemy: 'choir_singer', count: [3, 3], chance: 0.4 },
     ],
     championChance: 0.16,
     rareChance: 0.14,

@@ -98,6 +98,8 @@ describe('event sounds', () => {
     for (const family of ['infected', 'insect', 'beast', 'lumen', 'human'] as const) {
       expect(soundsForEvent(death({ family }))[0]!.id).toBe('death.organic');
     }
+    // Lumen's light creatures burst instead of falling.
+    expect(soundsForEvent(death({ family: 'light' }))).toEqual([{ id: 'explosion.small', x: 5, z: 6 }]);
     expect(soundsForEvent(death({}))).toEqual([]);
   });
 

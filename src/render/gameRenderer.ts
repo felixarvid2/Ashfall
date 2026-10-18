@@ -24,6 +24,8 @@ import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
 import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
+import { ChoirLinks } from './choirLinks';
+import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
 import { LootVisuals } from './lootVisuals';
 import { PostFx, type GraphicsQuality } from './postfx';
@@ -40,6 +42,7 @@ export class GameRenderer {
   private readonly objects = new Map<Entity, THREE.Object3D>();
   /** "!" and "?" over enemies; the wayfinding debug overlay when switched on. */
   private awareness: AwarenessMarkers | null = null;
+  private choir: ChoirLinks | null = null;
   private navDebug: NavDebugOverlay | null = null;
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
@@ -1131,8 +1134,10 @@ export class GameRenderer {
       if (!obj) {
         const r = world.req(e, Renderable);
         // Characters get their own material so they can flash and tint.
-        obj = this.assets.create(r.assetId, world.has(e, StatusEffects) || world.has(e, Interactable) || r.glow !== undefined);
+        obj = this.assets.create(r.assetId, world.has(e, StatusEffects) || world.has(e, Interactable) || r.glow !== undefined || r.look !== undefined);
         obj.scale.setScalar(r.scale ?? 1);
+        // Lumen's creations and memory shades are repainted (src/render/looks.ts).
+        if (r.look) applyLookMaterials((obj.userData.tint as TintSlot[] | undefined) ?? [], r.look);
         if (r.landmark) {
           // Landmarks read as dark silhouettes through the fog from anywhere in the region.
           obj.traverse((o) => {
@@ -1151,12 +1156,14 @@ export class GameRenderer {
         if (world.has(e, PlayerControlled)) addRim(obj, '#a8bcdf', 0.55);
         else if (world.has(e, EnemyAI)) {
           const drone = tr.y > 0.5;
-          if (drone) obj.scale.multiplyScalar(DRONE_SCALE);
+          // Lumen's imported models keep exactly the scale their def gives them; shades size up like the drones they remember.
+          if (drone && r.look !== 'lumen') obj.scale.multiplyScalar(DRONE_SCALE);
           // In the dark the rim would give them away; their eyes do instead.
           if (this.dark && !this.instanceRoot) this.addEyes(obj, obj.scale.x);
-          else addRim(obj, drone ? '#ffb080' : '#e07a4a', drone ? 0.65 : 0.32);
-          if (drone) this.addDroneMarks(obj, tr.y, r.glow ?? '#ff3a2a');
+          else if (!r.look) addRim(obj, drone ? '#ffb080' : '#e07a4a', drone ? 0.65 : 0.32);
+          if (drone) this.addDroneMarks(obj, tr.y, r.glow ?? (r.look ? LOOKS[r.look].emissive : '#ff3a2a'));
         }
+        obj.userData.baseScale = obj.scale.x;
         this.objects.set(e, obj);
         this.scene.add(obj);
         const clips = this.assets.clips(r.assetId);
@@ -1239,15 +1246,30 @@ export class GameRenderer {
       if (dead && animator?.has('death')) {
         // The death clip handles the fall; just sink the body afterwards.
         if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
+      } else if (dead && animator && fadesOnDeath(true, animator.has('death'))) {
+        // No death clip (Choir singers, the Absorbed): fade and shrink where it stands.
+        const f = deathFade(dead.elapsed);
+        const base = (obj.userData.baseScale as number | undefined) ?? 1;
+        obj.scale.setScalar(base * f.scale);
+        obj.userData.fadeOpacity = f.opacity;
+        obj.visible = f.opacity > 0.01;
       } else if (dead) {
         // Topple over, then sink into the ash.
         const fall = Math.min(1, dead.elapsed / 0.3);
         obj.rotation.set(0, dead.fallDir, 0);
         obj.rotateX((Math.PI / 2) * fall * 0.95);
         if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
-      } else if (obj.rotation.x !== 0) {
-        obj.rotation.x = 0;
-        obj.rotation.z = 0;
+      } else {
+        if (obj.rotation.x !== 0) {
+          obj.rotation.x = 0;
+          obj.rotation.z = 0;
+        }
+        // Back from a fade (revived): full size, opaque, visible.
+        if (obj.userData.fadeOpacity !== undefined) {
+          delete obj.userData.fadeOpacity;
+          obj.scale.setScalar((obj.userData.baseScale as number | undefined) ?? 1);
+          obj.visible = true;
+        }
       }
       if (lean) {
         // Yaw first, then pitch and roll about the creature's own axes.
@@ -1266,6 +1288,7 @@ export class GameRenderer {
         this.lastHitAnim.delete(e);
       }
     }
+    (this.choir ??= new ChoirLinks(this.scene)).update(world, this.objects, this.time);
     // Embers rise off molten metal near the camera (not off pools cooled by a valve).
     if (this.molten && !this.instanceRoot) {
       const f = this.rig.focusPoint;
@@ -1383,7 +1406,7 @@ export class GameRenderer {
       const def = enemyDef(ai.defId);
       const atk = def.attack;
       const fit = atk.windup + (atk.kind === 'melee' ? atk.recovery : 0.3);
-      return { state: atk.kind === 'buffAllies' ? 'cast' : 'attack', loop: false, fit, token: ai.attackSeq };
+      return { state: atk.kind === 'buffAllies' ? 'cast' : atk.kind === 'projectile' ? 'shoot' : 'attack', loop: false, fit, token: ai.attackSeq };
     }
 
     const flash = this.flashes.get(e) ?? 0;
@@ -1430,7 +1453,11 @@ export class GameRenderer {
     const family = ai ? enemyDef(ai.defId).family : null;
     const infected = !world.has(e, Dead) && (family === 'infected' || family === 'lumen');
     const stealth = effects?.list.some((s) => s.id === 'stealth') ?? false;
-    const opacity = hologram ? 0.45 + 0.1 * Math.sin(this.time * 12) : stealth ? 0.3 : 1;
+    // Lumen creations and shades: pulsing or flickering, faded out while they die without a death clip.
+    const look = world.get(e, Renderable)?.look;
+    const ls = look ? lookState(look, this.time, e) : null;
+    const fade = (obj.userData.fadeOpacity as number | undefined) ?? 1;
+    const opacity = (ls ? ls.opacity : hologram ? 0.45 + 0.1 * Math.sin(this.time * 12) : stealth ? 0.3 : 1) * fade;
     for (const slot of slots) {
       const see = opacity < 1;
       if (slot.material.transparent !== see) {
@@ -1438,7 +1465,14 @@ export class GameRenderer {
         slot.material.depthWrite = !see;
         slot.material.needsUpdate = true;
       }
+      if (look && see) slot.material.depthWrite = LOOKS[look].depthWrite;
       slot.material.opacity = opacity;
+      if (ls && look && !flash && !active && !hologram) {
+        // An elite's glow (blue champion, yellow rare) takes over the look's own emissive colour.
+        slot.material.emissive.set(glow ?? LOOKS[look].emissive);
+        slot.material.emissiveIntensity = ls.glow * dim;
+        continue;
+      }
       if (hologram) {
         slot.material.emissive.set('#3ab8ff');
         slot.material.emissiveIntensity = 0.9 * Math.max(0.25, dim);

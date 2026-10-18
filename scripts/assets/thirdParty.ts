@@ -106,6 +106,7 @@ export const STATUS_ICONS: Record<string, string> = {
   chainReaction: 'lorc/explosion-rays',
   magnet: 'lorc/magnet',
   overclock: 'lorc/stopwatch',
+  empowered: 'delapouite/musical-notes',
 };
 
 /**

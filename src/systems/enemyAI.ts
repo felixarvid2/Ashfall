@@ -7,6 +7,7 @@
  * Def extras: a front shield raised as the target closes in, burning trails, revives.
  */
 import { HEARING, minesBehaviours } from './minesAI';
+import { choirAura, coreAct, coreTick } from './coreAI';
 import { cellOf, clearLine, downhill, findPath, fleeOf, freeLine, lineOfSight, nearestOpen, nextWaypoint, openAt, snipeOf, type NavField, type NavMode, type NavService } from './navigation';
 import { caveGrid, walkableAt } from '../data/zones/caves';
 import {
@@ -31,6 +32,7 @@ import {
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { CombatStats } from '../core/components';
+import { CHOIR } from '../data/core';
 import { enemyDef } from '../data/db';
 import type { EnemyDef } from '../data/schemas';
 import { applyStatus, dealHit, hasStatus, conditionsOf, heal, kill, spawnEnemyHazard } from './combat';
@@ -88,6 +90,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
   // Blind Hounds hear what they cannot see (stealth does not hide you from them).
   let heard: Candidate[] | null = null;
   regrowFallen(world, ctx);
+  choirAura(world, ctx, frameDt);
 
   for (const e of world.query(EnemyAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
@@ -111,6 +114,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     }
     if (def.trail && ai.aggro) trail(world, e, ai, def, tr, dt);
     if (ai.aggro) vaultBehaviours(world, ctx, e, ai, def, tr, dt);
+    if (coreTick(world, ctx, e, ai, def, dt)) continue;
 
     if (!(world.get(e, StatusEffects)?.canAct ?? true)) continue;
 
@@ -123,6 +127,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     }
 
     if (minesBehaviours(world, ctx, e, ai, def, tr, mover, dt)) continue;
+    if (coreAct(world, ctx, e, ai, def, tr, dt)) continue;
 
     const target = chooseTarget(def.hearing ? (heard ??= targetCandidates(world, ctx, true)) : candidates, tr.x, tr.z);
     if (!target) {
@@ -212,6 +217,11 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
         if (def.attack.kind === 'melee') rusher(world, ctx, e, ai, def, tr, mover, player, ptr, dist, dt);
         else ranged(world, ctx, e, ai, def, tr, mover, ptr, dist, dt);
         break;
+    }
+    // Choir singers sing from where they stand.
+    if (def.rooted) {
+      mover.vx = 0;
+      mover.vz = 0;
     }
   }
 }
@@ -868,9 +878,10 @@ function ranged(
       owner: e,
       x: tr.x,
       z: tr.z,
-      shape: { kind: 'line', length: Math.min(atk.maxRange, dist + 3), width: atk.radius * 2.4, facing: Math.atan2(ptr.x - tr.x, ptr.z - tr.z) },
+      // A beam's line spans its whole reach and stays where it was aimed.
+      shape: { kind: 'line', length: atk.beam ? atk.maxRange : Math.min(atk.maxRange, dist + 3), width: atk.radius * (atk.beam ? 2 : 2.4), facing: Math.atan2(ptr.x - tr.x, ptr.z - tr.z) },
       duration: atk.windup,
-      color: '#ff5a2a',
+      color: atk.beam ? '#ffd86a' : '#ff5a2a',
     });
     return;
   }
@@ -893,14 +904,15 @@ function ranged(
   } else {
     ai.strafeTimer -= dt;
     if (ai.strafeTimer <= 0) {
-      ai.strafeTimer = ctx.rng.range(1.5, 3);
+      // Light Beings dart: short legs, quick reversals.
+      ai.strafeTimer = def.erratic ? ctx.rng.range(0.4, 1.1) : ctx.rng.range(1.5, 3);
       ai.strafeDir = ctx.rng.chance(0.5) ? 1 : -1;
     }
     // Turn back before strafing into a wall or out of sight.
     const sx = tr.x - nz * ai.strafeDir * 1.5;
     const sz = tr.z + nx * ai.strafeDir * 1.5;
     if (nav && (!openAt(nav.grid, sx, sz) || !clearLine(nav.grid, sx, sz, ptr.x, ptr.z))) ai.strafeDir = ai.strafeDir === 1 ? -1 : 1;
-    steer(mover, tr, -nz * ai.strafeDir, nx * ai.strafeDir, mover.speed * 0.6, 0);
+    steer(mover, tr, -nz * ai.strafeDir, nx * ai.strafeDir, mover.speed * (def.erratic ? 1 : 0.6), 0);
   }
 }
 
@@ -921,7 +933,8 @@ function fireProjectile(
   dx /= len;
   dz /= len;
   // Damage is computed at fire time so it still lands if the shooter dies.
-  const out = computeOutgoing({ ...stats, coefficient: 1 }, conditionsOf(world, owner, 'ranged'), ctx.rng.next());
+  const song = hasStatus(world, owner, 'empowered') ? [{ value: CHOIR.damage, source: 'choir' }] : [];
+  const out = computeOutgoing({ ...stats, coefficient: 1, multiplicative: [...stats.multiplicative, ...song] }, conditionsOf(world, owner, 'ranged'), ctx.rng.next());
   const p = world.create();
   world.add(p, Transform, makeTransform(tr.x + dx * 0.6, Math.max(1, tr.y), tr.z + dz * 0.6, Math.atan2(dx, dz)));
   world.add(p, Projectile, {
@@ -934,6 +947,7 @@ function fireProjectile(
     damageType: atk.damageType,
     attackerLevel: stats.level,
     owner,
+    ...(atk.curveDeg ? { curveDeg: atk.curveDeg } : {}),
   });
 }
 
@@ -1162,13 +1176,15 @@ function vaultBehaviours(world: World, ctx: GameContext, e: Entity, ai: EnemyAID
     const r = def.reinforce;
     ai.fightTime = (ai.fightTime ?? 0) + dt;
     ai.reinforceTimer = Math.max(0, (ai.reinforceTimer ?? 0) - dt);
-    if (ai.fightTime >= r.after && ai.reinforceTimer <= 0) {
+    ai.spawned = ai.spawned?.filter((m) => isUp(world, m));
+    if (ai.fightTime >= r.after && ai.reinforceTimer <= 0 && (r.max === undefined || (ai.spawned?.length ?? 0) < r.max)) {
       ai.reinforceTimer = r.cooldown;
       for (let i = 0; i < r.count; i++) {
         const a = (i / r.count) * Math.PI * 2 + ctx.rng.range(0, 1);
         const m = spawnEnemy(world, r.enemy, tr.x + Math.sin(a) * 3, tr.z + Math.cos(a) * 3, { level });
         world.req(m, EnemyAI).aggro = true;
         if (ai.pack) world.req(m, EnemyAI).pack = ai.pack;
+        (ai.spawned ??= []).push(m);
       }
       ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: tr.x, z: tr.z, radius: 4, facing: 0 });
     }
@@ -1250,6 +1266,8 @@ function pull(world: World, ctx: GameContext, e: Entity, ai: EnemyAIData, def: E
         const toZ = tr.z + Math.cos(ang) * stop;
         world.add(player, ForcedMove, { fromX: ptr.x, fromZ: ptr.z, toX, toZ, elapsed: 0, duration: 0.35, height: 0.4, landingSkill: null });
         ctx.events.push({ type: 'vfx', kind: 'pull', x: tr.x, z: tr.z, radius: dist, facing: tr.facing });
+        // Shade Weavers pin whoever they drag in.
+        if (p.root) applyStatus(world, ctx, player, { status: 'rooted', duration: p.root }, { team: 'enemy', level: world.get(e, CombatStats)?.level ?? 1 });
       }
     }
     ai.pullCooldown = p.every;

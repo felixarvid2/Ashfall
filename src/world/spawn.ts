@@ -2,6 +2,8 @@
 import {
   Collider,
   CombatStats,
+  DisplayName,
+  Elite,
   EnemyAI,
   Faction,
   Health,
@@ -94,7 +96,7 @@ export function spawnEnemy(world: World, defId: string, x: number, z: number, op
   const e = world.create();
   world.add(e, Transform, makeTransform(x, def.hover, z, 0));
   world.add(e, Mover, { speed: def.moveSpeed, speedMul: 1, turnRate: def.turnRate, vx: 0, vz: 0 });
-  world.add(e, Renderable, { assetId: def.assetId, scale: def.scale, ...(def.glow ? { glow: def.glow } : {}), ...(def.hologram ? { hologram: true } : {}) });
+  world.add(e, Renderable, { assetId: def.assetId, scale: def.scale, ...(def.glow ? { glow: def.glow } : {}), ...(def.hologram ? { hologram: true } : {}), ...(def.look ? { look: def.look } : {}) });
   world.add(e, Faction, { team: 'enemy' });
   world.add(e, Health, { current: life, max: life });
   world.add(e, Collider, {
@@ -113,9 +115,14 @@ export function spawnEnemy(world: World, defId: string, x: number, z: number, op
     resist: { ...def.resist },
     additive: [],
     multiplicative: [],
-    tags: [def.family],
+    tags: def.named ? [def.family, 'elite', 'named'] : [def.family],
     ...NO_EXTRA_STATS,
   });
+  // The Absorbed are named elites: a plate with their name, no random affixes.
+  if (def.named) {
+    world.add(e, DisplayName, { key: def.named.name });
+    world.add(e, Elite, { kind: 'named', affixes: [], timers: {}, shieldUsed: false, mirrored: false, copy: false });
+  }
   world.add(e, Level, { value: level });
   world.add(e, StatusEffects, { list: [], canAct: true, dotTimer: 0 });
   world.add(e, EnemyAI, {
