@@ -513,7 +513,11 @@ export class Game {
       upgrade: (id) => {
         const rift = this.ctx.instance?.rift;
         const r = rift ? riftGlyphAttempt(this.ctx, rift, id) : false;
-        if (r) this.autosave();
+        if (r) {
+          // The new glyph level applies at once.
+          recomputePlayer(this.world, this.player);
+          this.autosave();
+        }
         return r;
       },
     });
@@ -1458,6 +1462,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         break;
       case 'riftCleared':
         // The guardian fell in time: the account and tiers changed, the glyph attempts wait in the panel.
+        recomputePlayer(this.world, this.player);
         saveAccount(this.storage, this.ctx.account!);
         this.autosave();
         this.riftPanel.showResult();

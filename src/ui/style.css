@@ -1118,7 +1118,7 @@ html.touch-device .hint-mouse { display: none; }
 .map-tab.harvest { color: #ffb36a; border-color: #7a4a1e; }
 
 /* Deep Rifts: the obelisk / result panel, and the timer + progress bar inside a rift. */
-.rift-panel { left: 50%; transform: translateX(-50%); width: 400px; max-width: calc(100vw - 24px); }
+.rift-panel { left: 50%; top: 140px; transform: translateX(-50%); width: 400px; max-width: calc(100vw - 24px); }
 .rift-note { margin: 6px 0; font-size: 0.78em; color: #8a7e6c; line-height: 1.45; }
 .rift-best { font-size: 0.9em; color: #ffd27a; margin: 6px 0 2px; }
 .rift-open, .rift-effects { font-size: 0.78em; color: #cfc4b0; margin: 2px 0; }
@@ -1140,7 +1140,7 @@ html.touch-device .hint-mouse { display: none; }
 .rift-hud[data-phase="guardian"] .rift-hud-fill { background: linear-gradient(90deg, #c88a2a, #ffe29a); }
 .rift-hud[data-phase="failed"] .rift-hud-fill { background: #8a2a2a; }
 .rift-hud-status { margin-top: 2px; font-size: 0.68em; letter-spacing: 0.12em; text-transform: uppercase; color: #a698c8; text-shadow: 0 0 3px #000; }
-#ui.touch-ui .rift-panel { left: 50%; top: 54px; }
+#ui.touch-ui .rift-panel { left: 50%; top: 118px; }
 #ui.touch-ui .rift-hud { top: calc(env(safe-area-inset-top) + 70px); }
 
 /* World boss tracker: under the title, top left. */
