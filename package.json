@@ -22,7 +22,8 @@
     "vfx:generate": "NODE_USE_ENV_PROXY=1 tsx scripts/vfx/generate.ts",
     "vfx:pack": "tsx scripts/vfx/pack.ts",
     "art:generate": "NODE_USE_ENV_PROXY=1 tsx scripts/art/generate.ts",
-    "art:process": "tsx scripts/art/process.ts"
+    "art:process": "tsx scripts/art/process.ts",
+    "e2e": "node scripts/e2e/run.mjs"
   },
   "dependencies": {
     "three": "^0.186.1",
@@ -35,6 +36,7 @@
     "@types/node": "^26.6.4",
     "@types/three": "^0.186.0",
     "meshoptimizer": "^1.3.0",
+    "playwright-core": "^1.63.0",
     "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

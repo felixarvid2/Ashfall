@@ -77,6 +77,31 @@ for (const file of walk(out)) {
   rmSync(file);
   converted++;
 }
+// The page published as the artifact: the game's markup without the document skeleton (the artifact
+// service adds one), pointing at this build's hashed bundles. Publish it with `file_path` set to
+// dist-artifact/artifact-page.html and the changed assets under `files` (see .claude/agents/shipper.md).
+const built = readFileSync(join(out, 'index.html'), 'utf8');
+const js = /src="\.\/assets\/(index-[^"]+\.js)"/.exec(built)?.[1];
+const css = /href="\.\/assets\/(index-[^"]+\.css)"/.exec(built)?.[1];
+if (!js || !css) throw new Error('index bundle names not found in dist-artifact/index.html');
+writeFileSync(
+  join(out, 'artifact-page.html'),
+  `<title>Ashfall</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<style>
+  /* Single dark look: the game paints its own scene. */
+  :root { --bg: #0b0b0c; --fg: #d8d0c4; color-scheme: dark; }
+  html, body { height: 100%; background: var(--bg); color: var(--fg); }
+</style>
+<link rel="stylesheet" href="./assets/${css}">
+<div id="app">
+  <canvas id="game"></canvas>
+  <div id="ui"></div>
+</div>
+<script type="module" src="./assets/${js}"></script>
+`,
+);
+
 const files = walk(out);
 const bytes = files.reduce((s, f) => s + statSync(f).size, 0);
 console.log(`Converted ${converted} models. ${files.length} files, ${(bytes / 1e6).toFixed(1)} MB in dist-artifact/.`);
