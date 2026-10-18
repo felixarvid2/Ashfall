@@ -1428,8 +1428,8 @@ export class GameRenderer {
       if (ls && look && !flash && !active && !hologram) {
         // An elite's glow (blue champion, yellow rare) takes over the look's own emissive colour.
         slot.material.emissive.set(glow ?? LOOKS[look].emissive);
-        // (The look's own glow is kept low so the body reads against pale ground; an elite's colour gets a boost.)
-        slot.material.emissiveIntensity = ls.glow * (glow ? 1.8 : 1) * dim;
+        // (Kept low so the body reads against pale ground; an elite's bright colour is eased down a little.)
+        slot.material.emissiveIntensity = ls.glow * (glow ? 0.7 : 1) * dim;
         continue;
       }
       if (hologram) {

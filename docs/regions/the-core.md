@@ -86,8 +86,9 @@ Hanging Gardens push towards the abyss edges (the edge itself still blocks), fie
 
 ## Enemies (§4: 40–60 % returning)
 
-Every third-party model here is a pure Lumen creation and gets the Lumen look (emissive, translucent
-gold-white), which hides its low-poly style. Shades and the Absorbed reuse existing models through the
+Every third-party model here is a pure Lumen creation and gets the Lumen look (a dark indigo body with a low
+violet glow and a gold-white fresnel rim; the ground is pale, so a bright body would wash out), which hides its
+low-poly style. Shades and the Absorbed reuse existing models through the
 variant path the earlier regions use (tint, glow, scale, hologram).
 
 | Enemy | Role | Model | Returning or new | Behaviour |
