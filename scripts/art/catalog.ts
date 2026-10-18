@@ -143,6 +143,13 @@ const BOSSES: Record<string, string> = {
   pyre_warden: 'a warden in heavy heat-scarred furnace armour with flames behind his visor',
   frozen_welder: 'a welder encased in frost and ice, cryo torch glowing pale blue, frozen breath',
   vire: 'High Priestess Vire, a cult leader in dark robes with a smelter crown of molten metal, glowing orange eyes',
+  lumen: 'Lumen, a colossal entity of living gold-white light and violet crystal, a vast face made of many half-remembered human faces dissolving into light',
+  shade_the_first: 'a translucent pale-violet ghostly memory of a giant crystal-overgrown horror, flickering, made of light and smoke',
+  choir_mother: 'a tall alien chrysalis creature fused with organ-like pipes, singing, violet light pouring from its open mouth and seams',
+  brood_engine: 'a huge biomechanical hatchery machine, ribbed steel womb with glowing violet birth sacs and dangling cables, no face',
+  shade_vire: 'a translucent pale-violet ghostly memory of a cult high priestess with a molten crown, flickering, made of light and smoke',
+  shade_warden: 'a translucent pale-violet ghostly memory of an armoured vault warden overgrown with vines, flickering, made of light and smoke',
+  shade_kade: 'a translucent pale-violet ghostly memory of a tyrant governor in crowned power armour, flickering, made of light and smoke',
   the_keeper: 'a tall faceless entity of green lumen light inside a cage of black metal',
   brood_warden: 'a hulking infected warden covered in pulsing egg sacs and chitin plates',
   vine_matriarch: 'a towering plant creature matriarch woven from thorny vines with a glowing flower for a face',
@@ -227,6 +234,7 @@ const paintings: ArtSpec[] = [
   wide('regions/refinery_district', 'a massive industrial refinery district, smokestacks, rivers of molten metal, a cathedral-like smelter, orange glow'),
   wide('regions/hydroponic_vaults', 'overgrown hydroponic vaults, huge cracked glass domes swallowed by a giant glowing mother tree and fungus'),
   wide('regions/deep_mines', 'deep underground mines, mine cart rails disappearing into darkness, glowing cyan crystals, a vast cavern with a giant drill'),
+  wide('regions/the_core', 'a cathedral-sized cavern deep underground where machine and living light have grown together, floating islands joined by glowing bridges, a colossal space elevator shaft rising out of sight, gold-white and violet light'),
   wide('menu/title', 'a lone armoured figure on a ridge overlooking a burning ruined colony city under a huge ringed gas giant, ash in the air'),
   wide('menu/bastion', 'a towering figure in a bulky battered industrial exosuit with hydraulic pistons, a huge sledgehammer resting on the shoulder, glowing orange visor, embers drifting, heroic pose'),
   wide('menu/spectre', 'a stealthy sniper in a dark cloak and a glowing visor crouched on a ruined rooftop with twin pistols, hero shot'),
@@ -252,6 +260,7 @@ const maps: ArtSpec[] = [
   { key: 'maps/refinery_district', kind: 'map', zone: 'zone.refinery_district', prompt: `${MAP}, rusty industrial ground with orange molten channels`, w: SQ, h: SQ },
   { key: 'maps/hydroponic_vaults', kind: 'map', zone: 'zone.hydroponic_vaults', prompt: `${MAP}, overgrown dark green ground with glass domes`, w: SQ, h: SQ },
   { key: 'maps/deep_mines', kind: 'map', zone: 'zone.deep_mines', prompt: `${MAP}, black rock with tunnels and caverns as lit passages, cyan crystal glints`, w: SQ, h: SQ },
+  { key: 'maps/the_core', kind: 'map', zone: 'zone.the_core', prompt: `${MAP}, pale gold stone islands with violet glowing void between them, luminous paths`, w: SQ, h: SQ },
 ];
 
 export const ART: ArtSpec[] = [texture, ...bosses, ...items, ...uniques, ...aspects, ...stats, ...decals, ...vfxExtra, ...paintings, ...maps, ...frames];

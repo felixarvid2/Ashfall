@@ -5,6 +5,9 @@
  *  Poly Haven (CC0)    an HDRI as the scene's environment light   → public/assets/env/
  *                      small props for scatter                     → assets/source/<id>/refined.glb
  *                      (then `npm run meshy -- optimize --ids …` like any other model)
+ *  Quaternius, Kenney  enemies and props (R5, the Core): the model     → assets/source/<id>/refined.glb
+ *  (CC0)               files are kept by hand in assets-src/third-party/models/ (or THIRD_PARTY_MODELS_SRC);
+ *                      run `npm run assets:third-party -- local-models` to convert only these
  *  ambientCG (CC0)     rock PBR maps for the cave walls            → public/assets/textures/rock/
  *  game-icons.net      status effect icons (CC BY 3.0)             → public/assets/ui/status/
  *  game-icons.net,     touch menu icons (CC BY 3.0; Kenney is CC0) → public/assets/ui/menu/
@@ -44,6 +47,38 @@ export const POLYHAVEN_MODELS: Record<string, string> = {
   'env.moon_rock_c': 'moon_rock_06',
 };
 
+/**
+ * Free CC0 models kept as files (no download): asset id → file under assets-src/third-party/models/ (override
+ * the folder with THIRD_PARTY_MODELS_SRC). .gltf with external or embedded buffers becomes one .glb.
+ * Skinned models keep their size and clips; optimize.ts skips normalise for them, so the game scales them
+ * (EnemyDef.scale) and the clip→state mapping lives in the manifest entry (`meshy.clips`, no `rig`).
+ */
+export const LOCAL_MODELS: Record<string, string> = {
+  // Quaternius Cyberpunk Game Kit
+  'enemy.light_being': 'quaternius-cyberpunk-game-kit/Enemy_Flying.gltf',
+  'enemy.guardian_lancer': 'quaternius-cyberpunk-game-kit/Enemy_Large.gltf',
+  // Quaternius Ultimate Space Kit
+  'enemy.light_mote': 'quaternius-ultimate-space-kit/Enemy_ExtraSmall.gltf',
+  // Quaternius Animated Mech Pack (Flat Colors glTF from the pack's Google Drive folder)
+  'enemy.core_guardian': 'quaternius-animated-mech-pack/Stan.gltf',
+  // Quaternius Modular SciFi MegaKit (Standard)
+  'enemy.choir_singer': 'quaternius-modular-scifi-megakit/Alien_Oculichrysalis.gltf',
+  'prop.core_column': 'quaternius-modular-scifi-megakit/Column_Pipes.gltf',
+  'prop.core_wall_panel': 'quaternius-modular-scifi-megakit/WallAstra_Straight.gltf',
+  'prop.core_platform': 'quaternius-modular-scifi-megakit/Platform_Round1.gltf',
+  'prop.core_console': 'quaternius-modular-scifi-megakit/Prop_Computer.gltf',
+  'prop.core_cable': 'quaternius-modular-scifi-megakit/Prop_Cable_3.gltf',
+  'prop.core_door': 'quaternius-modular-scifi-megakit/Door_Frame_Square.gltf',
+  // Kenney Space Station Kit
+  'prop.core_pipe': 'kenney-space-station-kit/pipe.glb',
+  'prop.core_pipe_ring': 'kenney-space-station-kit/pipe-ring.glb',
+};
+
+/** Models whose origin is not at the feet: lift (metres, before the game's scale) so the lowest point is y = 0. */
+const LOCAL_LIFT: Record<string, number> = {
+  'enemy.choir_singer': 0.87, // the chrysalis hangs 0.87 m below its origin
+};
+
 /** Models that stand upright on Poly Haven but should lie on the ground. */
 const LIE_FLAT = new Set(['env.old_tyre', 'env.wheel_rim']);
 
@@ -71,6 +106,7 @@ export const STATUS_ICONS: Record<string, string> = {
   chainReaction: 'lorc/explosion-rays',
   magnet: 'lorc/magnet',
   overclock: 'lorc/stopwatch',
+  empowered: 'delapouite/musical-notes',
 };
 
 /**
@@ -85,7 +121,6 @@ export const MENU_ICONS: Record<string, string> = {
   quests: 'lorc/scroll-unfurled',
   mount: 'delapouite/scooter',
   flare: 'delapouite/torch',
-  fullscreen: 'kenney:larger',
   close: 'kenney:cross',
 };
 
@@ -187,6 +222,31 @@ async function models(): Promise<void> {
   }
 }
 
+/** Local CC0 model files (see LOCAL_MODELS) → one GLB per model where the Meshy pipeline expects a refined model. */
+async function localModels(): Promise<void> {
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+  const src = process.env.THIRD_PARTY_MODELS_SRC ?? join(CACHE, 'models');
+  for (const [assetId, rel] of Object.entries(LOCAL_MODELS)) {
+    const from = join(src, rel);
+    if (!existsSync(from)) throw new Error(`${assetId}: missing ${from} (set THIRD_PARTY_MODELS_SRC or add the file, see docs/credits.md)`);
+    const doc = await io.read(from);
+    const lift = LOCAL_LIFT[assetId];
+    if (lift) {
+      const scene = doc.getRoot().listScenes()[0]!;
+      const root = doc.createNode('Lift').setTranslation([0, lift, 0]);
+      for (const child of scene.listChildren()) {
+        scene.removeChild(child);
+        root.addChild(child);
+      }
+      scene.addChild(root);
+    }
+    const out = join(ROOT, 'assets', 'source', assetId, 'refined.glb');
+    mkdirSync(dirname(out), { recursive: true });
+    await io.write(out, doc);
+    console.log(`✓ ${assetId} ← ${rel}`);
+  }
+}
+
 async function icons(): Promise<void> {
   const outDir = join(PUBLIC, 'ui', 'status');
   mkdirSync(outDir, { recursive: true });
@@ -226,8 +286,14 @@ async function fonts(): Promise<void> {
   }
 }
 
-await hdris();
-await rock();
-await models();
-await icons();
-await fonts();
+// `npm run assets:third-party -- local-models` runs only the local model conversion (no downloads).
+if (process.argv[2] === 'local-models') {
+  await localModels();
+} else {
+  await hdris();
+  await rock();
+  await models();
+  await localModels();
+  await icons();
+  await fonts();
+}

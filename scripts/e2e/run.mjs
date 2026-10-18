@@ -6,7 +6,7 @@ import { hideHud, launch, shot, startGame } from './lib.mjs';
 
 const ARGS = {
   scenario: { value: true }, out: { value: true }, url: { value: true }, viewport: { value: true },
-  class: { value: true }, poi: { value: true }, zone: { value: true }, timeout: { value: true }, mobile: {},
+  class: { value: true }, poi: { value: true }, zone: { value: true }, at: { value: true }, timeout: { value: true }, mobile: {},
 };
 
 function parseArgs(argv) {
@@ -105,7 +105,9 @@ const SCENARIOS = {
     const id = opts.zone;
     if (!id) throw new Error('--zone <id> is required (e.g. zone.deep_mines)');
     await start();
-    await page.evaluate((id) => { const g = window.ashfall; g.ctx.debug.godMode = true; g.enterZone(id, 0, 0); }, id);
+    // --at x,z: where to stand (metres; default 0,0). The Core: the Gardens are around -460,200, the Heart at 0,620.
+    const [ax = 0, az = 0] = (opts.at ?? '0,0').split(',').map(Number);
+    await page.evaluate(([id, x, z]) => { const g = window.ashfall; g.ctx.debug.godMode = true; g.enterZone(id, x, z); }, [id, ax, az]);
     await wait(page, 9000);
     const zoneId = await page.evaluate(() => window.ashfall.zone.def.id);
     if (zoneId !== id) throw new Error(`Expected zone ${id}, now in ${zoneId}`);
@@ -176,7 +178,7 @@ async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const name = opts.scenario;
   if (!name || !SCENARIOS[name] || !opts.out) {
-    console.error(`Usage: run.mjs --scenario <${Object.keys(SCENARIOS).join('|')}> --out <dir> [--url U] [--viewport WxH] [--mobile] [--class bastion|spectre|xenomant] [--poi id] [--zone id] [--timeout seconds]`);
+    console.error(`Usage: run.mjs --scenario <${Object.keys(SCENARIOS).join('|')}> --out <dir> [--url U] [--viewport WxH] [--mobile] [--class bastion|spectre|xenomant] [--poi id] [--zone id] [--at x,z] [--timeout seconds]`);
     process.exit(2);
   }
   const out = resolve(opts.out);

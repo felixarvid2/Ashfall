@@ -8,6 +8,7 @@ import type { PoiKind } from '../data/zones/zoneTypes';
 import { revealedFraction, type ZoneRuntime } from '../world/zone';
 import { extraHubs } from '../world/setPieces';
 import { artUrl } from './art';
+import { bridgeCellsOf, caveGrid } from '../data/zones/caves';
 
 const MINI_SIZE = 180;
 /** Metres shown from the centre of the minimap to its edge. */
@@ -65,7 +66,7 @@ export class MapUi {
   /** Fog of war per zone, one pixel per map cell, scaled up when drawn. */
   private readonly fog = new Map<string, { canvas: HTMLCanvasElement; dirty: number; version: number }>();
   /** Painted region maps (FLUX.2 Turbo), shown only where you have explored. */
-  private readonly painted = new Map<string, { image: HTMLImageElement; ready: boolean; masked: HTMLCanvasElement; version: number } | null>();
+  private readonly painted = new Map<string, { image: CanvasImageSource; ready: boolean; masked: HTMLCanvasElement; version: number } | null>();
   private readonly tabs: HTMLDivElement;
   /** Zone shown on the full map (null = the one you are in). */
   private viewing: string | null = null;
@@ -285,7 +286,10 @@ export class MapUi {
         const entry = p;
         image.onload = () => (entry.ready = true);
         image.src = url;
-      } else p = null;
+      } else {
+        const drawn = proceduralMap(zone);
+        p = drawn ? { image: drawn, ready: true, masked: Object.assign(document.createElement('canvas'), { width: 512, height: 512 }), version: -1 } : null;
+      }
       this.painted.set(id, p);
     }
     if (!p || !p.ready) return null;
@@ -460,4 +464,34 @@ export class MapUi {
       this.toggle();
     }
   }
+}
+
+/**
+ * A map drawn from the walkable grid, for a zone with no painting yet (The Core): ground, the drop under
+ * the Hanging Gardens, and the energy bridges as light.
+ */
+function proceduralMap(zone: ZoneRuntime): HTMLCanvasElement | null {
+  const grid = caveGrid(zone.def);
+  if (!grid) return null;
+  const size = 512;
+  const canvas = Object.assign(document.createElement('canvas'), { width: size, height: size });
+  const c = canvas.getContext('2d');
+  if (!c) return null;
+  const img = c.createImageData(size, size);
+  const bridge = bridgeCellsOf(grid);
+  const paint = (rgb: number[], px: number) => {
+    img.data[px * 4] = rgb[0]!;
+    img.data[px * 4 + 1] = rgb[1]!;
+    img.data[px * 4 + 2] = rgb[2]!;
+    img.data[px * 4 + 3] = 255;
+  };
+  for (let y = 0; y < size; y++) {
+    const j = Math.min(grid.n - 1, Math.floor((y / size) * grid.n));
+    for (let x = 0; x < size; x++) {
+      const k = j * grid.n + Math.min(grid.n - 1, Math.floor((x / size) * grid.n));
+      paint(bridge.has(k) ? [255, 230, 176] : grid.data[k] ? [92, 76, 128] : grid.air?.[k] ? [26, 15, 51] : [12, 10, 20], y * size + x);
+    }
+  }
+  c.putImageData(img, 0, 0);
+  return canvas;
 }

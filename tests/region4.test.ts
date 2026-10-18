@@ -55,7 +55,7 @@ describe('The Deep Mines zone', () => {
   it('is region 4, levels 30–40, reached by a freight lift from the Vaults', () => {
     expect(DEEP_MINES.region).toBe(4);
     expect(DEEP_MINES.levels).toEqual([30, 40]);
-    expect(ZONES.at(-1)).toBe(DEEP_MINES);
+    expect(ZONES[3]).toBe(DEEP_MINES);
     expect(MINES_GATE.to).toEqual({ zone: HYDROPONIC_VAULTS.id, gate: LIFT_GATE.id });
     expect(LIFT_GATE.to).toEqual({ zone: DEEP_MINES.id, gate: MINES_GATE.id });
     expect(zoneDef(LIFT_GATE.to.zone)).toBe(DEEP_MINES);

@@ -22,4 +22,5 @@ export const STATUSES: Record<StatusId, z.input<typeof StatusDefSchema>> = {
   chainReaction: { kind: 'buff', color: '#ff9a3a' },
   magnet: { kind: 'buff', color: '#c77dff' },
   overclock: { kind: 'buff', color: '#5ad2ff' },
+  empowered: { kind: 'buff', color: '#d6b0ff' },
 };

@@ -8,7 +8,7 @@
 import { Blast, Collider, Dead, Mover, PlayerControlled, Projectile, Renderable, Transform, makeTransform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
-import { caveGrid, nearestWalkable, walkableAt, type CaveGrid } from '../data/zones/caves';
+import { airAt, caveGrid, nearestWalkable, walkableAt, type CaveGrid } from '../data/zones/caves';
 import type { ZoneDef } from '../data/zones/zoneTypes';
 import { monsterLevel } from '../systems/encounter';
 import type { ZoneRuntime } from './zone';
@@ -92,7 +92,8 @@ export function rockSystem(world: World, _dt: number, ctx: GameContext): void {
   }
   for (const e of world.query(Transform, Projectile)) {
     const tr = world.req(e, Transform);
-    if (!walkableAt(grid, tr.x, tr.z)) world.destroyDeferred(e);
+    // Bolts fly over open air (an abyss, a melt pool) and stop at rock.
+    if (!walkableAt(grid, tr.x, tr.z) && !airAt(grid, tr.x, tr.z)) world.destroyDeferred(e);
   }
 }
 

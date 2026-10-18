@@ -80,6 +80,8 @@ for (const file of walk(out)) {
 // The page published as the artifact: the game's markup without the document skeleton (the artifact
 // service adds one), pointing at this build's hashed bundles. Publish it with `file_path` set to
 // dist-artifact/artifact-page.html and the changed assets under `files` (see .claude/agents/shipper.md).
+// The home-screen manifest and its icons only belong to the standalone build.
+for (const f of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) rmSync(join(out, f), { force: true });
 const built = readFileSync(join(out, 'index.html'), 'utf8');
 const js = /src="\.\/assets\/(index-[^"]+\.js)"/.exec(built)?.[1];
 const css = /href="\.\/assets\/(index-[^"]+\.css)"/.exec(built)?.[1];

@@ -35,6 +35,8 @@ export const STATUS_IDS = [
   'chainReaction',
   'magnet',
   'overclock',
+  // The Core: the Choir's song (enemies near a living singer hit harder and move faster).
+  'empowered',
 ] as const;
 export const StatusIdSchema = z.enum(STATUS_IDS);
 export type StatusId = z.infer<typeof StatusIdSchema>;
@@ -374,6 +376,16 @@ export type ClassDef = z.infer<typeof ClassDefSchema>;
 
 // ---- Enemies ----------------------------------------------------------------
 
+/** What an enemy is made of: picks its death sound (docs/regions/the-core.md: `light` = Lumen's own creatures). */
+export const ENEMY_FAMILIES = ['infected', 'insect', 'machine', 'beast', 'lumen', 'human', 'light'] as const;
+export const EnemyFamilySchema = z.enum(ENEMY_FAMILIES);
+export type EnemyFamily = z.infer<typeof EnemyFamilySchema>;
+
+/** Variant looks for the renderer: Lumen's own creations, and returning enemies as memory shades. */
+export const ENEMY_LOOKS = ['lumen', 'shade'] as const;
+export const EnemyLookSchema = z.enum(ENEMY_LOOKS);
+export type EnemyLook = z.infer<typeof EnemyLookSchema>;
+
 const EnemyAttackSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('melee'),
@@ -436,6 +448,10 @@ const EnemyAttackSchema = z.discriminatedUnion('kind', [
     burst: z.number().int().positive().default(1),
     burstInterval: z.number().nonnegative().default(0.1),
     spreadDeg: z.number().nonnegative().default(0),
+    /** The Core: the shot turns toward the player at up to this many degrees per second (Shade Drone). */
+    curveDeg: z.number().positive().optional(),
+    /** The Core: a charged beam. The telegraph line spans the whole range and stays where it was aimed (Guardian Lancer). */
+    beam: z.boolean().default(false),
   }),
   // Walks up, swells (telegraphed circle) and bursts, dying in the blast.
   z.object({
@@ -459,7 +475,7 @@ const EnemyAttackSchema = z.discriminatedUnion('kind', [
 export const EnemyDefSchema = z.object({
   id: z.string(),
   assetId: z.string(),
-  family: z.enum(['infected', 'insect', 'machine', 'beast', 'lumen', 'human']),
+  family: EnemyFamilySchema,
   behavior: z.enum(['rusher', 'ranged', 'support', 'kamikaze', 'flanker', 'tank']),
   life: z.number().positive(),
   armor: z.number().nonnegative(),
@@ -477,6 +493,8 @@ export const EnemyDefSchema = z.object({
   glow: z.string().optional(),
   /** Drawn as a translucent hologram (Echoes). */
   hologram: z.boolean().default(false),
+  /** The Core: `lumen` (emissive gold-white, violet rim) or `shade` (pale, flickering) replace the model's own colours. */
+  look: EnemyLookSchema.optional(),
   /** Fraction of damage blocked by a shield when hit from the front (within 60°). */
   frontShield: z.number().min(0).max(0.95).default(0),
   collider: z.object({ radius: z.number().positive(), mass: z.number().positive() }),
@@ -498,27 +516,37 @@ export const EnemyDefSchema = z.object({
       spawn: z.object({ enemy: z.string(), count: z.number().int().positive() }).optional(),
       /** A ring of crystal shards flies out (Shard Bloater): `count` bolts of `coefficient` × its damage. */
       shards: z.object({ count: z.number().int().positive(), speed: z.number().positive(), range: z.number().positive(), coefficient: z.number().positive() }).optional(),
+      /** The Core: a small warned blast where it fell, `coefficient` × its damage (Light Mote). */
+      burst: z.object({ radius: z.number().positive(), warning: z.number().nonnegative(), coefficient: z.number().positive() }).optional(),
     })
     .optional(),
   /** Raises a front shield when the target closes in (Smelter): blocks `block` of frontal hits. */
   shield: z.object({ block: z.number().min(0).max(0.95), duration: z.number().positive(), cooldown: z.number().positive(), range: z.number().positive().default(7) }).optional(),
   /** Leaves burning ground behind while it walks (Slagborn). */
   trail: z
-    .object({ every: z.number().positive(), radius: z.number().positive(), duration: z.number().positive(), applies: z.array(StatusApplySchema), color: z.string().optional() })
+    .object({
+      every: z.number().positive(),
+      radius: z.number().positive(),
+      duration: z.number().positive(),
+      applies: z.array(StatusApplySchema),
+      color: z.string().optional(),
+      /** The Core: the pool drifts with Unstable Gravity (Shade Smelter). */
+      drift: z.boolean().default(false),
+    })
     .optional(),
   // ---- Region 3 behaviours (docs/regions/hydroponic-vaults.md) ----
   /** Lashes a target that keeps its distance and drags it in (Vine Weaver). */
   pull: z
-    .object({ every: z.number().positive(), range: z.number().positive(), minRange: z.number().nonnegative(), windup: z.number().positive(), width: z.number().positive(), coefficient: z.number().nonnegative().default(0.5) })
+    .object({ every: z.number().positive(), range: z.number().positive(), minRange: z.number().nonnegative(), windup: z.number().positive(), width: z.number().positive(), coefficient: z.number().nonnegative().default(0.5), root: z.number().positive().optional() })
     .optional(),
   /** Chance to slip past each of the player's hits (Spore Swarm). */
   evasion: z.number().min(0).max(0.9).default(0),
   /** Heals nearby allies of these families by `fraction` of their max life every `every` seconds (Mossborn). */
   healAllies: z
-    .object({ every: z.number().positive(), radius: z.number().positive(), fraction: z.number().positive().max(1), families: z.array(z.enum(['infected', 'insect', 'machine', 'beast', 'lumen', 'human'])).min(1) })
+    .object({ every: z.number().positive(), radius: z.number().positive(), fraction: z.number().positive().max(1), families: z.array(EnemyFamilySchema).min(1) })
     .optional(),
   /** Calls `count` more enemies once it has been fighting for `after` seconds, then every `cooldown` (Cocoon Warden). */
-  reinforce: z.object({ after: z.number().positive(), cooldown: z.number().positive(), enemy: z.string(), count: z.number().int().positive() }).optional(),
+  reinforce: z.object({ after: z.number().positive(), cooldown: z.number().positive(), enemy: z.string(), count: z.number().int().positive(), max: z.number().int().positive().optional() }).optional(),
   /** Spawns with fungi around it; while any fungus stands it regrows after dying (Lumen Giant). */
   regrow: z.object({ fungi: z.number().int().positive(), radius: z.number().positive(), delay: z.number().positive(), lifeFraction: z.number().positive().max(1), fungusLife: z.number().positive() }).optional(),
   /** Lobs a telegraphed spore cloud at the target (Mutated Botanist). */
@@ -535,13 +563,13 @@ export const EnemyDefSchema = z.object({
   /** Hunts by sound: notices the player only up close (even stealthed) and runs to noise (Blind Hound). */
   hearing: z.boolean().default(false),
   /** Every `every` s, hardens the nearest ally in `radius` (chitin: less damage taken) (Governor's Drone). */
-  shieldAlly: z.object({ every: z.number().positive(), radius: z.number().positive(), duration: z.number().positive() }).optional(),
+  shieldAlly: z.object({ every: z.number().positive(), radius: z.number().positive(), duration: z.number().positive(), count: z.number().int().positive().default(1) }).optional(),
   /** Travels underground (untargetable) and surfaces under the target with a warning (Burrower). */
   burrow: z
     .object({ every: z.number().positive(), surfaced: z.number().positive(), speed: z.number().positive(), warning: z.number().positive(), radius: z.number().positive(), coefficient: z.number().positive() })
     .optional(),
   /** A crystal shell worth `fraction` of its life: ignores elemental damage and reflects `reflect` of what it takes until it breaks (Crystal Sentinel). */
-  shell: z.object({ fraction: z.number().positive().max(2), reflect: z.number().min(0).max(1) }).optional(),
+  shell: z.object({ fraction: z.number().positive().max(2), reflect: z.number().min(0).max(1), bolts: z.boolean().default(false) }).optional(),
   /** Throws telegraphed dynamite at the target (Infected Miner). */
   dynamite: z.object({ every: z.number().positive(), range: z.number().positive(), radius: z.number().positive(), fuse: z.number().positive(), coefficient: z.number().positive() }).optional(),
   /** Blinks beside the target every `every` s (Echo). */
@@ -550,6 +578,31 @@ export const EnemyDefSchema = z.object({
   lightVulnerable: z.number().positive().default(1),
   /** Raises a dome that cuts ranged damage to allies inside by `reduction` (Shield Officer). */
   dome: z.object({ every: z.number().positive(), duration: z.number().positive(), radius: z.number().positive(), reduction: z.number().min(0).max(0.95) }).optional(),
+  // ---- Region 5 behaviours (docs/regions/the-core.md) ----
+  /** Blinks a short way every `every` s while fighting: beside the target after a short flicker (`close`, Shade Hound) or sideways (`strafe`, Light Being). */
+  blink: z
+    .object({
+      every: z.number().positive(),
+      mode: z.enum(['close', 'strafe']),
+      /** Only blinks when the target is between these distances. */
+      minRange: z.number().nonnegative(),
+      maxRange: z.number().positive(),
+      /** `close`: distance to the target after the blink; `strafe`: how far it hops. */
+      hop: z.number().positive(),
+      /** Seconds of flicker before it vanishes. */
+      warning: z.number().nonnegative().default(0.25),
+    })
+    .optional(),
+  /** Fast, jittery strafing instead of steady circling (Light Being). */
+  erratic: z.boolean().default(false),
+  /** Dies by itself after this many seconds (Shade Walker echoes). */
+  lifespan: z.number().positive().optional(),
+  /** Stays where it stands (Choir singers). */
+  rooted: z.boolean().default(false),
+  /** While it lives, enemies within CHOIR.radius deal more damage and move faster (src/data/core.ts). */
+  choir: z.boolean().default(false),
+  /** A named elite (the Absorbed): its name and the line it says when it notices you (language keys). */
+  named: z.object({ name: z.string(), line: z.string() }).optional(),
 });
 export type EnemyDef = z.infer<typeof EnemyDefSchema>;
 

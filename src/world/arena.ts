@@ -11,6 +11,9 @@ export interface ScatterInstance {
   z: number;
   rot: number;
   scale: number;
+  /** Distorted memories only (ScatterDef.tilt/lift): lean about the x and z axes, metres above the ground. */
+  lean?: { x: number; z: number };
+  lift?: number;
 }
 
 /** Spawn prop entities. Lights and scatter are visual-only and handled by the renderer. */
@@ -55,7 +58,10 @@ export function scatterInstances(arena: ArenaDef, index: number): ScatterInstanc
     if (grid && !walkableAt(grid, x, z)) continue;
     // Clutter by the roads stays out of water and molten metal.
     if (def.near && (zone.env ?? []).some((f) => (f.kind === 'molten' || f.kind === 'water') && Math.hypot(x - f.x, z - f.z) < f.radius + 1)) continue;
-    out.push({ x, z, rot: rng.range(0, Math.PI * 2), scale: rng.range(def.minScale, def.maxScale) });
+    const inst: ScatterInstance = { x, z, rot: rng.range(0, Math.PI * 2), scale: rng.range(def.minScale, def.maxScale) };
+    if (def.tilt) inst.lean = { x: rng.range(-def.tilt, def.tilt), z: rng.range(-def.tilt, def.tilt) };
+    if (def.lift) inst.lift = rng.range(0, def.lift);
+    out.push(inst);
   }
   return out;
 }
@@ -86,6 +92,14 @@ function spotPicker(zone: ArenaDef & { roads?: Road[]; hubs?: HubDef[] }, def: S
       const a = rng.range(0, Math.PI * 2);
       const r = h.radius + rng.range(-1, spread);
       return { x: h.x + Math.sin(a) * r, z: h.z + Math.cos(a) * r };
+    };
+  }
+  if (def.within) {
+    const w = def.within;
+    return () => {
+      const a = rng.range(0, Math.PI * 2);
+      const r = w.radius * Math.sqrt(rng.range(0, 1));
+      return { x: w.x + Math.sin(a) * r, z: w.z + Math.cos(a) * r };
     };
   }
   const half = zone.halfSize;

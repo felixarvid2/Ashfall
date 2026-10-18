@@ -6,6 +6,7 @@ import { Dead, EnemyAI, Health, PlayerControlled, Renderable, Transform, CombatS
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { Rng } from '../core/rng';
+import { enemyDef } from '../data/db';
 import { packTemplate } from '../data/packs';
 import type { HubDef, ZoneDef } from '../data/zones/zoneTypes';
 import { monsterLevel } from '../systems/encounter';
@@ -63,6 +64,8 @@ export interface ZoneRuntime {
   cooled: Map<string, number>;
   /** Deep Mines: flares, cave-ins and noise (created on first use). */
   underground?: import('./underground').UndergroundState;
+  /** The Core: which gravity shimmers were already shown (created on first use). */
+  core?: import('./theCore').CoreState;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
@@ -179,7 +182,13 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
     for (let i = 0; i < n; i++) ids.push(m.enemy);
   }
   const champion = rng.chance(template.championChance);
-  const rareIndex = !champion && rng.chance(template.rareChance) ? rng.int(0, ids.length - 1) : -1;
+  // Named elites (the Absorbed), the Choir and rooted turrets are groups of their own: no affixes, no copies.
+  const plain = (enemy: string) => {
+    const d = enemyDef(enemy);
+    return !d.named && !d.choir && !d.rooted && d.lifespan === undefined;
+  };
+  const rarePicks = ids.flatMap((enemy, i) => (plain(enemy) ? [i] : []));
+  const rareIndex = !champion && rng.chance(template.rareChance) && rarePicks.length ? rarePicks[rng.int(0, rarePicks.length - 1)]! : -1;
   const shared = champion ? championAffixes(rng) : [];
   const extra: Entity[] = [];
   state.members = ids.map((enemy, i) => {
@@ -190,7 +199,7 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
     const z = Math.max(-lim, Math.min(lim, spawn.z + Math.cos(a) * d));
     const e = spawnEnemy(world, enemy, x, z, { level });
     world.req(e, EnemyAI).pack = id;
-    if (champion && i < 4) makeElite(world, e, 'champion', rng, shared);
+    if (champion && i < 4 && plain(enemy)) makeElite(world, e, 'champion', rng, shared);
     if (i === rareIndex) extra.push(...makeElite(world, e, 'rare', rng));
     return e;
   });
@@ -258,7 +267,10 @@ export function zoneSystem(world: World, dt: number, ctx: GameContext): void {
   }
   if (atGate && zone.gateReady && !world.has(player, Dead)) {
     zone.gateReady = false;
-    ctx.events.push({ type: 'zoneGate', gate: atGate });
+    const lock = zone.def.gates.find((g) => g.id === atGate)?.requires;
+    // A locked gate says why; stepping away and back says it again.
+    if (lock && !ctx.quests?.done.has(lock.quest)) ctx.events.push({ type: 'notice', key: lock.locked });
+    else ctx.events.push({ type: 'zoneGate', gate: atGate });
   } else if (clear) zone.gateReady = true;
   const hub = hubAt(zone, ptr.x, ptr.z);
   if ((hub?.id ?? null) !== zone.inHub) {

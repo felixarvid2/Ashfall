@@ -2,6 +2,7 @@
  * Applying hits, damage, statuses, healing and death to entities.
  * Pure formula lives in damage.ts; this module mutates the world and emits events.
  */
+import { CHOIR } from '../data/core';
 import { PYLON_EFFECTS } from '../data/interactables';
 import {
   Blast,
@@ -147,6 +148,8 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
       ...(hit.bonuses?.multiplicative ?? []),
       // Overcharge pylon.
       ...(hasStatus(world, attacker, 'overcharge') ? [{ value: PYLON_EFFECTS.overchargeDamage, source: 'pylon' }] : []),
+      // The Choir's song.
+      ...(hasStatus(world, attacker, 'empowered') ? [{ value: CHOIR.damage, source: 'choir' }] : []),
     ],
   };
   const result = computeHit(input, hit.damageType, { ...state, conditions }, stats.level, ctx.rng);
@@ -470,7 +473,7 @@ export function spawnEnemyHazard(
   owner: Entity,
   x: number,
   z: number,
-  spec: { radius: number; duration: number; applies: StatusApply[]; color?: string | undefined },
+  spec: { radius: number; duration: number; applies: StatusApply[]; color?: string | undefined; drift?: boolean | undefined },
 ): Entity {
   const stats = world.get(owner, CombatStats);
   const hz = world.create();
@@ -482,6 +485,7 @@ export function spawnEnemyHazard(
     duration: spec.duration,
     tickTimer: 0,
     ...(spec.color ? { color: spec.color } : {}),
+    ...(spec.drift ? { drift: true } : {}),
     applies: spec.applies.map((a) => ({
       status: a.status,
       duration: a.duration,
@@ -573,6 +577,15 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
           owner: target,
         });
       }
+    }
+    // Light Motes burst: a small warned blast where they fell.
+    if (def.onDeath?.burst && tr) {
+      const b = def.onDeath.burst;
+      const stats = world.get(target, CombatStats);
+      const blast = world.create();
+      world.add(blast, Transform, makeTransform(tr.x, 0, tr.z));
+      world.add(blast, Blast, { fuse: b.warning, radius: b.radius, owner: null, coefficient: 0, flat: 0, hurtsEnemies: false, player: { fraction: 0, damage: (stats?.weaponDamage ?? 10) * b.coefficient, level: stats?.level ?? 1 } });
+      if (b.warning > 0) ctx.events.push({ type: 'telegraph', owner: blast, x: tr.x, z: tr.z, shape: { kind: 'circle', radius: b.radius }, duration: b.warning, color: '#ff7a2a' });
     }
     eliteDeath(world, ctx, target);
     ctx.stats.kills++;

@@ -27,7 +27,7 @@ import { computeTaken } from './damage';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { Rng } from '../core/rng';
-import { BOSS_SCRIPTS, type BossPhase } from '../data/bosses';
+import { BOSS_SCRIPTS, MEMORY_ATTACKS, type BossMemory, type BossPhase } from '../data/bosses';
 import type { EliteAffix } from '../data/elites';
 import { applyAffixes } from './elites';
 import { spawnEnemy } from '../world/spawn';
@@ -54,7 +54,7 @@ export function spawnBoss(world: World, x: number, z: number, spec: BossSpec): E
   world.add(e, DisplayName, { key: spec.name });
   applyAffixes(world, e, 'named', spec.affixes, new Rng(`boss-${spec.enemy}`));
   const r = world.get(e, Renderable);
-  if (r && spec.enemy !== 'the_first') r.scale = (r.scale ?? 1) * 1.3;
+  if (r && spec.enemy !== 'the_first' && spec.enemy !== 'shade_the_first') r.scale = (r.scale ?? 1) * 1.3;
   world.add(e, Boss, {
     script: spec.script ?? null,
     phase: 0,
@@ -80,11 +80,14 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
     const boss = world.req(e, Boss);
     if (world.has(e, Dead)) {
       // Thrown plates crumble when the boss dies (and armour, Root Nodes and vines go with it).
-      for (const p of [...boss.plates, ...(boss.parts ?? []), ...(boss.nodes ?? []), ...(boss.vines ?? [])]) if (world.isAlive(p)) world.destroyDeferred(p);
+      for (const p of [...boss.plates, ...(boss.parts ?? []), ...(boss.nodes ?? []), ...(boss.vines ?? []), ...(boss.fields ?? []), ...(boss.form !== undefined ? [boss.form] : [])]) if (world.isAlive(p)) world.destroyDeferred(p);
       boss.plates = [];
       boss.parts = [];
       boss.nodes = [];
       boss.vines = [];
+      boss.fields = [];
+      delete boss.form;
+      delete boss.memory;
       continue;
     }
     const ai = world.req(e, EnemyAI);
@@ -102,7 +105,8 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
     const list = phases(boss);
     const frac = health.current / health.max;
     let next = boss.phase;
-    while (next + 1 < list.length && frac <= list[next + 1]!.below) next++;
+    // A beat holds the fight until the game ends it; everything else follows life.
+    while (next + 1 < list.length && frac <= list[next + 1]!.below && !(list[next]!.beat && !boss.beatDone)) next++;
     if (next !== boss.phase) {
       boss.phase = next;
       const ph = list[next]!;
@@ -112,10 +116,12 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
       ctx.events.push({ type: 'shake', trauma: 0.5 });
       boss.timers.plates = 1.5;
       boss.timers.spores = 1;
+      boss.timers.adds = Math.min(boss.timers.adds, 6);
       phaseStart(world, ctx, e, boss, next);
     }
-    const ph = list[boss.phase];
+    let ph = list[boss.phase];
     if (!ph) continue;
+    if (ph.memories?.length && boss.memory) ph = memoryTick(world, ctx, boss, ph, ph.memories, dt, level);
     wardenParts(world, ctx, e, boss, tr);
     if (ph.fireballs && (boss.timers.fireballs = (boss.timers.fireballs ?? 2) - dt) <= 0) {
       const f = ph.fireballs;
@@ -247,6 +253,7 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
         const a = ctx.rng.range(0, Math.PI * 2);
         const d = ctx.rng.range(0, boss.arena.radius - 4);
         const hz = world.create();
+        (boss.fields ??= []).push(hz);
         world.add(hz, Transform, makeTransform(boss.arena.x + Math.sin(a) * d, 0, boss.arena.z + Math.cos(a) * d));
         world.add(hz, Hazard, {
           team: 'enemy',
@@ -269,6 +276,17 @@ function phaseStart(world: World, ctx: GameContext, e: Entity, boss: Boss, index
   if (!ph) return;
   const tr = world.req(e, Transform);
   const level = world.get(e, CombatStats)?.level ?? 1;
+  // Lumen: a memory phase or a beat clears the arena of what came before; leaving them clears their leftovers.
+  if (boss.memory && !ph.memories) delete boss.memory;
+  if (boss.form !== undefined && !ph.beat) {
+    if (world.isAlive(boss.form)) world.destroyDeferred(boss.form);
+    delete boss.form;
+  }
+  if (ph.memories) {
+    clearArena(world, boss);
+    boss.memory = { index: -1, t: 0 };
+  }
+  if (ph.beat) beatStart(world, ctx, boss, ph.beat, tr);
   if (ph.guards) {
     for (let i = 0; i < ph.guards.count; i++) {
       const a = (i / ph.guards.count) * Math.PI * 2;
@@ -368,7 +386,100 @@ function wardenParts(world: World, ctx: GameContext, e: Entity, boss: Boss, tr: 
       ctx.events.push({ type: 'shake', trauma: 0.5 });
     }
   }
+  const cur = list[boss.phase];
+  if (cur?.beat && !boss.beatDone) taken = 0;
+  else if (cur?.vulnerable) taken *= cur.vulnerable;
   boss.damageTaken = taken;
+}
+
+/** Everything the boss summoned or laid down for the phase that is ending: adds, spore clouds, molten pools. */
+function clearArena(world: World, boss: Boss): void {
+  for (const a of [...boss.adds, ...(boss.fields ?? [])]) if (world.isAlive(a)) world.destroyDeferred(a);
+  boss.adds = [];
+  boss.fields = [];
+  boss.pending = [];
+}
+
+/** Lumen's beat begins: it stops, the arena empties and an ally's shape stands in front of the player. */
+function beatStart(world: World, ctx: GameContext, boss: Boss, beat: NonNullable<BossPhase['beat']>, tr: Transform): void {
+  clearArena(world, boss);
+  boss.beatDone = false;
+  const player = world.first(PlayerControlled, Transform);
+  const pt = player !== undefined ? world.req(player, Transform) : undefined;
+  const facing = pt ? Math.atan2(pt.x - tr.x, pt.z - tr.z) : 0;
+  // It stands a few paces in front of the player (on the line to the boss), not beside the boss: the player may be
+  // fighting from the far side of the arena, out of the camera's view of it.
+  const gap = pt ? Math.hypot(pt.x - tr.x, pt.z - tr.z) : 0;
+  const at = pt && gap > 4 ? Math.max(1.5, gap - Math.min(5, gap * 0.6)) : 7;
+  const f = world.create();
+  world.add(f, Transform, makeTransform(tr.x + Math.sin(facing) * at, 0, tr.z + Math.cos(facing) * at, facing + Math.PI));
+  world.add(f, Renderable, { assetId: beat.form.asset, scale: beat.form.scale, glow: beat.form.glow, look: 'lumen' });
+  world.add(f, DisplayName, { key: beat.form.name });
+  boss.form = f;
+  ctx.events.push({ type: 'vfx', kind: 'flash', x: tr.x, z: tr.z, radius: 10, facing: 0 });
+  ctx.events.push({ type: 'beat', id: beat.id });
+}
+
+/** Is the boss waiting in a beat for the game's answer? */
+export function inBeat(world: World, e: Entity): boolean {
+  const boss = world.get(e, Boss);
+  return !!boss && boss.engaged && !boss.beatDone && !!phases(boss)[boss.phase]?.beat;
+}
+
+/** The game answered a beat (the dialogue choice): the fight goes on to the next phase. */
+export function endBeat(world: World, e: Entity): void {
+  const boss = world.get(e, Boss);
+  if (boss && boss.engaged) boss.beatDone = true;
+}
+
+/**
+ * Lumen's memories play one after another, looping. Returns the phase with the current memory's hazards and
+ * attacks laid over it; a memory begins with its shades rising and the previous memory's leftovers gone.
+ */
+function memoryTick(world: World, ctx: GameContext, boss: Boss, ph: BossPhase, memories: BossMemory[], dt: number, level: number): BossPhase {
+  const m = boss.memory!;
+  m.t -= dt;
+  if (m.t <= 0) {
+    const next = (m.index + 1) % memories.length;
+    const mem = memories[next]!;
+    m.index = next;
+    m.t = mem.seconds;
+    clearArena(world, boss);
+    boss.timers.fireballs = 1.5;
+    boss.timers.beams = 2;
+    boss.timers.tentacles = 2.5;
+    boss.timers.spores = 1.5;
+    boss.timers.adds = mem.adds ? 3 : Infinity;
+    for (const s of mem.shades) {
+      for (let i = 0; i < s.count; i++) {
+        const a = ctx.rng.range(0, Math.PI * 2);
+        const d = ctx.rng.range(8, boss.arena.radius - 6);
+        const shade = spawnEnemy(world, s.enemy, boss.arena.x + Math.sin(a) * d, boss.arena.z + Math.cos(a) * d, { level });
+        world.req(shade, EnemyAI).aggro = true;
+        boss.adds.push(shade);
+      }
+    }
+    ctx.events.push({ type: 'banner', key: mem.banner, seconds: 2.6 });
+    ctx.events.push({ type: 'vfx', kind: 'flash', x: boss.arena.x, z: boss.arena.z, radius: 12, facing: 0 });
+    ctx.events.push({ type: 'shake', trauma: 0.3 });
+  }
+  const mem = memories[m.index]!;
+  const out: BossPhase = { ...ph };
+  for (const k of MEMORY_ATTACKS) {
+    const v = mem[k];
+    if (v) Object.assign(out, { [k]: v });
+  }
+  return out;
+}
+
+/** The memory playing now (for the renderer's atmosphere), or null. */
+export function activeMemory(world: World): BossMemory | null {
+  for (const e of world.query(Boss)) {
+    const boss = world.req(e, Boss);
+    if (!boss.memory || boss.memory.index < 0 || world.has(e, Dead)) continue;
+    return phases(boss)[boss.phase]?.memories?.[boss.memory.index] ?? null;
+  }
+  return null;
 }
 
 /** A spore beam lands: everything on the player's side along the line is hit. */
@@ -442,7 +553,11 @@ export function resetBoss(world: World, e: Entity): void {
   if (!boss || world.has(e, Dead)) return;
   for (const a of boss.adds) if (world.isAlive(a)) world.destroyDeferred(a);
   for (const p of boss.plates) world.destroyDeferred(p);
-  for (const p of [...(boss.parts ?? []), ...(boss.nodes ?? []), ...(boss.vines ?? [])]) if (world.isAlive(p)) world.destroyDeferred(p);
+  for (const p of [...(boss.parts ?? []), ...(boss.nodes ?? []), ...(boss.vines ?? []), ...(boss.fields ?? []), ...(boss.form !== undefined ? [boss.form] : [])]) if (world.isAlive(p)) world.destroyDeferred(p);
+  boss.fields = [];
+  delete boss.form;
+  delete boss.memory;
+  delete boss.beatDone;
   boss.adds = [];
   boss.plates = [];
   boss.parts = [];

@@ -8,6 +8,7 @@
 import { cssUrl } from './art';
 import type { Input } from '../core/input';
 import { t } from '../data/i18n';
+import { fullscreenOrFallback, isFullscreen, onFullscreenChange } from './fullscreen';
 import type { Action } from '../data/settings';
 import type { TouchMenuEntry } from './soundPanel';
 
@@ -30,7 +31,7 @@ const SLOT_ACTIONS: ({ hold: Action } | { button: number } | { attack: true } | 
 ];
 
 /** Menu button icons live in public/assets/ui/menu/ (white glyphs, tinted through a CSS mask). */
-const menuIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/menu/${id}.${id === 'fullscreen' || id === 'close' ? 'png' : 'svg'}`;
+const menuIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/menu/${id}.${id === 'close' ? 'png' : 'svg'}`;
 
 const MENU: { id: string; action: Action }[] = [
   { id: 'inventory', action: 'inventory' },
@@ -71,6 +72,8 @@ export class TouchControls {
     slotElements: HTMLElement[],
     /** Extra buttons at the end of the menu row (sound). */
     extraMenu: TouchMenuEntry[] = [],
+    /** Short hints (the full-screen button when the browser cannot do it). */
+    notify: (message: string) => void = () => {},
   ) {
     // Joystick: a zone over the lower left; the base jumps to wherever the thumb lands.
     const zone = document.createElement('div');
@@ -104,14 +107,24 @@ export class TouchControls {
       return b;
     };
     for (const m of MENU) menu.appendChild(menuButton(m.id, t(`touch.menu.${m.id}`), () => this.input.pressAction(m.action)));
-    if (document.fullscreenEnabled) {
-      menu.appendChild(
-        menuButton('fullscreen', t('touch.menu.fullscreen'), () => {
-          if (document.fullscreenElement) void document.exitFullscreen();
-          else void document.documentElement.requestFullscreen().catch(() => {});
-        }),
-      );
-    }
+    // Always shown: where the browser cannot go full screen the tap opens the game in its own tab or says how.
+    const fs = menuButton('fullscreen', t('touch.menu.fullscreen'), () => {
+      void fullscreenOrFallback().then((outcome) => {
+        if (outcome === 'needsTab') notify(t('touch.fullscreen.needsTab'));
+        else if (outcome === 'needsHomeScreen') notify(t('touch.fullscreen.needsHomeScreen'));
+      });
+    });
+    // The icon and label follow the real state (the browser can also leave full screen by itself).
+    const sync = () => {
+      const on = isFullscreen();
+      const label = t(on ? 'touch.menu.fullscreenExit' : 'touch.menu.fullscreen');
+      fs.title = label;
+      fs.setAttribute('aria-label', label);
+      fs.setAttribute('aria-pressed', String(on));
+      fs.querySelector<HTMLElement>('.touch-menu-icon')?.style.setProperty('--icon', cssUrl(menuIconUrl(on ? 'fullscreen-exit' : 'fullscreen')));
+    };
+    this.cleanups.push(onFullscreenChange(sync));
+    menu.appendChild(fs);
 
     for (const entry of extraMenu) {
       const b = menuButton(entry.id, entry.label, entry.onClick);

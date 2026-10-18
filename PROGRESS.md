@@ -4,7 +4,28 @@
 
 ## Current phase
 
-**Sound and music ✅ built — waiting for your playtest feedback** before Region 5.
+**Region 5: The Core (levels 40–50) ✅ built — waiting for your playtest feedback.** Plan:
+docs/regions/the-core.md, measurements: docs/regions/the-core-playtest.md.
+- The bore from the Deep Mines opens after Governor Kade. Zone gates can now require a finished quest.
+- The Borderland, The Hanging Gardens (11 floating islands, 13 energy bridges; 3 of them switch off on a cycle
+  and push riders to safety), The Memory Halls (distorted patches of all four earlier regions), The Heart, and
+  The Last Camp hub (6 NPCs).
+- Unstable Gravity: a shimmer, then a pull that curves bolts. The Core is lit from within: procedural
+  Lumen-matter ground, a glowing abyss, light columns at the elevator shaft and the heart.
+- Enemies: 6 Memory Shades of earlier enemies with new tricks, Light Beings, Light Motes, Core Guardians (ward
+  allies), Guardian Lancers (30 m beam), the Choir (empowers nearby enemies), 5 named Absorbed (people from
+  earlier regions). 13 CC0 models from Quaternius and Kenney wear a Lumen look (dark indigo body, gold-white
+  rim) that hides their low-poly style. Shades reuse existing models.
+- 4 dungeons: Memory of Ember, The Endless Shaft (per-floor scaling, best floor remembered), The Singing Halls
+  (hunted by ear, ringing choir pillars), The Chamber of Creation (four portals). 3 Memory Mirrors. The Elevator
+  Base (6 waves: shades of Vire, the Warden and Kade; fighting allies) opens the causeway to the Heart.
+- **Lumen, The One Who Remembers:** phase 1 uses the earlier bosses' attacks; phase 2 shows four region memories
+  (~15 s each); phase 3 is Lumen in Dr. Okafor's form, Listen or Fight (a dialogue choice, stored); phase 4 is
+  the exposed core. The epilogue matches the choice, then the credits, then you are back at the Last Camp.
+- Quests: 6 main, 8 side, 1 mystery; 5 events on existing event types.
+- Art: 7 boss portraits, a region painting and the world map (FLUX, $0.08).
+
+### Earlier: Sound and music ✅ built
 - One WebAudio engine (`src/audio/engine.ts`) with master → music / effects / interface buses. Volume sliders
   for each, mute, saved with the other settings.
 - Effects: 47 sounds in one sprite, keyed by game event in `src/audio/eventSounds.ts`: damage types, crits,
@@ -249,6 +270,19 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
 
+## What to test (Region 5 – The Core)
+1. Defeat Governor Kade, then take the bore from the Deep Mines to the Core.
+2. The Hanging Gardens: cross the energy bridges, time the three that switch off, and feel the gravity shimmer
+   and pull.
+3. The Memory Halls: walk through the distorted patches of the four earlier regions.
+4. The four dungeons, especially the depth of the Endless Shaft and the ringing pillars of the Singing Halls;
+   then the Elevator Base (6 waves).
+5. Lumen's four phases and both choices (Listen or Fight); check that the epilogue matches your choice.
+6. Readability: can you tell the Lumen creatures apart, and are the Guardian Lancer beams fair?
+7. Quest rewards: are they worth the walk?
+8. **Tell me:** what is unreadable or unfair, and how long each part took you (compare the numbers in the
+   playtest report).
+
 ## What to test (Sound and music)
 1. Music starts on your first click at the character select (browsers block audio before a click).
 2. Change zones and hubs: the music crossfades and the ambience changes. In Cinder Flats, the wind rises in an
@@ -402,6 +436,12 @@ Shift + left-click to attack in place.
 9. **Most important:** is it fun? Too easy/hard, too slow/fast, too much/little shake?
 
 ## Known issues / limitations
+- Region 5: the Core's music is a placeholder (`music.deep_mines`); the sacred choir music is deferred.
+- Region 5: dungeons run 16–19 min (target 8–12); the walk from the gate to Lumen takes ≈ 4 min (target 5–7);
+  full exploration takes ≈ 5 h 19 min (target 3–5 h).
+- Region 5: the themed Core events (bridge collapse, choir awakening, memory surge, gravity storm) are not built.
+- Region 5: Absorbed NPC models only have idle clips; Lumen is only partly on screen from parts of the arena edge.
+- Region 5: balance at levels 40–50 is only unit-tested. The Core as an endgame area and World Tiers are deferred.
 - Region 1: no durability on death (§13); Codex unlocks, tempering and
   masterworking come with Phase 7; Force Wall and Laser Grid elite affixes come later.
 - Region 1: dungeons are a bit short (~6 min) and road packs a bit dense — see the playtest report.
@@ -427,9 +467,8 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 
 ## Next steps
-- **Your playtest feedback on the sound and music, then on the Deep Mines** (and the earlier regions) → then
-  Region 5 (The Core) with the
-  same process. Replace the placeholder models of regions 3–4 when Meshy credits are available.
+- **Your playtest feedback on The Core (and the earlier regions)** → then the endgame phase. Replace the
+  placeholder models of regions 3–5 when Meshy credits are available.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
 - Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).

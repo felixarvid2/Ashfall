@@ -270,8 +270,16 @@
       "elder_guardian": "The Elder Guardian",
       "holm": "Security Chief Marta Holm",
       "kade": "Governor Kade",
+      "shade_the_first": "The Shade of The First",
+      "first_choir": "The First Choir",
+      "brood_engine": "The Brood Engine",
+      "shade_vire": "Shade of High Priestess Vire",
+      "shade_warden": "Shade of the Warden",
+      "shade_kade": "Shade of Governor Kade",
+      "lumen": "Lumen, The One Who Remembers",
       "old_ears": "Old Ears"
     },
+    "lumen": "Lumen",
     "brood_mother": "Brood Mother",
     "commandant_hale": "Commandant Hale",
     "the_first": "The First",
@@ -320,6 +328,32 @@
     "security_trooper": "Security Trooper",
     "shield_officer": "Shield Officer",
     "drill_colossus": "Drill Colossus",
+    "shade_walker": "Shade Walker",
+    "shade_echo": "Walker Echo",
+    "shade_hound": "Shade Hound",
+    "shade_smelter": "Shade Smelter",
+    "shade_weaver": "Shade Weaver",
+    "shade_sentinel": "Shade Sentinel",
+    "shade_drone": "Shade Drone",
+    "light_being": "Light Being",
+    "light_mote": "Light Mote",
+    "core_guardian": "Core Guardian",
+    "guardian_lancer": "Guardian Lancer",
+    "choir_singer": "Choir Singer",
+    "lumen_turret": "Lumen Turret",
+    "absorbed_ostrow": "Ostrow, Absorbed",
+    "absorbed_lenn": "Brother Lenn, Absorbed",
+    "absorbed_halvorsen": "Dr. Halvorsen, Absorbed",
+    "absorbed_rhee": "Rhee, Absorbed",
+    "absorbed_danner": "Pvt. Danner, Absorbed",
+    "absorbedSays": "{name}: \u201c{line}\u201d",
+    "absorbed": {
+      "ostrow": { "name": "Ostrow, Absorbed", "line": "You hung four lamps by the lift. Where is mine?" },
+      "lenn": { "name": "Brother Lenn, Absorbed", "line": "I sang so I would not hear them. Now I am the song." },
+      "halvorsen": { "name": "Dr. Halvorsen, Absorbed", "line": "I can hear the roots under your feet. They are singing." },
+      "rhee": { "name": "Rhee, Absorbed", "line": "I built these for you. Please do not run." },
+      "danner": { "name": "Pvt. Danner, Absorbed", "line": "I told you I was not one of them. Not yet." }
+    },
     "foreman_dray": "Foreman Dray",
     "the_prism": "The Prism",
     "drowned_engine": "The Drowned Engine",
@@ -327,6 +361,12 @@
     "elder_guardian": "The Elder Guardian",
     "security_chief_holm": "Security Chief Holm",
     "governor_kade": "Governor Kade",
+    "shade_the_first": "Shade of The First",
+    "choir_mother": "Choir Mother",
+    "brood_engine": "Brood Engine",
+    "shade_vire": "Shade of Vire",
+    "shade_warden": "Shade of the Warden",
+    "shade_kade": "Shade of Kade",
     "conduit": "Power Conduit",
     "shieldGenerator": "Shield Generator"
   },
@@ -354,6 +394,7 @@
     "chainReaction": "Chain Reaction",
     "magnet": "Magnet",
     "overclock": "Overclock",
+    "empowered": "Empowered",
     "wading": "Wading"
   },
   "items": {
@@ -1393,7 +1434,12 @@
         "caves": "The Crystal Caves",
         "lake": "Drill Lake",
         "elder": "The Elder Halls",
-        "aurum": "Mining Station Aurum"
+        "aurum": "Mining Station Aurum",
+        "camp": "The Last Camp",
+        "gardens": "Garden Landing",
+        "halls": "Hall of First Memory",
+        "base": "The Elevator Base",
+        "heart": "Heart Causeway"
       }
     },
     "refineryDistrict": {
@@ -1431,6 +1477,20 @@
         "zero": "Elevator Station Zero",
         "aurum": "Mining Station Aurum (reclaimed)"
       }
+    },
+    "theCore": {
+      "name": "The Core",
+      "greatCavern": "The Great Cavern",
+      "borderland": "The Borderland",
+      "hangingGardens": "The Hanging Gardens",
+      "memoryHalls": "The Memory Halls",
+      "heart": "The Heart",
+      "hub": {
+        "camp": "The Last Camp"
+      }
+    },
+    "gateLocked": {
+      "bore": "The bore is sealed. Whatever Kade's drill woke is not finished with the Mines yet."
     }
   },
   "map": {
@@ -1462,6 +1522,7 @@
       "dungeon": "Enter",
       "bunker": "Enter Bunker",
       "portal": "Leave",
+    "deeper": "Go Deeper",
       "generator": "Start Generator",
       "instanceKey": "Take Keycard",
       "cache": "Open Cache",
@@ -1482,7 +1543,8 @@
     "pylonBanner": "{name}",
     "pylonToast": "{name}: {desc}",
     "close": "Close",
-    "loreXp": "+{xp} XP"
+    "loreXp": "+{xp} XP",
+    "notBuilt": "Sealed. Whatever waits behind this has not woken yet."
   },
   "pylons": {
     "overcharge": {
@@ -1518,6 +1580,20 @@
     "resourceGen": "+3% resource generation"
   },
   "lore": {
+    "cmirror": {
+      "ash": {
+        "title": "Memory: the evacuation that never came",
+        "body": "Lumen remembers the Flats as a place where people waited. It has kept the waiting and lost the reason: the lander hatches still read 'DAY 3', and the shuttle is always one hour away."
+      },
+      "refinery": {
+        "title": "Memory: the furnace that would not go out",
+        "body": "The Smelters fed the fire because the fire fed them. Lumen remembers the warmth, not the cost. Every shade here keeps stoking something that went cold years ago."
+      },
+      "vault": {
+        "title": "Memory: the garden under glass",
+        "body": "Okafor's seeds are all here, perfectly labelled, perfectly alive. Lumen could not bear to let anything in the Vaults die, and so nothing in the Vaults was ever allowed to finish living."
+      }
+    },
     "cf": {
       "0": {
         "title": "Escape pod flight recorder",
@@ -1753,6 +1829,56 @@
         "title": "Memory crystal IV",
         "body": "And then, a human voice laid over the old one: 'Fascinating. They want a body. I have one to offer — on my terms.' — Governor A. Kade"
       }
+    },
+    "core": {
+      "0": {
+        "title": "Bore log, last entry",
+        "body": "Depth four thousand metres. The rock stopped being rock around three-eight. It is warm now, and it is breathing. We kept drilling. Nobody gave the order to stop."
+      },
+      "1": {
+        "title": "Scrawled on a mine cart",
+        "body": "IT WAS NEVER ASLEEP. IT WAS WAITING FOR SOMEONE TO MAKE A DOOR."
+      },
+      "2": {
+        "title": "Technician's note",
+        "body": "The pipes still carry coolant. Only now the coolant is gold, and it is warm, and it is going the wrong way: into the walls, not out of them."
+      },
+      "3": {
+        "title": "Camp ledger",
+        "body": "Day 3: eleven of us. Day 9: nineteen. Day 14: thirty-one, and a column of names under MISSING that nobody remembers writing. We keep the count anyway."
+      },
+      "4": {
+        "title": "Service tunnel sign",
+        "body": "SEALED FOR YOUR PROTECTION. THE SHAFT IS NOT A WAY OUT. THE SHAFT IS A WAY UP."
+      },
+      "5": {
+        "title": "Survey drone recording",
+        "body": "Structure ahead: a column, four hundred metres across, running up out of sensor range. Material: steel, and something else. The something else is humming a tune."
+      },
+      "6": {
+        "title": "Gardener's note",
+        "body": "The bridges are not for us. We are for the bridges. When they flicker, step off. It does not want you to fall. It has never wanted that."
+      },
+      "7": {
+        "title": "Voice log, unknown",
+        "body": "I saw my own house. The kitchen, the light on the table, the dog. I walked in. It was a field of gold, and it said my name the way she used to."
+      },
+      "8": {
+        "title": "Memory Halls plaque",
+        "body": "EVERYTHING HERE HAS BEEN LOVED. EVERYTHING HERE HAS BEEN KEPT. NOTHING HERE HAS BEEN ALLOWED TO END."
+      },
+      "9": {
+        "title": "Climber's journal",
+        "body": "Fifteen hundred steps to the causeway. The light pulses once a second. By the end I was walking in time with it, and I was glad."
+      },
+      "10": {
+        "title": "Fragment, in gold light",
+        "body": "I did not take them. They came to the light, and I kept them from the dark. Is that not what you wanted, once, for your own?"
+      },
+      "11": {
+        "title": "Last message from the Elevator Base",
+        "body": "We hold the shaft. Whatever is climbing it will have to climb past us. If you read this, tell the surface we did not run."
+      }
     }
   },
   "npcs": {
@@ -1891,6 +2017,39 @@
       "name": "Teo Vasquez",
       "title": "Mining Station Aurum",
       "greeting": "Aurum's ours again. Ninety-one miners alive. That number only goes one way unless we finish this."
+    },
+    "maren": {
+      "name": "Maren Sól",
+      "title": "Elevator engineer · The Last Camp",
+      "greeting": "You're the one who came down the bore. Good. Touch nothing, and if the wall says your name, don't answer."
+    },
+    "idris": {
+      "name": "Idris Vale",
+      "title": "Listener",
+      "greeting": "Quiet a moment. It's remembering something. It does that when it's lonely."
+    },
+    "hekla_core": {
+      "name": "Hekla Strand",
+      "title": "Blacksmith · From Outpost Ember",
+      "greeting": "Four thousand metres of rock overhead and the anvil still rings true. Put it on the bench.",
+      "service": "Blacksmith"
+    },
+    "gus_core": {
+      "name": "Gus Abara",
+      "title": "Quartermaster · From the Refinery",
+      "greeting": "Salvaged, bartered or stolen. Down here there's a fourth kind: found. Don't ask where.",
+      "service": "Trade"
+    },
+    "dace_core": {
+      "name": "Dace",
+      "title": "Aspect technician · From the Vaults",
+      "greeting": "The aspects hum at the same pitch as the walls. It's lovely. It's the worst sound I've ever heard.",
+      "service": "Aspects"
+    },
+    "brask_core": {
+      "name": "Foreman Hana Brask",
+      "title": "From Station Zero",
+      "greeting": "Zero has a night shift now. This hole is mine to worry about. Watch your lamp."
     }
   },
   "quests": {
@@ -2192,6 +2351,82 @@
         "offer": "He's wired himself into the drill. Lumen armour, his engineers called it.\nThe drill head turns when he wants it to. Don't stand where it's going.\nBring him down. Then we can all go home. Whatever home means now.",
         "talk2": "It's over. The drill's quiet. First time in a year I can hear water dripping.\nHis last log... the heart of it, he called it. 'Where the light began.' The Core.\nWe're not done, are we. But tonight, Station Zero sleeps.",
         "done": "The Main Drill is silent. Below it, the Core waits."
+      },
+      "core_bore": {
+        "title": "The Bore",
+        "summary": "Kade's drill broke through into something warm. The bore runs down to the Core's Borderland, where the mine turns into light.",
+        "steps": {
+          "0": "Reach the bore at Drill Lake",
+          "1": "Descend the bore",
+          "2": "Clear the Borderland ({n}/{count})",
+          "3": "Reach the heart of the Borderland"
+        },
+        "done": "The rock stops being rock somewhere above you. Down here the walls are warm, and they breathe."
+      },
+      "last_camp": {
+        "title": "The Last Camp",
+        "summary": "A voice on the maintenance band says someone is holding a sealed section of the service tunnel. Follow the old drift north.",
+        "steps": {
+          "0": "Follow the old drift north",
+          "1": "Find the Last Camp",
+          "2": "Talk to Maren Sól"
+        },
+        "talk2": "Maren Sól. Elevator engineer, third shift. I sealed this stretch of tunnel the day the bore opened.\nEleven of us at first. Then nineteen. Then more, and nobody remembers them arriving. Your people came down behind you: Hekla, Gus, Dace, Brask. The ledger says forty-one. I count thirty-eight.\nThe shaft in the middle is the old space elevator. Lumen is climbing it. Whatever it means to do at the top, it has to get past the Base first. We mean to see that it can't.",
+        "done": "The Last Camp has a fire, a roof and a name. For now that is a great deal."
+      },
+      "bridges_of_light": {
+        "title": "Bridges of Light",
+        "summary": "The Elevator Base draws its power through the Hanging Gardens. Three anchors keep the energy bridges holding, and they are failing.",
+        "steps": {
+          "0": "Reach the Hanging Gardens",
+          "1": "Find the Gardens' teleporter",
+          "2": "Restore the bridge anchors ({n}/{count})",
+          "3": "Hold the crossing ({n}/{count})",
+          "4": "Cross to the far island",
+          "5": "Return to Maren Sól"
+        },
+        "offer": "The Base had its own power once. Then it learned to take it from the Gardens: three anchors on three islands, feeding the Base across the bridges.\nThe bridges flicker because the anchors are failing. Reset them, hold the crossing, and get to the far island.\nDon't stand on a bridge when it flickers. It won't drop you. I'd still rather you didn't test it.",
+        "talk5": "The bridges steady. I can see it from here, the whole west wall lit like a street at night.\nGood. The Base has power again. Now we need to know what we're fighting. Idris has been listening to the Halls for a month. Go and hear what he's heard.",
+        "done": "The Gardens burn steady gold. Even the abyss looks almost kind."
+      },
+      "what_lumen_remembers": {
+        "title": "What Lumen Remembers",
+        "summary": "The Memory Halls hold Lumen's copies of every place you have bled for. At the centre of the oldest waits a shade of the first monster.",
+        "steps": {
+          "0": "Enter the Memory Halls",
+          "1": "Find the Halls' teleporter",
+          "2": "Gather the memory echoes ({n}/{count})",
+          "3": "Find the Memory of Ember",
+          "4": "Clear the Memory of Ember",
+          "5": "Return to Idris Vale"
+        },
+        "offer": "It isn't attacking at random. Listen to the Halls: it's reciting. The ash, the fire, the green, the dark. Every place you fought for, copied from memory, and wrong in the same way each time.\nGather the echoes lying in those four memories. Then go into the oldest one, Outpost Ember, and tell me what it kept.\nI don't think it remembers the places. I think it remembers us.",
+        "talk5": "The First. In Ember's yard, exactly as it stood the night you came. Same smoke, same lamps, same empty chair by the fire.\nIt kept the chair. Do you see? It never kept the monsters. It kept the people who left.\nThat's what the Absorbed are. Not prey. Guests. And a host doesn't stop until the house is full.",
+        "done": "Idris sits a long while with his hand flat against the wall. The wall is warm."
+      },
+      "elevator_base": {
+        "title": "The Elevator Base",
+        "summary": "At the shaft's foot stands the last defence before Lumen's heart. Retake it, and the way to the Heart opens.",
+        "steps": {
+          "0": "Follow the spine road to the shaft",
+          "1": "Retake the Elevator Base",
+          "2": "Return to Maren Sól"
+        },
+        "offer": "The Base is where the shaft meets the ground. Everything that climbs, climbs past it, and every wave that comes up out of the Heart comes through its gates.\nIt fell the first night. Three shades hold it now, and they used to be people you fought: Vire, the Warden, Kade. Don't be moved by the faces.\nTake it back. Our people will come through the doors when the fighting starts.",
+        "talk2": "The Base is ours. The doors are shut behind you and the causeway is open ahead.\nThere was a last message from this place, once, on the band: 'We hold the shaft. Whatever is climbing it will have to climb past us.' It's true again.\nAfter this, one more door. The Heart. I won't lie to you. I don't know what's behind it, and nobody who does is still alive.",
+        "done": "The Elevator Base stands, and a thin gold light climbs the shaft above it."
+      },
+      "one_who_remembers": {
+        "title": "The One Who Remembers",
+        "summary": "Lumen waits in its heart at the top of the causeway. It has kept everyone it ever touched. You decide what that means.",
+        "steps": {
+          "0": "Cross the heart causeway",
+          "1": "Find the Heart's teleporter",
+          "2": "Enter the Heart",
+          "3": "Face Lumen"
+        },
+        "offer": "Past the causeway there's a chamber the size of a cathedral, and in the middle of it, Lumen. It's been calling you since the drill. It will use whatever it learned from the ones it kept: faces, voices.\nIf it speaks to you in a voice you know, you'll want to listen. Listen, if you have to. Just remember what you came down here to do.\nGo. We'll hold the shaft.",
+        "done": "The pulse in the walls slows, and stops. Somewhere far above, something has stopped climbing."
       }
     },
     "sq": {
@@ -2697,6 +2932,107 @@
         "offer": "Those troopers. I trained with half of them. Before Kade bought them.\nPut them down. And find out who gave the orders. I want names.",
         "talk2": "Holm wrote it all down. Every order, every name. Kade's.\nIt ends with him. Take this. It was my sergeant's.",
         "done": "Ruiz burns the log page by page."
+      },
+      "last_watch": {
+        "title": "The Last Watch",
+        "summary": "Hekla remembers a deserter from Sierra who swore he was not one of them. Not yet. Someone has seen him in the ash memory.",
+        "steps": {
+          "0": "Look for Danner in the Halls' ash memory",
+          "1": "Put Pvt. Danner to rest",
+          "2": "Take his dog tags",
+          "3": "Return to Hekla"
+        },
+        "offer": "Danner. You met him by the southern bunker, the Sierra deserter. Whatever you decided about him there, he didn't stay decided.\nA scavenger came through last night. Says there's a man in grey fatigues walking the ash memory in the Halls, counting under his breath. Standing watch. Over nothing.\nHe told you he wasn't one of them. Not yet. Go and see what 'yet' turned into.",
+        "talk3": "His tags. Pvt. D. Danner, Checkpoint Sierra.\nHe kept watch to the end. That's more than the others did.\nI'll hang them on the anvil. When I forget what a hard choice feels like, I'll look at them.",
+        "done": "Danner's watch is over. The tags hang on Hekla's anvil."
+      },
+      "pyre_song": {
+        "title": "The Pyre Song",
+        "summary": "Brother Lenn sang at the burnings, then against them. Now a singer is heard in the fire memory, off-key.",
+        "steps": {
+          "0": "Follow the singing to the fire memory",
+          "1": "Silence Brother Lenn",
+          "2": "Take his hymnal",
+          "3": "Return to Gus Abara"
+        },
+        "offer": "Brother Lenn. The Smelter preacher on Foundry Road. You decided what to do with him. After that he made a decision of his own.\nA runner heard singing from the fire memory, the one in the Halls where the furnaces never go out. A hymn, off-key. It's the old burning song.\nGo and let him stop. A man shouldn't have to sing that forever.",
+        "talk3": "A hymnal with the margins burnt. He sang so he wouldn't hear them, he told me once.\nI hope you gave him quiet. If he's anywhere, I hope it's quiet.\nHere. His share of an old debt. He'd have wanted it spent on something useful.",
+        "done": "The fire memory is quiet. Somebody had to end the song."
+      },
+      "empty_cab": {
+        "title": "The Empty Cab",
+        "summary": "Rhee swore he would never leave his crane. A crane has appeared in the Borderland machinery, and its cab light is on.",
+        "steps": {
+          "0": "Reach the crane in the Borderland machinery",
+          "1": "Stop Rhee",
+          "2": "Shut down the crane's controls",
+          "3": "Return to Gus Abara"
+        },
+        "offer": "Rhee. Ran the Refinery crane eleven years. Said he'd leave the cab when they pried his fingers off the levers.\nThere's a crane in the Borderland machinery that wasn't there yesterday. The cab light is on. Lumen copies what it loves.\nGo see if the cab's occupied. If it is, you'll know what to do.",
+        "talk3": "Eleven years, and he finally got out of the cab. Just not the way I'd hoped.\nI'll write him down as retired. Crane operators don't get a dinner. Take this instead.",
+        "done": "The cab light goes out. Rhee's shift is over."
+      },
+      "last_samples": {
+        "title": "The Last Samples",
+        "summary": "Halvorsen's research tracker is moving again. Dace wants his notes before whatever carries them forgets what they say.",
+        "steps": {
+          "0": "Look for Dr. Halvorsen in the jungle memory",
+          "1": "Stop Dr. Halvorsen",
+          "2": "Recover his research notes",
+          "3": "Return to Dace"
+        },
+        "offer": "You remember Dr. Halvorsen. Went out to repair a pump and came back with roots in his blood. You made a decision about him then. It didn't hold, down here.\nHis tracker started moving again two days ago, east, into the jungle memory. His notes were on him, and Okafor would give a year's rations to read them.\nGet the notes. Don't let him follow you out.",
+        "talk3": "'Root systems do not die; they remember.' Underlined three times.\nHe knew. He wrote it down and kept walking toward it anyway. That's a scientist for you.\nThank you. I'll copy these out for Lab 9. Someone should know what he found.",
+        "done": "Halvorsen's notes are copied twice and hidden in different places."
+      },
+      "fifth_lamp": {
+        "title": "The Fifth Lamp",
+        "summary": "Four lamps hang by the lift at Station Zero, but the survey crew had a fifth. A lamp has been seen swinging in the dark memory.",
+        "steps": {
+          "0": "Look for Ostrow in the dark memory",
+          "1": "Lay Ostrow to rest",
+          "2": "Take his lamp",
+          "3": "Return to Foreman Brask"
+        },
+        "offer": "Four lamps by the lift. You brought them back yourself. What I never told you: the crew had a lead, Ostrow. He stayed on the radio. When the line went quiet I told myself he'd gone up the shaft. I hung four lamps and left a hook empty.\nA runner swears there's a lamp swinging in the dark memory. Swinging like a man walking.\nIf it's him, I'll light the fifth myself.",
+        "talk3": "That's his lamp. Dented where he dropped it the day the quake came.\nI'll hang it on the fifth hook. Every shift change I'll say five names. I'd like to say it's because I'm sentimental. It's because I'm stubborn.",
+        "done": "The fifth hook holds a lamp. Brask lights it herself."
+      },
+      "three_mirrors": {
+        "title": "Three Mirrors",
+        "summary": "Three Memory Mirrors hold what Lumen kept of the ash, the refinery and the vaults. Idris wants to know what each one remembers.",
+        "steps": {
+          "0": "Clear the Ash Mirror",
+          "1": "Clear the Refinery Mirror",
+          "2": "Clear the Vault Mirror",
+          "3": "Return to Idris Vale"
+        },
+        "offer": "There are three places where the Core looks back at itself. Mirrors, I call them: a piece of the ash, a refinery, a vault, folded into the rock and left to repeat.\nGo through all three. Don't touch the glass if you can help it. Bring me what's written on the other side.\nThe ash first. It always starts with the ash.",
+        "talk3": "Ash: a road with a person on it. Refinery: a furnace nobody's tending. Vault: a garden somebody's weeding.\nEvery mirror, one person doing one ordinary thing, over and over, because it can't bear for them to stop.\nI don't know if that's love. I do know it's the most frightening thing I've ever read.",
+        "done": "Idris fills a page, then another. He does not ask you to read them."
+      },
+      "how_deep": {
+        "title": "How Deep",
+        "summary": "A shaft in the Borderland drops past anything the survey drones could measure. Brask wants to know where it ends.",
+        "steps": {
+          "0": "Find the Endless Shaft in the Borderland",
+          "1": "Descend to the eighth floor",
+          "2": "Return to Foreman Brask"
+        },
+        "offer": "A shaft on the west side of the Borderland. Drones went down it and kept sending depth readings until they ran out of numbers.\nThe crews call it the Endless Shaft. Stupid name. I want to know if it's true.\nGo down. Floor after floor. Bring me the eighth, and bring yourself back with it.",
+        "talk2": "Eight floors, and each one worse than the last. And it kept going.\nGood. That's what I needed to hear. Not that it ends. That it doesn't, and you came back anyway.\nHere. For the trouble.",
+        "done": "Brask chalks the number on the camp's wall and underlines it twice."
+      },
+      "towers_speak": {
+        "title": "The Towers Speak",
+        "summary": "Three signal towers still stand in the Core. Maren wants the surface to hear that someone is alive down here.",
+        "steps": {
+          "0": "Switch on the signal towers ({n}/{count})",
+          "1": "Return to Maren Sól"
+        },
+        "offer": "Three signal towers stand in the Core: one in the Borderland, one in the Gardens, one in the Halls. They're old, but the transmitters work if you give them a kick and a power cell.\nSwitch them on. I want the whole Core to hear us say we're still here.\nWhat it does with the signal, I haven't thought about yet.",
+        "talk1": "Three tones on the band. And then, for the first time in a month, something answered. Not the walls. Static, and then a voice, very far away: Station Zero is listening.\nThey're up there. We're not alone.\nTake this. You've earned more than I have to give.",
+        "done": "The band hums with three small voices. One of them is yours."
       }
     },
     "my": {
@@ -2743,6 +3079,17 @@
           "3": "Open what it guards"
         },
         "done": "The whisper stops. Something was waiting for you."
+      },
+      "table_light": {
+        "title": "The Light on the Table",
+        "summary": "A lamp burns on a kitchen table in the middle of the Memory Halls. Nobody here has a kitchen.",
+        "steps": {
+          "0": "Follow the lamplight",
+          "1": "Follow it further",
+          "2": "Follow it to the last room",
+          "3": "Open what the table holds"
+        },
+        "done": "Someone set the table for you. The lamp goes out when you leave."
       }
     }
   },
@@ -2830,6 +3177,22 @@
     "champion": "Champion"
   },
   "bosses": {
+    "shade_the_first": {
+      "phase2": "The memory slips: the Shade of The First is never quite where it was",
+      "phase3": "The Shade of The First tears itself loose from the memory"
+    },
+    "first_choir": {
+      "phase2": "The choir rises in pitch",
+      "phase3": "The whole chamber sings"
+    },
+    "brood_engine": {
+      "phase2": "The Engine opens the Refinery hatch",
+      "phase3": "The Engine opens the Vaults hatch",
+      "phase4": "The Engine opens the Mines hatch"
+    },
+    "shade_vire": { "phase2": "The Shade of Vire sets the memory alight" },
+    "shade_warden": { "phase2": "The Shade of the Warden calls the vines of a forgotten dome" },
+    "shade_kade": { "phase2": "The Shade of Kade steps between moments" },
     "brood_mother": {
       "phase2": "The Brood Mother splits open"
     },
@@ -2911,10 +3274,47 @@
       "phase2": "Kade plugs into the Main Drill. Cut the conduits!",
       "freed": "The conduits are cut. Kade is exposed.",
       "phase3": "The Lumen takes the governor"
+    },
+    "lumen": {
+      "name": "Lumen, The One Who Remembers",
+      "intro": "Lumen, The One Who Remembers",
+      "phase2": "Lumen remembers the world it took",
+      "memory": {
+        "ash": "Memory: the ash fields",
+        "fire": "Memory: the refinery fires",
+        "jungle": "Memory: the Vaults' garden",
+        "dark": "Memory: the dark of the mines"
+      },
+      "phase3": "Lumen takes a friend's face",
+      "phase4": "The core is exposed. End it!",
+      "role": "Lumen, wearing a friend's face",
+      "speech": "You walked through all of it and still you do not know what I am.\nI kept every one of them. Every room, every voice, every morning. Nothing I love is lost while I remember it.\nStay. Listen. Or do what you came to do, and I will remember that too.",
+      "choice": {
+        "listen": "Listen.",
+        "fight": "Fight."
+      },
+      "reply": {
+        "listen": "Then hear it. Every name, in order. It will take only a moment, and then the face falls away.",
+        "fight": "Then remember me kindly. I will remember you."
+      }
     }
   },
   "instances": {
+    "choirPillar": "Choir Pillar",
+    "pillarRings": "A pillar rings out. Everything in the room turns toward it.",
+    "hatchPortal": "Hatching Portal",
+    "shaft": {
+      "cleared": "Floor {n} cleared. The way down is open.",
+      "floor": "Floor {n}"
+    },
     "names": {
+      "core_memory_of_ember": "Memory of Ember",
+      "core_endless_shaft": "The Endless Shaft",
+      "core_singing_halls": "The Singing Halls",
+      "core_chamber_of_creation": "The Chamber of Creation",
+      "core_mirror_0": "Memory Mirror: Ash",
+      "core_mirror_1": "Memory Mirror: Refinery",
+      "core_mirror_2": "Memory Mirror: Vaults",
       "meridians_hold": "Meridian's Hold",
       "bunker_sierra4": "Bunker Sierra-4",
       "drainage_tunnels": "The Drainage Tunnels",
@@ -2958,9 +3358,13 @@
     },
     "objective": {
       "activate": "Restore power: generators {n}/{count}",
+      "portals": "Close the hatching portals: {n}/{count}",
+      "shaft": "Floor {floor} (deepest: {best}). Clear it and go deeper, or leave.",
       "collect": "Find keycards: {n}/{count}",
       "destroy": "Destroy spore nests: {n}/{count}",
       "clear": "Clear the bunker",
+      "clearMemory": "Clear the memory",
+      "clearChoir": "Silence the First Choir",
       "boss": "Defeat {name}",
       "done": "Cleared. Take what you earned and leave.",
       "valves": "Shut the pumps in order: {n}/{count} · next: {next}",
@@ -2981,6 +3385,7 @@
     },
     "progress": {
       "activate": "Generator online ({n}/{count})",
+      "portals": "Portal closed ({n}/{count})",
       "collect": "Keycard found ({n}/{count})",
       "destroy": "Spore nest destroyed ({n}/{count})",
       "valves": "Pump shut ({n}/{count})",
@@ -3022,6 +3427,18 @@
     "powerCore": "Power Core"
   },
   "setPieces": {
+    "base": {
+      "start": "The Elevator Base: hold it against the shades",
+      "wave": "Wave {n}/{count}",
+      "reclaimed": "The Elevator Base is held. The heart causeway is open.",
+      "allyArrives": "{name} joins the fight",
+      "ally": {
+        "ember": "Ember Militia",
+        "refinery": "Refinery Crew",
+        "vaults": "Vault Gardener",
+        "mines": "Deep Miner"
+      }
+    },
     "sierra": {
       "start": "Checkpoint Sierra: destroy the Spore Feeders",
       "reclaimed": "Checkpoint Sierra reclaimed"
@@ -3053,6 +3470,9 @@
     },
     "kade": {
       "defeated": "Governor Kade falls. The Main Drill winds down."
+    },
+    "lumen": {
+      "defeated": "The light goes out of the Heart."
     }
   },
   "worldEvents": {
@@ -3205,6 +3625,10 @@
   "touch": {
     "attack": "Attack",
     "use": "Use",
+    "fullscreen": {
+      "needsTab": "Open the game in its own tab for full screen.",
+      "needsHomeScreen": "On iPhone: Share, then Add to Home Screen, to play full screen."
+    },
     "menu": {
       "inventory": "Bag",
       "character": "Hero",
@@ -3213,6 +3637,7 @@
       "quests": "Quests",
       "mount": "Bike",
       "fullscreen": "Full screen",
+      "fullscreenExit": "Exit full screen",
       "close": "Close",
       "flare": "Flare",
       "sound": "Sound",
@@ -3222,6 +3647,28 @@
       "auto": "Auto",
       "on": "On",
       "off": "Off"
+    }
+  },
+  "ending": {
+    "continue": "Continue",
+    "skip": "Skip",
+    "listenTitle": "What Was Remembered",
+    "fightTitle": "What Was Left",
+    "epilogue": {
+      "listen": "You listened, and Lumen told you everything. Every name it had taken, every face, every kitchen light left burning in a settlement that no longer exists. It had never meant to take them. It had only wanted nothing to be lost.\nWhen the core went dark the names stayed with you, and you carried them out through the shaft into the grey morning. The survivors at the Last Camp asked what you had done. You told them what you had heard. Some wept. Some wrote it down. Far above the clouds a station stopped waiting for a signal.",
+      "fight": "You did not listen. You had heard enough voices in the dark to know whose they were, and none of them were Lumen's. The core burst, and the light that poured down the shaft was only light.\nThe Absorbed lay down where they stood. The shades came apart like smoke. No one thanked you, and you did not ask them to. The Last Camp opened its doors at dawn, and beyond the ash there was a road. You walked it with the names of the lost in your pocket, unspoken, and kept going."
+    },
+    "credits": {
+      "title": "Ashfall",
+      "c1": "3D models and icons: Meshy",
+      "c2": "2D art: FLUX.2 Turbo",
+      "c3": "Creatures and props of the Core: Quaternius and Kenney (CC0)",
+      "c4": "Environment light and props: Poly Haven (CC0). Cave rock: ambientCG (CC0)",
+      "c5": "Status icons: game-icons.net, Lorc, Delapouite and Carl Olsen (CC BY 3.0)",
+      "c6": "Fonts: Rajdhani and Share Tech Mono (SIL OFL 1.1)",
+      "c7": "Sound effects: Kenney (CC0)",
+      "c8": "Music: Music Loop Bundle by Abstraction (CC0)",
+      "c9": "Thank you for playing."
     }
   },
   "underground": {

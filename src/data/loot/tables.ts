@@ -79,6 +79,20 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   { id: 'dt.security_trooper', itemChance: 0.35, goldChance: 0.8, gold: [3, 6], crystalChance: 0.05, xp: 32 },
   { id: 'dt.shield_officer', itemChance: 0.6, goldChance: 1, gold: [4, 8], crystalChance: 0.08, rarityBias: { rare: 1.5 }, xp: 48 },
   { id: 'dt.drill_colossus', itemChance: 1, extraItems: 2, goldChance: 1, gold: [12, 20], crystalChance: 0.3, rarityBias: { rare: 3, legendary: 2.5 }, minRarity: 'magic', xp: 240 },
+  // The Core
+  { id: 'dt.shade_walker', itemChance: 0.15, goldChance: 0.38, gold: [2, 4], crystalChance: 0.02, xp: 18 },
+  { id: 'dt.shade_hound', itemChance: 0.1, goldChance: 0.3, gold: [1, 3], crystalChance: 0.012, xp: 11 },
+  { id: 'dt.shade_smelter', itemChance: 0.32, goldChance: 0.7, gold: [3, 6], crystalChance: 0.05, xp: 36 },
+  { id: 'dt.shade_weaver', itemChance: 0.32, goldChance: 0.65, gold: [3, 6], crystalChance: 0.05, xp: 38 },
+  { id: 'dt.shade_sentinel', itemChance: 0.88, goldChance: 1, gold: [6, 12], crystalChance: 0.2, rarityBias: { rare: 2 }, minRarity: 'magic', xp: 100 },
+  { id: 'dt.shade_drone', itemChance: 0.2, goldChance: 0.5, gold: [2, 5], crystalChance: 0.03, xp: 20 },
+  { id: 'dt.light_being', itemChance: 0.22, goldChance: 0.5, gold: [2, 5], crystalChance: 0.04, xp: 26 },
+  { id: 'dt.light_mote', itemChance: 0.05, goldChance: 0.2, gold: [1, 2], crystalChance: 0.006, xp: 7 },
+  { id: 'dt.core_guardian', itemChance: 0.92, extraItems: 1, goldChance: 1, gold: [8, 14], crystalChance: 0.18, rarityBias: { rare: 2.5, legendary: 1.5 }, minRarity: 'magic', xp: 120 },
+  { id: 'dt.guardian_lancer', itemChance: 0.6, goldChance: 1, gold: [5, 10], crystalChance: 0.1, rarityBias: { rare: 1.5 }, xp: 70 },
+  { id: 'dt.choir_singer', itemChance: 0.55, goldChance: 1, gold: [4, 9], crystalChance: 0.1, rarityBias: { rare: 1.5 }, xp: 60 },
+  // Echoes and turrets that are called in pay nothing.
+  { id: 'dt.shade_echo', itemChance: 0, goldChance: 0, gold: [0, 0], crystalChance: 0, xp: 0 },
   // Elites: champions (blue) and rare elites (yellow) roll extra, better loot.
   { id: 'dt.champion', itemChance: 0.6, goldChance: 1, gold: [3, 6], crystalChance: 0.08, rarityBias: { rare: 2, legendary: 1.5 }, minRarity: 'magic', xp: 40 },
   { id: 'dt.rare_elite', itemChance: 1, extraItems: 2, goldChance: 1, gold: [8, 14], crystalChance: 0.2, rarityBias: { rare: 3, legendary: 3, unique: 2 }, minRarity: 'magic', xp: 120 },

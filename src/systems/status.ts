@@ -1,4 +1,5 @@
 /** Ticks status effects: expiry, damage-over-time, and derived flags (canAct, speedMul). */
+import { CHOIR } from '../data/core';
 import { PYLON_EFFECTS } from '../data/interactables';
 import { Dead, Invulnerable, Mounted, Mover, StatusEffects } from '../core/components';
 import type { GameContext } from '../core/context';
@@ -55,6 +56,7 @@ export function statusSystem(world: World, dt: number, ctx: GameContext): void {
       if (def.kind === 'disable') canAct = false;
       if (def.kind === 'slow') slow = Math.max(slow, def.slow);
       if (s.id === 'kinetic') haste = 1 + PYLON_EFFECTS.kineticSpeed;
+      if (s.id === 'empowered') haste *= 1 + CHOIR.speed;
     }
     effects.canAct = canAct;
     const mover = world.get(e, Mover);

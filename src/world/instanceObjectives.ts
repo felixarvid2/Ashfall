@@ -10,6 +10,8 @@
  * Region 4 (docs/regions/deep-mines.md):
  * - defend (elevator): ride the elevator down while waves climb on (Shaft 13)
  * - mirrors: turn crystal mirrors until each catches the light (The Crystal Labyrinth)
+ * Region 5 (docs/regions/the-core.md):
+ * - portals: close hatching portals, each hatching one earlier region's creatures (The Chamber of Creation)
  */
 import {
   Collider,
@@ -23,6 +25,7 @@ import {
   Mover,
   PlayerControlled,
   Renderable,
+  Targetable,
   Transform,
   makeTransform,
 } from '../core/components';
@@ -41,6 +44,8 @@ export const VALVE_COLORS = ['red', 'yellow', 'blue', 'green'] as const;
 const COCOON_HATCH = 5;
 const MIRROR_DARK = '#3a5a8a';
 const MIRROR_LIT = '#e8ffff';
+/** One glow per hatching portal: Ash, the Refinery, the Vaults, the Mines. */
+const PORTAL_GLOW = ['#b48cff', '#ff9a4a', '#7dff8a', '#6ad8ff'];
 const VALVE_GLOW: Record<(typeof VALVE_COLORS)[number], string> = { red: '#ff3a2a', yellow: '#ffd23a', blue: '#3a8aff', green: '#5aff6a' };
 
 export interface ObjectiveExtra {
@@ -60,6 +65,8 @@ export interface ObjectiveExtra {
   cocoons?: { entity: Entity; x: number; z: number }[];
   /** Crystal Labyrinth: each mirror's position (0–3) and the one that catches the light. */
   mirrors?: { entity: Entity; turn: number; aligned: number }[];
+  /** Chamber of Creation: the hatching portals (closed when destroyed). */
+  portals?: Entity[];
 }
 
 /** How many steps the objective counts to. */
@@ -129,6 +136,22 @@ export function setupObjective(world: World, rt: InstanceRuntime, spots: Instanc
       world.req(e, Transform).facing = (turn * Math.PI) / 2;
       world.add(e, DisplayName, { key: 'instances.mirror' });
       extra.mirrors.push({ entity: e, turn, aligned });
+    }
+  } else if (obj.kind === 'portals') {
+    extra.portals = [];
+    for (let i = 0; i < obj.count; i++) {
+      const c = centre(spots[i % spots.length]!, roomCenter);
+      const pool = obj.pools[i % obj.pools.length]!;
+      const e = world.create();
+      world.add(e, Transform, makeTransform(c.x + rng.range(-3, 3), 0, c.z + rng.range(-3, 3), rng.range(0, 6)));
+      world.add(e, Renderable, { assetId: 'prop.teleporter', scale: 0.7, glow: PORTAL_GLOW[i % PORTAL_GLOW.length]! });
+      world.add(e, Faction, { team: 'enemy' });
+      const life = obj.life * (1 + 0.12 * (rt.level - 1));
+      world.add(e, Health, { current: life, max: life });
+      world.add(e, Collider, { radius: 1.4, mass: Infinity, layer: 'ground', isStatic: true });
+      world.add(e, Targetable, { spawn: { enemy: pool[0]!, pool, count: 2, every: obj.every, timer: 2 } });
+      world.add(e, DisplayName, { key: 'instances.hatchPortal' });
+      extra.portals.push(e);
     }
   } else if (obj.kind === 'defend') {
     // The compressor stands in the last main room before the boss.
@@ -438,7 +461,7 @@ export function objectiveInteract(world: World, ctx: GameContext, rt: InstanceRu
 }
 
 /** Objective line details for the HUD (null = use the generic text). */
-export function objectiveDetail(rt: InstanceRuntime, t: (key: string, params?: Record<string, string | number>) => string): string | null {
+export function objectiveDetail(world: World, rt: InstanceRuntime, t: (key: string, params?: Record<string, string | number>) => string): string | null {
   const obj = rt.def.objective;
   const extra = rt.extra;
   const heat = extra.heat !== undefined && !rt.objective.done ? ` · ${t('instances.heat', { pct: Math.round(extra.heat * 100) })}` : '';
@@ -456,6 +479,10 @@ export function objectiveDetail(rt: InstanceRuntime, t: (key: string, params?: R
     const timers = extra.cages.filter((c) => c.state === 'locked' && c.remaining !== null).map((c) => Math.ceil(c.remaining!));
     const soon = timers.length ? ` · ${t('instances.pyreIn', { s: Math.min(...timers) })}` : '';
     return `${t('instances.objective.rescue', { n: freed, count: obj.count })}${soon}`;
+  }
+  if (obj.kind === 'portals' && extra.portals) {
+    const left = extra.portals.filter((e) => world.isAlive(e) && !world.has(e, Dead)).length;
+    return t('instances.objective.portals', { n: obj.count - left, count: obj.count });
   }
   if (obj.kind === 'defend' && extra.defend) {
     const key = obj.machine === 'elevator' ? 'elevator' : 'defend';

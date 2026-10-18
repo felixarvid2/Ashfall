@@ -23,13 +23,15 @@ import {
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { Rng } from '../core/rng';
-import { INSTANCES, INSTANCE_ORIGIN, ROOM_CELL, type InstanceDef } from '../data/instances';
+import { INSTANCES, INSTANCE_ORIGIN, ROOM_CELL, shaftScaling, type InstanceDef } from '../data/instances';
 import { INTERACT_RADIUS } from '../data/interactables';
+import { enemyDef } from '../data/db';
 import { packTemplate } from '../data/packs';
 import { spawnBoss } from '../systems/boss';
 import { signal } from '../systems/quests';
-import { spawnEnemy } from './spawn';
+import { shadeLook, spawnEnemy } from './spawn';
 import { makeElite } from './zone';
+import { descend, setupCore, shadesOnly, shaftAffixes, tickCore, type CoreInstanceState } from './coreInstances';
 import { objectiveCount, objectiveDetail, objectiveInteract, setupObjective, tickObjective, type ObjectiveExtra } from './instanceObjectives';
 
 export type Dir = 'n' | 's' | 'e' | 'w';
@@ -149,6 +151,12 @@ export interface InstanceRuntime {
   lights: { x: number; z: number; color: string; intensity: number; distance: number; height: number }[];
   /** Region 2 objectives' state (valves, robot, cages, compressor, heat, frost vents). */
   extra: ObjectiveExtra;
+  /** The Core: shaft floors and choir pillars. */
+  core?: CoreInstanceState;
+}
+
+export function hasInstance(id: string): boolean {
+  return INSTANCES.some((d) => d.id === id);
 }
 
 export function instanceDef(id: string): InstanceDef {
@@ -226,7 +234,8 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
     def,
     poi,
     exit,
-    level,
+    // The Endless Shaft's floors never raise the level: it stays within the Core's range (50).
+    level: def.floors ? Math.min(level, ctx.zoneLevels[1]) : level,
     layout,
     rng,
     start: roomCenter(layout.rooms[0]!),
@@ -260,7 +269,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
       const z = cz + (side === 2 ? inset : side === 3 ? -inset : t);
       const e = world.create();
       world.add(e, Transform, makeTransform(x, 0, z, rng.range(0, Math.PI * 2)));
-      world.add(e, Renderable, { assetId: rng.pick(def.theme.decor), scale: rng.range(0.7, 1.05) });
+      world.add(e, Renderable, { assetId: rng.pick(def.theme.decor), scale: rng.range(0.7, 1.05), ...(def.theme.shade ? { look: 'shade' as const } : {}) });
       world.add(e, Collider, { radius: 0.8, mass: Infinity, layer: 'ground', isStatic: true });
     }
     const lamps = room.kind === 'boss' ? 4 : rng.int(1, 2);
@@ -306,6 +315,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
   }
 
   setupObjective(world, rt, spots, roomCenter);
+  setupCore(world, ctx, rt, roomCenter);
 
   // The way out, by the entrance.
   interactable(world, 'exit', 'portal', rt.start.x - 6, rt.start.z - 6, 'prop.teleporter', 0.32, '#5ad2ff');
@@ -325,20 +335,39 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
 /** Spawn a room's enemies (when the player first comes near). */
 function populate(world: World, rt: InstanceRuntime, room: InstanceRoom): void {
   room.spawned = true;
-  if (room.kind === 'start' || room.kind === 'boss') return;
+  // The Endless Shaft fills its last room too (it has no boss).
+  if (room.kind === 'start' || (room.kind === 'boss' && !rt.def.floors)) return;
   const c = roomCenter(room);
-  const packs = rt.rng.int(rt.def.packsPerRoom[0], rt.def.packsPerRoom[1]);
+  const sc = rt.def.floors ? shaftScaling(rt.core?.shaft?.floor ?? 1) : null;
+  const extra = sc?.packs ?? 0;
+  const packs = rt.rng.int(rt.def.packsPerRoom[0], rt.def.packsPerRoom[1]) + Math.floor(extra) + (extra % 1 > 0 && rt.rng.chance(extra % 1) ? 1 : 0);
   for (let p = 0; p < packs; p++) {
     const template = packTemplate(rt.rng.pick(rt.def.packs));
-    const elite = rt.rng.chance(template.championChance * 1.5) ? 'champion' : rt.rng.chance(template.rareChance * 1.5) ? 'rare' : null;
-    let first = true;
+    const elite = sc
+      ? rt.rng.chance(sc.champion)
+        ? 'champion'
+        : rt.rng.chance(template.rareChance * 1.5)
+          ? 'rare'
+          : null
+      : rt.rng.chance(template.championChance * 1.5)
+        ? 'champion'
+        : rt.rng.chance(template.rareChance * 1.5)
+          ? 'rare'
+          : null;
+    // Shaft floors: a champion pack has up to three champions sharing affixes, and every elite carries the floor's extras.
+    const shared = sc && elite ? shaftAffixes(rt.rng, elite, rt.level, sc.affixes) : undefined;
+    let made = 0;
     for (const m of template.members) {
       if (m.chance !== undefined && !rt.rng.chance(m.chance)) continue;
       const n = rt.rng.int(m.count[0], m.count[1]);
       for (let i = 0; i < n; i++) {
-        const e = spawnEnemy(world, m.enemy, c.x + rt.rng.range(-8, 8), c.z + rt.rng.range(-8, 8), { level: rt.level });
-        if (first && elite) makeElite(world, e, elite, rt.rng);
-        first = false;
+        const e = spawnEnemy(world, m.enemy, c.x + rt.rng.range(-8, 8), c.z + rt.rng.range(-8, 8), { level: rt.level, ...(sc ? { lifeMul: sc.lifeMul } : {}) });
+        if (shadesOnly(rt)) shadeLook(world, e);
+        // Named elites (the Absorbed) are never made champions.
+        if (elite && made < (sc && elite === 'champion' ? 3 : 1) && !enemyDef(m.enemy).named) {
+          makeElite(world, e, elite, rt.rng, shared);
+          made++;
+        }
       }
     }
   }
@@ -375,13 +404,15 @@ export function instanceSystem(world: World, dt: number, ctx: GameContext): void
     tg.spawn.timer = tg.spawn.every;
     for (let i = 0; i < tg.spawn.count; i++) {
       const a = ctx.rng.range(0, Math.PI * 2);
-      const m = spawnEnemy(world, tg.spawn.enemy, tr.x + Math.sin(a) * 2.5, tr.z + Math.cos(a) * 2.5, { level: rt.level });
+      const m = spawnEnemy(world, tg.spawn.pool ? ctx.rng.pick(tg.spawn.pool) : tg.spawn.enemy, tr.x + Math.sin(a) * 2.5, tr.z + Math.cos(a) * 2.5, { level: rt.level });
+      if (shadesOnly(rt)) shadeLook(world, m);
       world.req(m, EnemyAI).aggro = true;
     }
     ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: tr.x, z: tr.z, radius: 2.5, facing: 0 });
   }
 
   const obj = def.objective;
+  tickCore(world, dt, ctx, rt, player, roomCenter);
   tickObjective(world, dt, ctx, rt, player, roomCenter);
   if (!rt.objective.done) {
     if (obj.kind === 'destroy') {
@@ -389,6 +420,13 @@ export function instanceSystem(world: World, dt: number, ctx: GameContext): void
       if (dead !== rt.objective.progress) {
         rt.objective.progress = dead;
         ctx.events.push({ type: 'banner', key: obj.target?.progress ?? 'instances.progress.destroy', params: { n: dead, count: obj.count }, seconds: 1.6 });
+      }
+    } else if (obj.kind === 'portals' && rt.extra.portals) {
+      // Closed = destroyed. (Counted from the portals themselves: armour plates and the like are targets too.)
+      const closed = rt.extra.portals.filter((e) => !world.isAlive(e) || world.has(e, Dead)).length;
+      if (closed !== rt.objective.progress) {
+        rt.objective.progress = closed;
+        ctx.events.push({ type: 'banner', key: 'instances.progress.portals', params: { n: closed, count: obj.count }, seconds: 1.6 });
       }
     } else if (obj.kind === 'activate' && rt.objective.charging) {
       const ch = rt.objective.charging;
@@ -492,6 +530,8 @@ export function instanceInteract(world: World, ctx: GameContext, target: Entity,
       }
       return true;
     case 'portal':
+      // The Endless Shaft's way down (the event is sent by `descend`); every other portal leaves.
+      if (it.poi === 'deeper') return descend(world, ctx, rt);
       ctx.events.push({ type: 'interact', kind: 'portal', id: 'exit' });
       return true;
     case 'valve':
@@ -515,13 +555,15 @@ export function clearInstance(world: World): void {
 }
 
 /** Objective line for the HUD. */
-export function objectiveText(rt: InstanceRuntime, t: (key: string, params?: Record<string, string | number>) => string): string {
+export function objectiveText(world: World, rt: InstanceRuntime, t: (key: string, params?: Record<string, string | number>) => string): string {
   const obj = rt.def.objective;
+  // The Endless Shaft never ends: the line is always the floor.
+  if (rt.core?.shaft) return t('instances.objective.shaft', { floor: rt.core.shaft.floor, best: rt.core.shaft.best });
   if (rt.completed) return t('instances.objective.done');
   if (rt.objective.done) return rt.def.boss ? t('instances.objective.boss', { name: t(rt.def.boss.name) }) : t('instances.objective.done');
-  const detail = objectiveDetail(rt, t);
+  const detail = objectiveDetail(world, rt, t);
   if (detail) return detail;
-  if (obj.kind === 'clear') return t('instances.objective.clear');
+  if (obj.kind === 'clear') return t(obj.objective ?? 'instances.objective.clear');
   const params = { n: rt.objective.progress, count: objectiveCount(obj) };
   if (obj.kind === 'collect' && obj.item && obj.item !== 'keycard') return t(`instances.objective.${obj.item}`, params);
   if (obj.kind === 'destroy' && obj.target) return t(obj.target.objective ?? 'instances.objective.motherCocoon', params);

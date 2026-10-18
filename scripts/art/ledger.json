@@ -1,6 +1,6 @@
 {
-  "spent": 1.7120000000000013,
-  "images": 209,
+  "spent": 1.7920000000000014,
+  "images": 218,
   "tries": {
     "textures/mine_rock": 1,
     "bosses/governor_kade": 1,
@@ -181,7 +181,16 @@
     "frames/magic": 1,
     "frames/rare": 1,
     "frames/unique": 1,
-    "frames/mythic": 1
+    "frames/mythic": 1,
+    "bosses/lumen": 1,
+    "bosses/shade_the_first": 1,
+    "bosses/choir_mother": 1,
+    "bosses/brood_engine": 1,
+    "bosses/shade_vire": 1,
+    "bosses/shade_warden": 1,
+    "bosses/shade_kade": 1,
+    "regions/the_core": 1,
+    "maps/the_core": 1
   },
   "log": [
     {
@@ -1228,6 +1237,51 @@
       "key": "decals/rust_plate",
       "cost": 0.008,
       "at": "2026-10-05T12:11:05.380Z"
+    },
+    {
+      "key": "bosses/lumen",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:07.494Z"
+    },
+    {
+      "key": "bosses/choir_mother",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:07.870Z"
+    },
+    {
+      "key": "bosses/brood_engine",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:09.106Z"
+    },
+    {
+      "key": "bosses/shade_the_first",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:10.406Z"
+    },
+    {
+      "key": "bosses/shade_warden",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:15.667Z"
+    },
+    {
+      "key": "bosses/shade_vire",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:18.391Z"
+    },
+    {
+      "key": "bosses/shade_kade",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:20.354Z"
+    },
+    {
+      "key": "maps/the_core",
+      "cost": 0.016,
+      "at": "2026-10-18T17:48:21.760Z"
+    },
+    {
+      "key": "regions/the_core",
+      "cost": 0.008,
+      "at": "2026-10-18T17:48:23.116Z"
     }
   ]
 }

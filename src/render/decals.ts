@@ -22,6 +22,7 @@ const SETS: Record<string, [DecalKey, number, number, number][]> = {
   'zone.refinery_district': [['oil_stain', 3, 1.5, 3.5], ['hazard_stripes', 2, 2.5, 4], ['manhole', 2, 1.2, 1.8], ['floor_grate', 2, 1.2, 2], ['scorch_mark', 2, 2, 4], ['rubble', 2, 1.5, 3], ['tire_tracks', 2, 3, 5]],
   'zone.hydroponic_vaults': [['moss_patch', 3, 2, 4], ['puddle', 3, 1.5, 3.5], ['lumen_growth', 2, 1.5, 3], ['footprints', 2, 1.5, 2.5], ['floor_grate', 1, 1.2, 2], ['blood_stain', 1, 1, 2], ['bones', 1, 1.5, 2.5]],
   'zone.deep_mines': [['rubble', 3, 1.5, 3.5], ['puddle', 2, 1.5, 3], ['crystal_shards', 2, 1.5, 3], ['bones', 2, 1.5, 2.5], ['footprints', 2, 1.5, 2.5], ['lumen_growth', 1, 1.5, 3], ['oil_stain', 1, 1.5, 2.5]],
+  'zone.the_core': [['lumen_growth', 3, 2, 4], ['rubble', 2, 1.5, 3], ['floor_grate', 2, 1.2, 2], ['crystal_shards', 1, 1.5, 3], ['footprints', 1, 1.5, 2.5], ['puddle', 1, 1.5, 3]],
 };
 
 const textures = new Map<DecalKey, THREE.Texture>();

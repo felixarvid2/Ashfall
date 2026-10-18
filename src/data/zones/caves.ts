@@ -11,9 +11,33 @@ export interface Cavern {
   radius: number;
 }
 
+/** An energy bridge (The Core, Hanging Gardens): a walkable strip that can switch on and off. */
+export interface Bridge {
+  id: string;
+  a: [number, number];
+  b: [number, number];
+  width: number;
+  /** Absent: always on. */
+  cycle?: BridgeCycle;
+}
+
+/** Seconds on, then off; the last `flicker` seconds of "on" flicker as a warning. `offset` shifts the phase. */
+export interface BridgeCycle {
+  on: number;
+  off: number;
+  flicker: number;
+  offset: number;
+}
+
 export interface CaveDef {
   /** Open caverns joined by the tunnels. */
   caverns: Cavern[];
+  /** Carved out of the open ground again (melt pools); never walkable, bolts fly over them. */
+  holes?: Cavern[];
+  /** Where unwalkable ground is open air, not rock (abyss, melt pools): bolts fly over it and no rock wall is drawn. */
+  abyss?: Cavern[];
+  /** Energy bridges between islands. */
+  bridges?: Bridge[];
 }
 
 export interface CaveGrid {
@@ -24,6 +48,10 @@ export interface CaveGrid {
   half: number;
   /** 1 = walkable, row-major from (−half, −half). */
   data: Uint8Array;
+  /** 1 = unwalkable open air (abyss, melt pools): bolts pass, no rock is drawn. Absent in plain caves. */
+  air?: Uint8Array;
+  /** Energy bridges: the cells only they make walkable, and whether each is on right now. */
+  bridges?: { def: Bridge; cells: Int32Array; on: boolean }[];
 }
 
 export const CAVE_CELL = 2;
@@ -46,7 +74,7 @@ export function caveGrid(def: CaveSource): CaveGrid | null {
   const half = def.halfSize;
   const n = Math.ceil((half * 2) / cell);
   const data = new Uint8Array(n * n);
-  const circle = (cx: number, cz: number, r: number) => {
+  const circle = (cx: number, cz: number, r: number, v = 1) => {
     const i0 = Math.max(0, Math.floor((cx - r + half) / cell));
     const i1 = Math.min(n - 1, Math.floor((cx + r + half) / cell));
     const j0 = Math.max(0, Math.floor((cz - r + half) / cell));
@@ -55,7 +83,7 @@ export function caveGrid(def: CaveSource): CaveGrid | null {
       const z = (j + 0.5) * cell - half;
       for (let i = i0; i <= i1; i++) {
         const x = (i + 0.5) * cell - half;
-        if ((x - cx) ** 2 + (z - cz) ** 2 <= r * r) data[j * n + i] = 1;
+        if ((x - cx) ** 2 + (z - cz) ** 2 <= r * r) data[j * n + i] = v;
       }
     }
   };
@@ -85,7 +113,42 @@ export function caveGrid(def: CaveSource): CaveGrid | null {
   }
   for (const c of def.caves.caverns) circle(c.x, c.z, c.radius);
   for (const h of def.hubs) circle(h.x, h.z, h.radius + 4);
-  const grid = { cell, n, half, data };
+  const grid: CaveGrid = { cell, n, half, data };
+  // Melt pools: carved out of whatever was painted.
+  for (const h of def.caves.holes ?? []) circle(h.x, h.z, h.radius, 0);
+  if (def.caves.bridges?.length) {
+    grid.bridges = [];
+    for (const b of def.caves.bridges) {
+      // Cells only this bridge opens (the ends lie on islands that are open anyway).
+      const before = data.slice();
+      capsule(b.a[0], b.a[1], b.b[0], b.b[1], b.width / 2);
+      const cells: number[] = [];
+      for (let k = 0; k < data.length; k++) if (data[k] && !before[k]) cells.push(k);
+      grid.bridges.push({ def: b, cells: Int32Array.from(cells), on: true });
+    }
+  }
+  if (def.caves.abyss || def.caves.holes || def.caves.bridges) {
+    const air = new Uint8Array(n * n);
+    const mark = (cx: number, cz: number, r: number) => {
+      const i0 = Math.max(0, Math.floor((cx - r + half) / cell));
+      const i1 = Math.min(n - 1, Math.floor((cx + r + half) / cell));
+      const j0 = Math.max(0, Math.floor((cz - r + half) / cell));
+      const j1 = Math.min(n - 1, Math.floor((cz + r + half) / cell));
+      for (let j = j0; j <= j1; j++) {
+        const z = (j + 0.5) * cell - half;
+        for (let i = i0; i <= i1; i++) {
+          const x = (i + 0.5) * cell - half;
+          if ((x - cx) ** 2 + (z - cz) ** 2 <= r * r) air[j * n + i] = 1;
+        }
+      }
+    };
+    for (const c of def.caves.abyss ?? []) mark(c.x, c.z, c.radius);
+    for (const c of def.caves.holes ?? []) mark(c.x, c.z, c.radius);
+    for (let k = 0; k < air.length; k++) if (data[k]) air[k] = 0;
+    grid.air = air;
+  }
+  // Start in the state the cycle has at time 0.
+  setBridges(grid, 0);
   cache.set(def, grid);
   return grid;
 }
@@ -133,4 +196,46 @@ export function nearestWalkable(grid: CaveGrid, x: number, z: number, maxRadius 
     if (best) return best;
   }
   return null;
+}
+
+export function airAt(grid: CaveGrid, x: number, z: number): boolean {
+  if (!grid.air) return false;
+  const i = Math.floor((x + grid.half) / grid.cell);
+  const j = Math.floor((z + grid.half) / grid.cell);
+  if (i < 0 || j < 0 || i >= grid.n || j >= grid.n) return false;
+  return grid.air[j * grid.n + i] === 1;
+}
+
+/** Is this bridge on at `time`? `flicker` is true during the warning at the end of the "on" span. */
+export function bridgeState(cycle: BridgeCycle | undefined, time: number): { on: boolean; flicker: boolean } {
+  if (!cycle) return { on: true, flicker: false };
+  const period = cycle.on + cycle.off;
+  const t = (((time + cycle.offset) % period) + period) % period;
+  return { on: t < cycle.on, flicker: t >= cycle.on - cycle.flicker && t < cycle.on };
+}
+
+/**
+ * Switch the grid's bridges to their state at `time` (the grid is shared and cached: this changes
+ * it in place). Returns the bridges that just went off, so whoever stands on them can be moved.
+ */
+export function setBridges(grid: CaveGrid, time: number): CaveGrid['bridges'] {
+  const switchedOff: NonNullable<CaveGrid['bridges']> = [];
+  for (const b of grid.bridges ?? []) {
+    const on = bridgeState(b.def.cycle, time).on;
+    if (on === b.on) continue;
+    b.on = on;
+    for (const k of b.cells) {
+      grid.data[k] = on ? 1 : 0;
+      if (grid.air) grid.air[k] = on ? 0 : 1;
+    }
+    if (!on) switchedOff.push(b);
+  }
+  return switchedOff;
+}
+
+/** The grid as drawn: every bridge cell is open air (bridges are drawn on top as light). */
+export function bridgeCellsOf(grid: CaveGrid): Set<number> {
+  const out = new Set<number>();
+  for (const b of grid.bridges ?? []) for (const k of b.cells) out.add(k);
+  return out;
 }

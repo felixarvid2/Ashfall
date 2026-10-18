@@ -7,7 +7,7 @@ import { AwarenessMarkers, NavDebugOverlay } from './navOverlay';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { Boss, CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CLASS_WEAPONS } from '../data/weapons';
@@ -17,12 +17,17 @@ import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena
 import { buildGroundSplat } from './groundSplat';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnvFeature } from '../data/zones/zoneTypes';
-import { caveGrid, type CaveGrid } from '../data/zones/caves';
+import { bridgeCellsOf, caveGrid, type CaveDef, type CaveGrid } from '../data/zones/caves';
 import { scatterInstances } from '../world/arena';
+import { gravityFields } from '../world/theCore';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
 import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
+import { CoreLook, blurCut, cutCells, cutTexture, ghostMaterial, type CutField } from './coreLook';
+import { ChoirLinks } from './choirLinks';
+import { memoryAtmosphere, type Atmosphere } from './memoryLook';
+import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
 import { LootVisuals } from './lootVisuals';
 import { PostFx, type GraphicsQuality } from './postfx';
@@ -39,6 +44,7 @@ export class GameRenderer {
   private readonly objects = new Map<Entity, THREE.Object3D>();
   /** "!" and "?" over enemies; the wayfinding debug overlay when switched on. */
   private awareness: AwarenessMarkers | null = null;
+  private choir: ChoirLinks | null = null;
   private navDebug: NavDebugOverlay | null = null;
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
@@ -91,7 +97,10 @@ export class GameRenderer {
     this.scene.background = new THREE.Color(arena.fog.color);
     this.scene.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
     this.ash.setColor(arena.particles ?? '#b8b2aa');
+    this.postfx.setGrade(arena.grade?.saturation, arena.grade?.tint);
     this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
+    this.zoneAtmosphere = { fog: arena.fog, ambient: arena.ambient, playerLight: arena.playerLight, hemisphere: arena.hemisphere, grade: arena.grade, dark: arena.dark };
+    this.memory = null;
     if (!this.ambientLight || !this.hemiLight) {
       this.ambientLight = new THREE.AmbientLight();
       this.hemiLight = new THREE.HemisphereLight('#4a5466', '#2a2018');
@@ -99,6 +108,8 @@ export class GameRenderer {
     }
     this.ambientLight.color.set(arena.ambient.color);
     this.ambientLight.intensity = arena.ambient.intensity;
+    this.hemiLight.color.set(arena.hemisphere?.sky ?? '#4a5466');
+    this.hemiLight.groundColor.set(arena.hemisphere?.ground ?? '#2a2018');
     this.hemiLight.intensity = arena.ambient.intensity * 1.6;
     const pl = arena.playerLight;
     this.playerLight.color.set(pl.color);
@@ -118,6 +129,15 @@ export class GameRenderer {
 
     const size = arena.halfSize * 2 + 40;
     const groundDef = arena.ground;
+    // Open air in the ground (The Core's abyss and bridges): a smoothed mask the ground shader discards by.
+    const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+    const caves = (arena as { caves?: CaveDef }).caves;
+    const cutField: CutField | null = grid && caves && (grid.air || grid.bridges) ? blurCut(grid, cutCells(grid, caves)) : null;
+    let cutTex: THREE.DataTexture | null = null;
+    if (cutField) {
+      cutTex = cutTexture(cutField, size);
+      this.zoneTextures.push(cutTex);
+    }
     const geometry = new THREE.PlaneGeometry(size, size);
     let groundMat: THREE.MeshStandardMaterial;
     if (groundDef?.base) {
@@ -125,7 +145,7 @@ export class GameRenderer {
       const reps = size / groundDef.tile;
       const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
       for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * reps, uv.getY(i) * reps);
-      groundMat = this.texturedGroundMaterial(groundDef, size, reps, arena.id);
+      groundMat = this.texturedGroundMaterial(groundDef, size, reps, arena.id, cutTex);
     } else {
       groundMat = new THREE.MeshStandardMaterial({ map: makeGroundTexture(), color: 0x8a847c, roughness: 1, metalness: 0 });
     }
@@ -135,29 +155,41 @@ export class GameRenderer {
     s.add(ground);
 
     // Roads (open-world zones): ribbons along each polyline, textured when the zone has a road surface.
-    const roads = (arena as { roads?: { width: number; points: [number, number][] }[] }).roads ?? [];
+    const roads = (arena as { roads?: { width: number; points: [number, number][]; surface?: GroundTexture }[] }).roads ?? [];
     if (roads.length) {
       let roadMat: THREE.MeshStandardMaterial;
-      if (groundDef?.road) {
-        // Ash drifts over the ragged edges: an alpha map fades both sides of the ribbon.
-        const edges = makeRoadEdgeTexture();
+      // Ash drifts over the ragged edges: an alpha map fades both sides of the ribbon.
+      const edges = groundDef?.road || roads.some((r) => r.surface) ? makeRoadEdgeTexture() : null;
+      if (edges) {
         edges.repeat.set(1, 1 / 8);
         this.zoneTextures.push(edges);
-        roadMat = new THREE.MeshStandardMaterial({
-          map: this.groundTexture(groundDef.road),
-          alphaMap: edges,
-          transparent: true,
-          depthWrite: false,
-          color: GROUND_TINT,
-          roughness: 0.95,
-          metalness: 0,
-          polygonOffset: true,
-          polygonOffsetFactor: -1,
-        });
-      } else {
-        roadMat = new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 });
       }
-      for (const road of roads) s.add(roadMesh(road.points, road.width, roadMat));
+      const surfaces = new Map<GroundTexture, THREE.MeshStandardMaterial>();
+      const surfaceMat = (name: GroundTexture) => {
+        let mat = surfaces.get(name);
+        if (!mat) {
+          mat = new THREE.MeshStandardMaterial({
+            map: this.groundTexture(name),
+            alphaMap: edges,
+            transparent: true,
+            depthWrite: false,
+            color: GROUND_TINT,
+            roughness: 0.95,
+            metalness: 0,
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+          });
+          surfaces.set(name, mat);
+        }
+        return mat;
+      };
+      if (!groundDef?.road) roadMat = new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 });
+      else roadMat = surfaceMat(groundDef.road);
+      for (const road of roads) {
+        // A road on the base texture itself is just ground: no ribbon over it.
+        if (road.surface && road.surface === groundDef?.base) continue;
+        s.add(roadMesh(road.points, road.width, road.surface ? surfaceMat(road.surface) : roadMat));
+      }
     }
     buildDecals(s, arena);
 
@@ -166,8 +198,15 @@ export class GameRenderer {
     if (env.length) this.buildEnv(s, env);
     const domes = (arena as { domes?: { x: number; z: number; radius: number }[] }).domes ?? [];
     if (domes.length) this.buildDomes(s, domes);
-    const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+    this.coreLook = null;
     if (grid) this.buildCaveWalls(s, grid);
+    if (grid && caves && (grid.air || grid.bridges)) {
+      this.coreLook = new CoreLook(s, grid, caves, cutField, gravityFields(arena as { env?: EnvFeature[] }), arena.beams ?? [], this.glowTexture());
+    }
+    // Pale Lumen ground: warnings are drawn solid instead of additive.
+    this.vfx.brightGround = this.coreLook !== null;
+    // The Core's drifting light: motes rise out of the abyss instead of ash falling.
+    if (this.coreLook) this.ash.setMotes(['#ffd88a', '#c8a4ff', '#fff0c8']);
     this.dark = arena.dark ?? false;
     this.useEnvironment(this.dark ? ENV_LIGHT.dark : ENV_LIGHT.surface);
     this.dynamicLights = [];
@@ -205,11 +244,16 @@ export class GameRenderer {
     const CHUNK = 48;
     arena.scatter.forEach((def, index) => {
       // Clutter by the roads and hubs is seen close up: full detail, true proportions, on the ground.
-      const clutter = def.near !== undefined;
-      const parts = this.assets.instancingParts(def.asset, clutter ? 'full' : 'low');
+      const clutter = def.near !== undefined || def.within !== undefined;
+      // Distorted memories are many and floating: the light model keeps them cheap.
+      const parts = this.assets.instancingParts(def.asset, def.near !== undefined ? 'full' : 'low');
+      // A distorted memory: the same props in violet-rimmed, half see-through material.
+      if (def.ghost) for (const part of parts) part.material = ghostMaterial(part.material, def.ghost);
       const chunks = new Map<string, ReturnType<typeof scatterInstances>>();
       for (const inst of scatterInstances(arena, index)) {
-        const key = `${Math.floor(inst.x / CHUNK)},${Math.floor(inst.z / CHUNK)}`;
+        // A memory is dense and local: bigger chunks keep the draw calls down and still cull the far side.
+        const size = def.within ? CHUNK * 2 : CHUNK;
+        const key = `${Math.floor(inst.x / size)},${Math.floor(inst.z / size)}`;
         let list = chunks.get(key);
         if (!list) chunks.set(key, (list = []));
         list.push(inst);
@@ -217,12 +261,14 @@ export class GameRenderer {
       const m = new THREE.Matrix4();
       const q = new THREE.Quaternion();
       const up = new THREE.Vector3(0, 1, 0);
+      const lean = new THREE.Euler();
       for (const instances of chunks.values()) {
         for (const { geometry, material } of parts) {
           const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
           instances.forEach((inst, i) => {
-            q.setFromAxisAngle(up, inst.rot);
-            m.compose(new THREE.Vector3(inst.x, clutter ? -0.01 : -0.05, inst.z), q, new THREE.Vector3(inst.scale, inst.scale * (clutter ? 1 : 0.8), inst.scale));
+            if (inst.lean) q.setFromEuler(lean.set(inst.lean.x, inst.rot, inst.lean.z, 'YXZ'));
+            else q.setFromAxisAngle(up, inst.rot);
+            m.compose(new THREE.Vector3(inst.x, (clutter ? -0.01 : -0.05) + (inst.lift ?? 0), inst.z), q, new THREE.Vector3(inst.scale, inst.scale * (clutter ? 1 : 0.8), inst.scale));
             mesh.setMatrixAt(i, m);
           });
           mesh.computeBoundingSphere();
@@ -467,7 +513,7 @@ export class GameRenderer {
    * patches. Each texture's look (scale, brightness, glow) comes from GROUND_LOOK: Lumen spots glow
    * green, cracks in slag glow orange, crystal and alien seams glow cyan.
    */
-  private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string): THREE.MeshStandardMaterial {
+  private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string, cut: THREE.Texture | null = null): THREE.MeshStandardMaterial {
     const res = 1024;
     const count = Math.min(def.layers.length, 6);
     const splats = buildGroundSplat(def.patches, size, res, seed, count).map((data) => {
@@ -493,7 +539,7 @@ export class GameRenderer {
       let color = `raw${i}`;
       if (look.soften) color = `mix(vec3(${look.soften.toward.map(glsl).join(', ')}), ${color}, ${glsl(look.soften.keep)})`;
       if (look.gain) color = `(${color}) * ${glsl(look.gain)}`;
-      body += `ground = mix(ground, ${color}, ${weight});\n`;
+      body += `ground = mix(ground, ${color}, ${weight});\nbaseW *= 1.0 - ${weight};\n`;
       if (look.glow === 'green') {
         body += `groundGlow += vec3(0.36, 1.0, 0.42) * ${weight} * smoothstep(0.2, 0.6, raw${i}.g - max(raw${i}.r, raw${i}.b)) * 1.5;\n`;
       } else if (look.glow === 'orange') {
@@ -503,13 +549,18 @@ export class GameRenderer {
         body += `groundGlow += vec3(0.3, 0.8, 1.0) * ${weight} * smoothstep(0.55, 0.85, min(raw${i}.g, raw${i}.b)) * smoothstep(0.15, 0.35, raw${i}.b - raw${i}.r) * 1.6;\n`;
       }
     });
-    const samplers = layers.map((_, i) => `groundLayer${i}`).concat(splats.map((_, i) => `groundSplat${i}`));
+    // The base texture's own glow (the Core's gold and violet veins) shows where no overlay covers it.
+    const baseLook = BASE_LOOK[def.base!] ?? {};
+    if (baseLook.gain) mat.color.multiplyScalar(baseLook.gain);
+    const baseGlow = baseLook.glow ? 'normalize(ground + 0.001) * 0.9 * smoothstep(0.3, 0.7, max(ground.r, max(ground.g, ground.b)) - min(ground.r, min(ground.g, ground.b)))' : 'vec3(0.0)';
+    const samplers = layers.map((_, i) => `groundLayer${i}`).concat(splats.map((_, i) => `groundSplat${i}`)).concat(cut ? ['groundCut'] : []);
     // The generated shader differs per layer set: give three a cache key so zones don't share programs.
-    mat.customProgramCacheKey = () => `ground:${layers.join(',')}`;
+    mat.customProgramCacheKey = () => `ground:${layers.join(',')}:${def.base}:${cut ? 'cut' : ''}`;
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.groundReps = { value: reps };
       layers.forEach((name, i) => (shader.uniforms[`groundLayer${i}`] = { value: this.groundTexture(name) }));
       splats.forEach((tex, i) => (shader.uniforms[`groundSplat${i}`] = { value: tex }));
+      if (cut) shader.uniforms.groundCut = { value: cut };
       const splatReads = splats
         .map((_, i) => `vec4 splat${i} = texture2D(groundSplat${i}, splatUv);`)
         .join('\n');
@@ -521,12 +572,24 @@ export class GameRenderer {
           // The plane's v runs from +z to -z; the splat's rows run from -z.
           vec2 splatUv = vec2(vMapUv.x, groundReps - vMapUv.y) / groundReps;
           ${splatReads}
+          ${
+            cut
+              ? `// Open air: no ground over the abyss; the soft glowing lip is the field's last stretch before the edge.
+          float cutField = texture2D(groundCut, splatUv).r;
+          if (cutField > 0.5) discard;
+          float lip = smoothstep(0.18, 0.5, cutField);`
+              : 'float cutField = 0.0; float lip = 0.0;'
+          }
           vec3 ground = mix(
             texture2D(map, vMapUv).rgb,
             texture2D(map, mat2(0.8, -0.6, 0.6, 0.8) * vMapUv * 0.43 + 0.37).rgb,
             splat0.a);
           vec3 groundGlow = vec3(0.0);
+          vec3 baseGlow = ${baseGlow};
+          float baseW = 1.0;
           ${body}
+          ${baseLook.glow ? 'groundGlow += baseGlow * baseW;' : ''}
+          ${cut ? 'groundGlow += mix(vec3(0.55, 0.3, 1.0), vec3(1.0, 0.8, 0.42), smoothstep(0.3, 0.5, cutField)) * lip * lip * 0.4;' : ''}
           diffuseColor.rgb *= ground;
           `,
         )
@@ -559,6 +622,26 @@ export class GameRenderer {
   }
 
   private lightSpots: { x: number; z: number; color: string; intensity: number; distance: number; height: number }[] = [];
+  /** The zone's own atmosphere, and the memory of Lumen's phase 2 laid over it (null: none). */
+  private zoneAtmosphere: Atmosphere | null = null;
+  private memory: string | null = null;
+
+  /** Lumen's phase 2: the arena takes on an earlier region's fog, light and lamp (null puts the Heart back). */
+  setMemoryLook(look: 'ash' | 'fire' | 'jungle' | 'dark' | null): void {
+    if (look === this.memory || !this.zoneAtmosphere || !this.ambientLight || !this.hemiLight) return;
+    this.memory = look;
+    const a = look ? memoryAtmosphere(look) : this.zoneAtmosphere;
+    this.setLook(a.fog, a.ambient);
+    this.hemiLight.color.set(a.hemisphere?.sky ?? '#4a5466');
+    this.hemiLight.groundColor.set(a.hemisphere?.ground ?? '#2a2018');
+    this.postfx.setGrade(a.grade?.saturation, a.grade?.tint);
+    this.playerLight.color.set(a.playerLight.color);
+    this.playerLight.intensity = a.playerLight.intensity;
+    this.playerLight.distance = a.playerLight.distance;
+    this.dark = a.dark ?? false;
+    this.scene.environmentIntensity = this.dark ? ENV_LIGHT.dark : ENV_LIGHT.surface;
+  }
+
   private zoneLook: { fog: { color: string; density: number }; ambient: { color: string; intensity: number } } | null = null;
   private ambientLight: THREE.AmbientLight | null = null;
   private hemiLight: THREE.HemisphereLight | null = null;
@@ -597,6 +680,9 @@ export class GameRenderer {
     // colour, which read as a black floor.)
     const map = this.instanceFloorTexture(theme.ground ?? 'military_concrete', w, d);
     const tint = new THREE.Color(theme.floor).lerp(new THREE.Color('#ffffff'), 0.7);
+    // Pale painted floors (the Core's pearl stone) keep the brightness they are given in the zone, or the lamps blow them out.
+    const gain = BASE_LOOK[(theme.ground ?? '') as GroundTexture]?.gain;
+    if (gain) tint.multiplyScalar(gain);
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map, color: tint, roughness: 0.95, metalness: 0.05 }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set((bounds.minX + bounds.maxX) / 2, 0.01, (bounds.minZ + bounds.maxZ) / 2);
@@ -705,8 +791,15 @@ export class GameRenderer {
    */
   private buildCaveWalls(root: THREE.Group, grid: CaveGrid): void {
     const H = 3.6;
-    const { n, cell, half, data } = grid;
+    const { n, cell, half } = grid;
+    // As drawn, an energy bridge is light laid over open air: its cells are not ground.
+    const bridgeCells = bridgeCellsOf(grid);
+    const data = bridgeCells.size ? grid.data.slice() : grid.data;
+    for (const k of bridgeCells) data[k] = 0;
     const open = (i: number, j: number) => i >= 0 && j >= 0 && i < n && j < n && data[j * n + i] === 1;
+    // Open air (an abyss, a melt pool) has no rock: no cap over it and no wall beside it, but a glowing drop.
+    const air = (i: number, j: number) => i >= 0 && j >= 0 && i < n && j < n && (grid.air?.[j * n + i] === 1 || bridgeCells.has(j * n + i));
+    const solid = (i: number, j: number) => !open(i, j) && !air(i, j);
     const rng = new Rng('cave-walls');
     // Deterministic per-corner jitter so neighbouring wall pieces share their corners.
     const jitter = (i: number, j: number) => {
@@ -717,12 +810,12 @@ export class GameRenderer {
     for (let j = 0; j < n; j++) {
       let i = 0;
       while (i < n) {
-        if (open(i, j)) {
+        if (!solid(i, j)) {
           i++;
           continue;
         }
         const start = i;
-        while (i < n && !open(i, j)) i++;
+        while (i < n && solid(i, j)) i++;
         const x0 = start * cell - half;
         const x1 = i * cell - half;
         const z0 = j * cell - half;
@@ -733,7 +826,7 @@ export class GameRenderer {
     const capGeo = new THREE.BufferGeometry();
     capGeo.setAttribute('position', new THREE.Float32BufferAttribute(capPos, 3));
     capGeo.computeVertexNormals();
-    const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color: '#050404' }));
+    const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color: grid.air ? '#160f2a' : '#050404' }));
     root.add(cap);
     const wallPos: number[] = [];
     const wallCol: number[] = [];
@@ -768,11 +861,11 @@ export class GameRenderer {
         const z0 = j * cell - half;
         const x1 = x0 + cell;
         const z1 = z0 + cell;
-        // Faces point into the open cell.
-        if (!open(i, j - 1)) quad(x1, z0, x0, z0, [i + 1, j], [i, j]);
-        if (!open(i, j + 1)) quad(x0, z1, x1, z1, [i, j + 1], [i + 1, j + 1]);
-        if (!open(i - 1, j)) quad(x0, z0, x0, z1, [i, j], [i, j + 1]);
-        if (!open(i + 1, j)) quad(x1, z1, x1, z0, [i + 1, j + 1], [i + 1, j]);
+        // Faces point into the open cell; where the neighbour is open air the island just ends.
+        if (!open(i, j - 1) && !air(i, j - 1)) quad(x1, z0, x0, z0, [i + 1, j], [i, j]);
+        if (!open(i, j + 1) && !air(i, j + 1)) quad(x0, z1, x1, z1, [i, j + 1], [i + 1, j + 1]);
+        if (!open(i - 1, j) && !air(i - 1, j)) quad(x0, z0, x0, z1, [i, j], [i, j + 1]);
+        if (!open(i + 1, j) && !air(i + 1, j)) quad(x1, z1, x1, z0, [i + 1, j + 1], [i + 1, j]);
       }
     }
     const wallGeo = new THREE.BufferGeometry();
@@ -780,9 +873,19 @@ export class GameRenderer {
     wallGeo.setAttribute('color', new THREE.Float32BufferAttribute(wallCol, 3));
     wallGeo.setAttribute('uv', new THREE.Float32BufferAttribute(wallUv, 2));
     wallGeo.computeVertexNormals();
-    const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide, ...this.rockMaps() }));
+    // The Core's walls are Lumen matter, lit from within (the mines' are plain rock).
+    const lit = grid.air ? { emissive: new THREE.Color('#4a3c66'), emissiveIntensity: 0.18 } : {};
+    const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide, ...this.rockMaps(), ...lit }));
     walls.receiveShadow = true;
     root.add(walls);
+  }
+
+  /** The Core: the abyss, island skirts, energy bridges, the shaft's beam and the gravity shimmer (src/render/coreLook.ts). */
+  private coreLook: CoreLook | null = null;
+
+  /** Called every frame with the game clock: bridges fade and flicker with their cycle, gravity fields shimmer. */
+  updateCore(time: number): void {
+    this.coreLook?.update(time);
   }
 
   private rockTextures: { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture } | null = null;
@@ -984,8 +1087,10 @@ export class GameRenderer {
       if (!obj) {
         const r = world.req(e, Renderable);
         // Characters get their own material so they can flash and tint.
-        obj = this.assets.create(r.assetId, world.has(e, StatusEffects) || world.has(e, Interactable) || r.glow !== undefined);
+        obj = this.assets.create(r.assetId, world.has(e, StatusEffects) || world.has(e, Interactable) || r.glow !== undefined || r.look !== undefined);
         obj.scale.setScalar(r.scale ?? 1);
+        // Lumen's creations and memory shades are repainted (src/render/looks.ts).
+        if (r.look) applyLookMaterials((obj.userData.tint as TintSlot[] | undefined) ?? [], r.look);
         if (r.landmark) {
           // Landmarks read as dark silhouettes through the fog from anywhere in the region.
           obj.traverse((o) => {
@@ -1004,12 +1109,14 @@ export class GameRenderer {
         if (world.has(e, PlayerControlled)) addRim(obj, '#a8bcdf', 0.55);
         else if (world.has(e, EnemyAI)) {
           const drone = tr.y > 0.5;
-          if (drone) obj.scale.multiplyScalar(DRONE_SCALE);
+          // Lumen's imported models keep exactly the scale their def gives them; shades size up like the drones they remember.
+          if (drone && r.look !== 'lumen') obj.scale.multiplyScalar(DRONE_SCALE);
           // In the dark the rim would give them away; their eyes do instead.
           if (this.dark && !this.instanceRoot) this.addEyes(obj, obj.scale.x);
-          else addRim(obj, drone ? '#ffb080' : '#e07a4a', drone ? 0.65 : 0.32);
-          if (drone) this.addDroneMarks(obj, tr.y, r.glow ?? '#ff3a2a');
+          else if (!r.look) addRim(obj, drone ? '#ffb080' : '#e07a4a', drone ? 0.65 : 0.32);
+          if (drone) this.addDroneMarks(obj, tr.y, r.glow ?? (r.look ? LOOKS[r.look].emissive : '#ff3a2a'));
         }
+        obj.userData.baseScale = obj.scale.x;
         this.objects.set(e, obj);
         this.scene.add(obj);
         const clips = this.assets.clips(r.assetId);
@@ -1025,6 +1132,9 @@ export class GameRenderer {
           if (!visible) continue;
         }
         // Tall props between the camera and the player turn see-through (smokestacks, towers).
+        this.setFaded(obj, this.occludes(r, tr.x, tr.z));
+      } else if (world.get(e, Boss)?.script === 'lumen') {
+        // Lumen is a rooted tower of light: it fades the same way when the player stands behind it.
         this.setFaded(obj, this.occludes(r, tr.x, tr.z));
       }
       obj.position.set(
@@ -1092,15 +1202,38 @@ export class GameRenderer {
       if (dead && animator?.has('death')) {
         // The death clip handles the fall; just sink the body afterwards.
         if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
+        // A creature that bursts (Light Motes) leaves no body behind: it shrinks away once the clip has played.
+        const ai = world.get(e, EnemyAI);
+        if (world.get(e, Renderable)?.look && ai && enemyDef(ai.defId).onDeath?.burst) {
+          const f = deathFade(Math.max(0, dead.elapsed - 0.6));
+          obj.scale.setScalar(((obj.userData.baseScale as number | undefined) ?? 1) * f.scale);
+          obj.userData.fadeOpacity = f.opacity;
+          obj.visible = f.opacity > 0.01;
+        }
+      } else if (dead && animator && fadesOnDeath(true, animator.has('death'))) {
+        // No death clip (Choir singers, the Absorbed): fade and shrink where it stands.
+        const f = deathFade(dead.elapsed);
+        const base = (obj.userData.baseScale as number | undefined) ?? 1;
+        obj.scale.setScalar(base * f.scale);
+        obj.userData.fadeOpacity = f.opacity;
+        obj.visible = f.opacity > 0.01;
       } else if (dead) {
         // Topple over, then sink into the ash.
         const fall = Math.min(1, dead.elapsed / 0.3);
         obj.rotation.set(0, dead.fallDir, 0);
         obj.rotateX((Math.PI / 2) * fall * 0.95);
         if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
-      } else if (obj.rotation.x !== 0) {
-        obj.rotation.x = 0;
-        obj.rotation.z = 0;
+      } else {
+        if (obj.rotation.x !== 0) {
+          obj.rotation.x = 0;
+          obj.rotation.z = 0;
+        }
+        // Back from a fade (revived): full size, opaque, visible.
+        if (obj.userData.fadeOpacity !== undefined) {
+          delete obj.userData.fadeOpacity;
+          obj.scale.setScalar((obj.userData.baseScale as number | undefined) ?? 1);
+          obj.visible = true;
+        }
       }
       if (lean) {
         // Yaw first, then pitch and roll about the creature's own axes.
@@ -1119,6 +1252,7 @@ export class GameRenderer {
         this.lastHitAnim.delete(e);
       }
     }
+    (this.choir ??= new ChoirLinks(this.scene)).update(world, this.objects, this.time);
     // Embers rise off molten metal near the camera (not off pools cooled by a valve).
     if (this.molten && !this.instanceRoot) {
       const f = this.rig.focusPoint;
@@ -1236,7 +1370,7 @@ export class GameRenderer {
       const def = enemyDef(ai.defId);
       const atk = def.attack;
       const fit = atk.windup + (atk.kind === 'melee' ? atk.recovery : 0.3);
-      return { state: atk.kind === 'buffAllies' ? 'cast' : 'attack', loop: false, fit, token: ai.attackSeq };
+      return { state: atk.kind === 'buffAllies' ? 'cast' : atk.kind === 'projectile' ? 'shoot' : 'attack', loop: false, fit, token: ai.attackSeq };
     }
 
     const flash = this.flashes.get(e) ?? 0;
@@ -1283,7 +1417,11 @@ export class GameRenderer {
     const family = ai ? enemyDef(ai.defId).family : null;
     const infected = !world.has(e, Dead) && (family === 'infected' || family === 'lumen');
     const stealth = effects?.list.some((s) => s.id === 'stealth') ?? false;
-    const opacity = hologram ? 0.45 + 0.1 * Math.sin(this.time * 12) : stealth ? 0.3 : 1;
+    // Lumen creations and shades: pulsing or flickering, faded out while they die without a death clip.
+    const look = world.get(e, Renderable)?.look;
+    const ls = look ? lookState(look, this.time, e) : null;
+    const fade = (obj.userData.fadeOpacity as number | undefined) ?? 1;
+    const opacity = (ls ? ls.opacity : hologram ? 0.45 + 0.1 * Math.sin(this.time * 12) : stealth ? 0.3 : 1) * fade;
     for (const slot of slots) {
       const see = opacity < 1;
       if (slot.material.transparent !== see) {
@@ -1291,7 +1429,15 @@ export class GameRenderer {
         slot.material.depthWrite = !see;
         slot.material.needsUpdate = true;
       }
+      if (look && see) slot.material.depthWrite = LOOKS[look].depthWrite;
       slot.material.opacity = opacity;
+      if (ls && look && !flash && !active && !hologram) {
+        // An elite's glow (blue champion, yellow rare) takes over the look's own emissive colour.
+        slot.material.emissive.set(glow ?? LOOKS[look].emissive);
+        // (Kept low so the body reads against pale ground; an elite's bright colour is eased down a little.)
+        slot.material.emissiveIntensity = ls.glow * (glow ? 0.7 : 1) * dim;
+        continue;
+      }
       if (hologram) {
         slot.material.emissive.set('#3ab8ff');
         slot.material.emissiveIntensity = 0.9 * Math.max(0.25, dim);
@@ -1329,9 +1475,9 @@ export class GameRenderer {
     return true;
   }
 
-  /** Follow a world position with the camera and draw a frame. */
-  render(frameDt: number, followX: number, followY: number, followZ: number): void {
-    this.rig.update(followX, followY, followZ, frameDt);
+  /** Follow a world position with the camera and draw a frame; `look` moves the camera's focus off the player (a boss fight). */
+  render(frameDt: number, followX: number, followY: number, followZ: number, look?: { x: number; z: number }): void {
+    this.rig.update(look?.x ?? followX, followY, look?.z ?? followZ, frameDt);
     const f = this.rig.focusPoint;
     // Keep the shadow frustum centred on the action.
     this.playerLight.position.set(followX, 4.5, followZ);
@@ -1459,6 +1605,12 @@ const GROUND_LOOK: Partial<
   elder_stone: { scale: 0.55, gain: 1.5, glow: 'blue' },
   lake_shore: { scale: 0.8, gain: 0.85 },
   steel_grating: { scale: 0.9, gain: 0.95 },
+};
+
+/** Base textures that are drawn their own way (the others keep the plain tint): brightness and whether veins glow. */
+const BASE_LOOK: Partial<Record<GroundTexture, { gain?: number; glow?: 'lumen' }>> = {
+  // The Core: pale pearl stone, its gold and violet veins glow.
+  lumen_matter: { gain: 0.62, glow: 'lumen' },
 };
 
 /** Multiplies the painted ground textures down to the dark night look of the procedural ground. */
