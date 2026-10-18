@@ -75,6 +75,23 @@ export const SaveDataSchema = z.object({
       tracked: z.string().nullable(),
     })
     .default({ active: {}, done: {}, tracked: null }),
+  /**
+   * Endgame progress of this character (docs/endgame.md): Neural Matrix (paragon) experience,
+   * points, allocated nodes, boards and glyphs; Ash Harvest shards carried; tempering recipes learned
+   * and masterworking materials. Defaults keep older v7 saves loading.
+   */
+  endgame: z
+    .object({
+      matrixXp: z.number().nonnegative().default(0),
+      matrixPoints: z.number().int().nonnegative().default(0),
+      nodes: z.array(z.string()).default([]),
+      boards: z.array(z.object({ id: z.string(), rotation: z.number().int().default(0), gate: z.string().optional() })).default([]),
+      glyphs: z.array(z.object({ id: z.string(), level: z.number().int().min(1), socket: z.string().optional() })).default([]),
+      ashShards: z.number().int().nonnegative().default(0),
+      recipes: z.array(z.string()).default([]),
+      materials: z.record(z.string(), z.number().int().nonnegative()).default({}),
+    })
+    .prefault({}),
 });
 
 export type SaveData = z.infer<typeof SaveDataSchema>;

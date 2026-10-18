@@ -61,6 +61,8 @@ export interface GameContext {
   quests?: import('../systems/quests').QuestRuntime;
   /** Account-wide progress (Echo Relics, Restoration); absent in headless sims. */
   account?: import('./account').AccountData;
+  /** This character's endgame progress (Neural Matrix, glyphs, shards, recipes, materials; docs/endgame.md). */
+  endgame?: import('./save').SaveData['endgame'];
 }
 
 export interface RewardRequest {

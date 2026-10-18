@@ -45,6 +45,7 @@ import {
   SaveStore,
   parseSave,
   safeLocalStorage,
+  SaveDataSchema,
   serializeSave,
   slotKey,
   type SaveData,
@@ -1770,6 +1771,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         ),
       },
       quests: saveQuests(this.ctx.quests!),
+      endgame: structuredClone(this.ctx.endgame ?? SaveDataSchema.shape.endgame.parse(undefined)),
     };
   }
 
@@ -1823,6 +1825,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       this.ctx.zones!.set(id, zone);
     }
     setQuestState(this.ctx.quests!, data.quests);
+    this.ctx.endgame = structuredClone(data.endgame);
     const known = hasZone(data.world.zone);
     const at = known ? { x, z } : START_ZONE.playerSpawn;
     this.enterZone(known ? data.world.zone : START_ZONE.id, at.x, at.z);

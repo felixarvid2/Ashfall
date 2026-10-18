@@ -46,6 +46,7 @@ const sample = (): SaveData => ({
   skills: { ranks: { 'n.hydraulic_strike': 2 }, slots: ['bastion.hydraulic_strike', null, null, null, null, null] },
   world: { zone: 'zone.cinder_flats', zones: { 'zone.cinder_flats': { discovered: ['tp.ember', 'tp.impact'], revealed: 'AAE=', found: [], keycards: [] } } },
   quests: { active: { 'mq.fuel': { step: 2, progress: 3 } }, done: { 'mq.wake_up': '' }, tracked: 'mq.fuel' },
+  endgame: { matrixXp: 0, matrixPoints: 0, nodes: [], boards: [], glyphs: [], ashShards: 0, recipes: [], materials: {} },
 });
 
 describe('save serialization', () => {
