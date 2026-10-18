@@ -28,6 +28,9 @@ export const AccountSchema = z.object({
       tier: z.number().int().min(1).max(4).default(1),
       codex: z.array(z.string()).default([]),
       riftBest: z.number().int().nonnegative().default(0),
+      /** Deep Rifts: the highest level open (a fast clear opens two), and the best time (s) of the best level (0 = none). */
+      riftOpen: z.number().int().nonnegative().default(0),
+      riftTime: z.number().nonnegative().default(0),
       playtime: z.number().nonnegative().default(0),
     })
     .prefault({}),

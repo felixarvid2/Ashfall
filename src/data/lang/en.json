@@ -239,6 +239,9 @@
     "bloater": "Bloater",
     "spore_hound": "Spore Hound",
     "sergeant": "Contaminated Sergeant",
+    "world_ashen_colossus": "Ashen Colossus",
+    "world_mother_of_spores": "Mother of Spores",
+    "world_hollow_engine": "Hollow Engine",
     "named": {
       "lena": "Lena Reyes",
       "rook": "Rook",
@@ -541,6 +544,143 @@
     },
     "armorReduction": "Physical damage reduction",
     "close": "Close"
+  },
+  "matrix": {
+    "title": "Neural Matrix",
+    "tab": "Neural Matrix",
+    "back": "Skills",
+    "points": "{points} matrix points",
+    "xp": "{xp} / {next} XP to the next point",
+    "earned": "{earned} / {max} earned",
+    "maxed": "All {max} matrix points earned",
+    "reset": "Reset ({gold} gold)",
+    "resetConfirm": "Refund all matrix points for {gold} gold? Glyphs are taken out of their sockets.",
+    "pointBanner": "Neural Matrix: +{points} point ({total} earned)",
+    "glyphBanner": "Glyph found: {name}",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "recenter": "Show all boards",
+    "hint": "Drag to pan, scroll or pinch to zoom. Tap a node you can reach to take it; a gate lets you attach another board.",
+    "kinds": {
+      "start": "Start",
+      "normal": "Normal node",
+      "magic": "Magic node",
+      "rare": "Rare node",
+      "legendary": "Legendary node",
+      "socket": "Glyph socket",
+      "gate": "Gate"
+    },
+    "boards": {
+      "start": "Core Board",
+      "ash": "Ash Board",
+      "forge": "Forge Board",
+      "bloom": "Bloom Board",
+      "deep": "Deep Board"
+    },
+    "legendary": {
+      "start": "Neural Overdrive",
+      "ash": "Heart of Cinders",
+      "forge": "Forgeheart",
+      "bloom": "Verdant Pulse",
+      "deep": "Abyssal Mind"
+    },
+    "fx": {
+      "damage": "+{pct}% damage",
+      "damageMul": "{pct}% more damage",
+      "overheat": "{sec} s more time before overheating"
+    },
+    "when": {
+      "vulnerable": "against Vulnerable enemies",
+      "stunned": "against stunned enemies",
+      "burning": "against burning enemies",
+      "poisoned": "against poisoned enemies",
+      "chilled": "against chilled enemies",
+      "elite": "against elites",
+      "melee": "with melee attacks",
+      "ranged": "with ranged attacks",
+      "marked": "against marked enemies",
+      "highResource": "while your resource is high",
+      "hasBarrier": "while you have a barrier",
+      "highLife": "while above 80% life",
+      "evasive": "while evasive",
+      "stealthed": "while stealthed",
+      "minion": "from your minions"
+    },
+    "state": {
+      "owned": "Allocated",
+      "available": "Click to allocate (1 point)"
+    },
+    "cannot": {
+      "unknown": "That board is not attached.",
+      "owned": "Already allocated.",
+      "points": "No matrix points left.",
+      "unreachable": "Not connected to an allocated node.",
+      "gate": "Take the gate first.",
+      "used": "Another board hangs here already.",
+      "board": "That board is not available.",
+      "space": "There is no room for that board here.",
+      "locked": "Reset the nodes on that board first.",
+      "failed": "That cannot be done."
+    },
+    "glyphBoost": "Glyphs: +{pct}% to this node",
+    "gateHint": "Take it, then attach another board here.",
+    "startHint": "Every path begins here.",
+    "socketEmpty": "Empty socket",
+    "glyphLevel": "Lv {level}",
+    "glyphsTitle": "Glyphs",
+    "noGlyphs": "No glyphs yet. Deep Rift Guardians drop them.",
+    "pickGlyph": "Socket a glyph:",
+    "unsocket": "Remove glyph",
+    "glyphDesc": "Raises {stats} on normal and magic nodes within {radius} cells by {pct}% per level.",
+    "glyphBonus": "With {need} {attr} in range ({have} now): {bonus}",
+    "glyphSocketed": "In a socket",
+    "glyphFree": "Not socketed",
+    "glyphMax": "Maximum level",
+    "attached": "Board attached: {board}",
+    "attach": "Attach {board}",
+    "attachHint": "Attach a board here and pick its rotation.",
+    "detach": "Detach",
+    "rotateHint": "Rotating or detaching needs the board's nodes to be unallocated.",
+    "gateEntry": "This gate joins the board to the one before it.",
+    "noBoards": "Every board is attached.",
+    "glyphs": {
+      "brawn": {
+        "name": "Brawn"
+      },
+      "precision": {
+        "name": "Precision"
+      },
+      "insight": {
+        "name": "Insight"
+      },
+      "resolve": {
+        "name": "Resolve"
+      },
+      "bulwark": {
+        "name": "Bulwark"
+      },
+      "warcry": {
+        "name": "Warcry"
+      },
+      "swiftness": {
+        "name": "Swiftness"
+      },
+      "predator": {
+        "name": "Predator"
+      },
+      "aegis": {
+        "name": "Aegis"
+      },
+      "voltage": {
+        "name": "Voltage"
+      },
+      "focus": {
+        "name": "Focus"
+      },
+      "wellspring": {
+        "name": "Wellspring"
+      }
+    }
   },
   "tree": {
     "title": "Skills",
@@ -1519,6 +1659,8 @@
       "npc": "Talk",
       "questObject": "Examine",
       "stash": "Open Stash",
+      "riftObelisk": "Use Rift Obelisk",
+      "beacon": "Use Tier Beacon",
       "dungeon": "Enter",
       "bunker": "Enter Bunker",
       "portal": "Leave",
@@ -1533,7 +1675,8 @@
       "lever": "Pull Lever",
       "mirror": "Turn Mirror",
       "eventObject": "Use",
-      "feature": "Use"
+      "feature": "Use",
+      "harvestCache": "Open Harvest Cache"
     },
     "needKeycard": "Locked. A keycard should be lying somewhere nearby.",
     "keycard": "Keycard taken. A locked chest is close by.",
@@ -3118,6 +3261,111 @@
     "completedList": "Completed",
     "completedBanner": "Quest complete"
   },
+  "crafting": {
+    "groups": {
+      "offense": "Offense",
+      "defense": "Defense",
+      "utility": "Utility",
+      "mobility": "Mobility"
+    },
+    "materials": {
+      "lumen_dust": "Lumen Dust",
+      "rift_shard": "Rift Shard"
+    },
+    "recipes": {
+      "temper": {
+        "offense": {
+          "crit": {
+            "name": "Razor Edge",
+            "desc": "Sharpens the killing blow."
+          },
+          "fury": {
+            "name": "Fury",
+            "desc": "Raw damage and speed."
+          },
+          "bane": {
+            "name": "Bane",
+            "desc": "Hurts elites and weakened foes."
+          }
+        },
+        "defense": {
+          "ward": {
+            "name": "Ward",
+            "desc": "Armour and resistance."
+          },
+          "vitality": {
+            "name": "Vitality",
+            "desc": "Life and healing on kill."
+          },
+          "bulwark": {
+            "name": "Bulwark",
+            "desc": "Damage reduction and barrier."
+          }
+        },
+        "utility": {
+          "tempo": {
+            "name": "Tempo",
+            "desc": "Faster cooldowns and resource."
+          },
+          "mending": {
+            "name": "Mending",
+            "desc": "Better potions and life on kill."
+          },
+          "mind": {
+            "name": "Attunement",
+            "desc": "Core attributes."
+          }
+        },
+        "mobility": {
+          "stride": {
+            "name": "Stride",
+            "desc": "Move faster."
+          },
+          "dash": {
+            "name": "Dash",
+            "desc": "Movement and cooldowns."
+          },
+          "flow": {
+            "name": "Flow",
+            "desc": "Movement, agility and speed."
+          }
+        }
+      }
+    },
+    "temper": {
+      "title": "Tempering",
+      "locked": "The forge can temper gear once the Veteran tier opens (defeat Lumen).",
+      "cannot": "Only rare, legendary, unique and mythic items can be tempered.",
+      "noRecipes": "You know no tempering recipes yet. World bosses, Harvest caches and Rift Guardians teach them.",
+      "charges": "Tempering charges: {n}/{max}",
+      "options": "Can add: {stats}",
+      "add": "Temper ({gold} gold)",
+      "replace": "Replace: {stat}"
+    },
+    "masterwork": {
+      "title": "Masterworking",
+      "cannot": "Only rare, legendary, unique and mythic items can be masterworked.",
+      "rank": "Masterwork {rank}/{max}",
+      "note": "Each rank adds 5% to every affix. Ranks 4, 8 and 12 also upgrade one random affix by 25%.",
+      "have": "You have {dust} Lumen Dust and {shards} Rift Shards.",
+      "cost": "Next rank: {gold} gold, {dust} Lumen Dust, {shards} Rift Shards.",
+      "raise": "Raise to rank {rank}",
+      "maxed": "This item is at the highest rank.",
+      "reset": "Reset to rank 0 ({gold} gold)"
+    },
+    "tooltip": {
+      "tempered": "Tempered affix",
+      "masterwork": "Masterwork {rank}/{max}"
+    },
+    "codex": {
+      "title": "Codex of Power ({n}/{total})",
+      "hint": "Clear a dungeon for the first time to unlock its aspect for every character. Select a rare or legendary item to imprint one, as often as you like.",
+      "locked": "Locked: clear {dungeon}",
+      "imprint": "Imprint ({gold} gold)",
+      "unlocked": "Codex of Power: {aspect} unlocked by clearing {dungeon}."
+    },
+    "salvageDust": "+{n} Lumen Dust"
+  },
   "services": {
     "vendor": {
       "title": "Benny's Trade",
@@ -3152,7 +3400,13 @@
       "invalid": "That can't be done to this item.",
       "noAspect": "Only legendary items have an aspect to extract.",
       "cacheFull": "Your aspect cache is full.",
-      "type": "That aspect doesn't fit this item."
+      "type": "That aspect doesn't fit this item.",
+      "locked": "That isn't unlocked yet.",
+      "charges": "This item has no tempering charges left.",
+      "recipe": "You haven't learned that recipe.",
+      "materials": "Not enough materials.",
+      "maxRank": "This item is at the highest masterwork rank.",
+      "slots": "This item already has two tempered affixes; replace one instead."
     }
   },
   "elites": {
@@ -3308,6 +3562,7 @@
       "floor": "Floor {n}"
     },
     "names": {
+      "deep_rift": "Deep Rift",
       "core_memory_of_ember": "Memory of Ember",
       "core_endless_shaft": "The Endless Shaft",
       "core_singing_halls": "The Singing Halls",
@@ -3669,6 +3924,114 @@
       "c7": "Sound effects: Kenney (CC0)",
       "c8": "Music: Music Loop Bundle by Abstraction (CC0)",
       "c9": "Thank you for playing."
+    }
+  },
+  "rifts": {
+    "title": "Deep Rift",
+    "locked": "The obelisk is dormant. Defeat Lumen to wake it.",
+    "badLevel": "That rift level is not open yet.",
+    "intro": "Step through the obelisk into a rift that holds every region at once. Slay enough enemies to call the Rift Guardian, then kill it within {minutes} minutes.",
+    "best": "Best: Rift {level}, cleared in {time}",
+    "noBest": "No rift cleared yet.",
+    "open": "Open levels: 1 to {max}. A clear with more than half the time left opens two new levels.",
+    "effects": "Enemies have ×{mul} life and damage. Cache items: item power {power}.",
+    "enter": "Enter Rift {level}",
+    "cleared": "Rift {level} cleared",
+    "resultTime": "Cleared in {time}. Levels open: up to {open}.",
+    "fast": "Fast clear: two new levels are open.",
+    "tierUnlocked": "World Tier unlocked: {tier}. Choose it at a Tier Beacon.",
+    "glyphGranted": "You had no glyph. The rift gives you {name}.",
+    "attempts": "Glyph upgrade attempts left: {n}. Choose which glyph to try.",
+    "attemptsDone": "All glyph upgrade attempts are used.",
+    "glyphRow": "{name} · level {level}",
+    "upgraded": "{name} rose to level {level}.",
+    "failed": "{name} held firm. The upgrade failed.",
+    "cacheHint": "Open the cache for legendaries, Rift Shards and maybe a tempering recipe, then take the portal out.",
+    "cache": "Rift cache: {legendaries} legendaries, {shards} Rift Shards.",
+    "recipe": "Tempering recipe learned: {name}.",
+    "guardianAppears": "{name}",
+    "collapse": "The rift collapses.",
+    "collapsed": "The rift collapsed. No upgrades.",
+    "objective": {
+      "running": "Rift {level}: slay enemies ({percent}%)",
+      "guardian": "Rift {level}: slay the Rift Guardian",
+      "cleared": "Rift {level} cleared: open the cache, then leave",
+      "failed": "The rift is collapsing"
+    },
+    "hud": {
+      "level": "Rift {level}",
+      "running": "Progress {percent}%",
+      "guardian": "Slay the Rift Guardian",
+      "cleared": "Cleared",
+      "failed": "Collapsing"
+    },
+    "guardians": {
+      "brood_mother": "Rift Guardian: Brood Mother",
+      "slag_heart": "Rift Guardian: Slag Heart",
+      "vine_matriarch": "Rift Guardian: Vine Matriarch",
+      "archivist": "Rift Guardian: Archivist",
+      "elder_guardian": "Rift Guardian: Elder Guardian"
+    }
+  },
+  "worldTiers": {
+    "title": "Tier Beacon",
+    "badge": "WT {roman} {name}",
+    "active": "Active",
+    "intro": "Choose how hard the world fights back. Higher tiers reward more. The change applies to enemies that spawn from now on.",
+    "combat": "The beacon will not answer while enemies are fighting you.",
+    "picked": "World Tier set: {tier}.",
+    "unlockedToast": "World Tier II unlocked: Veteran. Choose it at a Tier Beacon in any hub.",
+    "1": { "name": "Survivor", "unlock": "Available from the start." },
+    "2": { "name": "Veteran", "unlock": "Defeat Lumen." },
+    "3": { "name": "Nightmare", "unlock": "Clear Deep Rift 20." },
+    "4": { "name": "Apocalypse", "unlock": "Clear Deep Rift 40." },
+    "effects": {
+      "levelZone": "Monsters match your level within each zone's range.",
+      "levelPlayer": "Monsters match your level in every zone.",
+      "enemies": "Enemy life ×{life}, enemy damage ×{damage}.",
+      "rewards": "Experience ×{xp}, gold ×{gold}.",
+      "loot": "Item power +{power}, greater affix chance +{greater}%, unique and mythic drops ×{rare}."
+    }
+  },
+  "harvest": {
+    "line": "Ash Harvest: {region} — {time} left",
+    "shards": "Ash Shards: {n}",
+    "shardsCache": "Ash Shards: {n} / {cost}",
+    "mapRegion": "Ash Harvest",
+    "mapCache": "Harvest Cache",
+    "needShards": "Not enough Ash Shards for a Harvest Cache.",
+    "shardsLost": "You fell. Half of your Ash Shards are lost.",
+    "cacheOpened": "Harvest Cache opened: a legendary and {dust} Lumen Dust.",
+    "cacheRecipe": "The cache held a tempering recipe you did not know."
+  },
+  "worldBoss": {
+    "hudWarning": "World boss: {boss} in {time} \u2014 {region}",
+    "hudAlive": "World boss: {boss} \u2014 {region} \u2014 {time} left",
+    "warning": "World boss: {boss} appears in {minutes} min in {region}.",
+    "appeared": "World boss: {boss} has appeared in {region}.",
+    "gone": "The world boss has gone.",
+    "defeated": "World boss defeated",
+    "chest": "The boss's chest bursts open.",
+    "unique": "A unique item lies among the loot.",
+    "recipe": "Tempering recipe learned: {name}",
+    "dust": "+{n} {name}",
+    "ashen_colossus": {
+      "name": "The Ashen Colossus",
+      "intro": "The Ashen Colossus walks again",
+      "phase2": "The Colossus tears up the ground and hurls it",
+      "phase3": "The Colossus burns from within"
+    },
+    "mother_of_spores": {
+      "name": "The Mother of Spores",
+      "intro": "The Mother of Spores stirs",
+      "phase2": "The Mother of Spores opens her spore beds",
+      "phase3": "The Mother of Spores swells and bursts her skin"
+    },
+    "hollow_engine": {
+      "name": "The Hollow Engine",
+      "intro": "The Hollow Engine wakes",
+      "phase2": "The Hollow Engine spins up its drill",
+      "phase3": "The Hollow Engine tears itself loose from the floor"
     }
   },
   "underground": {

@@ -79,6 +79,7 @@ import { DamageNumbers } from './ui/damageNumbers';
 import { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
 import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
+import { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels } from './ui/lootLabels';
 import { playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
@@ -93,7 +94,8 @@ import { slotsFor, type Item, type Slot } from './data/loot/schemas';
 import { generateItem, itemPowerFor, xpToNext } from './systems/loot/generate';
 import { addToGrid, emptyInventory, equipFromGrid, salvage, socketCrystal, targetSlot, unequip } from './systems/loot/inventory';
 import { PICKUP_KEY_RADIUS, grantXp, nextItemUid, pickUp, pickupSystem, rewardSystem, setItemNamer } from './systems/loot/rewards';
-import { computePlayerStats, recomputePlayer, sumItemStats } from './systems/stats';
+import { computePlayerStats, recomputePlayer, setExtraEffects, sumItemStats } from './systems/stats';
+import * as matrix from './systems/endgame/matrix';
 import { monsterLevel } from './systems/encounter';
 import { learn, learnedSkills, pointsSpent, resetTree, respecCost, tree } from './systems/skillTree';
 import { DevTools } from './ui/devtools';
@@ -127,6 +129,14 @@ import { NPCS, questDef } from './data/quests/db';
 import { DialoguePanel, NpcPlates, QuestLog, QuestTracker, type DialogueButton, type DialoguePage, type QuestLogEntry, type TrackedQuest } from './ui/questUi';
 import { STASH_POSITION } from './data/quests/cinderFlats';
 import { ServicePanel, type ServiceKind } from './ui/servicePanel';
+import { TierPanel, tierBadgeText } from './ui/tierPanel';
+import { RiftHud, RiftPanel } from './ui/riftPanel';
+import { RIFT, RIFT_ID } from './data/endgame/rifts';
+import { riftObeliskAt } from './data/endgame/riftObelisks';
+import { GLYPH_DEFS } from './data/endgame/matrix';
+import { riftEntryProblem, riftGlyphAttempt, riftHud, riftOpenLevel } from './systems/endgame/rifts';
+import { TIER_BEACONS } from './data/endgame/beacons';
+import { chooseTier, currentTier, monsterLevelCap, playerInCombat, setEnemyScaling, tickPlaytime, tierMods } from './systems/endgame/tiers';
 import {
   buy as buyItem,
   extractAspect,
@@ -139,6 +149,7 @@ import {
   stashSlots,
   toStash,
 } from './systems/hub/services';
+import { codexImprint, codexValue, grantSalvageDust, masterworkRankUp, masterworkReset, temperItem } from './systems/endgame/crafting';
 import { VENDOR } from './data/services';
 import { championAffixes, eliteSystem } from './systems/elites';
 import { activeMemory, bossSystem, inBeat, resetBoss } from './systems/boss';
@@ -148,7 +159,12 @@ import { EpilogueScreen } from './ui/epilogue';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
+import { worldBossMarker, worldBossSystem } from './world/worldBoss';
+import { WorldBossHud } from './ui/worldBossHud';
+import { worldBossPortrait } from './data/endgame/worldBosses';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
+import { harvestSystem, harvestView } from './world/harvest';
+import { HarvestHud } from './ui/harvestHud';
 import { environmentSystem, resetEnvironment, sporeExposure, sporesActive } from './world/environment';
 import { vehicleSystem } from './systems/vehicle';
 import { STORM, stormSystem } from './world/storm';
@@ -182,11 +198,14 @@ export class Game {
   /** Black overlay faded in while a zone loads. */
   private readonly fade: HTMLDivElement;
   private readonly toasts: Toasts;
+  private readonly worldBossHud: WorldBossHud;
+  private readonly harvestHud: HarvestHud;
   private readonly devtools: DevTools;
   private readonly damageNumbers: DamageNumbers;
   private readonly inventoryPanel: InventoryPanel;
   private readonly characterPanel: CharacterPanel;
   private readonly skillTreePanel: SkillTreePanel;
+  private readonly matrixPanel: MatrixPanel;
   private readonly lootLabels: LootLabels;
   private readonly mapUi: MapUi;
   private readonly interactPrompt: InteractPrompt;
@@ -200,6 +219,9 @@ export class Game {
   /** NPC the open conversation is with. */
   private talkingTo: string | null = null;
   private readonly servicePanel: ServicePanel;
+  private readonly tierPanel: TierPanel;
+  private readonly riftPanel: RiftPanel;
+  private readonly riftHudUi: RiftHud;
   private vendorStock: (Item | null)[] = [];
   /** Simulated time when the trader restocks (also on level up). */
   private vendorRestockAt = -Infinity;
@@ -282,7 +304,9 @@ export class Game {
       .add('elites', eliteSystem)
       .add('boss', bossSystem)
       .add('setPieces', setPieceSystem)
+      .add('worldBoss', worldBossSystem)
       .add('worldEvents', worldEventSystem)
+      .add('harvest', harvestSystem)
       .add('storm', stormSystem)
       .add('minions', minionSystem)
       .add('status', statusSystem)
@@ -315,6 +339,8 @@ export class Game {
 
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
+    this.worldBossHud = new WorldBossHud(uiRoot, (message) => this.toasts.show(message, 'info', 4500));
+    this.harvestHud = new HarvestHud(uiRoot);
     this.hud = new Hud(uiRoot, () => this.respawn());
     this.fade = document.createElement('div');
     this.fade.className = 'zone-fade';
@@ -437,7 +463,61 @@ export class Game {
         saveAccount(this.storage, this.ctx.account!);
         this.autosave();
       },
+      endgame: () => ({
+        tierUnlocked: this.ctx.account?.endgame.tierUnlocked ?? 1,
+        recipes: this.ctx.endgame?.recipes ?? [],
+        materials: this.ctx.endgame?.materials ?? {},
+        codex: this.ctx.account?.endgame.codex ?? [],
+      }),
+      codexValue: (id, ip) => codexValue(this.ctx, id, ip),
+      temper: (gi, id, slot) => {
+        const inv = this.world.req(this.player, Inventory);
+        const item = inv.grid[gi];
+        if (item) this.serviceResult(temperItem(this.ctx.loot.rng, this.ctx, inv, item, id, slot));
+      },
+      masterworkRankUp: (gi) => {
+        const inv = this.world.req(this.player, Inventory);
+        const item = inv.grid[gi];
+        if (item) this.serviceResult(masterworkRankUp(this.ctx.loot.rng, this.ctx, inv, item));
+      },
+      masterworkReset: (gi) => {
+        const inv = this.world.req(this.player, Inventory);
+        const item = inv.grid[gi];
+        if (item) this.serviceResult(masterworkReset(inv, item));
+      },
+      codexImprint: (id, gi) => {
+        const inv = this.world.req(this.player, Inventory);
+        const item = inv.grid[gi];
+        if (item) this.serviceResult(codexImprint(this.ctx, inv, item, id));
+      },
     });
+    this.tierPanel = new TierPanel(uiRoot, {
+      unlocked: () => this.ctx.account?.endgame.tierUnlocked ?? 1,
+      chosen: () => currentTier(this.ctx),
+      inCombat: () => playerInCombat(this.world, this.ctx),
+      pick: (tier) => {
+        if (!chooseTier(this.world, this.ctx, tier)) return;
+        saveAccount(this.storage, this.ctx.account!);
+        this.toasts.show(t('worldTiers.picked', { tier: tierBadgeText(tier) }));
+      },
+    });
+    this.riftPanel = new RiftPanel(uiRoot, {
+      levels: () => {
+        const e = this.ctx.account?.endgame;
+        return { open: riftOpenLevel(this.ctx), best: e?.riftBest ?? 0, time: e?.riftTime ?? 0 };
+      },
+      enter: (level) => this.enterRift(level),
+      glyphs: () => (this.ctx.endgame?.glyphs ?? []).map((g) => ({ id: g.id, name: this.glyphName(g.id), level: g.level })),
+      attempts: () => this.ctx.instance?.rift?.attempts ?? 0,
+      result: () => this.ctx.instance?.rift?.result ?? null,
+      upgrade: (id) => {
+        const rift = this.ctx.instance?.rift;
+        const r = rift ? riftGlyphAttempt(this.ctx, rift, id) : false;
+        if (r) this.autosave();
+        return r;
+      },
+    });
+    this.riftHudUi = new RiftHud(uiRoot);
     this.servicePanel.onToggle = (open) => {
       if (open) {
         this.inventoryPanel.toggle(true);
@@ -468,6 +548,7 @@ export class Game {
           compiled: user.compiled,
           respecCost: respecCost(t3, prog.level),
           gold: this.world.req(this.player, Inventory).gold,
+          matrixUnlocked: prog.level >= PROGRESSION.maxLevel,
         };
       },
       {
@@ -477,6 +558,21 @@ export class Game {
         iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       },
     );
+    // The Neural Matrix (endgame) is a second view of the skill panel; its stats join every recompute.
+    setExtraEffects(() => matrix.matrixEffects(this.ctx.endgame));
+    this.matrixPanel = new MatrixPanel(
+      uiRoot,
+      () => ({ endgame: matrix.ensureEndgame(this.ctx), gold: this.world.req(this.player, Inventory).gold }),
+      {
+        allocate: (id) => this.matrixChange(matrix.allocateNode(this.ctx, id)),
+        respec: () => this.matrixRespec(),
+        attach: (gate, board, rotation) => this.matrixChange(matrix.attachBoard(this.ctx, gate, board, rotation)),
+        rotate: (board, rotation) => this.matrixChange(matrix.rotateBoard(this.ctx, board, rotation)),
+        detach: (board) => this.matrixChange(matrix.detachBoard(this.ctx, board)),
+        socket: (glyph, node) => this.matrixChange({ ok: matrix.socketGlyph(this.ctx, glyph, node) } as { ok: boolean; reason?: string }),
+      },
+    );
+    this.skillTreePanel.setMatrix(this.matrixPanel);
     this.hud.setSkillResolvers(
       (id) => this.world.get(this.player, SkillUser)?.compiled[id]?.def ?? skill(id),
       (id) => this.renderer.assets.iconUrl(skillIconId(id), import.meta.env.BASE_URL),
@@ -623,6 +719,8 @@ export class Game {
   newCharacter(slot: number, classId: string, name: string): void {
     this.respawnAs(classId);
     this.resetWorld();
+    // A new character starts with empty endgame state (recipes, materials), not the last one's.
+    this.ctx.endgame = SaveDataSchema.shape.endgame.parse(undefined);
     setQuestState(this.ctx.quests!, { active: {}, done: {}, tracked: null });
     this.enterZone(START_ZONE.id, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
     this.slot = slot;
@@ -721,6 +819,7 @@ export class Game {
     }
     this.closeDialogue();
     this.servicePanel.close();
+    this.tierPanel.close();
     this.lastTarget = null;
     // Arriving in another region: its painting and name sweep in, once the zone is drawing.
     if (old?.def.id !== id) {
@@ -747,7 +846,9 @@ export class Game {
     if (!zone) return;
     spawnArenaProps(this.world, zone.def);
     const stash = zone.def.id === START_ZONE.id ? STASH_POSITION : zone.def.stash;
-    spawnInteractables(this.world, zone, stash ? [{ poi: 'stash', kind: 'stash', ...stash }] : []);
+    const beacon = TIER_BEACONS[zone.def.id];
+    const obelisk = riftObeliskAt(zone.def.id);
+    spawnInteractables(this.world, zone, [...(stash ? [{ poi: 'stash', kind: 'stash' as const, ...stash }] : []), ...(beacon ? [{ poi: 'tierBeacon', kind: 'beacon' as const, ...beacon }] : []), ...(obelisk ? [{ poi: 'riftObelisk', kind: 'riftObelisk' as const, ...obelisk }] : [])]);
     syncInteractables(this.world, zone);
     syncSetPieces(this.world, zone);
     rebuildQuestWorld(this.world, this.ctx);
@@ -822,6 +923,9 @@ export class Game {
     if (input.wasPressed('toggleMute')) this.toggleMute();
     if (this.loreReader.open && (input.wasPressed('pickup') || input.wasPressed('map'))) this.loreReader.close();
 
+    // World Tiers: the play time clock, and the enemy scaling every new spawn picks up.
+    tickPlaytime(this.ctx, dt);
+    setEnemyScaling(tierMods(this.ctx));
     this.scheduler.tick(this.world, dt, this.ctx);
     this.ctx.tick++;
     this.ctx.time += dt;
@@ -888,14 +992,22 @@ export class Game {
       this.characterPanel.refresh();
     }
     this.announceBosses();
+    if (this.tierPanel.open && Math.floor(this.realTime * 2) !== Math.floor((this.realTime - frameDt) * 2)) this.tierPanel.refresh();
     if (this.pendingCard && --this.pendingCard.frames <= 0) {
       this.hud.regionCard(this.pendingCard.image, this.pendingCard.name, this.pendingCard.sub);
       this.pendingCard = null;
     }
     this.hud.update(this.hudState(), frameDt);
+    this.worldBossHud.update(this.ctx);
+    this.riftHudUi.update(this.ctx.instance?.rift ? riftHud(this.ctx.instance.rift) : null);
     this.mapUi.markers = this.ctx.instance
       ? this.instanceMarkers()
       : questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
+    const worldBoss = worldBossMarker(this.ctx);
+    if (worldBoss) this.mapUi.markers.push({ ...worldBoss, shape: 'diamond' });
+    const harvest = harvestView(this.ctx);
+    this.mapUi.harvest = harvest;
+    this.harvestHud.update(harvest, this.ctx.endgame?.ashShards ?? 0, frameDt);
     this.mapUi.update(frameDt);
     this.updateInteractPrompt(px, pz);
     this.updateQuestUi(px, pz);
@@ -1073,6 +1185,8 @@ export class Game {
     this.elitePlates.update(elites, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
     // Leaving the hub closes its services.
     if (this.servicePanel.open && !this.zone?.inHub) this.servicePanel.close();
+    if (this.tierPanel.open && !this.zone?.inHub) this.tierPanel.close();
+    if (this.riftPanel.current === 'select' && !this.zone?.inHub) this.riftPanel.close();
     // Walking away ends the conversation.
     if (this.dialogue.open && this.talkingTo) {
       const npc = this.world.query(Npc, Transform).find((e) => this.world.req(e, Npc).id === this.talkingTo);
@@ -1304,6 +1418,10 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         this.characterPanel.refresh();
         this.autosave();
         break;
+      case 'codex':
+        if (detail && id) this.toasts.show(t('crafting.codex.unlocked', { aspect: t(`aspects.${detail}.name`), dungeon: t(`instances.names.${id}`) }));
+        saveAccount(this.storage, this.ctx.account!);
+        break;
       case 'lore':
         if (detail) this.loreReader.show(detail, LORE_XP_PER_LEVEL * this.world.req(this.player, Progression).level);
         this.autosave();
@@ -1327,9 +1445,51 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       case 'stash':
         this.openService('stash');
         break;
+      case 'beacon':
+        this.closeDialogue();
+        this.servicePanel.close();
+        this.tierPanel.show();
+        break;
+      case 'riftObelisk':
+        this.closeDialogue();
+        this.servicePanel.close();
+        this.tierPanel.close();
+        this.riftPanel.showSelect();
+        break;
+      case 'riftCleared':
+        // The guardian fell in time: the account and tiers changed, the glyph attempts wait in the panel.
+        saveAccount(this.storage, this.ctx.account!);
+        this.autosave();
+        this.riftPanel.showResult();
+        break;
+      case 'riftCache':
+        if (detail) {
+          const [shards, recipe, legendaries] = detail.split('|');
+          this.toasts.show(t('rifts.cache', { legendaries: legendaries ?? 0, shards: shards ?? 0 }));
+          if (recipe) this.toasts.show(t('rifts.recipe', { name: t(`endgame.recipes.${recipe}.name`) }));
+        }
+        this.autosave();
+        break;
+      case 'riftExit':
+        // Out of time: the rift throws you out.
+        this.riftPanel.close();
+        this.exitInstance();
+        this.toasts.show(t('rifts.collapsed'));
+        break;
+      case 'tierUnlock':
+        saveAccount(this.storage, this.ctx.account!);
+        this.toasts.show(t('worldTiers.unlockedToast'));
+        break;
       case 'feature':
         if (detail) this.hud.showBanner(t(`features.${detail}.used`), 2);
         break;
+      case 'harvestCache': {
+        const [dust, recipe] = (detail ?? '').split(',');
+        this.toasts.show(t('harvest.cacheOpened', { dust: dust ?? 0 }));
+        if (recipe) this.toasts.show(t('harvest.cacheRecipe'));
+        this.autosave();
+        break;
+      }
       case 'reclaimed':
         // Pump Station Delta's people move in.
         if (id) spawnUnlockedNpcs(this.world, this.ctx, id);
@@ -1477,7 +1637,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       const dn = w.get(te, DisplayName);
       const elite = w.get(te, Elite);
       const name = dn ? (dn.literal ? dn.key : t(dn.key)) : t(`enemies.${ai.defId}`);
-      const portrait = artUrl(`bosses/${ai.defId}`);
+      const portrait = artUrl(`bosses/${worldBossPortrait(ai.defId) ?? ai.defId}`);
       target = {
         name,
         current: th.current,
@@ -1502,6 +1662,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       potion: { charges: user.potionCharges, max: cls.potion.charges + (w.get(p, AccountBonuses)?.potionCharges ?? 0) },
       wave: enc && enc.wave > 0 ? { wave: enc.wave, alive: enc.alive, phase: enc.phase, timer: enc.timer } : null,
       ...(this.zone ? { location: this.locationLabel() } : {}),
+      ...((this.ctx.account?.endgame.tierUnlocked ?? 1) >= 2 ? { tier: tierBadgeText(currentTier(this.ctx)) } : {}),
       ...(() => {
         const tr = this.playerTransform;
         const ev = this.ctx.instance ? null : activeEvent(this.zone, tr.x, tr.z);
@@ -1538,7 +1699,10 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     user.cast = null;
     user.request = null;
     // The Endless Shaft ends with your death: you wake outside it.
-    if (this.ctx.instance?.def.floors) {
+    // A Deep Rift collapses with it: no upgrades.
+    if (this.ctx.instance?.def.floors || this.ctx.instance?.rift) {
+      if (this.ctx.instance.rift) this.toasts.show(t('rifts.collapsed'));
+      this.riftPanel.close();
       this.exitInstance();
       w.add(p, Invulnerable, { remaining: 2 });
       return;
@@ -1572,6 +1736,23 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const defId = poi.kind === 'dungeon' ? String(poi.data?.dungeon ?? '') : String(poi.data?.instance ?? 'bunker');
     // Anything not built yet (the Core's heart is still a marker) says so instead of crashing.
     if (!hasInstance(defId)) return this.notice('interact.notBuilt', 'info');
+    const level = monsterLevel(this.world, this.ctx) + (poi.kind === 'dungeon' ? 1 : 0);
+    this.startInstance(defId, poiId, Math.min(level, monsterLevelCap(this.ctx) + 1), { x: poi.x + 3, z: poi.z + 3 });
+  }
+
+  /** Enter a Deep Rift of this level from the Rift Obelisk (docs/endgame.md). */
+  enterRift(level: number): void {
+    const zone = this.zone;
+    const at = zone ? riftObeliskAt(zone.def.id) : undefined;
+    if (!zone || !at || this.ctx.instance || this.fading || this.world.has(this.player, Dead)) return;
+    const problem = riftEntryProblem(this.ctx, level);
+    if (problem) return this.notice(problem === 'locked' ? 'rifts.locked' : 'rifts.badLevel', 'error');
+    this.startInstance(RIFT_ID, 'riftObelisk', RIFT.monsterLevel, { x: at.x + 3, z: at.z + 3 }, level);
+  }
+
+  private startInstance(defId: string, poiId: string, level: number, exit: { x: number; z: number }, riftLevel?: number): void {
+    const zone = this.zone;
+    if (!zone) return;
     // Wake-up packs far away would only sit there: put them back to sleep.
     for (const st of zone.packs.values()) {
       if (st.state !== 'active') continue;
@@ -1580,11 +1761,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       st.state = 'dormant';
     }
     this.world.flushDestroyed();
-    const level = monsterLevel(this.world, this.ctx) + (poi.kind === 'dungeon' ? 1 : 0);
-    const rt = buildInstance(this.world, this.ctx, defId, poiId, `${this.ctx.rng.seed}-${this.instanceCount++}`, Math.min(level, this.ctx.zoneLevels[1] + 1), {
-      x: poi.x + 3,
-      z: poi.z + 3,
-    });
+    const rt = buildInstance(this.world, this.ctx, defId, poiId, `${this.ctx.rng.seed}-${this.instanceCount++}`, level, exit, riftLevel);
     this.ctx.instance = rt;
     this.ctx.worldHalfSize = 2600;
     const xs = rt.layout.rooms.map((r) => roomCenter(r));
@@ -1603,7 +1780,13 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     this.placePlayer(rt.start.x, rt.start.z);
     this.closeDialogue();
     this.servicePanel.close();
+    this.tierPanel.close();
     this.hud.showBanner(this.locationLabel().title, 2.4);
+  }
+
+  /** A glyph's display name (Neural Matrix strings), falling back to its id. */
+  private glyphName(id: string): string {
+    return GLYPH_DEFS.has(id) ? t(`matrix.glyphs.${id}.name`) : id;
   }
 
   exitInstance(): void {
@@ -1712,7 +1895,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       if (this.announced.has(e) || !this.world.req(e, Boss).engaged || this.world.has(e, Dead)) continue;
       this.announced.add(e);
       const ai = this.world.req(e, EnemyAI);
-      const portrait = artUrl(`bosses/${ai.defId}`);
+      const portrait = artUrl(`bosses/${worldBossPortrait(ai.defId) ?? ai.defId}`);
       if (!portrait) continue;
       const dn = this.world.get(e, DisplayName);
       const name = dn ? (dn.literal ? dn.key : t(dn.key)) : t(`enemies.${ai.defId}`);
@@ -1826,6 +2009,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     }
     setQuestState(this.ctx.quests!, data.quests);
     this.ctx.endgame = structuredClone(data.endgame);
+    // A character already at the cap gets the starting board and glyphs (older saves, first load after the update).
+    if (this.world.req(this.player, Progression).level >= PROGRESSION.maxLevel) matrix.ensureMatrixStarted(this.ctx);
     const known = hasZone(data.world.zone);
     const at = known ? { x, z } : START_ZONE.playerSpawn;
     this.enterZone(known ? data.world.zone : START_ZONE.id, at.x, at.z);
@@ -1873,8 +2058,11 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   }
 
   salvageItem(index: number): void {
-    const gold = salvage(this.world.req(this.player, Inventory), index);
+    const inv = this.world.req(this.player, Inventory);
+    const dust = inv.grid[index] ? grantSalvageDust(this.ctx, inv.grid[index]!) : 0;
+    const gold = salvage(inv, index);
     if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
+    if (dust > 0) this.toasts.show(t('crafting.salvageDust', { n: dust }));
     this.afterInventoryChange();
   }
 
@@ -1942,6 +2130,33 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       if (free >= 0) user.slots[free] = skillId;
     }
     this.skillTreePanel.refresh();
+  }
+
+  /** After a Neural Matrix action: stats and panels follow, or the reason it failed is shown. */
+  private matrixChange(r: { ok: boolean; reason?: string }): void {
+    if (!r.ok) {
+      this.notice(`matrix.cannot.${r.reason ?? 'failed'}`, 'error');
+      return;
+    }
+    recomputePlayer(this.world, this.player);
+    this.skillTreePanel.refresh();
+    this.characterPanel.refresh();
+    this.autosave();
+  }
+
+  private matrixRespec(): void {
+    const e = matrix.ensureEndgame(this.ctx);
+    const inv = this.world.req(this.player, Inventory);
+    const cost = matrix.respecCost(e);
+    if (e.nodes.length === 0) return;
+    if (inv.gold < cost) {
+      this.notice('tree.cannot.gold', 'error');
+      return;
+    }
+    inv.gold -= cost;
+    matrix.respecMatrix(this.ctx);
+    this.inventoryPanel.refresh();
+    this.matrixChange({ ok: true });
   }
 
   resetSkillTree(): void {

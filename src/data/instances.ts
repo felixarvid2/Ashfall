@@ -4,6 +4,7 @@
  */
 import type { EliteAffix } from './elites';
 import type { GroundTexture } from './zones/testArena';
+import { RIFT_INSTANCE } from './endgame/rifts';
 
 export type InstanceObjective =
   /** Power up generators; each charges while enemies attack. */
@@ -55,7 +56,8 @@ export interface InstanceBoss {
 
 export interface InstanceDef {
   id: string;
-  kind: 'dungeon' | 'bunker';
+  /** `rift`: a Deep Rift (src/data/endgame/rifts.ts, systems/endgame/rifts.ts): timed, kill-driven progress, the guardian at 100 %. */
+  kind: 'dungeon' | 'bunker' | 'rift';
   /** Main path length (rooms, start and boss included) and side branches. */
   main: [number, number];
   branches: [number, number];
@@ -634,6 +636,7 @@ export const INSTANCES: InstanceDef[] = [
     eventChance: 0.2,
     lore: 'cmirror.vault',
   },
+  RIFT_INSTANCE,
 ];
 
 /** The Core's instances (docs/regions/the-core.md); built where the Core's dungeon and mirror markers point. */

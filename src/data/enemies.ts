@@ -1,6 +1,7 @@
 /** Enemy definitions (Phase 1: three Cinder Flats archetypes). */
 import type { z } from 'zod';
 import type { EnemyDefSchema } from './schemas';
+import { WORLD_BOSS_ENEMIES } from './endgame/worldBosses';
 
 type EnemyInput = z.input<typeof EnemyDefSchema>;
 
@@ -1700,4 +1701,6 @@ export const ENEMIES: EnemyInput[] = [
     dropTable: 'dt.rare_elite',
     attack: { kind: 'melee', range: 3, arcDeg: 140, windup: 1, recovery: 0.8, cooldown: 1.5, damageType: 'physical', knockback: 3 },
   },
+  // World bosses (docs/endgame.md).
+  ...WORLD_BOSS_ENEMIES,
 ];

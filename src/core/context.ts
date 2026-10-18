@@ -74,6 +74,9 @@ export interface RewardRequest {
   xp: boolean;
   /** Also drop one guaranteed item of this rarity (debug, boss chests). */
   rarity?: Rarity;
+  /** How many guaranteed items of `rarity` (default 1), and their fixed item power (default: by `level`). */
+  count?: number;
+  itemPower?: number;
   /** Also drop this specific unique (quest choices). */
   unique?: string;
 }

@@ -3,8 +3,10 @@
  * always produces the same loot — essential for reproducing bugs and for tests.
  */
 import type { Rng } from '../../core/rng';
+import type { TierMods } from '../../data/endgame/tiers';
 import { AFFIX_DEFS, ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, PROGRESSION, UNIQUE_DEFS, baseItem, rarityDef } from '../../data/loot/db';
 import { resolveEffects, type Effect } from '../../data/effects';
+import { effectiveAffixes } from '../endgame/itemMods';
 import {
   RARITIES,
   type AspectDef,
@@ -46,10 +48,11 @@ export function crystalTier(itemPower: number): number {
 const rarityIndex = (r: Rarity) => RARITIES.indexOf(r);
 
 /** Weighted rarity roll with per-table bias and a floor; disabled rarities never drop. */
-export function rollRarity(rng: Rng, bias: Partial<Record<Rarity, number>> = {}, minRarity: Rarity = 'common'): Rarity {
+export function rollRarity(rng: Rng, bias: Partial<Record<Rarity, number>> = {}, minRarity: Rarity = 'common', rareDrops = 1): Rarity {
   const options = RARITIES.filter((r) => rarityDef(r).enabled && rarityIndex(r) >= rarityIndex(minRarity)).map((r) => ({
     item: r,
-    weight: (PROGRESSION.rarityWeights[r] ?? 0) * (bias[r] ?? 1),
+    // World Tiers multiply the unique and mythic weights (docs/endgame.md).
+    weight: (PROGRESSION.rarityWeights[r] ?? 0) * (bias[r] ?? 1) * (r === 'unique' || r === 'mythic' ? rareDrops : 1),
   }));
   return rng.weighted(options);
 }
@@ -110,6 +113,8 @@ export interface GenerateOptions {
   type?: ItemType;
   /** Localised base name lookup (defaults to the id). */
   nameOf?: (baseId: string) => string;
+  /** Added to the rarity's chance that an affix rolls greater (World Tiers). */
+  greaterBonus?: number;
 }
 
 /** An aspect that fits the item type and the player's class (85 % own class, like bases). */
@@ -152,7 +157,7 @@ export function generateItem(rng: Rng, opts: GenerateOptions): Item {
   const def = rarityDef(rarity);
   const implicits = base.implicits.map((imp) => ({ stat: imp.stat, value: rollValue(rng, imp, ip) }));
   const count = rng.int(def.affixes[0], def.affixes[1]);
-  const affixes = rollAffixes(rng, base.type, count, ip, def.greaterChance);
+  const affixes = rollAffixes(rng, base.type, count, ip, Math.min(1, def.greaterChance + (opts.greaterBonus ?? 0)));
   const baseName = opts.nameOf?.(base.id) ?? base.id;
   const item: Item = {
     uid: opts.uid,
@@ -229,7 +234,8 @@ export function crystalSlotGroup(type: ItemType): 'weapon' | 'armor' | 'jewelry'
 /** Every stat an item grants: implicits, affixes and socketed crystals. */
 export function itemStats(item: Item): RolledStat[] {
   const base = BASE_ITEMS.get(item.base);
-  const out = [...item.implicits, ...item.affixes];
+  // Tempered affixes and masterwork multipliers (docs/endgame.md) are already folded into effectiveAffixes.
+  const out: RolledStat[] = [...item.implicits, ...effectiveAffixes(item)];
   if (base) {
     const group = crystalSlotGroup(base.type);
     for (const s of item.sockets) {
@@ -259,16 +265,17 @@ export function rollDrops(
   classId: string,
   nextUid: () => string,
   nameOf?: (baseId: string) => string,
+  tier?: Pick<TierMods, 'itemPower' | 'greaterChance' | 'rareDrops'>,
 ): DropResult {
   const items: Item[] = [];
   const rolls = 1 + table.extraItems;
   for (let i = 0; i < rolls; i++) {
     if (!rng.chance(table.itemChance)) continue;
-    const ip = itemPowerFor(level, rng);
-    const rarity = rollRarity(rng, table.rarityBias, table.minRarity);
-    items.push(generateItem(rng, { itemPower: ip, classId, uid: nextUid(), rarity, nameOf }));
+    const ip = itemPowerFor(level, rng) + (tier?.itemPower ?? 0);
+    const rarity = rollRarity(rng, table.rarityBias, table.minRarity, tier?.rareDrops);
+    items.push(generateItem(rng, { itemPower: ip, classId, uid: nextUid(), rarity, nameOf, greaterBonus: tier?.greaterChance ?? 0 }));
   }
-  if (rng.chance(table.crystalChance)) items.push(generateCrystal(rng, itemPowerFor(level, rng), nextUid()));
+  if (rng.chance(table.crystalChance)) items.push(generateCrystal(rng, itemPowerFor(level, rng) + (tier?.itemPower ?? 0), nextUid()));
   const gold = rng.chance(table.goldChance) ? Math.round(rng.range(table.gold[0], table.gold[1]) * level) : 0;
   return { items, gold };
 }

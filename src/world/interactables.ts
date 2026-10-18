@@ -45,8 +45,10 @@ import { livingInCircle } from '../systems/targeting';
 import { revealAround, type ZoneRuntime } from './zone';
 import { signal } from '../systems/quests';
 import { instanceInteract } from './instance';
+import { riftsUnlocked } from '../systems/endgame/rifts';
 import { eventInteract } from './worldEvents';
 import { FEATURES, featureOf, useFeature } from './features';
+import { openHarvestCache } from './harvest';
 
 const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: number; glow?: string; collider?: number }>> = {
   chest: { asset: 'prop.supply_chest', collider: 0.7 },
@@ -60,6 +62,8 @@ const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: numb
   dungeon: { asset: 'prop.teleporter', scale: 0.3, glow: '#ff8a3a' },
   bunker: { asset: 'prop.teleporter', scale: 0.26, glow: '#c8a060' },
   stash: { asset: 'prop.supply_chest', scale: 1.1, glow: '#7dd8a0', collider: 0.8 },
+  riftObelisk: { asset: 'prop.core_column', scale: 0.8, glow: '#b48cff', collider: 0.8 },
+  beacon: { asset: 'prop.signal_tower', scale: 0.55, glow: '#ff8a3a', collider: 0.7 },
 };
 
 /** Spawn the zone's interactable objects (once, when the zone loads). */
@@ -281,8 +285,17 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
     case 'teleporter':
     case 'npc':
     case 'stash':
+    case 'beacon':
     case 'dungeon':
     case 'bunker':
+      emit();
+      return true;
+    case 'riftObelisk':
+      // Opens once the account has the World Tier that unlocks Deep Rifts.
+      if (!riftsUnlocked(ctx)) {
+        ctx.events.push({ type: 'notice', key: 'rifts.locked' });
+        return false;
+      }
       emit();
       return true;
     case 'generator':
@@ -297,6 +310,8 @@ export function interact(world: World, ctx: GameContext, player: Entity, target:
       return eventInteract(world, ctx, target, it);
     case 'feature':
       return useFeature(world, ctx, zone, target, it, poi);
+    case 'harvestCache':
+      return openHarvestCache(world, ctx, target, it);
     case 'questObject':
       // Quest objects vanish when used; the quest log decides what they mean.
       it.used = true;

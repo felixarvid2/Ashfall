@@ -14,6 +14,16 @@ import {
   rerollCost,
   sellPrice,
 } from '../systems/hub/services';
+import { CODEX_ASPECTS, MASTERWORK, RECIPE_DEFS, TEMPERING } from '../data/endgame/crafting';
+import {
+  canMasterwork,
+  canTemper,
+  codexImprintCost,
+  masterworkCost,
+  masterworkResetCost,
+  temperChargesLeft,
+  temperCost,
+} from '../systems/endgame/crafting';
 import { renderItemCell } from './inventoryPanel';
 import { artUrl } from './art';
 import { aspectText, formatStat, itemDisplayName, placeTooltipForPortrait, renderItemTooltip } from './itemTooltip';
@@ -35,6 +45,13 @@ export interface ServiceActions {
   imprint(cacheIndex: number, gridIndex: number): void;
   toStash(gridIndex: number): void;
   fromStash(index: number): void;
+  /** Endgame crafting (docs/endgame.md): the account/character state the panel shows, and the actions. */
+  endgame(): { tierUnlocked: number; recipes: readonly string[]; materials: Readonly<Record<string, number>>; codex: readonly string[] };
+  codexValue(aspectId: string, itemPower: number): number;
+  temper(gridIndex: number, recipeId: string, slot?: number): void;
+  masterworkRankUp(gridIndex: number): void;
+  masterworkReset(gridIndex: number): void;
+  codexImprint(aspectId: string, gridIndex: number): void;
 }
 
 export class ServicePanel {
@@ -45,6 +62,8 @@ export class ServicePanel {
   private kind: ServiceKind | null = null;
   /** Backpack item selected for the blacksmith or Technician. */
   private selected: number | null = null;
+  /** Tempered affix that the next tempering replaces once an item has two. */
+  private temperSlot = 0;
 
   constructor(parent: HTMLElement, private readonly actions: ServiceActions) {
     this.root = document.createElement('div');
@@ -102,6 +121,7 @@ export class ServicePanel {
         break;
       default:
         this.selected = this.selected === index ? null : index;
+        this.temperSlot = 0;
         break;
     }
     this.refresh();
@@ -181,6 +201,7 @@ export class ServicePanel {
         });
       }
     }
+    if (item) out.push(...this.tempering(inv, item), ...this.masterwork(inv, item));
     out.push(div('service-sep', ''));
     out.push(
       button(t('services.blacksmith.salvageJunk'), () => {
@@ -226,6 +247,128 @@ export class ServicePanel {
       }
       out.push(row);
     });
+    out.push(...this.codex(inv, item));
+    return out;
+  }
+
+  /** Tempering (endgame): add or replace a tempered affix from a learned recipe. */
+  private tempering(inv: Inventory, item: Item): HTMLElement[] {
+    const out: HTMLElement[] = [div('service-sep', ''), div('service-sub', t('crafting.temper.title'))];
+    const eg = this.actions.endgame();
+    if (eg.tierUnlocked < TEMPERING.tierRequired) return [...out, div('inv-hint', t('crafting.temper.locked'))];
+    if (!canTemper(item)) return [...out, div('inv-hint', t('crafting.temper.cannot'))];
+    const left = temperChargesLeft(item);
+    const tempered = item.tempered ?? [];
+    out.push(div('temper-charges', t('crafting.temper.charges', { n: left, max: TEMPERING.charges })));
+    for (const a of tempered) out.push(div('tempered', `${formatStat(a.stat, a.value)}  (${t(`crafting.recipes.${a.affix}.name`)})`));
+    const recipes = eg.recipes.filter((id) => RECIPE_DEFS.has(id));
+    if (recipes.length === 0) return [...out, div('inv-hint', t('crafting.temper.noRecipes'))];
+    const cost = temperCost(item);
+    const full = tempered.length >= TEMPERING.maxAffixes;
+    // With both slots filled, one choice of which affix to replace applies to every recipe.
+    if (full) {
+      this.temperSlot = Math.min(this.temperSlot, tempered.length - 1);
+      const pick = div('temper-slots', '');
+      tempered.forEach((a, i) => {
+        const b = button(t('crafting.temper.replace', { stat: t(`stats.${a.stat}`) }), () => {
+          this.temperSlot = i;
+          this.refresh();
+        });
+        b.classList.toggle('active', i === this.temperSlot);
+        b.dataset.testid = `temper-slot-${i}`;
+        pick.appendChild(b);
+      });
+      out.push(pick);
+    }
+    for (const id of recipes) {
+      const recipe = RECIPE_DEFS.get(id)!;
+      const row = div('recipe-row', '');
+      row.append(
+        div('recipe-name', `${t(`crafting.recipes.${id}.name`)} · ${t(`crafting.groups.${recipe.group}`)}`),
+        div('recipe-desc', t('crafting.temper.options', { stats: [...new Set(recipe.options.map((o) => t(`stats.${o.stat}`)))].join(', ') })),
+      );
+      const b = button(t('crafting.temper.add', { gold: cost }), () => {
+        this.actions.temper(this.selected!, id, full ? this.temperSlot : undefined);
+        this.refresh();
+      });
+      b.dataset.testid = `temper-${id}`;
+      b.disabled = inv.gold < cost || left <= 0;
+      row.appendChild(b);
+      out.push(row);
+    }
+    return out;
+  }
+
+  /** Masterworking (endgame): ranks 0–12 for gold and materials, reset for gold. */
+  private masterwork(inv: Inventory, item: Item): HTMLElement[] {
+    const out: HTMLElement[] = [div('service-sep', ''), div('service-sub', t('crafting.masterwork.title'))];
+    if (!canMasterwork(item)) return [...out, div('inv-hint', t('crafting.masterwork.cannot'))];
+    const rank = item.masterwork ?? 0;
+    const mats = this.actions.endgame().materials;
+    out.push(
+      div('masterwork-rank', t('crafting.masterwork.rank', { rank, max: MASTERWORK.maxRank })),
+      div('inv-hint', t('crafting.masterwork.note')),
+      div('inv-hint', t('crafting.masterwork.have', { dust: mats['lumen_dust'] ?? 0, shards: mats['rift_shard'] ?? 0 })),
+    );
+    const cost = masterworkCost(item);
+    if (!cost) out.push(div('inv-hint', t('crafting.masterwork.maxed')));
+    else {
+      const enough = inv.gold >= cost.gold && (mats['lumen_dust'] ?? 0) >= cost.lumen_dust && (mats['rift_shard'] ?? 0) >= cost.rift_shard;
+      out.push(div('inv-hint', t('crafting.masterwork.cost', { gold: cost.gold, dust: cost.lumen_dust, shards: cost.rift_shard })));
+      const b = button(t('crafting.masterwork.raise', { rank: rank + 1 }), () => {
+        this.actions.masterworkRankUp(this.selected!);
+        this.refresh();
+      });
+      b.dataset.testid = 'masterwork-up';
+      b.disabled = !enough;
+      out.push(b);
+    }
+    if (rank > 0) {
+      const gold = masterworkResetCost(item);
+      const b = button(t('crafting.masterwork.reset', { gold }), () => {
+        this.actions.masterworkReset(this.selected!);
+        this.refresh();
+      });
+      b.dataset.testid = 'masterwork-reset';
+      b.disabled = inv.gold < gold;
+      out.push(b);
+    }
+    return out;
+  }
+
+  /** The Codex of Power (endgame): every dungeon's aspect, imprintable without limit once unlocked. */
+  private codex(inv: Inventory, item: Item | null): HTMLElement[] {
+    const eg = this.actions.endgame();
+    const entries = Object.entries(CODEX_ASPECTS);
+    const unlocked = entries.filter(([, aspect]) => eg.codex.includes(aspect)).length;
+    const out: HTMLElement[] = [div('service-sep', ''), div('service-sub', t('crafting.codex.title', { n: unlocked, total: entries.length })), div('inv-hint', t('crafting.codex.hint'))];
+    for (const [dungeon, aspect] of entries) {
+      const row = div('aspect-row codex-row', '');
+      const open = eg.codex.includes(aspect);
+      row.dataset.testid = `codex-${aspect}`;
+      if (!open) row.classList.add('locked');
+      const icon = artUrl(`aspects/${aspect}`);
+      if (icon) row.append(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
+      row.append(div('aspect-name', t(`aspects.${aspect}.name`)));
+      if (!open) {
+        row.append(div('aspect-desc', t('crafting.codex.locked', { dungeon: t(`instances.names.${dungeon}`) })));
+        out.push(row);
+        continue;
+      }
+      const preview = this.actions.codexValue(aspect, item?.itemPower ?? 100);
+      row.append(div('aspect-desc', aspectText(aspect, preview)));
+      if (item && canImprint(item, aspect)) {
+        const cost = codexImprintCost(item);
+        const b = button(t('crafting.codex.imprint', { gold: cost }), () => {
+          this.actions.codexImprint(aspect, this.selected!);
+          this.refresh();
+        });
+        b.dataset.testid = `codex-imprint-${aspect}`;
+        b.disabled = inv.gold < cost;
+        row.appendChild(b);
+      }
+      out.push(row);
+    }
     return out;
   }
 

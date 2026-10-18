@@ -33,6 +33,9 @@ import { shadeLook, spawnEnemy } from './spawn';
 import { makeElite } from './zone';
 import { descend, setupCore, shadesOnly, shaftAffixes, tickCore, type CoreInstanceState } from './coreInstances';
 import { objectiveCount, objectiveDetail, objectiveInteract, setupObjective, tickObjective, type ObjectiveExtra } from './instanceObjectives';
+import { unlockCodexForDungeon } from '../systems/endgame/crafting';
+import { RIFT } from '../data/endgame/rifts';
+import { createRift, openRiftCache, riftHud, tickRift, type RiftHost, type RiftState } from '../systems/endgame/rifts';
 
 export type Dir = 'n' | 's' | 'e' | 'w';
 const DIRS: Record<Dir, [number, number]> = { n: [0, 1], s: [0, -1], e: [1, 0], w: [-1, 0] };
@@ -153,6 +156,8 @@ export interface InstanceRuntime {
   extra: ObjectiveExtra;
   /** The Core: shaft floors and choir pillars. */
   core?: CoreInstanceState;
+  /** A Deep Rift: level, progress bar, timer, guardian (systems/endgame/rifts.ts). */
+  rift?: RiftState;
 }
 
 export function hasInstance(id: string): boolean {
@@ -225,7 +230,7 @@ function interactable(world: World, poi: string, kind: Interactable['kind'], x: 
 }
 
 /** Build the instance's walls, decor, objective objects and the way out. */
-export function buildInstance(world: World, ctx: GameContext, defId: string, poi: string, seed: string, level: number, exit: { x: number; z: number }): InstanceRuntime {
+export function buildInstance(world: World, ctx: GameContext, defId: string, poi: string, seed: string, level: number, exit: { x: number; z: number }, riftLevel?: number): InstanceRuntime {
   const def = instanceDef(defId);
   const rng = new Rng(`${defId}-${seed}`);
   const layout = generateLayout(rng, def);
@@ -235,7 +240,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
     poi,
     exit,
     // The Endless Shaft's floors never raise the level: it stays within the Core's range (50).
-    level: def.floors ? Math.min(level, ctx.zoneLevels[1]) : level,
+    level: def.kind === 'rift' ? RIFT.monsterLevel : def.floors ? Math.min(level, ctx.zoneLevels[1]) : level,
     layout,
     rng,
     start: roomCenter(layout.rooms[0]!),
@@ -245,6 +250,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
     completed: false,
     lights: [],
     extra: {},
+    ...(def.kind === 'rift' ? { rift: createRift(riftLevel ?? 1) } : {}),
   };
 
   const bossRoom = layout.rooms.find((r) => r.kind === 'boss');
@@ -336,7 +342,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
 function populate(world: World, rt: InstanceRuntime, room: InstanceRoom): void {
   room.spawned = true;
   // The Endless Shaft fills its last room too (it has no boss).
-  if (room.kind === 'start' || (room.kind === 'boss' && !rt.def.floors)) return;
+  if (room.kind === 'start' || (room.kind === 'boss' && !rt.def.floors && rt.def.kind !== 'rift')) return;
   const c = roomCenter(room);
   const sc = rt.def.floors ? shaftScaling(rt.core?.shaft?.floor ?? 1) : null;
   const extra = sc?.packs ?? 0;
@@ -371,6 +377,11 @@ function populate(world: World, rt: InstanceRuntime, room: InstanceRoom): void {
       }
     }
   }
+}
+
+/** What a rift run needs from its instance. */
+export function riftHost(rt: InstanceRuntime): RiftHost {
+  return { layout: rt.layout, rng: rt.rng, start: rt.start, roomCenter };
 }
 
 function inInstance(x: number): boolean {
@@ -410,6 +421,9 @@ export function instanceSystem(world: World, dt: number, ctx: GameContext): void
     }
     ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: tr.x, z: tr.z, radius: 2.5, facing: 0 });
   }
+
+  // A Deep Rift runs on its own rules: kills fill the bar, the guardian ends it.
+  if (rt.rift) return tickRift(world, dt, ctx, riftHost(rt), rt.rift, player);
 
   const obj = def.objective;
   tickCore(world, dt, ctx, rt, player, roomCenter);
@@ -480,6 +494,9 @@ function complete(world: World, ctx: GameContext, rt: InstanceRuntime, x: number
   const id = rt.def.kind === 'dungeon' ? `dungeon.${rt.def.id}` : rt.poi;
   signal(ctx, { type: 'objective', id });
   ctx.events.push({ type: 'banner', key: 'instances.complete', params: {}, seconds: 2.6 });
+  // The first clear of a dungeon unlocks its aspect in the Codex of Power (docs/endgame.md).
+  const unlocked = rt.def.kind === 'dungeon' ? unlockCodexForDungeon(ctx, rt.def.id) : null;
+  if (unlocked) ctx.events.push({ type: 'interact', kind: 'codex', id: rt.def.id, detail: unlocked });
   if (ctx.account) {
     const zoneId = ctx.zone?.def.id ?? 'zone';
     const entry = (ctx.account.restoration[zoneId] ??= { points: [], tiers: 0 });
@@ -522,6 +539,16 @@ export function instanceInteract(world: World, ctx: GameContext, target: Entity,
       if (obj.item === 'memory') ctx.events.push({ type: 'interact', kind: 'lore', id: it.poi, detail: `dmarc.${rt.objective.progress - 1}` });
       return true;
     case 'cache':
+      if (rt.rift) {
+        // A rift's cache: legendaries at the rift's item power, Rift Shards, maybe a recipe.
+        if (rt.rift.phase !== 'cleared' || rt.rift.cacheOpened) return false;
+        it.used = true;
+        const got = openRiftCache(world, ctx, rt.rift, tr, rt.rng);
+        ctx.events.push({ type: 'interact', kind: 'riftCache', id: String(rt.rift.level), detail: `${got.shards}|${got.recipe ?? ''}|${got.legendaries}` });
+        const r = world.get(target, Renderable);
+        if (r) delete r.glow;
+        return true;
+      }
       it.used = true;
       ctx.rewards.push({ table: 'dt.dungeon_cache', level: rt.level, x: tr.x, z: tr.z, xp: false, ...(rt.def.kind === 'dungeon' ? { rarity: 'legendary' as const } : {}) });
       {
@@ -532,6 +559,12 @@ export function instanceInteract(world: World, ctx: GameContext, target: Entity,
     case 'portal':
       // The Endless Shaft's way down (the event is sent by `descend`); every other portal leaves.
       if (it.poi === 'deeper') return descend(world, ctx, rt);
+      // A cleared rift with glyph attempts left asks once before you leave.
+      if (rt.rift && rt.rift.phase === 'cleared' && rt.rift.attempts > 0 && !rt.rift.warned) {
+        rt.rift.warned = true;
+        ctx.events.push({ type: 'interact', kind: 'riftCleared', id: String(rt.rift.level) });
+        return true;
+      }
       ctx.events.push({ type: 'interact', kind: 'portal', id: 'exit' });
       return true;
     case 'valve':
@@ -559,6 +592,7 @@ export function objectiveText(world: World, rt: InstanceRuntime, t: (key: string
   const obj = rt.def.objective;
   // The Endless Shaft never ends: the line is always the floor.
   if (rt.core?.shaft) return t('instances.objective.shaft', { floor: rt.core.shaft.floor, best: rt.core.shaft.best });
+  if (rt.rift) return t(`rifts.objective.${rt.rift.phase}`, { level: rt.rift.level, percent: Math.floor(riftHud(rt.rift).progress * 100) });
   if (rt.completed) return t('instances.objective.done');
   if (rt.objective.done) return rt.def.boss ? t('instances.objective.boss', { name: t(rt.def.boss.name) }) : t('instances.objective.done');
   const detail = objectiveDetail(world, rt, t);

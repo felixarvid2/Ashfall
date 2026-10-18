@@ -49,6 +49,8 @@ export interface HudState {
   wave: { wave: number; alive: number; phase: 'intermission' | 'active'; timer: number } | null;
   /** Open world: region and subzone name, shown where the wave tracker sits in the arena. */
   location?: { title: string; sub: string };
+  /** World Tier badge text ('WT II Veteran'), shown under the region name once a tier above I is unlocked. */
+  tier?: string;
   target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; portrait?: string } | null;
   /** World event in progress near the player. */
   event?: { title: string; text: string };
@@ -163,6 +165,7 @@ export class Hud {
   private readonly potionSlot: Slot;
   private readonly waveTitle: HTMLDivElement;
   private readonly waveSub: HTMLDivElement;
+  private readonly tierBadge: HTMLDivElement;
   private readonly target: HTMLDivElement;
   private readonly targetName: HTMLDivElement;
   private readonly targetFill: HTMLDivElement;
@@ -240,7 +243,10 @@ export class Hud {
     this.waveTitle.className = 'wave-title';
     this.waveSub = document.createElement('div');
     this.waveSub.className = 'wave-sub';
-    wave.append(this.waveTitle, this.waveSub);
+    this.tierBadge = document.createElement('div');
+    this.tierBadge.className = 'tier-badge';
+    this.tierBadge.hidden = true;
+    wave.append(this.waveTitle, this.waveSub, this.tierBadge);
 
     this.target = document.createElement('div');
     this.target.className = 'target-frame';
@@ -460,6 +466,12 @@ export class Hud {
       const [a = '', b = ''] = waveKey.split('|');
       this.waveTitle.textContent = a;
       this.waveSub.textContent = b;
+    }
+
+    const tierText = state.wave ? '' : (state.tier ?? '');
+    if (this.tierBadge.textContent !== tierText) {
+      this.tierBadge.textContent = tierText;
+      this.tierBadge.hidden = tierText === '';
     }
 
     const targetKey = state.target

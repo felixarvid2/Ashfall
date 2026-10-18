@@ -41,6 +41,7 @@ import { signal } from './quests';
 import { eliteDeath, onEliteHit } from './elites';
 import { spawnEnemy } from '../world/spawn';
 import { isLit } from '../world/underground';
+import { harvestOnDeath } from '../world/harvest';
 
 export function hasStatus(world: World, e: Entity, id: StatusId): boolean {
   return world.get(e, StatusEffects)?.list.some((s) => s.id === id) ?? false;
@@ -64,12 +65,17 @@ export function conditionsOf(world: World, e: Entity, attackRange: 'melee' | 'ra
   return set;
 }
 
+/** Share of max life above which the attacker counts as "highLife". */
+const HIGH_LIFE = 0.8;
+
 /** Conditions about the attacker itself ("while you have a barrier", "while Heat is high"). */
 export function attackerConditions(world: World, e: Entity): Condition[] {
   const out: Condition[] = [];
   const r = world.get(e, Resource);
   if (r && r.current >= r.max * 0.7) out.push('highResource');
   if (hasStatus(world, e, 'barrier')) out.push('hasBarrier');
+  const hp = world.get(e, Health);
+  if (hp && hp.current > hp.max * HIGH_LIFE) out.push('highLife');
   if (hasStatus(world, e, 'evasive')) out.push('evasive');
   if (hasStatus(world, e, 'stealth')) out.push('stealthed');
   if (world.get(e, Summon)?.kind === 'minion') out.push('minion');
@@ -588,6 +594,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
       if (b.warning > 0) ctx.events.push({ type: 'telegraph', owner: blast, x: tr.x, z: tr.z, shape: { kind: 'circle', radius: b.radius }, duration: b.warning, color: '#ff7a2a' });
     }
     eliteDeath(world, ctx, target);
+    harvestOnDeath(world, ctx, target);
     ctx.stats.kills++;
     if (tr) {
       const quest = world.get(target, QuestTag)?.quest;
@@ -595,6 +602,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
     }
     onEnemyDeath(world, ctx, target, wasMarked);
   }
+  if (isPlayer) harvestOnDeath(world, ctx, target);
   ctx.events.push({ type: 'death', target, x: tr?.x ?? 0, z: tr?.z ?? 0, isPlayer, ...(ai ? { family: enemyDef(ai.defId).family } : {}) });
 }
 

@@ -442,6 +442,16 @@ html, body {
 .item-tip-implicits { border-top: 1px solid #2a2420; margin-top: 6px; padding-top: 6px; color: #b8b0a4; }
 .item-tip-stats { border-top: 1px solid #2a2420; margin-top: 6px; padding-top: 6px; color: #8ab4ff; }
 .item-tip-stats .greater { color: #ffb84a; }
+.item-tip-stats .tempered { color: #c78bff; }
+.item-tip-masterwork { margin-top: 4px; color: #e8c872; font-size: 0.9em; }
+.service-panel .tempered { color: #c78bff; margin: 2px 0; }
+.service-panel .temper-charges, .service-panel .masterwork-rank { color: #e8c872; margin: 4px 0; }
+.service-panel .recipe-row { border-top: 1px solid #2a2420; padding: 6px 0; }
+.service-panel .recipe-name { color: #c78bff; }
+.service-panel .recipe-desc { color: #9a8f80; font-size: 0.85em; margin-bottom: 4px; }
+.service-panel .codex-row.locked { opacity: 0.55; }
+.service-panel .temper-slots { display: flex; gap: 6px; margin: 6px 0; }
+.service-panel .temper-slots .service-btn.active { border-color: #c78bff; color: #c78bff; }
 .item-tip-sockets { margin-top: 6px; }
 .item-tip-req { color: #e0574a; margin-top: 6px; }
 .item-tip-compare { border-top: 1px solid #2a2420; margin-top: 6px; padding-top: 6px; }
@@ -1081,3 +1091,119 @@ html.touch-device .hint-mouse { display: none; }
 .epilogue-credits h1 { font-size: 2.6em; margin-bottom: 48px; }
 .epilogue-skip { position: absolute; right: 16px; bottom: 16px; }
 @keyframes epilogue-scroll { from { transform: translateY(0); } to { transform: translateY(calc(-100% - 100vh)); } }
+
+/* World Tiers: the HUD badge and the Tier Beacon panel. */
+.tier-badge { display: inline-block; margin-top: 3px; padding: 1px 8px; font-size: 0.65em; letter-spacing: 0.14em; text-transform: uppercase; color: #ffb36a; border: 1px solid #7a4a1e; background: rgba(20, 12, 6, 0.55); }
+.tier-badge[hidden] { display: none; }
+.tier-panel { left: 12px; width: 380px; }
+.tier-row { display: block; width: 100%; text-align: left; margin: 6px 0; padding: 7px 10px; font: inherit; color: var(--ui-text); background: #1e1a17; border: 1px solid var(--ui-border); cursor: pointer; }
+.tier-row:hover:not(:disabled) { border-color: var(--ui-accent); }
+.tier-row.current { border-color: #ff8a3a; background: #2a1d12; }
+.tier-row:disabled { opacity: 0.55; cursor: default; }
+.tier-name { font-size: 0.95em; letter-spacing: 0.1em; color: #ffd27a; }
+.tier-effects { margin: 4px 0 0; font-size: 0.72em; line-height: 1.5; color: #cfc4b0; }
+.tier-lock { margin: 4px 0 0; font-size: 0.72em; color: #b8806a; }
+.tier-note { margin: 8px 0 0; font-size: 0.75em; color: #8a7e6c; }
+#ui.touch-ui .tier-panel { left: 8px; top: 54px; }
+
+/* Ash Harvest: the active region and the Ash Shard counter, left of the minimap. */
+.harvest-hud { position: absolute; top: 52px; right: 206px; max-width: 240px; text-align: right; pointer-events: none; }
+.harvest-hud[hidden], .harvest-hud [hidden] { display: none; }
+.harvest-line { font-size: 0.72em; letter-spacing: 0.08em; text-transform: uppercase; color: #ffb36a; text-shadow: 0 0 3px #000; }
+.harvest-shards { margin-top: 3px; font-size: 0.8em; color: #e8dcc8; text-shadow: 0 0 3px #000; transition: color 0.2s; }
+.harvest-shards.gain { color: #ffe29a; }
+.harvest-shards.ready { color: #ffb36a; text-shadow: 0 0 6px rgba(255, 138, 58, 0.8); }
+#ui.touch-ui .harvest-hud { top: 10px; right: calc(env(safe-area-inset-right) + 128px); max-width: 160px; }
+#ui.touch-ui.portrait .harvest-hud { top: calc(var(--sat) + 10px); right: calc(var(--sar) + 120px); }
+.map-tab.harvest { color: #ffb36a; border-color: #7a4a1e; }
+
+/* Deep Rifts: the obelisk / result panel, and the timer + progress bar inside a rift. */
+.rift-panel { left: 50%; transform: translateX(-50%); width: 400px; max-width: calc(100vw - 24px); }
+.rift-note { margin: 6px 0; font-size: 0.78em; color: #8a7e6c; line-height: 1.45; }
+.rift-best { font-size: 0.9em; color: #ffd27a; margin: 6px 0 2px; }
+.rift-open, .rift-effects { font-size: 0.78em; color: #cfc4b0; margin: 2px 0; }
+.rift-tier { font-size: 0.85em; color: #ffb36a; margin: 4px 0; }
+.rift-stepper { display: flex; align-items: center; gap: 6px; margin: 10px 0 4px; }
+.rift-step { width: auto; flex: 0 0 auto; text-align: center; margin: 0; padding: 5px 9px; }
+.rift-level { flex: 1; text-align: center; font-size: 1.6em; letter-spacing: 0.1em; color: #b48cff; text-shadow: 0 0 10px rgba(180, 140, 255, 0.5); }
+.rift-slider { width: 100%; margin: 4px 0 8px; accent-color: #b48cff; }
+.rift-enter { text-align: center; margin-top: 10px; border-color: #7a5cc8; color: #e6d8ff; }
+.rift-glyph { text-align: left; }
+.rift-log { margin: 8px 0; font-size: 0.78em; color: #e8dcc8; white-space: pre-line; line-height: 1.5; }
+.rift-hud { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 24px)); pointer-events: none; text-align: center; z-index: 12; }
+.rift-hud[hidden] { display: none; }
+.rift-hud-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8em; letter-spacing: 0.14em; text-transform: uppercase; color: #cdb8ff; text-shadow: 0 0 3px #000; }
+.rift-hud-time { font-size: 1.35em; color: #ffe9b8; letter-spacing: 0.08em; }
+.rift-hud-time.low { color: #ff6a4a; }
+.rift-hud-bar { height: 10px; margin-top: 3px; background: rgba(10, 8, 18, 0.8); border: 1px solid #5a4a8a; }
+.rift-hud-fill { height: 100%; width: 0; background: linear-gradient(90deg, #6a4ac8, #c8a4ff); transition: width 0.25s; }
+.rift-hud[data-phase="guardian"] .rift-hud-fill { background: linear-gradient(90deg, #c88a2a, #ffe29a); }
+.rift-hud[data-phase="failed"] .rift-hud-fill { background: #8a2a2a; }
+.rift-hud-status { margin-top: 2px; font-size: 0.68em; letter-spacing: 0.12em; text-transform: uppercase; color: #a698c8; text-shadow: 0 0 3px #000; }
+#ui.touch-ui .rift-panel { left: 50%; top: 54px; }
+#ui.touch-ui .rift-hud { top: calc(env(safe-area-inset-top) + 70px); }
+
+/* World boss tracker: under the title, top left. */
+.worldboss-hud { position: absolute; top: 96px; left: 16px; max-width: 360px; padding: 3px 10px; font-size: 0.75em; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd0a0; border-left: 2px solid #ff4a2a; background: rgba(20, 8, 6, 0.6); text-shadow: 0 0 3px #000; pointer-events: none; }
+.worldboss-hud[hidden] { display: none; }
+#ui.touch-ui .worldboss-hud { top: 56px; left: calc(env(safe-area-inset-left) + 8px); max-width: 200px; font-size: 0.65em; }
+#ui.touch-ui.portrait .worldboss-hud { top: calc(var(--sat) + 8px); left: calc(var(--sal) + 8px); max-width: calc(100vw - 150px); }
+
+/* ---- Neural Matrix (inside the skill panel) ---------------------------------------- */
+.tree-panel.matrix-mode { width: min(1000px, calc(100vw - 32px)); height: calc(100vh - 110px); max-height: calc(100vh - 110px); }
+.tree-panel.matrix-mode > div:not(.item-tooltip) { flex: 1; }
+.tree-tools { display: flex; gap: 6px; }
+.matrix-tab { color: #e8c86a !important; border-color: #6a5a3a !important; }
+.matrix { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; }
+.matrix-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.matrix-count { color: var(--ui-muted); letter-spacing: 0.08em; }
+.matrix-count.has { color: #e8c86a; text-shadow: 0 0 8px rgba(232, 200, 106, 0.5); }
+.matrix-xp, .matrix .muted { font-size: 0.78em; color: var(--ui-muted); }
+.matrix-tools { display: flex; gap: 6px; }
+.matrix button { font: inherit; font-size: 0.8em; color: var(--ui-text); background: #24201c; border: 1px solid var(--ui-border); padding: 4px 10px; cursor: pointer; }
+.matrix button:disabled { opacity: 0.4; cursor: default; }
+.matrix button.on { border-color: var(--ui-accent); color: var(--ui-accent); }
+.matrix-viewport { position: relative; flex: 1; min-height: 220px; overflow: hidden; background: #0b0a09; border: 1px solid #2a2420; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.matrix-viewport:active { cursor: grabbing; }
+.matrix-svg { display: block; width: 100%; height: 100%; touch-action: none; }
+.matrix-board { fill: #12100e; stroke: #2e2823; stroke-width: 2; }
+.matrix-board-label { fill: #5c5348; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; pointer-events: none; }
+.matrix-edge { stroke: #2e2823; stroke-width: 3; pointer-events: none; }
+.matrix-edge.on { stroke: #e8c86a; }
+.matrix-edge.link { stroke-dasharray: 4 4; }
+.matrix-reach { fill: rgba(181, 122, 255, 0.05); stroke: rgba(181, 122, 255, 0.35); stroke-dasharray: 5 5; pointer-events: none; }
+.matrix-reach.active { fill: rgba(232, 200, 106, 0.07); stroke: rgba(232, 200, 106, 0.6); }
+.matrix-node { cursor: pointer; }
+.matrix-hit { fill: transparent; }
+.matrix-shape { fill: #1a1612; stroke: #4a4038; stroke-width: 2; }
+.matrix-node.k-magic .matrix-shape { stroke: #4f7fc4; }
+.matrix-node.k-rare .matrix-shape { stroke: #c4a24f; }
+.matrix-node.k-legendary .matrix-shape { stroke: #ff8a2a; }
+.matrix-node.k-socket .matrix-shape { stroke: #b57aff; }
+.matrix-node.k-gate .matrix-shape { stroke: #4fc46a; }
+.matrix-node.locked { opacity: 0.55; }
+.matrix-node.can .matrix-shape { stroke-width: 3; filter: drop-shadow(0 0 5px rgba(232, 200, 106, 0.7)); }
+.matrix-node.owned .matrix-shape { fill: #6a5a30; stroke: #e8c86a; }
+.matrix-node.k-magic.owned .matrix-shape { fill: #2c4a78; stroke: #8ab4ff; }
+.matrix-node.k-rare.owned .matrix-shape { fill: #7a6420; stroke: #ffe08a; }
+.matrix-node.k-legendary.owned .matrix-shape { fill: #8a4a1a; stroke: #ffb066; }
+.matrix-node.k-socket.owned .matrix-shape { fill: #3a2a5a; stroke: #d2a8ff; }
+.matrix-node.k-gate.owned .matrix-shape { fill: #1f4a2a; stroke: #6bff7a; }
+.matrix-node.k-start .matrix-shape { fill: #6a5a30; stroke: #e8c86a; }
+.matrix-node.covered .matrix-shape { stroke: #e8c86a; stroke-dasharray: 3 2; }
+.matrix-node.selected .matrix-shape { stroke: #fff; stroke-width: 3; }
+.matrix-glyph-level { fill: #fff; font-size: 12px; font-weight: 700; pointer-events: none; }
+.matrix-zoom { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 4px; }
+.matrix-zoom button { width: 36px; height: 36px; padding: 0; font-size: 1.1em; }
+.matrix-detail { flex: 0 0 auto; max-height: 34%; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 64px; padding: 6px 8px; background: #15120f; border: 1px solid #2a2420; }
+.matrix-detail .item-tip { border: none; padding: 0; background: none; }
+.gate-form, .glyph-card { display: flex; flex-direction: column; gap: 6px; }
+.gate-rot, .glyph-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.glyph-pick button.in-use { opacity: 0.7; }
+.matrix-glyphs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.matrix-glyphs-title { font-size: 0.72em; letter-spacing: 0.15em; text-transform: uppercase; color: #c8b89a; }
+.glyph-chip.socketed { border-color: #b57aff; }
+#ui.touch-ui .tree-panel.matrix-mode { height: calc(100vh - 62px); max-height: calc(100vh - 62px); }
+#ui.touch-ui.portrait .tree-panel.matrix-mode { height: calc(100dvh - 12px - var(--sat) - var(--sab)); max-height: calc(100dvh - 12px - var(--sat) - var(--sab)); padding: 8px; }
+#ui.touch-ui.portrait .matrix-detail { max-height: 30%; }
+#ui.touch-ui .matrix button { padding: 8px 12px; }
