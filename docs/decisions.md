@@ -115,8 +115,8 @@ Keeps combat code free of loot logic and lets wave caches reuse the same path.
 by `npm run meshy -- icons`. Consistent painted style via a shared icon prompt.
 
 ### 2026-10-02 — Loot sounds are synthesised (WebAudio)
-Each rarity has its own procedural sound (brief §5.6) until the Howler.js audio system and recorded/
-generated sound files arrive in Phase 8.
+Each rarity has its own procedural sound (brief §5.6). They stay synthesised and now play through the
+effects bus of the audio engine (2026-10-18), not through Howler.js.
 
 ### 2026-10-02 — One effect vocabulary for tree nodes, aspects and uniques
 `src/data/effects.ts` defines four effect kinds (stat, damage, skillMod, overheat). Skills are recompiled
@@ -433,3 +433,18 @@ cover the menu, so a close button floats over them (there is no Escape on a phon
 canvas aspect itself (`viewForAspect` in `camera.ts`): below 1 the vertical FOV grows by 34° per unit of
 missing aspect, the follow distance ×1.15, and `setViewOffset` pushes the picture up so the player sits
 at 37.5 % from the top, clear of the thumbs. This applies to any portrait window, touch or not.
+
+### 2026-10-18 — Audio on plain WebAudio instead of Howler.js
+The brief named Howler.js. The audio engine (`src/audio/engine.ts`) uses the WebAudio API directly:
+- **One audio context.** The game already had a WebAudio core for the loot sounds, so music, effects and
+  loot share it.
+- **Category buses.** The brief asks for a separate volume per category. Howler has no category buses; here
+  master feeds music, effects and interface through plain gain nodes.
+- **No untestable fallback.** Howler's HTML5-audio fallback plays through `<audio>` elements, whose behaviour
+  under the claude.ai artifact CSP can't be verified here. Files are fetched and decoded with fetch +
+  `decodeAudioData`, the same path the painted art already uses.
+- **Ogg and MP3.** Safari can't be relied on to decode Ogg Vorbis, so both formats ship and the engine picks
+  Ogg where `canPlayType` allows it, MP3 otherwise.
+- **One sprite for effects.** The 47 effects are one file with offsets, which keeps the artifact's file count
+  low. The MP3 encoder delay (1105 samples) is dropped so each offset lands exactly on its sound.
+- Loot sounds stay synthesised (see 2026-10-02) and now go through the effects bus.
