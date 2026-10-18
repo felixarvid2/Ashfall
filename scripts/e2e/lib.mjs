@@ -16,10 +16,10 @@ export function chromiumPath() {
  * Starts Chromium with software WebGL (no GPU in the sandbox) and opens one page.
  * Returns { browser, page, errors }; `errors` collects uncaught page errors.
  */
-export async function launch({ width = 1100, height = 760, mobile = false } = {}) {
+export async function launch({ width = 1100, height = 760, mobile = false, autoplay = false } = {}) {
   const browser = await chromium.launch({
     executablePath: chromiumPath(),
-    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', ...(autoplay ? ['--autoplay-policy=no-user-gesture-required'] : [])],
   });
   const context = await browser.newContext({
     viewport: { width, height },
@@ -28,8 +28,10 @@ export async function launch({ width = 1100, height = 760, mobile = false } = {}
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  // A fresh save every run (no saved characters in slot 0).
-  await page.addInitScript(() => localStorage.clear());
+  // A fresh save every run (no saved characters in slot 0); a reload within the run keeps its storage.
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('e2e-fresh')) { localStorage.clear(); sessionStorage.setItem('e2e-fresh', '1'); }
+  });
   return { browser, page, errors, mobile };
 }
 

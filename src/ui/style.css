@@ -851,13 +851,14 @@ html.touch-device .hint-mouse { display: none; }
 /* Menu: a grid of icon buttons under the bars. */
 #ui.touch-ui.portrait .touch-menu:not([hidden]) {
   display: grid;
-  grid-template-columns: repeat(4, 40px);
-  gap: 6px;
+  grid-template-columns: repeat(5, 36px);
+  gap: 4px;
   left: calc(var(--sal) + 8px);
   top: calc(var(--sat) + 52px);
 }
+#ui.touch-ui.portrait .touch-menu-btn { width: 36px; height: 36px; }
 #ui.touch-ui.portrait .minimap { top: calc(var(--sat) + 8px); right: calc(var(--sar) + 8px); width: 104px; height: 104px; }
-#ui.touch-ui.portrait .quest-tracker { top: calc(var(--sat) + 120px); right: calc(var(--sar) + 8px); width: 140px; gap: 4px; }
+#ui.touch-ui.portrait .quest-tracker { top: calc(var(--sat) + 130px); right: calc(var(--sar) + 8px); width: 140px; gap: 4px; }
 #ui.touch-ui.portrait .quest-row { padding: 3px 6px; }
 #ui.touch-ui.portrait .quest-title { font-size: 0.7em; }
 #ui.touch-ui.portrait .quest-step { font-size: 0.65em; }
@@ -1033,3 +1034,36 @@ html.touch-device .hint-mouse { display: none; }
 #ui.touch-ui.portrait .item-tooltip.tip-top { top: calc(var(--sat) + 6px); bottom: auto; }
 #ui.touch-ui.portrait .item-tooltip.tip-bottom { top: auto; bottom: calc(var(--sab) + 6px); }
 #ui.touch-ui.portrait .item-tip { width: auto; font-size: 0.92em; }
+
+/* ---- Sound: speaker and volume buttons, volume panel ------------------------------------------
+   Desktop: bottom right. The touch layouts have the same two buttons in their menu row instead. */
+#ui .sound-hud, #ui .sound-hud * { pointer-events: auto; }
+.sound-hud { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 4px; z-index: 60; }
+#ui.touch-ui .sound-hud { display: none; }
+.sound-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ui-muted);
+  background: rgba(20, 17, 15, 0.82);
+  border: 1px solid var(--ui-border);
+}
+.sound-btn:hover { color: var(--ui-text); border-color: var(--ui-accent); }
+.sound-btn.muted { color: #c0502a; }
+.sound-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+.sound-panel { top: auto; bottom: 56px; right: 14px; width: 228px; max-height: none; z-index: 60; }
+.sound-panel.muted .sound-row { opacity: 0.5; }
+.sound-row { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 10px; margin: 0 0 10px; font-size: 0.9em; }
+.sound-row input[type='range'] { width: 100%; accent-color: var(--ui-accent); cursor: pointer; }
+.sound-close { font: inherit; padding: 4px 14px; cursor: pointer; border: 1px solid var(--ui-border); background: #24201c; color: var(--ui-text); letter-spacing: 0.1em; }
+#ui.touch-ui .sound-panel { top: 54px; bottom: auto; right: 8px; width: 260px; }

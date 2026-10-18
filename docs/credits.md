@@ -13,6 +13,8 @@ processed by `npm run assets:third-party` (`scripts/assets/thirdParty.ts`).
 | Touch menu icons | [game-icons.net](https://game-icons.net): Lorc, Delapouite | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | `public/assets/ui/menu/*.svg` |
 | Touch menu icons: fullscreen (*larger*), close (*cross*) | [Kenney Game Icons](https://kenney.nl/assets/game-icons) | CC0 | `public/assets/ui/menu/fullscreen.png`, `close.png` |
 | Fonts: Rajdhani (Indian Type Foundry), Share Tech Mono (Carrois Type Design) | [Google Fonts](https://fonts.google.com) | SIL Open Font License 1.1 (`public/assets/fonts/OFL-*.txt`) | `public/assets/fonts/` |
+| Sound effects: [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds), [Impact Sounds](https://kenney.nl/assets/impact-sounds), [Interface Sounds](https://kenney.nl/assets/interface-sounds), [Digital Audio](https://kenney.nl/assets/digital-audio), [RPG Audio](https://kenney.nl/assets/rpg-audio), [UI Audio](https://kenney.nl/assets/ui-audio), [Music Jingles](https://kenney.nl/assets/music-jingles) (level-up and quest jingles) | Kenney | CC0 | `public/assets/audio/sfx.*`, `amb/` (built by `npm run audio:build`; which file is which sound is in `scripts/audio/build.ts`) |
+| Music: *Music Loop Bundle* (Dark Portents, Dust Bowl, Magnetic Tape, Primordial Soup, Pull Me Down) | [Abstraction](https://tallbeard.itch.io/music-loop-bundle) (Ben Burnes) | CC0; credit to "Abstraction" is appreciated, not required | `public/assets/audio/music/` |
 
 The CC BY icons are credited on the character select screen, as their licence asks. Which icon
 stands for which status is listed in `STATUS_ICONS` in `scripts/assets/thirdParty.ts`:

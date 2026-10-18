@@ -4,9 +4,23 @@
 
 ## Current phase
 
-**Phase 8 – Region 4: The Deep Mines ✅ built — waiting for your playtest feedback** before Region 5.
-Plan: docs/regions/deep-mines.md, measurements and checklist: docs/regions/deep-mines-playtest.md. No new
-Meshy models (credits are used up).
+**Sound and music ✅ built — waiting for your playtest feedback** before Region 5.
+- One WebAudio engine (`src/audio/engine.ts`) with master → music / effects / interface buses. Volume sliders
+  for each, mute, saved with the other settings.
+- Effects: 47 sounds in one sprite, keyed by game event in `src/audio/eventSounds.ts`: damage types, crits,
+  player hits, deaths by enemy family (machine or organic), casts, shots and explosions, level up, quests,
+  waves, boss banners, zone gates, discoveries, overheat and telegraphs. Voice limits per sound and overall,
+  random pitch, distance attenuation and stereo pan from the player. Player footsteps.
+- Music per zone, hub, boss and menu (`src/data/audio.ts`), with 2 s crossfades. The boss track plays while a
+  boss is engaged; music ducks on death and on level-up and quest-complete stings. Ambience per zone (3 loops).
+  Cinder Flats' wind is procedural and follows Ash Storm exposure.
+- Files in `public/assets/audio/`: Ogg Vorbis and MP3 (the engine picks Ogg where the browser can play it, MP3
+  on Safari), 10.1 MB in total. Built by `npm run audio:build` (`scripts/audio/build.ts`) from CC0 sources
+  (Kenney packs incl. Sci-Fi Sounds; Abstraction Music Loop Bundle), kept in the felixarvid2/assets repo under
+  `third-party/audio`.
+
+### Earlier: Phase 8 – Region 4: The Deep Mines ✅ built. Plan: docs/regions/deep-mines.md, measurements and
+checklist: docs/regions/deep-mines-playtest.md. No new Meshy models (credits are used up).
 - A freight lift past the Great Dome drops into the mines. Underground, only tunnels and caverns are
   walkable; the renderer draws solid rock and rough walls along every edge.
 - Darkness: the lamp, glowing eyes on enemies in the dark, 10 floodlights that light an area for good,
@@ -235,6 +249,17 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
 
+## What to test (Sound and music)
+1. Music starts on your first click at the character select (browsers block audio before a click).
+2. Change zones and hubs: the music crossfades and the ambience changes. In Cinder Flats, the wind rises in an
+   Ash Storm.
+3. Engage a boss: its track takes over from the zone music.
+4. Mute with the speaker button or **N** (M is still the map). Check the music and effects are back on when you unmute.
+5. The volume button opens sliders for master, music, effects and interface; they keep their values after a reload.
+6. On a phone, mute and volume are in the touch menu.
+7. **Tell me:** which tracks don't fit their place (they were chosen by title, not by ear), and does any sound
+   feel too loud or repeat too often?
+
 ## What to test (Phase 8 – The Deep Mines)
 1. Finish the Vaults (or F3 → skip quest step) and follow *Going Down*: a road past the Great Dome leads to
    the freight lift at the north edge.
@@ -377,7 +402,7 @@ Shift + left-click to attack in place.
 9. **Most important:** is it fun? Too easy/hard, too slow/fast, too much/little shake?
 
 ## Known issues / limitations
-- Region 1: no sound or music yet (Phase 8); no durability on death (§13); Codex unlocks, tempering and
+- Region 1: no durability on death (§13); Codex unlocks, tempering and
   masterworking come with Phase 7; Force Wall and Laser Grid elite affixes come later.
 - Region 1: dungeons are a bit short (~6 min) and road packs a bit dense — see the playtest report.
 - Region 2: the bot's balance playthrough covers levels 1–10 only, so district difficulty (levels 10–20)
@@ -387,7 +412,8 @@ Shift + left-click to attack in place.
 - Region 3 uses only placeholder models (no Meshy credits); the Service Road walk is shorter than the
   5–7 minute target (see the playtest report); the bot does not cover levels 20–30.
 - Region 4 uses only placeholder models too; the walk through is ≈ 4 min.
-- No sound yet (Howler.js audio system is planned for Phase 8; loot sounds come with Phase 3).
+- Music tracks were chosen by title, not by ear. Swapping one is an edit in `src/data/audio.ts` and the mapping
+  in `scripts/audio/build.ts`.
 - **60 FPS not verified**: only measured in a headless CPU-rendered browser (4–6 FPS there — not
   representative). Skinned enemies are not instanced (one draw call each + shadows); if 100 enemies is too
   slow, next steps are GPU-instanced crowd animation (vertex-baked) and shadow LOD.
@@ -401,7 +427,8 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 
 ## Next steps
-- **Your playtest feedback on the Deep Mines** (and the earlier regions) → then Region 5 (The Core) with the
+- **Your playtest feedback on the sound and music, then on the Deep Mines** (and the earlier regions) → then
+  Region 5 (The Core) with the
   same process. Replace the placeholder models of regions 3–4 when Meshy credits are available.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).

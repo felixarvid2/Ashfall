@@ -1,28 +1,26 @@
 /**
  * Synthesised loot sounds (WebAudio, no files): each rarity has its own sound
- * (brief §5.6). Replaced or layered with the full audio system in Phase 8.
+ * (brief §5.6). They share the game's AudioContext (`engine.ts`) and play through its sfx bus,
+ * so the volume sliders and mute apply to them too.
  */
 import type { Rarity } from '../data/loot/schemas';
+import { audio as engine } from './engine';
 
+/** The context this file's synth chain was built on, and its level before the sfx bus. */
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 
 function audio(): AudioContext | null {
-  if (ctx) return ctx;
-  try {
-    ctx = new AudioContext();
-    master = ctx.createGain();
+  const live = engine.context;
+  const bus = engine.sfxBus;
+  if (!live || !bus || live.state !== 'running') return null;
+  if (ctx !== live) {
+    ctx = live;
+    master = live.createGain();
     master.gain.value = 0.35;
-    master.connect(ctx.destination);
-  } catch {
-    ctx = null;
+    master.connect(bus);
   }
   return ctx;
-}
-
-/** Browsers start audio suspended until a user gesture. */
-export function unlockAudio(): void {
-  void audio()?.resume();
 }
 
 function tone(freq: number, start: number, duration: number, type: OscillatorType, gain: number, glideTo?: number): void {

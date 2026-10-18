@@ -29,6 +29,7 @@ export const ACTIONS = [
   'quickLoad',
   'mount',
   'flare',
+  'toggleMute',
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -59,6 +60,8 @@ export const DEFAULT_KEYBINDINGS: Record<Action, string[]> = {
   quickLoad: ['F9'],
   mount: ['KeyB'],
   flare: ['KeyF'],
+  // M is the map; N toggles all sound.
+  toggleMute: ['KeyN'],
 };
 
 export const MoveModeSchema = z.enum(['wasd', 'click']);
@@ -72,6 +75,16 @@ const actionShape = Object.fromEntries(ACTIONS.map((a) => [a, z.array(z.string()
 /** Bumped when a change to the controls should reset older players' movement mode. */
 export const CONTROLS_VERSION = 1;
 
+/** Volumes 0..1 per bus (master scales all three), and a mute switch that keeps the sliders where they are. */
+export const AudioSettingsSchema = z.object({
+  master: z.number().min(0).max(1).default(0.8),
+  music: z.number().min(0).max(1).default(0.5),
+  sfx: z.number().min(0).max(1).default(0.8),
+  ui: z.number().min(0).max(1).default(0.6),
+  muted: z.boolean().default(false),
+});
+export type AudioSettings = z.infer<typeof AudioSettingsSchema>;
+
 export const SettingsSchema = z.object({
   moveMode: MoveModeSchema.default('click'),
   /** Settings saved before click-to-move became the default (version 0) switch to it once. */
@@ -84,6 +97,8 @@ export const SettingsSchema = z.object({
   textScale: z.number().min(0.75).max(2).default(1),
   language: z.string().default('en'),
   keybindings: z.object(actionShape).partial().default({}),
+  /** Settings saved before the sound system have none: the defaults apply. */
+  audio: AudioSettingsSchema.default({ master: 0.8, music: 0.5, sfx: 0.8, ui: 0.6, muted: false }),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -94,6 +109,8 @@ export function defaultSettings(): Settings {
 
 /** Diablo-style click-to-move replaced WASD as the default (controls version 1). */
 export function migrateSettings(settings: Settings): Settings {
+  // Settings objects built by hand (tests, older callers) may predate the sound options.
+  settings.audio = AudioSettingsSchema.parse(settings.audio ?? {});
   if (settings.controlsVersion < 1) settings.moveMode = 'click';
   settings.controlsVersion = CONTROLS_VERSION;
   return settings;

@@ -525,7 +525,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
     ai.regrowAt = ctx.time + regrow.delay;
     ctx.events.push({ type: 'vfx', kind: 'sporePulse', x: tr.x, z: tr.z, radius: regrow.radius, facing: 0 });
     ctx.events.push({ type: 'banner', key: 'enemies.regrowing', seconds: 2 });
-    ctx.events.push({ type: 'death', target, x: tr.x, z: tr.z, isPlayer: false });
+    ctx.events.push({ type: 'death', target, x: tr.x, z: tr.z, isPlayer: false, family: enemyDef(ai.defId).family });
     return;
   }
   if (ai) {
@@ -582,7 +582,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
     }
     onEnemyDeath(world, ctx, target, wasMarked);
   }
-  ctx.events.push({ type: 'death', target, x: tr?.x ?? 0, z: tr?.z ?? 0, isPlayer });
+  ctx.events.push({ type: 'death', target, x: tr?.x ?? 0, z: tr?.z ?? 0, isPlayer, ...(ai ? { family: enemyDef(ai.defId).family } : {}) });
 }
 
 /** Resource rules that trigger when an enemy dies: mark refunds and nearby-death gains (Biomass). */

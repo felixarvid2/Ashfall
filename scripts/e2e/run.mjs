@@ -115,6 +115,44 @@ const SCENARIOS = {
     return { screenshots: [await shot(page, out, `zone-${id}`)], notes: { zone: zoneId } };
   },
 
+  async audio({ page, out, start, mobile }) {
+    const screenshots = [];
+    const notes = { notFound: [] };
+    page.on('response', (r) => { if (r.url().includes('/assets/audio/') && r.status() >= 400) notes.notFound.push(`${r.status()} ${r.url()}`); });
+    const dbg = () => page.evaluate(() => window.ashfall.audioDebug);
+    await start();
+    await wait(page, 3000);
+    notes.afterStart = await dbg();
+    await page.evaluate(() => { const g = window.ashfall; g.ctx.debug.godMode = true; g.spawnHorde(8); });
+    await wait(page, 8000);
+    await page.evaluate(() => window.ashfall.killAllEnemies());
+    await wait(page, 2000);
+    notes.afterFight = await dbg();
+    await hideHud(page, '.fps-meter, .debug-panel');
+    screenshots.push(await shot(page, out, 'audio-hud'));
+    const open = mobile ? '[data-testid=touch-menu-sound-settings]' : '[data-testid=sound-open]';
+    await (mobile ? page.tap(open) : page.click(open));
+    await wait(page, 800);
+    screenshots.push(await shot(page, out, 'audio-panel'));
+    await page.evaluate(() => document.querySelector('.sound-panel')?.getBoundingClientRect()).then((r) => { notes.panelRect = r && [r.left, r.top, r.right, r.bottom].map(Math.round); });
+    notes.panelSliders = await page.evaluate(() => document.querySelectorAll('.sound-panel input[type=range]').length);
+    await (mobile ? page.tap('.sound-close') : page.click('.sound-close')).catch(() => {});
+    await wait(page, 500);
+    await page.evaluate(() => { const g = window.ashfall; g.enterZone('zone.deep_mines', 0, 0); });
+    await wait(page, 9000);
+    notes.deepMines = await dbg();
+    const mute = mobile ? '[data-testid=touch-menu-sound]' : '[data-testid=sound-mute]';
+    await (mobile ? page.tap(mute) : page.click(mute));
+    await wait(page, 500);
+    notes.muted = (await dbg()).muted;
+    notes.stored = await page.evaluate(() => localStorage.getItem('ashfall.settings'));
+    screenshots.push(await shot(page, out, 'audio-muted'));
+    await page.reload();
+    await page.waitForSelector('[data-testid=slot-0]', { timeout: 180000 });
+    notes.storedAfterReload = await page.evaluate(() => localStorage.getItem('ashfall.settings'));
+    return { screenshots, notes };
+  },
+
   async landscape({ page, out, start }) {
     await start();
     await page.evaluate(() => { const g = window.ashfall; g.ctx.debug.godMode = true; g.killAllEnemies(); });
@@ -131,6 +169,7 @@ const DEFAULTS = {
   instance: { viewport: '1100x760', mobile: false },
   zone: { viewport: '1100x760', mobile: false },
   landscape: { viewport: '844x390', mobile: true },
+  audio: { viewport: '1280x720', mobile: false },
 };
 
 async function main() {
@@ -147,13 +186,13 @@ async function main() {
   const url = opts.url ?? 'http://localhost:5173/';
   const timeoutMs = Number(opts.timeout ?? 300) * 1000;
 
-  const { browser, page, errors } = await launch({ width, height, mobile });
+  const { browser, page, errors } = await launch({ width, height, mobile, autoplay: name === 'audio' });
   const summary = { scenario: name, screenshots: [], errors, notes: {} };
   let timer;
   const watchdog = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`Timed out after ${timeoutMs / 1000}s`)), timeoutMs); });
   try {
     const start = (extra = {}) => startGame(page, { url, classId: opts.class ?? 'bastion', mobile, ...extra });
-    const r = await Promise.race([SCENARIOS[name]({ page, errors, opts, out, start }), watchdog]);
+    const r = await Promise.race([SCENARIOS[name]({ page, errors, opts, out, start, mobile }), watchdog]);
     summary.screenshots = r.screenshots;
     summary.notes = r.notes;
   } catch (e) {

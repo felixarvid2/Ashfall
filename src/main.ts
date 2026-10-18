@@ -3,8 +3,11 @@ import { Game } from './game';
 import { t } from './data/i18n';
 import { CharacterSelect } from './ui/characterSelect';
 import { registerFonts } from './ui/fonts';
+import { audio } from './audio/engine';
 
 registerFonts();
+// Listen for the first click or key press while the game loads, so the title music can start with it.
+audio.install();
 
 if (import.meta.env.DEV) {
   const errors = validateGameData();
