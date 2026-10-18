@@ -448,3 +448,18 @@ The brief named Howler.js. The audio engine (`src/audio/engine.ts`) uses the Web
 - **One sprite for effects.** The 47 effects are one file with offsets, which keeps the artifact's file count
   low. The MP3 encoder delay (1105 samples) is dropped so each offset lands exactly on its sound.
 - Loot sounds stay synthesised (see 2026-10-02) and now go through the effects bus.
+
+### 2026-10-18 — Free low-poly models only where a light treatment hides their style
+Region 5's Lumen creatures are CC0 models from Quaternius and Kenney that wear the Lumen look (dark indigo
+body, gold-white rim), which hides their low-poly style. Shades and the Absorbed reuse the game's own models.
+- **Sources:** kept in felixarvid2/assets under `third-party/models`; built by
+  `npm run assets:third-party -- local-models`.
+
+### 2026-10-18 — Region 5 scope: what is cut to fit levels 40–50
+- **Lumen phase 3 is one dialogue choice** (Listen or Fight) that changes only the epilogue.
+- **Memory Mirrors are three small instances** that replace bunkers.
+- **The Endless Shaft scales by density, champions and affixes**, since levels stop at 50.
+- **The Core as an endgame area is deferred.**
+
+### 2026-10-18 — Zone gates can require a finished quest
+A zone gate can now check for a finished quest, as the bore from the Deep Mines does (it needs `mq.governor`).
