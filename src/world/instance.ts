@@ -563,7 +563,7 @@ export function objectiveText(world: World, rt: InstanceRuntime, t: (key: string
   if (rt.objective.done) return rt.def.boss ? t('instances.objective.boss', { name: t(rt.def.boss.name) }) : t('instances.objective.done');
   const detail = objectiveDetail(world, rt, t);
   if (detail) return detail;
-  if (obj.kind === 'clear') return t('instances.objective.clear');
+  if (obj.kind === 'clear') return t(obj.objective ?? 'instances.objective.clear');
   const params = { n: rt.objective.progress, count: objectiveCount(obj) };
   if (obj.kind === 'collect' && obj.item && obj.item !== 'keycard') return t(`instances.objective.${obj.item}`, params);
   if (obj.kind === 'destroy' && obj.target) return t(obj.target.objective ?? 'instances.objective.motherCocoon', params);

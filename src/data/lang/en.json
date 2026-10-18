@@ -3363,6 +3363,8 @@
       "collect": "Find keycards: {n}/{count}",
       "destroy": "Destroy spore nests: {n}/{count}",
       "clear": "Clear the bunker",
+      "clearMemory": "Clear the memory",
+      "clearChoir": "Silence the First Choir",
       "boss": "Defeat {name}",
       "done": "Cleared. Take what you earned and leave.",
       "valves": "Shut the pumps in order: {n}/{count} · next: {next}",

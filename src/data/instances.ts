@@ -24,8 +24,8 @@ export type InstanceObjective =
     }
   /** Irrigation System: pull the pump levers; each drains the water from part of the tunnels. */
   | { kind: 'drain'; count: number }
-  /** Kill everything. */
-  | { kind: 'clear' }
+  /** Kill everything. `objective` is the line's language key (default: the bunker line). */
+  | { kind: 'clear'; objective?: string }
   /** Shut pumps in the order a panel shows; a wrong one resets them, heats the furnace and draws a wave. */
   | { kind: 'valves'; count: number; wave: number }
   /** Follow a damaged maintenance robot to the boss room; it stops while enemies are near it. */
@@ -563,7 +563,7 @@ export const INSTANCES: InstanceDef[] = [
     branches: [3, 4],
     packs: ['core_gardens', 'core_base'],
     packsPerRoom: [1, 2],
-    objective: { kind: 'clear' },
+    objective: { kind: 'clear', objective: 'instances.objective.clearChoir' },
     boss: { enemy: 'choir_mother', name: 'enemies.named.first_choir', lifeMul: 1, damageMul: 1, affixes: [], script: 'first_choir' },
     theme: CORE_HALLS,
     eventChance: 0.2,
@@ -602,7 +602,7 @@ export const INSTANCES: InstanceDef[] = [
     branches: [0, 1],
     packs: ['core_halls_ash'],
     packsPerRoom: [1, 1],
-    objective: { kind: 'clear' },
+    objective: { kind: 'clear', objective: 'instances.objective.clearMemory' },
     boss: null,
     theme: MIRROR_ASH,
     eventChance: 0.2,
@@ -615,7 +615,7 @@ export const INSTANCES: InstanceDef[] = [
     branches: [0, 1],
     packs: ['core_halls_fire'],
     packsPerRoom: [1, 1],
-    objective: { kind: 'clear' },
+    objective: { kind: 'clear', objective: 'instances.objective.clearMemory' },
     boss: null,
     theme: MIRROR_REFINERY,
     eventChance: 0.2,
@@ -628,7 +628,7 @@ export const INSTANCES: InstanceDef[] = [
     branches: [0, 1],
     packs: ['core_halls_jungle'],
     packsPerRoom: [1, 1],
-    objective: { kind: 'clear' },
+    objective: { kind: 'clear', objective: 'instances.objective.clearMemory' },
     boss: null,
     theme: MIRROR_VAULT,
     eventChance: 0.2,
