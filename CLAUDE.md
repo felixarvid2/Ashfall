@@ -18,7 +18,10 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
 
 - `npm run dev` play locally; `npm run build` typecheck and production build into `dist/`
 - `npx tsc --noEmit -p .` and `npx vitest run` must pass before anything is done
-- `npm run build:artifact` the self-contained build for a claude.ai artifact (`dist-artifact/`)
+- `npm run build:artifact` the self-contained build for a claude.ai artifact (`dist-artifact/`) and the page to
+  publish (`dist-artifact/artifact-page.html`)
+- `npm run e2e -- --scenario <boot|portrait|tooltip|instance|zone|landscape> --out <dir>` headless
+  browser checks with screenshots (`scripts/e2e/README.md`; start `npm run dev` first)
 - Releases: push a tag `vX.Y.Z`; `.github/workflows/release.yml` builds the game and attaches
   `ashfall-vX.Y.Z-web.zip` to a GitHub release
 

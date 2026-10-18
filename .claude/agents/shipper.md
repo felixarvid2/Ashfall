@@ -12,7 +12,8 @@ Repository facts:
 - GitHub repo `felixarvid2/Ashfall`. Work on the branch you are told (never push to `main` directly).
   Commit messages: imperative subject, a short body, and end with the attribution lines the main
   session gives you. Before every commit, check that no secret is staged:
-  `git diff --cached | grep -c "msy_\|fal_sk_"` must print 0 (keys live only in `.env`).
+  `git diff --cached | grep -cE "(msy|fal_sk)_[A-Za-z0-9]{12,}"` must print 0 (keys live only in
+  `.env`).
 - Pull requests: create with the GitHub MCP tools (`mcp__github__create_pull_request`; load with
   ToolSearch if deferred). Body: Summary bullets and a Test plan, ending with the attribution the main
   session gives you. **Merge only if the main session's instruction says the user approved the
