@@ -2,7 +2,7 @@
  * Open-world zone data (docs/world-and-gameplay.md §2–3). A zone is an ArenaDef (props, scatter,
  * lighting) plus roads, subzones, hubs, teleporters, enemy pack spawns and points of interest.
  */
-import type { ArenaDef, PropPlacement } from './testArena';
+import type { ArenaDef, GroundTexture, PropPlacement } from './testArena';
 import type { CaveDef } from './caves';
 
 export interface Subzone {
@@ -18,6 +18,8 @@ export interface Road {
   id: string;
   width: number;
   points: [number, number][];
+  /** Ground texture of this road (default: the zone's `ground.road`). */
+  surface?: GroundTexture;
 }
 
 export interface HubDef {

@@ -35,6 +35,12 @@ export interface ArenaDef {
   particles?: string;
   /** Almost no light but the player's lamp, lamps and floodlights; enemies show glowing eyes (Deep Mines). */
   dark?: boolean;
+  /** Hemisphere light colours (default: cold blue sky over a warm brown ground). The Core: gold above, violet bounce. */
+  hemisphere?: { sky: string; ground: string };
+  /** Post-process colour grade (default: cold and desaturated, saturation 0.82 under a pale blue tint). */
+  grade?: { saturation: number; tint: string };
+  /** Columns of light rising out of sight (The Core's space elevator shaft): drawn by the renderer, no collision. */
+  beams?: { x: number; z: number; radius: number; color: string }[];
 }
 
 /** Visual-only instanced clutter (no collision). */
@@ -48,6 +54,17 @@ export interface ScatterDef {
   near?: 'roads' | 'hubs';
   /** For `near`: how far beyond the road edge or the hub's radius it may lie (m). */
   spread?: number;
+  /**
+   * Only inside this circle, drawn as close-up clutter. With the fields below it is a distorted memory
+   * (The Core's Memory Halls): leaning, floating, half-transparent copies of an earlier region's props.
+   */
+  within?: { x: number; z: number; radius: number };
+  /** Lean each instance by up to this many radians. */
+  tilt?: number;
+  /** Float each instance up to this many metres above the ground. */
+  lift?: number;
+  /** Violet-lit translucent material (the colour of the rim light). */
+  ghost?: string;
 }
 
 /** A ground texture in public/assets/textures/ground/ (file name without .webp). */
@@ -74,7 +91,8 @@ export type GroundTexture =
   | 'elder_stone'
   | 'lake_shore'
   | 'steel_grating'
-  | 'mine_rock';
+  | 'mine_rock'
+  | 'lumen_matter';
 
 /**
  * Ground textures for an open-world zone: a base that covers everything, up to six overlay

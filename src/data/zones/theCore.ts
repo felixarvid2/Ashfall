@@ -10,7 +10,7 @@
 import { Rng } from '../../core/rng';
 import { caveGrid, nearestWalkable, openAt, type Bridge, type Cavern, type CaveDef } from './caves';
 import { alongRoad, clearOfProps, line } from './layout';
-import type { GroundDef, GroundPatch } from './testArena';
+import type { GroundDef, GroundPatch, ScatterDef } from './testArena';
 import type { EnvFeature, PackSpawn, PoiDef, PropPlacement, Road, ZoneDef } from './zoneTypes';
 
 const S = 2.2;
@@ -50,20 +50,25 @@ const inSub = (x: number, z: number, s: { c: [number, number]; r: number }) => M
 
 // ---- Walkable ground ----------------------------------------------------------------------------
 
+/**
+ * Roads are paths of the base ground (`surface` = the base texture draws no ribbon): the rusty plate of the
+ * old workings comes from the ground patches along the bore and the camp drift, and fades into Lumen matter.
+ */
+const SURFACE = 'lumen_matter' as const;
 const ROADS: Road[] = [
   // The bore from the Deep Mines into the Borderland, then the old drift to the Last Camp.
-  { id: 'bore', width: 12, points: scaled([[0, -334], [0, -296]]) },
-  { id: 'camp', width: 12, points: scaled([[0, -296], [0, -268], [-6, -200], [0, -140], [0, -110]]) },
+  { id: 'bore', width: 12, points: scaled([[0, -334], [0, -296]]), surface: SURFACE },
+  { id: 'camp', width: 12, points: scaled([[0, -296], [0, -268], [-6, -200], [0, -140], [0, -110]]), surface: SURFACE },
   // Drifts out to the machinery either side of the mouth.
-  { id: 'west', width: 10, points: scaled([[-70, -232], [-100, -214], [-130, -195]]) },
-  { id: 'east', width: 10, points: scaled([[72, -236], [100, -212], [130, -188]]) },
+  { id: 'west', width: 10, points: scaled([[-70, -232], [-100, -214], [-130, -195]]), surface: SURFACE },
+  { id: 'east', width: 10, points: scaled([[72, -236], [100, -212], [130, -188]]), surface: SURFACE },
   // Up the middle to the elevator shaft, east into the Memory Halls, west to the Gardens.
-  { id: 'spine', width: 12, points: scaled([[0, -110], [0, -40], [0, 20], [0, 60]]) },
-  { id: 'halls', width: 12, points: scaled([[0, 40], [70, 44], [130, 50], [190, 58]]) },
-  { id: 'gardens', width: 10, points: scaled([[0, -20], [-50, 0], [-100, 34]]) },
+  { id: 'spine', width: 12, points: scaled([[0, -110], [0, -40], [0, 20], [0, 60]]), surface: SURFACE },
+  { id: 'halls', width: 12, points: scaled([[0, 40], [70, 44], [130, 50], [190, 58]]), surface: SURFACE },
+  { id: 'gardens', width: 10, points: scaled([[0, -20], [-50, 0], [-100, 34]]), surface: SURFACE },
   // The heart causeway over the chasm, and the way on to the Heart.
-  { id: 'causeway', width: 14, points: scaled([[0, 100], [0, 130], [0, 200]]) },
-  { id: 'heart', width: 12, points: scaled([[0, 200], [0, 240], [0, 270]]) },
+  { id: 'causeway', width: 14, points: scaled([[0, 100], [0, 130], [0, 200]]), surface: SURFACE },
+  { id: 'heart', width: 12, points: scaled([[0, 200], [0, 240], [0, 270]]), surface: SURFACE },
 ];
 
 const C = (x: number, z: number, r: number): Cavern => ({ x: x * S, z: z * S, radius: r * S });
@@ -186,22 +191,32 @@ function buildGround(): GroundDef {
   const ASH = 2;
   const SLAG = 3;
   const MOSS = 4;
-  const ELDER = 5;
-  const patches: GroundPatch[] = [
-    // The Borderland: mine floor turning to Lumen matter.
-    { layer: ROCK, x: 0, z: -250 * S, radius: 105 * S, strength: 0.85 },
-    { layer: STEEL, x: LAST_CAMP.x, z: LAST_CAMP.z, radius: LAST_CAMP.radius + 12 },
-    { layer: STEEL, x: ELEVATOR_BASE.x, z: ELEVATOR_BASE.z, radius: ELEVATOR_BASE.radius + 10, strength: 0.9 },
-    // The Memory Halls: each memory keeps its region's ground.
-    { layer: ASH, x: 240 * S, z: 110 * S, radius: 42 * S, strength: 0.9 },
-    { layer: SLAG, x: 225 * S, z: -35 * S, radius: 40 * S, strength: 0.9 },
-    { layer: MOSS, x: 175 * S, z: 70 * S, radius: 38 * S, strength: 0.9 },
-    { layer: ROCK, x: 130 * S, z: -40 * S, radius: 36 * S, strength: 0.9 },
-    // The Gardens and the Heart: bare Lumen stone.
-    ...ISLANDS.map((i) => ({ layer: ELDER, x: i.x, z: i.z, radius: i.radius + 8, strength: 0.9 })),
-    { layer: ELDER, x: LUMEN_HEART.x, z: LUMEN_HEART.z, radius: 95 * S, strength: 0.85 },
-  ];
-  return { base: 'lab_tiles', tile: 9, layers: ['steel_plating', 'mine_rock', 'scorched_ground', 'cooling_slag', 'fungal_moss', 'elder_stone'], patches, road: 'steel_plating' };
+  const CONCRETE = 5;
+  const patches: GroundPatch[] = [];
+  // The Borderland: rusty mine plate along the bore and the old drift, mine rock round it, both fading into
+  // the pale Lumen matter of the base ground as the cavern opens up (strength falls with the distance north).
+  const worn = (z0: number, z1: number, layer: number, radius: number, step: number, from: number, to: number) => {
+    for (let z = z0; z <= z1 + 0.1; z += step) {
+      const k = (z - z0) / (z1 - z0);
+      patches.push({ layer, x: 0, z: z * S, radius: radius * S, strength: from + (to - from) * k });
+    }
+  };
+  worn(-334, -285, STEEL, 9, 14, 0.9, 0.1);
+  worn(-330, -235, ROCK, 40, 22, 0.7, 0.1);
+  // The machinery either side of the mouth stands on mine floor.
+  for (const [x, z] of [[-130, -195], [130, -188], [-70, -232], [72, -236]] as const) patches.push({ layer: ROCK, x: x * S, z: z * S, radius: 24 * S, strength: 0.7 });
+  // The Last Camp and the Elevator Base: the clean slabs of the shaft's service floor.
+  patches.push({ layer: CONCRETE, x: LAST_CAMP.x, z: LAST_CAMP.z, radius: LAST_CAMP.radius + 10 });
+  patches.push({ layer: CONCRETE, x: ELEVATOR_BASE.x, z: ELEVATOR_BASE.z, radius: ELEVATOR_BASE.radius + 4, strength: 0.9 });
+  // The Memory Halls: each memory keeps its region's ground, full strength.
+  patches.push(
+    { layer: ASH, x: 240 * S, z: 110 * S, radius: 42 * S },
+    { layer: SLAG, x: 225 * S, z: -35 * S, radius: 40 * S },
+    { layer: MOSS, x: 175 * S, z: 70 * S, radius: 38 * S },
+    { layer: ROCK, x: 130 * S, z: -40 * S, radius: 36 * S },
+  );
+  // The Gardens and the Heart are bare Lumen matter: the base ground.
+  return { base: 'lumen_matter', tile: 9, layers: ['steel_plating', 'mine_rock', 'ash_plain', 'cooling_slag', 'fungal_moss', 'military_concrete'], patches, road: 'lumen_matter' };
 }
 
 // ---- Props --------------------------------------------------------------------------------------
@@ -224,7 +239,7 @@ const growth = (x: number, z: number, scale: number, glow = GOLD, lit = false): 
   glow,
   ...(lit ? { light: { color: glow, intensity: 40, distance: 12, height: 2.4 } } : {}),
 });
-/** A Modular SciFi wall panel runs 4 m along its local z axis: collision circles follow it. */
+/** A Modular SciFi wall panel runs 4 m along its local z axis (3 m high): collision circles follow it. */
 const panel = (x: number, z: number, rot: number, scale = 1): PropPlacement => ({
   asset: 'prop.core_wall_panel',
   x,
@@ -282,7 +297,15 @@ function buildProps(): PropPlacement[] {
     props.push({ asset: 'prop.compressor', x: x + 6, z: z + 4, rot: rng.range(0, 6), collider: 1.4 });
     props.push({ asset: 'env.catwalk', x: x - 7, z: z - 3, rot: rng.range(0, 6), scale: 0.8, colliders: line(5, 0.6, 4) });
     props.push(growth(x + 2, z - 8, rng.range(1.4, 2.4), GOLD, true));
-    props.push({ asset: 'prop.core_pipe_ring', x: x - 2, z: z + 9, rot: rng.range(0, 6), scale: 3, collider: 1 });
+    // Pipes of the old plant, half sunk into the floor, with the collars Lumen grew round them.
+    for (let k = 0; k < 6; k++) {
+      const a = rng.range(0, Math.PI * 2);
+      const d = rng.range(0, 3.5);
+      const px = x - 2 + Math.sin(a) * d;
+      const pz = z + 9 + Math.cos(a) * d;
+      const sc = rng.range(3, 7);
+      props.push({ asset: k % 2 ? 'prop.core_pipe' : 'prop.core_pipe_ring', x: px, z: pz, rot: rng.range(0, 6), scale: sc, collider: 0.12 * sc + 0.3 });
+    }
   }
   // Lumen matter creeping over the Borderland floor.
   for (let i = 0; i < 160; i++) {
@@ -295,14 +318,14 @@ function buildProps(): PropPlacement[] {
   // The Last Camp: a sealed section of the shaft's service tunnel: a ring of plates with two doors,
   // cables across the floor, consoles, lamps and the stash.
   const L = LAST_CAMP;
-  props.push(...ring(L.x, L.z, L.radius - 1.5, [0, Math.PI]));
-  props.push({ asset: 'prop.core_door', x: L.x, z: L.z - (L.radius - 1.5), rot: 0, scale: 1.2 }, { asset: 'prop.core_door', x: L.x, z: L.z + (L.radius - 1.5), rot: 0, scale: 1.2 });
+  props.push(...ring(L.x, L.z, L.radius - 1.5, [0, Math.PI], 1.4));
+  props.push({ asset: 'prop.core_door', x: L.x, z: L.z - (L.radius - 1.5), rot: 0, scale: 1 }, { asset: 'prop.core_door', x: L.x, z: L.z + (L.radius - 1.5), rot: 0, scale: 1 });
   props.push(
     { asset: 'prop.core_console', x: L.x - 9, z: L.z + 8, rot: 0.6, scale: 1.1, collider: 0.7 },
     { asset: 'prop.core_console', x: L.x + 10, z: L.z + 6, rot: -0.5, scale: 1.1, collider: 0.7 },
     { asset: 'prop.core_platform', x: L.x, z: L.z, scale: 1.3 },
-    { asset: 'prop.core_cable', x: L.x - 5, z: L.z - 6, rot: 0.9, scale: 2 },
-    { asset: 'prop.core_cable', x: L.x + 6, z: L.z + 12, rot: -1.1, scale: 2 },
+    { asset: 'prop.core_cable', x: L.x - 5, z: L.z - 6, rot: 0.9, scale: 1.4 },
+    { asset: 'prop.core_cable', x: L.x + 6, z: L.z + 12, rot: -1.1, scale: 1.4 },
     { asset: 'prop.generator', x: L.x + 14, z: L.z - 6, rot: 1, collider: 1 },
     { asset: 'prop.cargo_crate', x: L.x - 14, z: L.z - 4, rot: 0.4, collider: 1 },
     lamp(L.x - 6, L.z + 3, '#fff0c8', 90),
@@ -310,20 +333,21 @@ function buildProps(): PropPlacement[] {
     lamp(L.x + 2, L.z + 14, '#fff0c8', 80),
   );
 
-  // The space elevator shaft: a column of light and steel rising out of sight, visible from everywhere.
+  // The space elevator shaft: a steel core with a column of light rising out of it (ZoneDef.beams) and six
+  // columns round its foot, lit from inside. A column is 5 m at scale 1: the core is about 17 m, the rest 6.5 m.
   props.push(
-    { asset: 'prop.core_column', x: SHAFT.x, z: SHAFT.z, scale: 14, landmark: true, glow: '#fff0c8', collider: 6.5, light: { color: '#fff0c8', intensity: 260, distance: 50, height: 12 } },
+    { asset: 'prop.core_column', x: SHAFT.x, z: SHAFT.z, scale: 3.4, landmark: true, collider: 2.2, light: { color: '#fff0c8', intensity: 90, distance: 46, height: 11 } },
     ...[0, 1, 2, 3, 4, 5].map((i) => {
       const a = (i / 6) * Math.PI * 2;
-      return { asset: 'prop.core_column', x: SHAFT.x + Math.sin(a) * 11, z: SHAFT.z + Math.cos(a) * 11, scale: 2.4, glow: GOLD, collider: 1.2 } as PropPlacement;
+      return { asset: 'prop.core_column', x: SHAFT.x + Math.sin(a) * 12, z: SHAFT.z + Math.cos(a) * 12, scale: 1.3, collider: 1.1, ...(i % 2 ? { light: { color: VIOLET, intensity: 50, distance: 18, height: 4 } } : {}) } as PropPlacement;
     }),
   );
   // The Elevator Base: a plated ring round the shaft's foot with four doors, consoles on the rim (greybox).
   const B = ELEVATOR_BASE;
-  props.push(...ring(B.x, B.z, B.radius, [0, Math.PI / 2, Math.PI, -Math.PI / 2], 1.2));
+  props.push(...ring(B.x, B.z, B.radius, [0, Math.PI / 2, Math.PI, -Math.PI / 2], 1.4));
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2;
-    props.push({ asset: 'prop.core_door', x: B.x + Math.sin(a) * B.radius, z: B.z + Math.cos(a) * B.radius, rot: a, scale: 1.5 });
+    props.push({ asset: 'prop.core_door', x: B.x + Math.sin(a) * B.radius, z: B.z + Math.cos(a) * B.radius, rot: a, scale: 1 });
   }
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2 + 0.5;
@@ -333,12 +357,12 @@ function buildProps(): PropPlacement[] {
 
   // The heart causeway: columns either side, lit.
   alongRoad(scaled([[0, 104], [0, 200]]), 18, 6).forEach((p, i) => {
-    for (const side of [-1, 1]) props.push({ asset: 'prop.core_column', x: p.x + side * 9.5, z: p.z, scale: 1.5, glow: i % 2 ? VIOLET : GOLD, collider: 0.8, ...(i % 3 === 0 ? { light: { color: GOLD, intensity: 60, distance: 16, height: 4 } } : {}) });
+    for (const side of [-1, 1]) props.push({ asset: 'prop.core_column', x: p.x + side * 9.5, z: p.z, scale: 1.2, collider: 0.7, ...(i % 3 === 0 ? { light: { color: GOLD, intensity: 60, distance: 16, height: 4 } } : {}) });
   });
 
   // The Hanging Gardens: Lumen growths and ruined columns on the islands, lit gold and violet.
   for (const isl of ISLANDS) {
-    props.push({ asset: 'prop.core_column', x: isl.x + isl.radius * 0.3, z: isl.z - isl.radius * 0.2, scale: 1.8, glow: VIOLET, collider: 1, light: { color: VIOLET, intensity: 60, distance: 20, height: 4 } });
+    props.push({ asset: 'prop.core_column', x: isl.x + isl.radius * 0.3, z: isl.z - isl.radius * 0.2, scale: 1.3, collider: 0.9, light: { color: VIOLET, intensity: 60, distance: 20, height: 4 } });
     for (let i = 0; i < 9; i++) {
       const a = rng.range(0, Math.PI * 2);
       const d = rng.range(0.15, 0.85) * isl.radius;
@@ -348,16 +372,17 @@ function buildProps(): PropPlacement[] {
       props.push(growth(x, z, rng.range(0.8, 2.4), i % 3 ? GOLD : VIOLET, i % 4 === 0));
     }
   }
-  // A glowing post at each end of every bridge.
+  // A lamp beside each bridge mouth, where the rails start (the bridge itself is drawn by the renderer).
   for (const b of BRIDGES) {
-    for (const [px, pz] of [b.a, b.b]) {
-      const dx = b.b[0] - b.a[0];
-      const dz = b.b[1] - b.a[1];
-      const len = Math.hypot(dx, dz);
-      const near = px === b.a[0] && pz === b.a[1] ? 1 : -1;
-      const x = px + (dx / len) * 8 * near + (-dz / len) * 5;
-      const z = pz + (dz / len) * 8 * near + (dx / len) * 5;
-      if (clear(x, z, 1)) props.push({ asset: 'prop.core_pipe_ring', x, z, scale: 2.4, glow: VIOLET, collider: 0.6 });
+    const dx = b.b[0] - b.a[0];
+    const dz = b.b[1] - b.a[1];
+    const len = Math.hypot(dx, dz);
+    for (const [end, dir] of [[b.a, 1], [b.b, -1]] as const) {
+      const isl = ISLANDS.find((i) => i.x === end[0] && i.z === end[1]);
+      if (!isl) continue;
+      const x = end[0] + (dx / len) * dir * (isl.radius - 3.5) + (-dz / len) * (BRIDGE_WIDTH / 2 + 1.2);
+      const z = end[1] + (dz / len) * dir * (isl.radius - 3.5) + (dx / len) * (BRIDGE_WIDTH / 2 + 1.2);
+      if (clear(x, z, 1)) props.push(lamp(x, z, VIOLET, 60));
     }
   }
 
@@ -384,10 +409,10 @@ function buildProps(): PropPlacement[] {
   // Fire: smokestacks, furnace blocks and vents, as the Refinery.
   patch(225, -35, 40, 34, (x, z) => {
     const r = rng.next();
-    if (r < 0.12) return { asset: 'env.smokestack', x, z, scale: rng.range(0.5, 0.8), collider: 2, glow: '#ff8a3a' };
-    if (r < 0.4) return { asset: 'env.furnace_block', x, z, rot: rng.range(0, 6), scale: rng.range(0.7, 1.1), collider: 2.2, glow: '#ff6a2a' };
+    if (r < 0.12) return { asset: 'env.smokestack', x, z, scale: rng.range(0.5, 0.8), collider: 2 };
+    if (r < 0.4) return { asset: 'env.furnace_block', x, z, rot: rng.range(0, 6), scale: rng.range(0.7, 1.1), collider: 2.2 };
     if (r < 0.6) return { asset: 'prop.vent', x, z, rot: rng.range(0, 6), collider: 0.8 };
-    return { asset: 'env.slag_rock', x, z, rot: rng.range(0, 6), scale: rng.range(0.7, 1.4), collider: 1, glow: '#ff7a2a' };
+    return { asset: 'env.slag_rock', x, z, rot: rng.range(0, 6), scale: rng.range(0.7, 1.4), collider: 1 };
   });
   // Jungle: fungal trees and nests, as the Vaults.
   patch(175, 70, 38, 44, (x, z) => {
@@ -404,9 +429,9 @@ function buildProps(): PropPlacement[] {
   const H = LUMEN_HEART;
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
-    props.push({ asset: 'prop.core_column', x: H.x + Math.sin(a) * (H.radius + 6), z: H.z + Math.cos(a) * (H.radius + 6), scale: 2.6, glow: i % 2 ? VIOLET : GOLD, collider: 1.3, light: { color: i % 2 ? VIOLET : GOLD, intensity: 70, distance: 22, height: 5 } });
+    props.push({ asset: 'prop.core_column', x: H.x + Math.sin(a) * (H.radius + 6), z: H.z + Math.cos(a) * (H.radius + 6), scale: 1.4, collider: 0.8, light: { color: i % 2 ? VIOLET : GOLD, intensity: 70, distance: 22, height: 5 } });
   }
-  props.push({ asset: 'prop.lumen_wrath', x: H.x, z: H.z + 14, scale: 3, glow: '#fff0c8', landmark: true, collider: 3, light: { color: '#fff0c8', intensity: 200, distance: 46, height: 8 } });
+  props.push({ asset: 'prop.lumen_wrath', x: H.x, z: H.z + 14, scale: 3, glow: '#fff0c8', landmark: true, collider: 3, light: { color: '#fff0c8', intensity: 90, distance: 46, height: 8 } });
 
   // Rubble and loose rock in the open caverns.
   for (let i = 0; i < 420; i++) {
@@ -570,6 +595,32 @@ export const CORE_TELEPORTERS = [
   { id: 'tp.heart', ...at(10, 206) },
 ];
 
+/**
+ * The Memory Halls' clutter: each memory's own props, but wrong the way remembered things are: leaning,
+ * floating a little, translucent at the edges and rimmed with that region's light. Visual only.
+ */
+const MEMORY_SCATTER: ScatterDef[] = (() => {
+  const memories = [
+    { id: 'ash', x: 240, z: 110, r: 42, ghost: '#b48cff', assets: [['env.old_tyre', 90, 1, 1.2], ['env.wheel_rim', 50, 1, 1.2], ['env.oil_drum', 50, 1, 1.2], ['env.debris_rock', 200, 1, 3], ['env.jerrycan', 40, 1, 1.2]] },
+    { id: 'fire', x: 225, z: -35, r: 40, ghost: '#ff9a60', assets: [['env.oil_drum', 80, 1, 1.2], ['env.steel_drum', 70, 1, 1.2], ['env.propane_tank', 50, 1, 1.3], ['env.utility_box', 50, 1, 1.3]] },
+    { id: 'jungle', x: 175, z: 70, r: 38, ghost: '#7dffa0', assets: [['prop.lumen_growth', 120, 1.2, 3.4], ['env.trash_can', 30, 1, 1.2], ['env.wheel_rim', 30, 1, 1.2]] },
+    { id: 'dark', x: 130, z: -40, r: 34, ghost: '#7ad8ff', assets: [['env.moon_rock_a', 35, 0.7, 1.8], ['env.moon_rock_b', 35, 0.7, 1.8], ['env.moon_rock_c', 25, 0.7, 1.8], ['env.ammo_box', 30, 1, 1.2], ['env.military_crate', 25, 1, 1.2]] },
+  ] as const;
+  return memories.flatMap((m) =>
+    m.assets.map(([asset, count, minScale, maxScale]): ScatterDef => ({
+      asset,
+      count,
+      seed: `core-memory-${m.id}-${asset}`,
+      minScale,
+      maxScale,
+      within: { x: m.x * S, z: m.z * S, radius: m.r * S },
+      tilt: 0.55,
+      lift: 2.2,
+      ghost: m.ghost,
+    })),
+  );
+})();
+
 const PROPS = buildProps();
 function insideProp(x: number, z: number): boolean {
   return PROPS.some((prop) => {
@@ -591,11 +642,20 @@ export const THE_CORE: ZoneDef = {
   levels: [40, 50],
   playerSpawn: CORE_GATE.arrive,
   // Not dark: Lumen's heart lights the cavern from within, gold-white and violet.
-  ambient: { color: '#b8a4e8', intensity: 1.4 },
-  moon: { color: '#ffe6b0', intensity: 1.8 },
-  fog: { color: '#2a1d4a', density: 0.012 },
+  ambient: { color: '#c9b6f0', intensity: 1.1 },
+  hemisphere: { sky: '#fbf4ff', ground: '#6a40c0' },
+  moon: { color: '#fff4e4', intensity: 1.7 },
+  fog: { color: '#3a2a66', density: 0.008 },
   playerLight: { color: '#fff0c8', intensity: 40, distance: 12 },
   particles: '#ffe39a',
+  // Warm and rich: lit from within, not the cold grade of the mines.
+  grade: { saturation: 1.0, tint: '#fffaf6' },
+  // The shaft's column of light.
+  beams: [
+    { x: SHAFT.x, z: SHAFT.z, radius: 2.6, color: '#fff0c8' },
+    // Lumen's heart pulses violet.
+    { x: LUMEN_HEART.x, z: LUMEN_HEART.z, radius: 3.6, color: '#c8a4ff' },
+  ],
   props: PROPS,
   scatter: [
     { asset: 'env.debris_rock', count: 6000, seed: 'core-debris', minScale: 0.3, maxScale: 1.3 },
@@ -604,6 +664,7 @@ export const THE_CORE: ZoneDef = {
     { asset: 'prop.core_pipe', count: 60, seed: 'core-pipe', minScale: 1.5, maxScale: 3, near: 'roads', spread: 2 },
     { asset: 'env.oil_drum', count: 20, seed: 'core-oil_drum', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 2 },
     { asset: 'env.military_crate', count: 20, seed: 'core-military_crate', minScale: 0.9, maxScale: 1.1, near: 'roads', spread: 2 },
+    ...MEMORY_SCATTER,
   ],
   ground: buildGround(),
   subzones: [

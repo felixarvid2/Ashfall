@@ -167,6 +167,27 @@ vendor, technician and stash as in the other hubs, plus returning NPCs.
 - Endless Shaft floor scaling; portal objective for the Chamber of Creation.
 - Lumen phase 2 arena changes and the phase 3 dialogue beat with an epilogue flag.
 
+## Look (renderer: `src/render/coreLook.ts`, zone data in `theCore.ts`)
+
+Lit from within, not dark like the mines: a gold-white hemisphere light over a violet bounce, violet fog, a warm
+colour grade (`ZoneDef.hemisphere`, `fog`, `grade`). The ground is **Lumen matter** (`lumen_matter.webp`, made
+by `scripts/art/lumenMatter.ts`): pale pearl stone with gold and violet veins that glow. The mines' rusty plate
+survives only along the bore and fades out over the Borderland (ground patches, no road ribbons); the Last
+Camp and the Elevator Base have clean concrete slabs; each Memory Hall keeps its region's ground.
+
+- **Abyss:** the ground plane is cut open over the abyss and the bridge strips by a smoothed mask, so island edges
+  are round; a soft gold lip glows along them, rock hangs below each island (tapering to a point) and a deep
+  violet and gold glow lies far under everything. Glow motes rise out of it instead of ash falling.
+- **Bridges:** thin gold rails with posts and a translucent band of running light that fades in and out with its
+  cycle (flicker as the warning).
+- **The shaft:** a steel core with six columns round its foot and a column of light rising out of sight
+  (`ZoneDef.beams`); Lumen's heart has a violet one. The camera sees about 20 m of ground ahead, so the
+  light is read from near the shaft; from afar the minimap's Elevator Base marker is the guide.
+- **Memory Halls:** each memory scatters its region's props as distorted copies (`ScatterDef.within` with
+  `tilt`, `lift`, `ghost`): leaning, floating a little, violet-rimmed and see-through at the edges.
+- Columns are 5 m at scale 1: the shaft core is 17 m (scale 3.4), everything else 6–7 m. Never give a column a
+  `glow` (a flat emissive over metal turns it cream).
+
 ## Assets (free libraries, no Meshy)
 
 All CC0, recorded in docs/credits.md, sources kept in the felixarvid2/assets repository under `third-party/`:

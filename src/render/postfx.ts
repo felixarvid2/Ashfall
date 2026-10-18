@@ -55,7 +55,16 @@ export class PostFx {
     this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.45, 0.82);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
-    this.composer.addPass(new ShaderPass(GradeShader));
+    this.grade = new ShaderPass(GradeShader);
+    this.composer.addPass(this.grade);
+  }
+
+  private readonly grade: ShaderPass;
+
+  /** The colour grade (default: cold and desaturated); a zone can warm it up (The Core). */
+  setGrade(saturation = 0.82, tint = '#e6ecf5'): void {
+    this.grade.uniforms.saturation!.value = saturation;
+    (this.grade.uniforms.tint!.value as THREE.Color).set(tint);
   }
 
   setQuality(quality: GraphicsQuality): void {

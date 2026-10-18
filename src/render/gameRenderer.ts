@@ -17,13 +17,14 @@ import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena
 import { buildGroundSplat } from './groundSplat';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnvFeature } from '../data/zones/zoneTypes';
-import { bridgeCellsOf, bridgeState, caveGrid, type BridgeCycle, type CaveGrid } from '../data/zones/caves';
+import { bridgeCellsOf, caveGrid, type CaveDef, type CaveGrid } from '../data/zones/caves';
 import { scatterInstances } from '../world/arena';
-import { gravityFields, gravityPhase, type Gravity } from '../world/theCore';
+import { gravityFields } from '../world/theCore';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
 import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
+import { CoreLook, blurCut, cutCells, cutTexture, ghostMaterial, type CutField } from './coreLook';
 import { ChoirLinks } from './choirLinks';
 import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
@@ -95,6 +96,7 @@ export class GameRenderer {
     this.scene.background = new THREE.Color(arena.fog.color);
     this.scene.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
     this.ash.setColor(arena.particles ?? '#b8b2aa');
+    this.postfx.setGrade(arena.grade?.saturation, arena.grade?.tint);
     this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
     if (!this.ambientLight || !this.hemiLight) {
       this.ambientLight = new THREE.AmbientLight();
@@ -103,6 +105,8 @@ export class GameRenderer {
     }
     this.ambientLight.color.set(arena.ambient.color);
     this.ambientLight.intensity = arena.ambient.intensity;
+    this.hemiLight.color.set(arena.hemisphere?.sky ?? '#4a5466');
+    this.hemiLight.groundColor.set(arena.hemisphere?.ground ?? '#2a2018');
     this.hemiLight.intensity = arena.ambient.intensity * 1.6;
     const pl = arena.playerLight;
     this.playerLight.color.set(pl.color);
@@ -122,6 +126,15 @@ export class GameRenderer {
 
     const size = arena.halfSize * 2 + 40;
     const groundDef = arena.ground;
+    // Open air in the ground (The Core's abyss and bridges): a smoothed mask the ground shader discards by.
+    const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+    const caves = (arena as { caves?: CaveDef }).caves;
+    const cutField: CutField | null = grid && caves && (grid.air || grid.bridges) ? blurCut(grid, cutCells(grid, caves)) : null;
+    let cutTex: THREE.DataTexture | null = null;
+    if (cutField) {
+      cutTex = cutTexture(cutField, size);
+      this.zoneTextures.push(cutTex);
+    }
     const geometry = new THREE.PlaneGeometry(size, size);
     let groundMat: THREE.MeshStandardMaterial;
     if (groundDef?.base) {
@@ -129,7 +142,7 @@ export class GameRenderer {
       const reps = size / groundDef.tile;
       const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
       for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * reps, uv.getY(i) * reps);
-      groundMat = this.texturedGroundMaterial(groundDef, size, reps, arena.id);
+      groundMat = this.texturedGroundMaterial(groundDef, size, reps, arena.id, cutTex);
     } else {
       groundMat = new THREE.MeshStandardMaterial({ map: makeGroundTexture(), color: 0x8a847c, roughness: 1, metalness: 0 });
     }
@@ -139,29 +152,41 @@ export class GameRenderer {
     s.add(ground);
 
     // Roads (open-world zones): ribbons along each polyline, textured when the zone has a road surface.
-    const roads = (arena as { roads?: { width: number; points: [number, number][] }[] }).roads ?? [];
+    const roads = (arena as { roads?: { width: number; points: [number, number][]; surface?: GroundTexture }[] }).roads ?? [];
     if (roads.length) {
       let roadMat: THREE.MeshStandardMaterial;
-      if (groundDef?.road) {
-        // Ash drifts over the ragged edges: an alpha map fades both sides of the ribbon.
-        const edges = makeRoadEdgeTexture();
+      // Ash drifts over the ragged edges: an alpha map fades both sides of the ribbon.
+      const edges = groundDef?.road || roads.some((r) => r.surface) ? makeRoadEdgeTexture() : null;
+      if (edges) {
         edges.repeat.set(1, 1 / 8);
         this.zoneTextures.push(edges);
-        roadMat = new THREE.MeshStandardMaterial({
-          map: this.groundTexture(groundDef.road),
-          alphaMap: edges,
-          transparent: true,
-          depthWrite: false,
-          color: GROUND_TINT,
-          roughness: 0.95,
-          metalness: 0,
-          polygonOffset: true,
-          polygonOffsetFactor: -1,
-        });
-      } else {
-        roadMat = new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 });
       }
-      for (const road of roads) s.add(roadMesh(road.points, road.width, roadMat));
+      const surfaces = new Map<GroundTexture, THREE.MeshStandardMaterial>();
+      const surfaceMat = (name: GroundTexture) => {
+        let mat = surfaces.get(name);
+        if (!mat) {
+          mat = new THREE.MeshStandardMaterial({
+            map: this.groundTexture(name),
+            alphaMap: edges,
+            transparent: true,
+            depthWrite: false,
+            color: GROUND_TINT,
+            roughness: 0.95,
+            metalness: 0,
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+          });
+          surfaces.set(name, mat);
+        }
+        return mat;
+      };
+      if (!groundDef?.road) roadMat = new THREE.MeshStandardMaterial({ color: 0x57504a, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1 });
+      else roadMat = surfaceMat(groundDef.road);
+      for (const road of roads) {
+        // A road on the base texture itself is just ground: no ribbon over it.
+        if (road.surface && road.surface === groundDef?.base) continue;
+        s.add(roadMesh(road.points, road.width, road.surface ? surfaceMat(road.surface) : roadMat));
+      }
     }
     buildDecals(s, arena);
 
@@ -170,10 +195,13 @@ export class GameRenderer {
     if (env.length) this.buildEnv(s, env);
     const domes = (arena as { domes?: { x: number; z: number; radius: number }[] }).domes ?? [];
     if (domes.length) this.buildDomes(s, domes);
-    const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
     this.coreLook = null;
     if (grid) this.buildCaveWalls(s, grid);
-    if (grid?.air || grid?.bridges) this.buildCoreLook(s, grid, gravityFields(arena as { env?: EnvFeature[] }));
+    if (grid && caves && (grid.air || grid.bridges)) {
+      this.coreLook = new CoreLook(s, grid, caves, cutField, gravityFields(arena as { env?: EnvFeature[] }), arena.beams ?? [], this.glowTexture());
+    }
+    // The Core's drifting light: motes rise out of the abyss instead of ash falling.
+    if (this.coreLook) this.ash.setMotes(['#ffd88a', '#c8a4ff', '#fff0c8']);
     this.dark = arena.dark ?? false;
     this.useEnvironment(this.dark ? ENV_LIGHT.dark : ENV_LIGHT.surface);
     this.dynamicLights = [];
@@ -211,11 +239,16 @@ export class GameRenderer {
     const CHUNK = 48;
     arena.scatter.forEach((def, index) => {
       // Clutter by the roads and hubs is seen close up: full detail, true proportions, on the ground.
-      const clutter = def.near !== undefined;
-      const parts = this.assets.instancingParts(def.asset, clutter ? 'full' : 'low');
+      const clutter = def.near !== undefined || def.within !== undefined;
+      // Distorted memories are many and floating: the light model keeps them cheap.
+      const parts = this.assets.instancingParts(def.asset, def.near !== undefined ? 'full' : 'low');
+      // A distorted memory: the same props in violet-rimmed, half see-through material.
+      if (def.ghost) for (const part of parts) part.material = ghostMaterial(part.material, def.ghost);
       const chunks = new Map<string, ReturnType<typeof scatterInstances>>();
       for (const inst of scatterInstances(arena, index)) {
-        const key = `${Math.floor(inst.x / CHUNK)},${Math.floor(inst.z / CHUNK)}`;
+        // A memory is dense and local: bigger chunks keep the draw calls down and still cull the far side.
+        const size = def.within ? CHUNK * 2 : CHUNK;
+        const key = `${Math.floor(inst.x / size)},${Math.floor(inst.z / size)}`;
         let list = chunks.get(key);
         if (!list) chunks.set(key, (list = []));
         list.push(inst);
@@ -223,12 +256,14 @@ export class GameRenderer {
       const m = new THREE.Matrix4();
       const q = new THREE.Quaternion();
       const up = new THREE.Vector3(0, 1, 0);
+      const lean = new THREE.Euler();
       for (const instances of chunks.values()) {
         for (const { geometry, material } of parts) {
           const mesh = new THREE.InstancedMesh(geometry, material, instances.length);
           instances.forEach((inst, i) => {
-            q.setFromAxisAngle(up, inst.rot);
-            m.compose(new THREE.Vector3(inst.x, clutter ? -0.01 : -0.05, inst.z), q, new THREE.Vector3(inst.scale, inst.scale * (clutter ? 1 : 0.8), inst.scale));
+            if (inst.lean) q.setFromEuler(lean.set(inst.lean.x, inst.rot, inst.lean.z, 'YXZ'));
+            else q.setFromAxisAngle(up, inst.rot);
+            m.compose(new THREE.Vector3(inst.x, (clutter ? -0.01 : -0.05) + (inst.lift ?? 0), inst.z), q, new THREE.Vector3(inst.scale, inst.scale * (clutter ? 1 : 0.8), inst.scale));
             mesh.setMatrixAt(i, m);
           });
           mesh.computeBoundingSphere();
@@ -473,7 +508,7 @@ export class GameRenderer {
    * patches. Each texture's look (scale, brightness, glow) comes from GROUND_LOOK: Lumen spots glow
    * green, cracks in slag glow orange, crystal and alien seams glow cyan.
    */
-  private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string): THREE.MeshStandardMaterial {
+  private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string, cut: THREE.Texture | null = null): THREE.MeshStandardMaterial {
     const res = 1024;
     const count = Math.min(def.layers.length, 6);
     const splats = buildGroundSplat(def.patches, size, res, seed, count).map((data) => {
@@ -499,7 +534,7 @@ export class GameRenderer {
       let color = `raw${i}`;
       if (look.soften) color = `mix(vec3(${look.soften.toward.map(glsl).join(', ')}), ${color}, ${glsl(look.soften.keep)})`;
       if (look.gain) color = `(${color}) * ${glsl(look.gain)}`;
-      body += `ground = mix(ground, ${color}, ${weight});\n`;
+      body += `ground = mix(ground, ${color}, ${weight});\nbaseW *= 1.0 - ${weight};\n`;
       if (look.glow === 'green') {
         body += `groundGlow += vec3(0.36, 1.0, 0.42) * ${weight} * smoothstep(0.2, 0.6, raw${i}.g - max(raw${i}.r, raw${i}.b)) * 1.5;\n`;
       } else if (look.glow === 'orange') {
@@ -509,13 +544,18 @@ export class GameRenderer {
         body += `groundGlow += vec3(0.3, 0.8, 1.0) * ${weight} * smoothstep(0.55, 0.85, min(raw${i}.g, raw${i}.b)) * smoothstep(0.15, 0.35, raw${i}.b - raw${i}.r) * 1.6;\n`;
       }
     });
-    const samplers = layers.map((_, i) => `groundLayer${i}`).concat(splats.map((_, i) => `groundSplat${i}`));
+    // The base texture's own glow (the Core's gold and violet veins) shows where no overlay covers it.
+    const baseLook = BASE_LOOK[def.base!] ?? {};
+    if (baseLook.gain) mat.color.multiplyScalar(baseLook.gain);
+    const baseGlow = baseLook.glow ? 'normalize(ground + 0.001) * 0.9 * smoothstep(0.3, 0.7, max(ground.r, max(ground.g, ground.b)) - min(ground.r, min(ground.g, ground.b)))' : 'vec3(0.0)';
+    const samplers = layers.map((_, i) => `groundLayer${i}`).concat(splats.map((_, i) => `groundSplat${i}`)).concat(cut ? ['groundCut'] : []);
     // The generated shader differs per layer set: give three a cache key so zones don't share programs.
-    mat.customProgramCacheKey = () => `ground:${layers.join(',')}`;
+    mat.customProgramCacheKey = () => `ground:${layers.join(',')}:${def.base}:${cut ? 'cut' : ''}`;
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.groundReps = { value: reps };
       layers.forEach((name, i) => (shader.uniforms[`groundLayer${i}`] = { value: this.groundTexture(name) }));
       splats.forEach((tex, i) => (shader.uniforms[`groundSplat${i}`] = { value: tex }));
+      if (cut) shader.uniforms.groundCut = { value: cut };
       const splatReads = splats
         .map((_, i) => `vec4 splat${i} = texture2D(groundSplat${i}, splatUv);`)
         .join('\n');
@@ -527,12 +567,24 @@ export class GameRenderer {
           // The plane's v runs from +z to -z; the splat's rows run from -z.
           vec2 splatUv = vec2(vMapUv.x, groundReps - vMapUv.y) / groundReps;
           ${splatReads}
+          ${
+            cut
+              ? `// Open air: no ground over the abyss; the soft glowing lip is the field's last stretch before the edge.
+          float cutField = texture2D(groundCut, splatUv).r;
+          if (cutField > 0.5) discard;
+          float lip = smoothstep(0.18, 0.5, cutField);`
+              : 'float cutField = 0.0; float lip = 0.0;'
+          }
           vec3 ground = mix(
             texture2D(map, vMapUv).rgb,
             texture2D(map, mat2(0.8, -0.6, 0.6, 0.8) * vMapUv * 0.43 + 0.37).rgb,
             splat0.a);
           vec3 groundGlow = vec3(0.0);
+          vec3 baseGlow = ${baseGlow};
+          float baseW = 1.0;
           ${body}
+          ${baseLook.glow ? 'groundGlow += baseGlow * baseW;' : ''}
+          ${cut ? 'groundGlow += mix(vec3(0.55, 0.3, 1.0), vec3(1.0, 0.8, 0.42), smoothstep(0.3, 0.5, cutField)) * lip * lip * 0.4;' : ''}
           diffuseColor.rgb *= ground;
           `,
         )
@@ -746,7 +798,7 @@ export class GameRenderer {
     const capGeo = new THREE.BufferGeometry();
     capGeo.setAttribute('position', new THREE.Float32BufferAttribute(capPos, 3));
     capGeo.computeVertexNormals();
-    const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color: grid.air ? '#0c0814' : '#050404' }));
+    const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color: grid.air ? '#160f2a' : '#050404' }));
     root.add(cap);
     const wallPos: number[] = [];
     const wallCol: number[] = [];
@@ -774,14 +826,6 @@ export class GameRenderer {
       const shade = 0.75 + rng.next() * 0.35;
       for (let k = 0; k < 6; k++) wallCol.push(0.95 * shade, 0.88 * shade, 0.8 * shade);
     };
-    // The edge of a floating island: glowing Lumen matter falling away into the dark.
-    const SKIRT = 7;
-    const lipPos: number[] = [];
-    const lipCol: number[] = [];
-    const lip = (ax: number, az: number, bx: number, bz: number) => {
-      lipPos.push(ax, 0, az, bx, 0, bz, bx, -SKIRT, bz, ax, 0, az, bx, -SKIRT, bz, ax, -SKIRT, az);
-      lipCol.push(1, 0.88, 0.62, 1, 0.88, 0.62, 0.18, 0.08, 0.34, 1, 0.88, 0.62, 0.18, 0.08, 0.34, 0.18, 0.08, 0.34);
-    };
     for (let j = 0; j < n; j++) {
       for (let i = 0; i < n; i++) {
         if (!open(i, j)) continue;
@@ -790,10 +834,10 @@ export class GameRenderer {
         const x1 = x0 + cell;
         const z1 = z0 + cell;
         // Faces point into the open cell; where the neighbour is open air the island just ends.
-        if (!open(i, j - 1)) (air(i, j - 1) ? lip(x1, z0, x0, z0) : quad(x1, z0, x0, z0, [i + 1, j], [i, j]));
-        if (!open(i, j + 1)) (air(i, j + 1) ? lip(x0, z1, x1, z1) : quad(x0, z1, x1, z1, [i, j + 1], [i + 1, j + 1]));
-        if (!open(i - 1, j)) (air(i - 1, j) ? lip(x0, z0, x0, z1) : quad(x0, z0, x0, z1, [i, j], [i, j + 1]));
-        if (!open(i + 1, j)) (air(i + 1, j) ? lip(x1, z1, x1, z0) : quad(x1, z1, x1, z0, [i + 1, j + 1], [i + 1, j]));
+        if (!open(i, j - 1) && !air(i, j - 1)) quad(x1, z0, x0, z0, [i + 1, j], [i, j]);
+        if (!open(i, j + 1) && !air(i, j + 1)) quad(x0, z1, x1, z1, [i, j + 1], [i + 1, j + 1]);
+        if (!open(i - 1, j) && !air(i - 1, j)) quad(x0, z0, x0, z1, [i, j], [i, j + 1]);
+        if (!open(i + 1, j) && !air(i + 1, j)) quad(x1, z1, x1, z0, [i + 1, j + 1], [i + 1, j]);
       }
     }
     const wallGeo = new THREE.BufferGeometry();
@@ -801,138 +845,19 @@ export class GameRenderer {
     wallGeo.setAttribute('color', new THREE.Float32BufferAttribute(wallCol, 3));
     wallGeo.setAttribute('uv', new THREE.Float32BufferAttribute(wallUv, 2));
     wallGeo.computeVertexNormals();
-    const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide, ...this.rockMaps() }));
+    // The Core's walls are Lumen matter, lit from within (the mines' are plain rock).
+    const lit = grid.air ? { emissive: new THREE.Color('#4a3c66'), emissiveIntensity: 0.18 } : {};
+    const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide, ...this.rockMaps(), ...lit }));
     walls.receiveShadow = true;
     root.add(walls);
-    if (lipPos.length) {
-      const lipGeo = new THREE.BufferGeometry();
-      lipGeo.setAttribute('position', new THREE.Float32BufferAttribute(lipPos, 3));
-      lipGeo.setAttribute('color', new THREE.Float32BufferAttribute(lipCol, 3));
-      root.add(new THREE.Mesh(lipGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
-    }
-    this.buildAbyss(root, grid, open, air);
   }
 
-  /** The glowing drop under open air: dark violet in the deep, bright where it meets ground. */
-  private buildAbyss(root: THREE.Group, grid: CaveGrid, open: (i: number, j: number) => boolean, air: (i: number, j: number) => boolean): void {
-    const { n, cell, half } = grid;
-    const near = (i: number, j: number, r: number) => {
-      for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) if (open(i + di, j + dj)) return true;
-      return false;
-    };
-    // Linear colours, kept low: bloom turns anything bright into a white sheet.
-    const tiers = [
-      [0.012, 0.006, 0.05],
-      [0.04, 0.02, 0.14],
-      [0.16, 0.08, 0.34],
-    ];
-    const pos: number[] = [];
-    const col: number[] = [];
-    const Y = 0.02;
-    for (let j = 0; j < n; j++) {
-      let i = 0;
-      while (i < n) {
-        if (!air(i, j)) {
-          i++;
-          continue;
-        }
-        // Runs of equal brightness merge into one strip.
-        const tier = near(i, j, 1) ? 2 : near(i, j, 4) ? 1 : 0;
-        const start = i;
-        while (i < n && air(i, j) && (near(i, j, 1) ? 2 : near(i, j, 4) ? 1 : 0) === tier) i++;
-        const x0 = start * cell - half;
-        const x1 = i * cell - half;
-        const z0 = j * cell - half;
-        const z1 = z0 + cell;
-        pos.push(x0, Y, z0, x0, Y, z1, x1, Y, z1, x0, Y, z0, x1, Y, z1, x1, Y, z0);
-        for (let k = 0; k < 6; k++) col.push(...tiers[tier]!);
-      }
-    }
-    if (!pos.length) return;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    root.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true })));
-  }
-
-  /** The Core: energy bridges (light strips that fade when off) and the shimmer over gravity fields. */
-  private coreLook: {
-    bridges: { id: string; cycle: BridgeCycle | undefined; mats: THREE.MeshBasicMaterial[]; level: number }[];
-    fields: { field: Gravity; mat: THREE.MeshBasicMaterial }[];
-    last: number;
-  } | null = null;
-
-  private buildCoreLook(root: THREE.Group, grid: CaveGrid, fields: Gravity[]): void {
-    const look: NonNullable<typeof this.coreLook> = { bridges: [], fields: [], last: 0 };
-    for (const b of grid.bridges ?? []) {
-      const dx = b.def.b[0] - b.def.a[0];
-      const dz = b.def.b[1] - b.def.a[1];
-      const full = Math.hypot(dx, dz);
-      // Only the stretch over open air is drawn (the ends lie on islands): from the bridge's own cells.
-      let t0 = Infinity;
-      let t1 = -Infinity;
-      for (const k of b.cells) {
-        const x = ((k % grid.n) + 0.5) * grid.cell - grid.half;
-        const z = (Math.floor(k / grid.n) + 0.5) * grid.cell - grid.half;
-        const along = ((x - b.def.a[0]) * dx + (z - b.def.a[1]) * dz) / full;
-        t0 = Math.min(t0, along);
-        t1 = Math.max(t1, along);
-      }
-      if (t0 > t1) continue;
-      t0 -= grid.cell / 2;
-      t1 += grid.cell / 2;
-      const len = t1 - t0;
-      const centre = (t0 + t1) / 2 / full;
-      const group = new THREE.Group();
-      group.position.set(b.def.a[0] + dx * centre, 0.07, b.def.a[1] + dz * centre);
-      group.rotation.y = Math.atan2(dx, dz);
-      // A wide soft body, a bright core and two rails.
-      const mats: THREE.MeshBasicMaterial[] = [];
-      const strip = (width: number, offset: number, color: string, opacity: number, y: number) => {
-        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
-        mats.push(mat);
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, len), mat);
-        mesh.rotation.x = -Math.PI / 2;
-        mesh.position.set(offset, y, 0);
-        group.add(mesh);
-      };
-      strip(b.def.width, 0, '#3a2670', 0.9, 0);
-      strip(b.def.width * 0.4, 0, '#9a86d8', 0.7, 0.01);
-      strip(0.4, -b.def.width / 2 + 0.2, '#c8b8f0', 0.9, 0.02);
-      strip(0.4, b.def.width / 2 - 0.2, '#c8b8f0', 0.9, 0.02);
-      look.bridges.push({ id: b.def.id, cycle: b.def.cycle, mats, level: 1 });
-      root.add(group);
-    }
-    for (const field of fields) {
-      const mat = new THREE.MeshBasicMaterial({ map: makeGlowTexture(), color: '#b48cff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
-      const w = field.rect ? field.rect.hx * 2 : field.radius * 2;
-      const d = field.rect ? field.rect.hz * 2 : field.radius * 2;
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set(field.x, 0.09, field.z);
-      root.add(mesh);
-      look.fields.push({ field, mat });
-    }
-    this.coreLook = look;
-  }
+  /** The Core: the abyss, island skirts, energy bridges, the shaft's beam and the gravity shimmer (src/render/coreLook.ts). */
+  private coreLook: CoreLook | null = null;
 
   /** Called every frame with the game clock: bridges fade and flicker with their cycle, gravity fields shimmer. */
   updateCore(time: number): void {
-    const look = this.coreLook;
-    if (!look) return;
-    const dt = Math.max(0, Math.min(0.1, time - look.last));
-    look.last = time;
-    for (const b of look.bridges) {
-      const st = bridgeState(b.cycle, time);
-      // Flicker: the light stutters in the last second before it goes out.
-      const target = !st.on ? 0 : st.flicker ? (Math.sin(time * 38) > 0 ? 1 : 0.15) : 1;
-      b.level += (target - b.level) * Math.min(1, dt * (st.on ? 14 : 7));
-      b.mats.forEach((m, i) => (m.opacity = b.level * [0.9, 0.7, 0.9, 0.9][i]!));
-    }
-    for (const { field, mat } of look.fields) {
-      const { phase } = gravityPhase(field, time);
-      mat.opacity = phase === 'idle' ? 0 : phase === 'shimmer' ? 0.12 + 0.1 * Math.sin(time * 16) : 0.18 + 0.04 * Math.sin(time * 5);
-    }
+    this.coreLook?.update(time);
   }
 
   private rockTextures: { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture } | null = null;
@@ -1640,6 +1565,12 @@ const GROUND_LOOK: Partial<
   elder_stone: { scale: 0.55, gain: 1.5, glow: 'blue' },
   lake_shore: { scale: 0.8, gain: 0.85 },
   steel_grating: { scale: 0.9, gain: 0.95 },
+};
+
+/** Base textures that are drawn their own way (the others keep the plain tint): brightness and whether veins glow. */
+const BASE_LOOK: Partial<Record<GroundTexture, { gain?: number; glow?: 'lumen' }>> = {
+  // The Core: pale pearl stone, its gold and violet veins glow.
+  lumen_matter: { gain: 0.62, glow: 'lumen' },
 };
 
 /** Multiplies the painted ground textures down to the dark night look of the procedural ground. */

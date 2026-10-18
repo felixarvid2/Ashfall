@@ -434,7 +434,8 @@ export class VfxSystem {
 
   private spawnTelegraph(owner: Entity | null, x: number, z: number, shape: TelegraphShape, duration: number, color: string): void {
     // Big area attacks (bosses, slams) get a rune circle turning under the warning.
-    if (shape.kind === 'circle' && shape.radius >= 3.5) this.sprites.magicCircle(x, z, shape.radius, color, duration);
+    // (Not for fields wider than a boss slam, like the Core's gravity: a sprite that big washes out the whole screen.)
+    if (shape.kind === 'circle' && shape.radius >= 3.5 && shape.radius <= 14) this.sprites.magicCircle(x, z, shape.radius, color, duration);
     const key = shape.kind === 'cone' ? `tele:cone:${shape.arcDeg}` : `tele:${shape.kind}`;
     const fx = this.acquire(key, () => {
       const geo = shape.kind === 'cone' ? this.coneGeometry(shape.arcDeg) : shape.kind === 'line' ? this.lineGeo : this.discGeo;

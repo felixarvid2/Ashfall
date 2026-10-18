@@ -41,47 +41,52 @@ const smooth = (a: number, b: number, v: number) => {
   return t * t * (3 - 2 * t);
 };
 
-const mottle = [new Wrap('lm-m0', 4), new Wrap('lm-m1', 9), new Wrap('lm-m2', 23), new Wrap('lm-m3', 64)];
-// Domain warps bend the veins so they wander like cracks instead of following the lattice.
-const warpX = new Wrap('lm-wx', 5);
-const warpY = new Wrap('lm-wy', 5);
-const goldVein = new Wrap('lm-gold', 6);
-const goldVein2 = new Wrap('lm-gold2', 14);
-const violetVein = new Wrap('lm-violet', 7);
-const violetVein2 = new Wrap('lm-violet2', 17);
+const mottle = [new Wrap('lm-m0', 4), new Wrap('lm-m1', 9), new Wrap('lm-m2', 23), new Wrap('lm-m3', 64), new Wrap('lm-m4', 160)];
+// Domain warps bend the veins so they wander and branch like cracks instead of following the lattice.
+const warpX = [new Wrap('lm-wx0', 3), new Wrap('lm-wx1', 8), new Wrap('lm-wx2', 19)];
+const warpY = [new Wrap('lm-wy0', 3), new Wrap('lm-wy1', 8), new Wrap('lm-wy2', 19)];
+const veinA = new Wrap('lm-gold', 5);
+const veinB = new Wrap('lm-gold2', 12);
+const veinC = new Wrap('lm-violet', 6);
+const veinD = new Wrap('lm-violet2', 15);
+// Slow fade along each vein: it burns bright in places and thins out to nothing in others.
+const fadeG = new Wrap('lm-fade-g', 7);
+const fadeV = new Wrap('lm-fade-v', 6);
 
 /** 0..1, peaking where a noise field crosses 0.5: thin wandering lines. */
 const ridge = (n: number, width: number) => 1 - smooth(0, width, Math.abs(n - 0.5));
+const wrap01 = (x: number) => ((x % 1) + 1) % 1;
 
 const data = Buffer.alloc(SIZE * SIZE * 3);
 for (let y = 0; y < SIZE; y++) {
   for (let x = 0; x < SIZE; x++) {
     const u = x / SIZE;
     const v = y / SIZE;
-    const wu = (u + (warpX.at(u, v) - 0.5) * 0.06 + 1) % 1;
-    const wv = (v + (warpY.at(u, v) - 0.5) * 0.06 + 1) % 1;
-    // Pearl stone: slow mottling, a finer grain on top.
-    const m = mottle[0]!.at(u, v) * 0.42 + mottle[1]!.at(u, v) * 0.3 + mottle[2]!.at(u, v) * 0.2 + mottle[3]!.at(u, v) * 0.08;
-    const tone = 0.62 + (m - 0.5) * 0.36;
-    let r = tone * 1.0;
-    let g = tone * 0.93;
-    let b = tone * 0.86;
-    // Veins: gold is common, violet rarer; each has a sharp core and a soft halo that tints the stone.
-    const gv = Math.max(ridge(goldVein.at(wu, wv), 0.018) * 0.9, ridge(goldVein2.at(wu, wv), 0.012) * 0.7);
-    const gh = Math.max(ridge(goldVein.at(wu, wv), 0.08), ridge(goldVein2.at(wu, wv), 0.05)) * 0.35;
-    const vv = Math.max(ridge(violetVein.at(wu, wv), 0.016) * 0.9, ridge(violetVein2.at(wu, wv), 0.011) * 0.65);
-    const vh = Math.max(ridge(violetVein.at(wu, wv), 0.07), ridge(violetVein2.at(wu, wv), 0.045)) * 0.3;
-    r += (1.0 - r) * gh * 0.5 - (r - 0.85) * 0.0;
-    g += (0.8 - g) * gh * 0.5;
-    b += (0.4 - b) * gh * 0.5;
-    r += (0.62 - r) * vh * 0.5;
-    g += (0.5 - g) * vh * 0.5;
-    b += (1.0 - b) * vh * 0.5;
+    const wu = wrap01(u + (warpX[0]!.at(u, v) - 0.5) * 0.16 + (warpX[1]!.at(u, v) - 0.5) * 0.07 + (warpX[2]!.at(u, v) - 0.5) * 0.025);
+    const wv = wrap01(v + (warpY[0]!.at(u, v) - 0.5) * 0.16 + (warpY[1]!.at(u, v) - 0.5) * 0.07 + (warpY[2]!.at(u, v) - 0.5) * 0.025);
+    // Pearl stone: slow mottling with a fine grain on top.
+    const m = mottle[0]!.at(u, v) * 0.34 + mottle[1]!.at(u, v) * 0.28 + mottle[2]!.at(u, v) * 0.2 + mottle[3]!.at(u, v) * 0.1 + mottle[4]!.at(u, v) * 0.08;
+    const tone = 0.8 + (m - 0.5) * 0.3;
+    let r = tone;
+    let g = tone * 0.96;
+    let b = tone * 0.9;
+    const gFade = smooth(0.3, 0.62, fadeG.at(u, v));
+    const vFade = smooth(0.38, 0.68, fadeV.at(u, v));
+    const gv = Math.max(ridge(veinA.at(wu, wv), 0.014) * 0.95, ridge(veinB.at(wu, wv), 0.008) * 0.6) * gFade;
+    const gh = Math.max(ridge(veinA.at(wu, wv), 0.07), ridge(veinB.at(wu, wv), 0.04)) * 0.3 * gFade;
+    const vv = Math.max(ridge(veinC.at(wu, wv), 0.012) * 0.9, ridge(veinD.at(wu, wv), 0.007) * 0.55) * vFade;
+    const vh = Math.max(ridge(veinC.at(wu, wv), 0.06), ridge(veinD.at(wu, wv), 0.035)) * 0.26 * vFade;
+    r += (1.0 - r) * gh * 0.45;
+    g += (0.78 - g) * gh * 0.45;
+    b += (0.38 - b) * gh * 0.45;
+    r += (0.7 - r) * vh * 0.45;
+    g += (0.55 - g) * vh * 0.45;
+    b += (1.0 - b) * vh * 0.45;
     r += (1.0 - r) * gv;
-    g += (0.78 - g) * gv;
-    b += (0.28 - b) * gv;
-    r += (0.66 - r) * vv;
-    g += (0.44 - g) * vv;
+    g += (0.74 - g) * gv;
+    b += (0.22 - b) * gv;
+    r += (0.6 - r) * vv;
+    g += (0.36 - g) * vv;
     b += (1.0 - b) * vv;
     const k = (y * SIZE + x) * 3;
     data[k] = Math.round(255 * Math.min(1, r));
