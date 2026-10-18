@@ -858,7 +858,7 @@ html.touch-device .hint-mouse { display: none; }
 }
 #ui.touch-ui.portrait .touch-menu-btn { width: 36px; height: 36px; }
 #ui.touch-ui.portrait .minimap { top: calc(var(--sat) + 8px); right: calc(var(--sar) + 8px); width: 104px; height: 104px; }
-#ui.touch-ui.portrait .quest-tracker { top: calc(var(--sat) + 120px); right: calc(var(--sar) + 8px); width: 140px; gap: 4px; }
+#ui.touch-ui.portrait .quest-tracker { top: calc(var(--sat) + 130px); right: calc(var(--sar) + 8px); width: 140px; gap: 4px; }
 #ui.touch-ui.portrait .quest-row { padding: 3px 6px; }
 #ui.touch-ui.portrait .quest-title { font-size: 0.7em; }
 #ui.touch-ui.portrait .quest-step { font-size: 0.65em; }
@@ -1061,7 +1061,7 @@ html.touch-device .hint-mouse { display: none; }
   -webkit-mask: var(--icon) center / contain no-repeat;
   mask: var(--icon) center / contain no-repeat;
 }
-.sound-panel { top: auto; bottom: 56px; right: 14px; width: 250px; max-height: none; z-index: 60; }
+.sound-panel { top: auto; bottom: 56px; right: 14px; width: 228px; max-height: none; z-index: 60; }
 .sound-panel.muted .sound-row { opacity: 0.5; }
 .sound-row { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 10px; margin: 0 0 10px; font-size: 0.9em; }
 .sound-row input[type='range'] { width: 100%; accent-color: var(--ui-accent); cursor: pointer; }

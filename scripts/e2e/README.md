@@ -34,5 +34,6 @@ scenario that needs `import('/src/...')` (a module `window.ashfall` does not exp
 | `instance` | 1100x760 | `--poi` (default `dungeon.drainage`): `enterInstance`, screenshot, `exitInstance`. Fails on an unknown poi and lists the valid ones. |
 | `zone` | 1100x760 | `--zone <id>` (for example `zone.deep_mines`, required): `enterZone(id, 0, 0)`, kills enemies, zooms in, hides the HUD, screenshot. |
 | `landscape` | 844x390 touch | HUD screenshot in landscape. |
+| `audio` | 1280x720 | Chromium with `--autoplay-policy=no-user-gesture-required`; fight, sound panel, `enterZone('zone.deep_mines')`, mute, reload. Notes: `audioDebug` snapshots, `/assets/audio/` 4xx responses, stored settings. Add `--mobile --viewport 390x844` for the touch menu. |
 
 `lib.mjs` has the helpers for new scenarios: `launch`, `startGame`, `hideHud`, `shot`.
