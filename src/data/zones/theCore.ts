@@ -25,7 +25,7 @@ const HALF = Math.round(340 * S);
 export const LAST_CAMP = { id: 'hub.camp', x: 0, z: -110 * S, radius: 24 };
 /** The space elevator shaft: the landmark at the centre. */
 export const SHAFT = { x: 0, z: 60 * S };
-/** The Elevator Base stronghold site at the shaft's foot (R5-C builds the battle). */
+/** The Elevator Base stronghold site at the shaft's foot (src/world/elevatorBase.ts). */
 export const ELEVATOR_BASE = { id: 'core.stronghold.base', x: SHAFT.x, z: SHAFT.z, radius: 34 };
 /** Lumen's heart: the final arena (R5-C). */
 export const LUMEN_HEART = { id: 'core.boss.lumen', x: 0, z: 285 * S, radius: 44 };
@@ -431,7 +431,6 @@ function buildProps(): PropPlacement[] {
     const a = (i / 16) * Math.PI * 2;
     props.push({ asset: 'prop.core_column', x: H.x + Math.sin(a) * (H.radius + 6), z: H.z + Math.cos(a) * (H.radius + 6), scale: 1.4, collider: 0.8, light: { color: i % 2 ? VIOLET : GOLD, intensity: 70, distance: 22, height: 5 } });
   }
-  props.push({ asset: 'prop.lumen_wrath', x: H.x, z: H.z + 14, scale: 3, glow: '#fff0c8', landmark: true, collider: 3, light: { color: '#fff0c8', intensity: 90, distance: 46, height: 8 } });
 
   // Rubble and loose rock in the open caverns.
   for (let i = 0; i < 420; i++) {
@@ -571,7 +570,7 @@ function buildPois(): PoiDef[] {
     if (!free(x, z)) continue;
     pois.push({ id: `core.crystal.${c++}`, kind: 'crystal', x, z });
   }
-  // Markers only until R5-C: the four dungeons, three Memory Mirrors, the Elevator Base and Lumen's heart.
+  // The four dungeons and three Memory Mirrors (src/data/instances.ts), the Elevator Base (src/world/elevatorBase.ts) and Lumen's heart.
   pois.push(
     { id: 'core.dungeon.ember', kind: 'dungeon', ...place(...cr(258, 128)), data: { dungeon: 'core_memory_of_ember' } },
     { id: 'core.dungeon.shaft', kind: 'dungeon', ...place(...cr(-134, -196)), data: { dungeon: 'core_endless_shaft' } },
@@ -583,6 +582,15 @@ function buildPois(): PoiDef[] {
     { id: ELEVATOR_BASE.id, kind: 'stronghold', x: ELEVATOR_BASE.x, z: ELEVATOR_BASE.z },
     { id: LUMEN_HEART.id, kind: 'boss', x: LUMEN_HEART.x, z: LUMEN_HEART.z },
   );
+  // World events (existing mechanics, answered by the Core's roster): hold, rescue, hunt, collect.
+  const events: [string, string, number, number][] = [
+    ['signalJam', 'signalJam.gardens', -245, 205],
+    ['signalJam', 'signalJam.halls', 245, 125],
+    ['rescue', 'rescue', 30, -40],
+    ['eliteHunt', 'eliteHunt', -70, -232],
+    ['supplyDrop', 'supplyDrop', -60, 240],
+  ];
+  events.forEach(([type, key, x, z]) => pois.push({ id: `core.event.${key}`, kind: 'event', ...place(...cr(x, z)), data: { event: type } }));
   return pois;
 }
 

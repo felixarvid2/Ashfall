@@ -666,8 +666,8 @@ export const PendingHazard = defineComponent<PendingHazard>('PendingHazard');
 
 /** Non-enemy things the player can click to attack (spore nests, Spore Feeders). */
 export interface Targetable {
-  /** Spawns adds every `every` seconds while the player is near (nests). */
-  spawn?: { enemy: string; count: number; every: number; timer: number };
+  /** Spawns adds every `every` seconds while the player is near (nests). `pool` (portals): each spawn picks from it. */
+  spawn?: { enemy: string; count: number; every: number; timer: number; pool?: string[] };
 }
 export const Targetable = defineComponent<Targetable>('Targetable');
 
@@ -697,6 +697,15 @@ export interface Boss {
   /** Root Nodes that hold a rooted boss, and the vines that cover the floor meanwhile. */
   nodes?: Entity[];
   vines?: Entity[];
+  // ---- Lumen ----
+  /** Phase 2's arena memories: which one is playing (index into the phase's `memories`) and its clock (s). */
+  memory?: { index: number; t: number };
+  /** A scripted beat (a phase with `beat`) holds the fight until this is set (the dialogue choice was made). */
+  beatDone?: boolean;
+  /** Hazard fields the boss laid (memory spore clouds and molten pools): cleared with the phase and on reset. */
+  fields?: Entity[];
+  /** The ally's shape Lumen wears during its beat. */
+  form?: Entity;
 }
 export const Boss = defineComponent<Boss>('Boss');
 

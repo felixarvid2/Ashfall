@@ -85,6 +85,10 @@ export type GameEvent =
   /** The player used a point of interest (UI shows toasts, the lore reader, buff banners). */
   | { type: 'interact'; kind: string; id: string; detail?: string }
   | { type: 'quest'; id: string; state: 'started' | 'progress' | 'step' | 'completed' | 'failed' }
+  /** A boss reached a scripted beat that needs the player (Lumen's Listen or Fight); the game opens the dialogue. */
+  | { type: 'beat'; id: string }
+  /** The final boss fell: the game shows the epilogue card and the credits. `choice` is the one made in Lumen's beat. */
+  | { type: 'epilogue'; choice: 'listen' | 'fight' | null }
   /** Big centred message from game logic (boss phases, instance objectives). */
   | { type: 'banner'; key: string; params?: Record<string, string | number>; /** Params that are themselves language keys. */ keyParams?: Record<string, string>; seconds?: number };
 

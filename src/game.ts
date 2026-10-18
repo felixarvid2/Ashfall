@@ -140,7 +140,10 @@ import {
 } from './systems/hub/services';
 import { VENDOR } from './data/services';
 import { championAffixes, eliteSystem } from './systems/elites';
-import { bossSystem, resetBoss } from './systems/boss';
+import { activeMemory, bossSystem, inBeat, resetBoss } from './systems/boss';
+import { CREDIT_KEYS, epilogueKeys, type LumenChoice } from './data/lumen';
+import { chooseLumen } from './world/lumen';
+import { EpilogueScreen } from './ui/epilogue';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
@@ -188,6 +191,7 @@ export class Game {
   private readonly interactPrompt: InteractPrompt;
   private readonly loreReader: LoreReader;
   private readonly dialogue: DialoguePanel;
+  private readonly epilogue: EpilogueScreen;
   private readonly npcPlates: NpcPlates;
   private readonly elitePlates: NpcPlates;
   private readonly questTracker: QuestTracker;
@@ -343,6 +347,7 @@ export class Game {
     );
     this.loreReader = new LoreReader(uiRoot);
     this.dialogue = new DialoguePanel(uiRoot);
+    this.epilogue = new EpilogueScreen(uiRoot);
     this.npcPlates = new NpcPlates(uiRoot);
     this.elitePlates = new NpcPlates(uiRoot);
     this.questTracker = new QuestTracker(uiRoot);
@@ -843,6 +848,7 @@ export class Game {
     if (zoom !== 0) this.renderer.rig.zoom(zoom);
 
     this.updateStormLook();
+    this.updateMemoryLook();
     if (this.ctx.instance?.extra.drained) this.renderer.updateInstanceWater(this.ctx.instance.extra.drained);
     if (this.zone) {
       const zone = this.zone;
@@ -970,6 +976,12 @@ export class Game {
           break;
         case 'quest':
           this.onQuestEvent(event.id, event.state);
+          break;
+        case 'beat':
+          this.lumenBeat();
+          break;
+        case 'epilogue':
+          this.showEnding(event.choice);
           break;
         case 'banner': {
           const params: Record<string, string | number> = { ...event.params };
@@ -1217,9 +1229,53 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     this.renderer.stormGlow = x;
   }
 
+  /** Lumen's phase 2: the arena wears the memory that is playing. */
+  private updateMemoryLook(): void {
+    if (!this.zone || this.ctx.instance) return;
+    this.renderer.setMemoryLook(activeMemory(this.world)?.look ?? null);
+    // A closed choice dialogue comes back while Lumen still waits for an answer.
+    if (!this.dialogue.open && !this.epilogue.open && this.world.query(Boss).some((b) => inBeat(this.world, b))) this.lumenBeat();
+  }
+
+  /** Phase 3: Lumen, in a friend's shape, asks you to listen. Both answers go on to the last phase. */
+  private lumenBeat(): void {
+    const zone = this.zone;
+    if (!zone || this.world.has(this.player, Dead)) return;
+    const speaker = t('npcs.okafor.name');
+    const role = t('bosses.lumen.role');
+    const answer = (choice: LumenChoice) => {
+      if (!chooseLumen(this.world, zone, choice)) return this.closeDialogue();
+      this.dialogue.show({ speaker, role, text: t(`bosses.lumen.reply.${choice}`), buttons: [{ label: t('questUi.continue'), onClick: () => this.closeDialogue() }] });
+      this.autosave();
+    };
+    this.dialogue.show({
+      speaker,
+      role,
+      text: t('bosses.lumen.speech'),
+      buttons: [
+        { label: t('bosses.lumen.choice.listen'), onClick: () => answer('listen') },
+        { label: t('bosses.lumen.choice.fight'), onClick: () => answer('fight') },
+      ],
+    });
+  }
+
+  /** The end: the epilogue card for the choice made, the credits, then back to the Last Camp. */
+  private showEnding(choice: LumenChoice | null): void {
+    this.closeDialogue();
+    this.world.add(this.player, Invulnerable, { remaining: 600 });
+    const keys = epilogueKeys(choice);
+    this.epilogue.show({ title: t(keys.title), text: t(keys.text) }, { title: t('ending.credits.title'), lines: CREDIT_KEYS.map((k) => t(k)) }, () => {
+      this.world.remove(this.player, Invulnerable);
+      const camp = this.zoneDef.teleporters.find((tp) => tp.id === 'tp.camp');
+      if (camp && !this.ctx.instance) this.placePlayer(camp.x + 2, camp.z + 2);
+      this.autosave();
+    });
+  }
+
   private updateInteractPrompt(px: number, pz: number): void {
     const near = this.world.has(this.player, Dead) ? null : nearestInteractable(this.world, px, pz, this.ctx.time);
-    const target = near !== null ? { ...this.world.req(near, Transform), kind: this.world.req(near, Interactable).kind } : null;
+    // The Endless Shaft's way down is a portal that goes the other way.
+    const target = near !== null ? { ...this.world.req(near, Transform), kind: this.world.req(near, Interactable).poi === 'deeper' ? 'deeper' : this.world.req(near, Interactable).kind } : null;
     this.interactPrompt.update(target, this.touchControls.shown ? t('touch.use') : keyLabel(resolveKeybindings(this.settings).pickup[0] ?? 'KeyE'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
     );
@@ -1284,7 +1340,9 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         if (id) this.enterInstance(id);
         break;
       case 'portal':
-        this.exitInstance();
+        // The Endless Shaft's way down: the next floor is already built, only the camera has to follow.
+        if (id === 'deeper' && this.ctx.instance) this.placePlayer(this.ctx.instance.start.x, this.ctx.instance.start.z);
+        else this.exitInstance();
         break;
       default:
         break;
@@ -1358,7 +1416,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   /** Region and subzone (or hub) under the player, for the HUD. */
   private locationLabel(): { title: string; sub: string } {
     const inst = this.ctx.instance;
-    if (inst) return { title: t(`instances.names.${inst.def.kind === 'bunker' ? inst.poi.replace(/\./g, '_') : inst.def.id}`), sub: objectiveText(inst, t) };
+    if (inst) return { title: t(`instances.names.${inst.def.kind === 'bunker' ? inst.poi.replace(/\./g, '_') : inst.def.id}`), sub: objectiveText(this.world, inst, t) };
     const zone = this.zone!;
     const tr = this.playerTransform;
     const key = zone.def.key;
@@ -1479,11 +1537,19 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const user = w.req(p, SkillUser);
     user.cast = null;
     user.request = null;
+    // The Endless Shaft ends with your death: you wake outside it.
+    if (this.ctx.instance?.def.floors) {
+      this.exitInstance();
+      w.add(p, Invulnerable, { remaining: 2 });
+      return;
+    }
     // Back at the nearest discovered teleporter (docs/world-and-gameplay.md §13).
     const tr = this.playerTransform;
     // Inside a dungeon you come back at its entrance; bosses reset (docs/world-and-gameplay.md §13).
     setPiecesOnDeath(w, this.zone);
     for (const b of w.query(Boss)) resetBoss(w, b);
+    // A conversation held by a boss (Lumen's choice) ends with the fight.
+    this.closeDialogue();
     const tp = this.ctx.instance ? { x: this.ctx.instance.start.x - 2, z: this.ctx.instance.start.z - 2 } : this.zone ? nearestTeleporter(this.zone, tr.x, tr.z) : this.zoneDef.playerSpawn;
     const spawn = { x: tp.x + 2, z: tp.z + 2 };
     Object.assign(this.playerTransform, makeTransform(spawn.x, 0, spawn.z, Math.PI));
@@ -1504,7 +1570,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const poi = zone?.def.pois.find((p) => p.id === poiId);
     if (!zone || !poi || this.ctx.instance) return;
     const defId = poi.kind === 'dungeon' ? String(poi.data?.dungeon ?? '') : String(poi.data?.instance ?? 'bunker');
-    // The Core's dungeons and mirrors are markers until R5-C builds them.
+    // Anything not built yet (the Core's heart is still a marker) says so instead of crashing.
     if (!hasInstance(defId)) return this.notice('interact.notBuilt', 'info');
     // Wake-up packs far away would only sit there: put them back to sleep.
     for (const st of zone.packs.values()) {
@@ -1563,7 +1629,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
       out.push({ x: tr.x, z: tr.z, color });
     }
     for (const e of this.world.query(Targetable, Transform)) {
-      if (this.world.has(e, Dead)) continue;
+      if (this.world.has(e, Dead) || this.world.get(e, DisplayName)?.key === 'instances.choirPillar') continue;
       const tr = this.world.req(e, Transform);
       if (tr.x > 1400) out.push({ x: tr.x, z: tr.z, color: '#7dff5a' });
     }

@@ -129,7 +129,9 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     if (minesBehaviours(world, ctx, e, ai, def, tr, mover, dt)) continue;
     if (coreAct(world, ctx, e, ai, def, tr, dt)) continue;
 
-    const target = chooseTarget(def.hearing ? (heard ??= targetCandidates(world, ctx, true)) : candidates, tr.x, tr.z);
+    // Blind Hounds, and everything in the Singing Halls, hunt by ear.
+    const hears = def.hearing || ctx.instance?.def.hearing === true;
+    const target = chooseTarget(hears ? (heard ??= targetCandidates(world, ctx, true)) : candidates, tr.x, tr.z);
     if (!target) {
       // Nobody visible (player stealthed or dead): go and look where they were last seen, then give up.
       ai.chasing = undefined;
@@ -146,7 +148,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
     if (!ai.aggro) {
       // Noticing takes a line of sight (rock and walls hide you) unless the target is right there;
       // Blind Hounds go by ear.
-      if (dist < (def.hearing ? HEARING.notice : def.aggroRange) && (def.hearing || dist < 3 || lineOfSight(ctx, tr.x, tr.z, ptr.x, ptr.z))) {
+      if (dist < (hears ? HEARING.notice : def.aggroRange) && (hears || dist < 3 || lineOfSight(ctx, tr.x, tr.z, ptr.x, ptr.z))) {
         alert(world, ctx, e, tr);
       } else {
         wander(ai, tr, mover, ctx, dt);
@@ -881,7 +883,7 @@ function ranged(
       // A beam's line spans its whole reach and stays where it was aimed.
       shape: { kind: 'line', length: atk.beam ? atk.maxRange : Math.min(atk.maxRange, dist + 3), width: atk.radius * (atk.beam ? 2 : 2.4), facing: Math.atan2(ptr.x - tr.x, ptr.z - tr.z) },
       duration: atk.windup,
-      color: atk.beam ? '#ffd86a' : '#ff5a2a',
+      color: '#ff5a2a',
     });
     return;
   }

@@ -1,6 +1,7 @@
 /**
- * The Choir's song made visible (docs/regions/the-core.md): a faint violet ring on the ground around each living
- * singer, and a beam from the singer to every enemy it currently empowers. Purely a view of ECS state: a singer is
+ * The Choir's song made visible (docs/regions/the-core.md): a violet ring on the ground around each living
+ * singer, and a beam (a thin violet tube with a gold core, solid rather than additive so it shows on the pale
+ * Lumen ground) from the singer to every enemy it currently empowers. Purely a view of ECS state: a singer is
  * an enemy whose def has `choir`, an empowered enemy carries the `empowered` status.
  */
 import * as THREE from 'three';
@@ -14,21 +15,36 @@ const MAX_RINGS = 12;
 
 export class ChoirLinks {
   private readonly root = new THREE.Group();
-  private readonly beams: THREE.LineSegments;
-  private readonly positions = new Float32Array(MAX_BEAMS * 6);
+  /** Beam tubes (unit height along Y, instanced): violet sheath and a thinner gold core. */
+  private readonly sheath: THREE.InstancedMesh;
+  private readonly core: THREE.InstancedMesh;
+  private readonly up = new THREE.Vector3(0, 1, 0);
+  private readonly from = new THREE.Vector3();
+  private readonly to = new THREE.Vector3();
+  private readonly dir = new THREE.Vector3();
+  private readonly quat = new THREE.Quaternion();
+  private readonly scale = new THREE.Vector3();
+  private readonly matrix = new THREE.Matrix4();
   private readonly rings: THREE.Mesh[] = [];
-  private readonly tmp = new THREE.Vector3();
 
   constructor(scene: THREE.Object3D) {
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(this.positions, 3).setUsage(THREE.DynamicDrawUsage));
-    this.beams = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: '#d6b0ff', transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-    this.beams.frustumCulled = false;
-    this.beams.renderOrder = 4;
-    this.root.add(this.beams);
-    const ringGeo = new THREE.RingGeometry(CHOIR.radius - 0.2, CHOIR.radius, 72).rotateX(-Math.PI / 2);
+    const tube = (radius: number, color: string, opacity: number, order: number): THREE.InstancedMesh => {
+      const mesh = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(radius, radius, 1, 6, 1, true),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, fog: false }),
+        MAX_BEAMS,
+      );
+      mesh.frustumCulled = false;
+      mesh.renderOrder = order;
+      mesh.count = 0;
+      this.root.add(mesh);
+      return mesh;
+    };
+    this.sheath = tube(0.055, '#7a3cff', 0.85, 4);
+    this.core = tube(0.022, '#ffe49a', 0.95, 5);
+    const ringGeo = new THREE.RingGeometry(CHOIR.radius - 0.35, CHOIR.radius, 72).rotateX(-Math.PI / 2);
     for (let i = 0; i < MAX_RINGS; i++) {
-      const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: '#b48cff', transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+      const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: '#7a3cff', transparent: true, opacity: 0.4, depthWrite: false, fog: false }));
       ring.visible = false;
       ring.position.y = 0.06;
       ring.renderOrder = 2;
@@ -62,23 +78,32 @@ export class ChoirLinks {
           }
         }
         if (!best) continue;
-        this.positions.set([best.position.x, best.position.y + 1.8, best.position.z], n * 6);
-        this.tmp.copy(target.position);
-        this.positions.set([this.tmp.x, this.tmp.y + 0.9, this.tmp.z], n * 6 + 3);
+        this.from.set(best.position.x, best.position.y + 1.8, best.position.z);
+        this.to.set(target.position.x, target.position.y + 0.9, target.position.z);
+        this.dir.subVectors(this.to, this.from);
+        const len = this.dir.length();
+        if (len < 0.01) continue;
+        this.quat.setFromUnitVectors(this.up, this.dir.multiplyScalar(1 / len));
+        this.scale.set(1, len, 1);
+        this.matrix.compose(this.from.add(this.to).multiplyScalar(0.5), this.quat, this.scale);
+        this.sheath.setMatrixAt(n, this.matrix);
+        this.core.setMatrixAt(n, this.matrix);
         n++;
       }
     }
-    this.beams.geometry.setDrawRange(0, n * 2);
-    (this.beams.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
-    this.beams.visible = n > 0;
-    (this.beams.material as THREE.LineBasicMaterial).opacity = 0.5 + 0.25 * Math.sin(time * 6);
+    for (const mesh of [this.sheath, this.core]) {
+      mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.visible = n > 0;
+    }
+    (this.sheath.material as THREE.MeshBasicMaterial).opacity = 0.7 + 0.2 * Math.sin(time * 6);
     this.rings.forEach((ring, i) => {
       const s = singers[i];
       ring.visible = s !== undefined;
       if (s === undefined) return;
       const o = objects.get(s)!;
       ring.position.set(o.position.x, 0.06, o.position.z);
-      (ring.material as THREE.MeshBasicMaterial).opacity = 0.18 + 0.1 * Math.sin(time * 2 + i);
+      (ring.material as THREE.MeshBasicMaterial).opacity = 0.34 + 0.1 * Math.sin(time * 2 + i);
     });
   }
 }

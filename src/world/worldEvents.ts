@@ -153,6 +153,12 @@ const WAVE_ROSTER: Record<string, { item: string; weight: number }[]> = {
     { item: 'mossborn', weight: 2 },
     { item: 'swarm_bloater', weight: 1 },
   ],
+  'zone.the_core': [
+    { item: 'shade_walker', weight: 5 },
+    { item: 'shade_hound', weight: 2 },
+    { item: 'light_mote', weight: 2 },
+    { item: 'shade_drone', weight: 1 },
+  ],
   default: [
     { item: 'infected_colonist', weight: 6 },
     { item: 'spore_hound', weight: 2 },
@@ -242,7 +248,7 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
       break;
     }
     case 'eliteHunt': {
-      const prey = ({ 'zone.refinery_district': 'welder', 'zone.hydroponic_vaults': 'vine_weaver', 'zone.deep_mines': 'ore_crusher' } as Record<string, string>)[ctx.zone?.def.id ?? ''] ?? 'spore_hound';
+      const prey = ({ 'zone.refinery_district': 'welder', 'zone.hydroponic_vaults': 'vine_weaver', 'zone.deep_mines': 'ore_crusher', 'zone.the_core': 'core_guardian' } as Record<string, string>)[ctx.zone?.def.id ?? ''] ?? 'spore_hound';
       const e = spawnEnemy(world, prey, ev.x, ev.z, { level: level + 1 });
       makeElite(world, e, 'rare', new Rng(`${id}-${ctx.tick}`));
       world.req(e, EnemyAI).aggro = true;

@@ -31,6 +31,16 @@ interface TimedFx {
   owner?: Entity;
 }
 
+/** A warning colour that still shows on pale ground: saturated, and no lighter than mid-tone. */
+const deepen = (color: string): string => {
+  const hsl = { h: 0, s: 0, l: 0 };
+  new THREE.Color(color).getHSL(hsl, THREE.SRGBColorSpace);
+  return `#${new THREE.Color().setHSL(hsl.h, Math.max(hsl.s, 0.9), Math.min(hsl.l, 0.5), THREE.SRGBColorSpace).getHexString()}`;
+};
+
+const solid = (color: THREE.ColorRepresentation, opacity: number): THREE.MeshBasicMaterial =>
+  new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide, fog: false });
+
 const additive = (color: THREE.ColorRepresentation, opacity = 1): THREE.MeshBasicMaterial =>
   new THREE.MeshBasicMaterial({
     color,
@@ -432,15 +442,23 @@ export class VfxSystem {
     }
   }
 
+  /**
+   * Pale ground (The Core's Lumen matter): additive warnings add nothing to a light floor, so telegraphs are drawn
+   * with normal blending in a deepened version of their colour.
+   */
+  brightGround = false;
+
   private spawnTelegraph(owner: Entity | null, x: number, z: number, shape: TelegraphShape, duration: number, color: string): void {
+    const bright = this.brightGround;
+    if (bright) color = deepen(color);
     // Big area attacks (bosses, slams) get a rune circle turning under the warning.
     // (Not for fields wider than a boss slam, like the Core's gravity: a sprite that big washes out the whole screen.)
     if (shape.kind === 'circle' && shape.radius >= 3.5 && shape.radius <= 14) this.sprites.magicCircle(x, z, shape.radius, color, duration);
-    const key = shape.kind === 'cone' ? `tele:cone:${shape.arcDeg}` : `tele:${shape.kind}`;
+    const key = (shape.kind === 'cone' ? `tele:cone:${shape.arcDeg}` : `tele:${shape.kind}`) + (bright ? ':bright' : '');
     const fx = this.acquire(key, () => {
       const geo = shape.kind === 'cone' ? this.coneGeometry(shape.arcDeg) : shape.kind === 'line' ? this.lineGeo : this.discGeo;
-      const outline = additive(color, 0.18);
-      const fill = additive(color, 0.35);
+      const outline = bright ? solid(color, 0.2) : additive(color, 0.18);
+      const fill = bright ? solid(color, 0.32) : additive(color, 0.35);
       const group = new THREE.Group();
       const outer = new THREE.Mesh(geo, outline);
       const inner = new THREE.Mesh(geo, fill);
@@ -458,7 +476,7 @@ export class VfxSystem {
       fx.group.scale.set(shape.width, 1, shape.length);
       fx.update = (f, t) => {
         inner.scale.set(1, 1, t);
-        f.materials[0]!.opacity = 0.12 + 0.12 * t;
+        f.materials[0]!.opacity = bright ? 0.2 + 0.15 * t : 0.12 + 0.12 * t;
       };
     } else {
       if (shape.kind === 'cone') fx.group.rotation.y = shape.facing + Math.PI;
@@ -466,7 +484,7 @@ export class VfxSystem {
       // Fill grows from the centre: when it reaches the edge, the attack lands.
       fx.update = (f, t) => {
         inner.scale.set(t, 1, t);
-        f.materials[0]!.opacity = 0.12 + 0.12 * t;
+        f.materials[0]!.opacity = bright ? 0.2 + 0.15 * t : 0.12 + 0.12 * t;
       };
     }
     fx.update(fx, 0);

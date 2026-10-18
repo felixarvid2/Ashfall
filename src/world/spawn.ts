@@ -81,6 +81,12 @@ export function spawnPlayer(world: World, classId: string, x: number, z: number)
   return e;
 }
 
+/** Draw an enemy as a memory (the Core's shade look) unless it already has a look of its own. */
+export function shadeLook(world: World, e: Entity): void {
+  const r = world.get(e, Renderable);
+  if (r && !r.look) r.look = 'shade';
+}
+
 export interface EnemySpawnOptions {
   lifeMul?: number;
   aggro?: boolean;

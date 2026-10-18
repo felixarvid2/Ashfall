@@ -18,6 +18,8 @@ import type { ZoneRuntime } from './zone';
 import { DISTRICT_ID, districtHubs, districtOnDeath, districtSystem, syncDistrict, type DistrictSetPieces } from './districtSetPieces';
 import { VAULTS_ID, syncVaults, vaultHubs, vaultSystem, vaultsOnDeath, type VaultSetPieces } from './vaultSetPieces';
 import { MINES_ID, mineHubs, mineSystem, minesOnDeath, syncMines, type MineSetPieces } from './mineSetPieces';
+import { CORE_ID, baseOnDeath, baseSystem, syncBase, type BaseState } from './elevatorBase';
+import { LUMEN_ZONE_ID, lumenOnDeath, lumenSystem, syncLumen, type LumenState } from './lumen';
 
 /** These set pieces live in Cinder Flats only. */
 const ZONE_ID = 'zone.cinder_flats';
@@ -41,6 +43,10 @@ export interface SetPieceState {
   vaults?: VaultSetPieces;
   /** Deep Mines: Mining Station Aurum and Governor Kade. */
   mines?: MineSetPieces;
+  /** The Core: the Elevator Base. */
+  base?: BaseState;
+  /** The Core: Lumen in the Heart. */
+  lumen?: LumenState;
 }
 
 export function createSetPieces(): SetPieceState {
@@ -63,10 +69,14 @@ export function syncSetPieces(world: World, zone: ZoneRuntime): void {
   const district = syncDistrict(world, zone);
   const vaults = syncVaults(world, zone);
   const mines = syncMines(world, zone);
+  const lumen = syncLumen(world, zone);
+  const base = syncBase(world, zone);
   zone.setPieces = createSetPieces();
   if (zone.def.id === DISTRICT_ID) zone.setPieces.district = district;
   if (zone.def.id === VAULTS_ID) zone.setPieces.vaults = vaults;
   if (zone.def.id === MINES_ID) zone.setPieces.mines = mines;
+  if (zone.def.id === CORE_ID) zone.setPieces.base = base;
+  if (zone.def.id === LUMEN_ZONE_ID) zone.setPieces.lumen = lumen;
   if (zone.found.has(SIERRA.id)) zone.setPieces.sierra.state = 'reclaimed';
   if (zone.found.has(MAW.id)) zone.setPieces.maw.state = 'defeated';
 }
@@ -95,6 +105,8 @@ export function setPieceSystem(world: World, dt: number, ctx: GameContext): void
     mineSystem(world, dt, ctx, zone, ptr);
     return;
   }
+  if (zone.def.id === CORE_ID) baseSystem(world, dt, ctx, zone, ptr);
+  if (zone.def.id === LUMEN_ZONE_ID) lumenSystem(world, ctx, zone, ptr);
   if (zone.def.id !== ZONE_ID) return;
   sierra(world, dt, ctx, zone, ptr);
   maw(world, ctx, zone, ptr);
@@ -234,6 +246,8 @@ export function setPiecesOnDeath(world: World, zone: ZoneRuntime | undefined): v
   districtOnDeath(world, zone);
   vaultsOnDeath(world, zone);
   minesOnDeath(world, zone);
+  lumenOnDeath(world, zone);
+  baseOnDeath(world, zone);
   const st = zone.setPieces.maw;
   if (st.state === 'fight') {
     for (const g of st.gates) world.destroyDeferred(g);

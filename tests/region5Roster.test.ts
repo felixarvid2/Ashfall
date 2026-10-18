@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { Blast, CombatStats, Dead, DisplayName, Elite, EnemyAI, Hazard, Health, Mover, Projectile, Renderable, SkillUser, StatusEffects, Transform } from '../src/core/components';
@@ -29,7 +30,7 @@ import { learnSkills, makeCtx, run, type SystemFn } from './helpers';
 
 const SHADES = ['shade_walker', 'shade_hound', 'shade_smelter', 'shade_weaver', 'shade_sentinel', 'shade_drone'];
 const NEW_REGULAR = ['light_being', 'light_mote', 'core_guardian', 'guardian_lancer'];
-const ABSORBED = ['absorbed_gerd', 'absorbed_oona', 'absorbed_dace', 'absorbed_rhee', 'absorbed_tobin'];
+const ABSORBED = ['absorbed_ostrow', 'absorbed_lenn', 'absorbed_halvorsen', 'absorbed_rhee', 'absorbed_danner'];
 const IMPORTED = ['enemy.light_being', 'enemy.guardian_lancer', 'enemy.light_mote', 'enemy.core_guardian', 'enemy.choir_singer'];
 const ALL_NEW = [...SHADES, 'shade_echo', ...NEW_REGULAR, 'choir_singer', ...ABSORBED, 'lumen_turret'];
 const def = (id: string): EnemyDef => ENEMY_DEFS.get(id)!;
@@ -162,15 +163,21 @@ describe('Core roster: packs', () => {
 });
 
 describe('Looks and the fade-and-shrink death', () => {
-  it('lumen pulses translucent gold, shades flicker and drop out', () => {
+  it('lumen pulses a dark body with a glowing rim, shades flicker and drop out without vanishing', () => {
     const lumen = Array.from({ length: 240 }, (_, i) => lookState('lumen', i / 30, 7));
-    expect(Math.max(...lumen.map((s) => s.glow))).toBeGreaterThan(Math.min(...lumen.map((s) => s.glow)) + 0.3);
-    for (const s of lumen) expect(s.opacity).toBeGreaterThan(0.7);
-    for (const s of lumen) expect(s.opacity).toBeLessThan(1);
+    expect(Math.max(...lumen.map((s) => s.glow))).toBeGreaterThan(Math.min(...lumen.map((s) => s.glow)) + 0.25);
+    // Low emissive: the body must stay well under the bloom threshold and the pale ground's brightness.
+    for (const s of lumen) expect(s.glow).toBeLessThan(0.8);
+    for (const s of lumen) expect(s.opacity).toBeGreaterThan(0.9);
     const shade = Array.from({ length: 600 }, (_, i) => lookState('shade', i / 30, 3));
-    expect(Math.min(...shade.map((s) => s.opacity))).toBeLessThan(0.3);
-    expect(Math.max(...shade.map((s) => s.opacity))).toBeLessThan(0.7);
-    expect(shade.every((s) => s.opacity > 0)).toBe(true);
+    expect(Math.min(...shade.map((s) => s.opacity))).toBeLessThan(0.55);
+    expect(Math.max(...shade.map((s) => s.opacity))).toBeLessThan(0.95);
+    // A dark core remains on pale ground even during a dropout.
+    expect(Math.min(...shade.map((s) => s.opacity))).toBeGreaterThan(0.3);
+    for (const spec of Object.values(LOOKS)) {
+      const c = new THREE.Color(spec.color);
+      expect(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b, 'body luminance (linear)').toBeLessThan(0.25);
+    }
   });
 
   it('a model without a death clip fades and shrinks to nothing; one with a clip does not', () => {
@@ -328,7 +335,8 @@ describe('Core roster: behaviours', () => {
           telegraphAt = ctx.time;
           expect(ev.duration).toBe(atk.windup);
           expect(ev.shape.length).toBe(atk.maxRange);
-          expect(ev.color).toBe('#ffd86a');
+          // The standard hostile colour: a cream line is lost on the pale Lumen ground.
+          expect(ev.color).toBe('#ff5a2a');
         }
       }
       if (telegraphAt >= 0 && firedAt < 0 && world.query(Projectile).length > 0) firedAt = ctx.time;
@@ -524,23 +532,23 @@ describe('The Absorbed', () => {
   });
 
   it('spawn with their name and the named-elite plate, and say their line once when they notice you', () => {
-    const { world, ctx, e } = fight('absorbed_gerd', 0, 10);
+    const { world, ctx, e } = fight('absorbed_ostrow', 0, 10);
     expect(world.req(e, Elite).kind).toBe('named');
-    expect(world.req(e, DisplayName).key).toBe('enemies.absorbed.gerd.name');
+    expect(world.req(e, DisplayName).key).toBe('enemies.absorbed.ostrow.name');
     expect(world.req(e, CombatStats).tags).toContain('elite');
     run(world, ctx, SYSTEMS, 120);
     const banners = ctx.events.drain().filter((ev: GameEvent) => ev.type === 'banner');
     expect(banners).toHaveLength(1);
     const banner = banners[0] as Extract<GameEvent, { type: 'banner' }>;
-    expect(t(banner.key, Object.fromEntries(Object.entries(banner.keyParams ?? {}).map(([k, v]) => [k, t(v)])))).toBe('Gerd, Absorbed: “The anvil is still warm. Hold still and I will finish you.”');
+    expect(t(banner.key, Object.fromEntries(Object.entries(banner.keyParams ?? {}).map(([k, v]) => [k, t(v)])))).toBe('Ostrow, Absorbed: “You hung four lamps by the lift. Where is mine?”');
   });
 
   it("fight with their old trade's tools", () => {
-    expect(def('absorbed_gerd').attack.kind).toBe('melee');
-    expect(def('absorbed_gerd').attack).toMatchObject({ knockback: 4 });
-    expect(def('absorbed_oona').attack.kind).toBe('cone');
-    expect(def('absorbed_dace').pull).toBeDefined();
-    expect(def('absorbed_tobin').dynamite).toBeDefined();
+    expect(def('absorbed_ostrow').attack.kind).toBe('melee');
+    expect(def('absorbed_ostrow').attack).toMatchObject({ knockback: 4 });
+    expect(def('absorbed_lenn').attack.kind).toBe('cone');
+    expect(def('absorbed_halvorsen').pull).toBeDefined();
+    expect(def('absorbed_danner').dynamite).toBeDefined();
     expect(def('absorbed_rhee').reinforce?.enemy).toBe('lumen_turret');
   });
 

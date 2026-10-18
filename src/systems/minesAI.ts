@@ -123,7 +123,7 @@ export function minesBehaviours(world: World, ctx: GameContext, e: Entity, ai: E
   if (def.burrow && ai.aggro && ptr) return burrow(world, ctx, e, ai, def.burrow, tr, mover, ptr, level, dt);
 
   // Blind Hounds go for fresh noise nearby instead of a target that is not right next to them.
-  if (def.hearing) {
+  if (def.hearing || ctx.instance?.def.hearing === true) {
     const noise = heardNoise(ctx, tr.x, tr.z, ai.aggro ? HEARING.confuse : HEARING.noiseRange);
     const near = ptr ? Math.hypot(ptr.x - tr.x, ptr.z - tr.z) : Infinity;
     if (noise && near > 4) {

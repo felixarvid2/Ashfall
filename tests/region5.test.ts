@@ -72,7 +72,7 @@ describe('The Core zone', () => {
     expect(THE_CORE.stash).toBeDefined();
   });
 
-  it('prefixes ids and has the planned markers, dungeons only as markers', () => {
+  it('prefixes ids and has the planned markers, and every dungeon and mirror is built', () => {
     for (const p of THE_CORE.pois) expect(p.id.startsWith('core.'), p.id).toBe(true);
     for (const p of THE_CORE.packs) expect(p.id.startsWith('core.'), p.id).toBe(true);
     const count = (kind: string) => THE_CORE.pois.filter((p) => p.kind === kind).length;
@@ -91,8 +91,8 @@ describe('The Core zone', () => {
     expect(base.id).toBe(ELEVATOR_BASE.id);
     expect(Math.hypot(base.x - SHAFT.x, base.z - SHAFT.z)).toBeLessThan(14);
     expect(THE_CORE.pois.find((p) => p.kind === 'boss')).toMatchObject({ id: LUMEN_HEART.id });
-    // The instances are built in R5-C: the game says so instead of crashing.
-    for (const p of THE_CORE.pois.filter((q) => q.kind === 'dungeon' || q.kind === 'bunker')) expect(hasInstance(String(p.data?.dungeon ?? p.data?.instance)), p.id).toBe(false);
+    // Every dungeon and mirror marker has its instance (R5-C).
+    for (const p of THE_CORE.pois.filter((q) => q.kind === 'dungeon' || q.kind === 'bunker')) expect(hasInstance(String(p.data?.dungeon ?? p.data?.instance)), p.id).toBe(true);
     // Packs of the density the earlier regions have (213–309).
     expect(THE_CORE.packs.length).toBeGreaterThan(180);
     expect(THE_CORE.packs.length).toBeLessThan(320);

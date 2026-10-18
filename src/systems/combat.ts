@@ -585,7 +585,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
       const blast = world.create();
       world.add(blast, Transform, makeTransform(tr.x, 0, tr.z));
       world.add(blast, Blast, { fuse: b.warning, radius: b.radius, owner: null, coefficient: 0, flat: 0, hurtsEnemies: false, player: { fraction: 0, damage: (stats?.weaponDamage ?? 10) * b.coefficient, level: stats?.level ?? 1 } });
-      if (b.warning > 0) ctx.events.push({ type: 'telegraph', owner: blast, x: tr.x, z: tr.z, shape: { kind: 'circle', radius: b.radius }, duration: b.warning, color: '#ffe9a0' });
+      if (b.warning > 0) ctx.events.push({ type: 'telegraph', owner: blast, x: tr.x, z: tr.z, shape: { kind: 'circle', radius: b.radius }, duration: b.warning, color: '#ff7a2a' });
     }
     eliteDeath(world, ctx, target);
     ctx.stats.kills++;

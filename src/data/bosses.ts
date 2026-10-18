@@ -46,7 +46,31 @@ export interface BossPhase {
   tentacles?: { enemy: string; count: number; every: number };
   /** A new form: bigger and glowing. */
   transform?: { scale: number; glow: string };
+  /**
+   * Lumen's phase 2: the arena becomes a memory of each earlier region in turn (looping), `seconds` each. A memory
+   * overlays its own hazards and attacks on the phase, and its `shades` rise when it begins.
+   */
+  memories?: BossMemory[];
+  /**
+   * A scripted beat: the boss cannot be hurt or attack, and the phase holds until the game calls `endBeat`
+   * (Lumen's dialogue choice). `form` is the ally it takes the shape of: a harmless model beside the boss.
+   */
+  beat?: { id: string; form: { asset: string; glow: string; scale: number; name: string } };
+  /** The boss takes this much more damage in the phase (Lumen's exposed core). */
+  vulnerable?: number;
 }
+
+/** One memory of Lumen's phase 2. `look` is a renderer atmosphere (src/render/memoryLook.ts). */
+export interface BossMemory extends Pick<BossPhase, 'adds' | 'fireballs' | 'sporeFields' | 'beams' | 'tentacles'> {
+  id: string;
+  seconds: number;
+  look: 'ash' | 'fire' | 'jungle' | 'dark';
+  banner: string;
+  shades: { enemy: string; count: number }[];
+}
+
+/** Attack fields a memory can overlay on its phase. */
+export const MEMORY_ATTACKS = ['adds', 'fireballs', 'sporeFields', 'beams', 'tentacles'] as const;
 
 export const BOSS_SCRIPTS: Record<string, BossPhase[]> = {
   brood_mother: [
@@ -226,5 +250,160 @@ export const BOSS_SCRIPTS: Record<string, BossPhase[]> = {
       fireballs: { every: 4, count: 3, radius: 3.2, warning: 1.4, damageOfWeapon: 1.5, color: '#5dff6a', vfx: 'slam' },
       tentacles: { enemy: 'mother_root', count: 2, every: 14 },
     },
+  ],
+  // ---- Region 5 ----
+  lumen: [
+    // Phase 1: the earlier bosses' attacks in new combinations: Vire's warned fireballs, The First's plates (which
+    // leave cover from the Warden's beams) and Light Beings.
+    {
+      below: 1,
+      adds: { enemy: 'light_being', count: 2, every: 16 },
+      fireballs: { every: 4.5, count: 3, radius: 2.8, warning: 1.3, damageOfWeapon: 1.2, color: '#ffd88a', vfx: 'explosion' },
+      plates: { every: 11, radius: 2.8, warning: 1.3, damageOfWeapon: 1.3 },
+      beams: { every: 8, length: 32, width: 2.4, warning: 1.2, damageOfWeapon: 1.3, color: '#fff0c8' },
+    },
+    // Phase 2: the arena remembers the earlier regions, about 15 s each: ash, fire, jungle, darkness.
+    {
+      below: 0.7,
+      banner: 'bosses.lumen.phase2',
+      memories: [
+        {
+          id: 'ash',
+          seconds: 15,
+          look: 'ash',
+          banner: 'bosses.lumen.memory.ash',
+          shades: [
+            { enemy: 'shade_walker', count: 3 },
+            { enemy: 'shade_echo', count: 2 },
+          ],
+          adds: { enemy: 'shade_walker', count: 1, every: 7 },
+          fireballs: { every: 5, count: 2, radius: 2.4, warning: 1.4, damageOfWeapon: 1, color: '#b8b2aa', vfx: 'slam' },
+        },
+        {
+          id: 'fire',
+          seconds: 15,
+          look: 'fire',
+          banner: 'bosses.lumen.memory.fire',
+          shades: [
+            { enemy: 'shade_smelter', count: 2 },
+            { enemy: 'shade_hound', count: 2 },
+          ],
+          fireballs: { every: 3.5, count: 3, radius: 2.8, warning: 1.2, damageOfWeapon: 1.2, color: '#ff7a1a', vfx: 'vent' },
+          sporeFields: { every: 5, count: 3, radius: 3, duration: 7, dpsOfWeapon: 0.3, status: 'burning', color: '#ff6a1a' },
+        },
+        {
+          id: 'jungle',
+          seconds: 15,
+          look: 'jungle',
+          banner: 'bosses.lumen.memory.jungle',
+          shades: [
+            { enemy: 'shade_weaver', count: 2 },
+            { enemy: 'shade_hound', count: 2 },
+          ],
+          sporeFields: { every: 4, count: 4, radius: 3.4, duration: 8, dpsOfWeapon: 0.35 },
+          tentacles: { enemy: 'mother_root', count: 1, every: 9 },
+        },
+        {
+          id: 'dark',
+          seconds: 15,
+          look: 'dark',
+          banner: 'bosses.lumen.memory.dark',
+          shades: [
+            { enemy: 'shade_sentinel', count: 1 },
+            { enemy: 'shade_drone', count: 3 },
+          ],
+          beams: { every: 4.5, length: 32, width: 2.4, warning: 1.1, damageOfWeapon: 1.4, color: '#6ad8ff' },
+        },
+      ],
+    },
+    // Phase 3: Lumen takes an ally's shape and asks the player to stop. A dialogue choice; both lead on.
+    {
+      below: 0.4,
+      banner: 'bosses.lumen.phase3',
+      tempo: 0,
+      transform: { scale: 0.35, glow: '#fff0c8' },
+      beat: { id: 'lumen.choice', form: { asset: 'npc.technician', glow: '#fff0c8', scale: 1.2, name: 'npcs.okafor.name' } },
+    },
+    // Phase 4: the core is exposed. Short and intense: Kade's drill sweep with every other attack at once.
+    {
+      below: 0.4,
+      banner: 'bosses.lumen.phase4',
+      tempo: 1.5,
+      vulnerable: 1.5,
+      transform: { scale: 1.3, glow: '#ffffff' },
+      sweep: { length: 44, width: 2.8, speed: 0.55, dpsOfWeapon: 0.9, color: '#fff0c8' },
+      fireballs: { every: 3.5, count: 4, radius: 2.8, warning: 1.1, damageOfWeapon: 1.4, color: '#ffd88a', vfx: 'explosion' },
+      beams: { every: 5, length: 32, width: 2.4, warning: 1, damageOfWeapon: 1.5, color: '#fff0c8' },
+      tentacles: { enemy: 'lumen_tentacle', count: 2, every: 12 },
+    },
+  ],
+  // ---- Region 5 (docs/regions/the-core.md): dungeon bosses and the Elevator Base's Memory Shades ----
+  shade_the_first: [
+    // The First's script, plus the twist: a memory is never quite where it was, so from phase 2 it blinks to you.
+    { below: 1, adds: { enemy: 'shade_walker', count: 3, every: 15 } },
+    {
+      below: 0.6,
+      banner: 'bosses.shade_the_first.phase2',
+      adds: { enemy: 'shade_walker', count: 2, every: 20 },
+      plates: { every: 6, radius: 2.6, warning: 1.3, damageOfWeapon: 1.4 },
+      teleport: { every: 9, radius: 3.5, warning: 1.1, damageOfWeapon: 1.4, color: '#b48cff' },
+    },
+    {
+      below: 0.25,
+      banner: 'bosses.shade_the_first.phase3',
+      speedMul: 1.6,
+      tempo: 1.4,
+      plates: { every: 9, radius: 2.6, warning: 1.2, damageOfWeapon: 1.4 },
+      sporeFields: { every: 7, count: 3, radius: 3.5, duration: 9, dpsOfWeapon: 0.35 },
+      teleport: { every: 6, radius: 3.5, warning: 1, damageOfWeapon: 1.5, color: '#b48cff' },
+    },
+  ],
+  first_choir: [
+    // Four singers ring the Choir Mother (empowering everything within 14 m while any lives); her songs arrive as waves.
+    { below: 1, guards: { enemy: 'choir_singer', count: 4 }, adds: { enemy: 'light_mote', count: 4, every: 15 }, beams: { every: 7, length: 26, width: 2.4, warning: 1.3, damageOfWeapon: 1.4, color: '#ffe39a' } },
+    {
+      below: 0.6,
+      banner: 'bosses.first_choir.phase2',
+      tempo: 1.3,
+      adds: { enemy: 'light_being', count: 2, every: 16 },
+      beams: { every: 6, length: 26, width: 2.4, warning: 1.2, damageOfWeapon: 1.4, color: '#ffe39a' },
+      fireballs: { every: 5, count: 3, radius: 3.2, warning: 1.3, damageOfWeapon: 1.4, color: '#ffe39a', vfx: 'slam' },
+    },
+    {
+      below: 0.3,
+      banner: 'bosses.first_choir.phase3',
+      tempo: 1.3,
+      transform: { scale: 1.15, glow: '#fff0c8' },
+      adds: { enemy: 'light_mote', count: 4, every: 12 },
+      sweep: { length: 28, width: 2.6, speed: 0.5, dpsOfWeapon: 0.9, color: '#ffe39a' },
+      fireballs: { every: 6, count: 3, radius: 3.2, warning: 1.3, damageOfWeapon: 1.5, color: '#ffe39a', vfx: 'slam' },
+    },
+  ],
+  brood_engine: [
+    // Each phase opens a hatch to one earlier region: Ash, the Refinery, the Vaults, the Mines.
+    { below: 1, adds: { enemy: 'shade_walker', count: 2, every: 12 } },
+    { below: 0.75, banner: 'bosses.brood_engine.phase2', adds: { enemy: 'shade_smelter', count: 2, every: 14 }, fireballs: { every: 6, count: 2, radius: 2.8, warning: 1.3, damageOfWeapon: 1.3, color: '#ffb040', vfx: 'explosion' } },
+    { below: 0.5, banner: 'bosses.brood_engine.phase3', tempo: 1.2, adds: { enemy: 'shade_weaver', count: 2, every: 14 }, sporeFields: { every: 8, count: 3, radius: 3.2, duration: 8, dpsOfWeapon: 0.35 } },
+    {
+      below: 0.25,
+      banner: 'bosses.brood_engine.phase4',
+      speedMul: 1.3,
+      tempo: 1.3,
+      transform: { scale: 1.15, glow: '#fff0c8' },
+      adds: { enemy: 'crystal_walker', count: 3, every: 10 },
+      beams: { every: 6, length: 24, width: 2.4, warning: 1.1, damageOfWeapon: 1.5, color: '#6ad8ff' },
+    },
+  ],
+  shade_vire: [
+    { below: 1, guards: { enemy: 'shade_smelter', count: 2 }, fireballs: { every: 5, count: 2, radius: 2.8, warning: 1.3, damageOfWeapon: 1.2, color: '#c8a4ff' } },
+    { below: 0.5, banner: 'bosses.shade_vire.phase2', adds: { enemy: 'shade_smelter', count: 1, every: 18 }, fireballs: { every: 4, count: 3, radius: 2.8, warning: 1.3, damageOfWeapon: 1.3, color: '#c8a4ff' } },
+  ],
+  shade_warden: [
+    { below: 1, armor: { plates: 3, reduction: 0.8, plateLife: 500 }, beams: { every: 6, length: 24, width: 2.4, warning: 1.2, damageOfWeapon: 1.3, color: '#b48cff' } },
+    { below: 0.5, banner: 'bosses.shade_warden.phase2', adds: { enemy: 'shade_walker', count: 2, every: 12 }, beams: { every: 5, length: 24, width: 2.4, warning: 1.1, damageOfWeapon: 1.4, color: '#b48cff' } },
+  ],
+  shade_kade: [
+    { below: 1, adds: { enemy: 'shade_drone', count: 2, every: 14 }, beams: { every: 6, length: 26, width: 2.4, warning: 1.2, damageOfWeapon: 1.4, color: '#c8a4ff' } },
+    { below: 0.5, banner: 'bosses.shade_kade.phase2', speedMul: 1.2, tempo: 1.2, teleport: { every: 7, radius: 3.5, warning: 1, damageOfWeapon: 1.4, color: '#c8a4ff' }, adds: { enemy: 'shade_drone', count: 2, every: 12 } },
   ],
 };

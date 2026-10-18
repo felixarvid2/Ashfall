@@ -35,7 +35,12 @@ export type InstanceObjective =
   /** Restart a machine, then keep it alive through waves for `time` seconds. */
   | { kind: 'defend'; time: number; life: number; waveEvery: number; wave: number; machine?: 'compressor' | 'elevator' }
   /** The Crystal Labyrinth: turn every mirror until it catches the light (each turn draws a few enemies). */
-  | { kind: 'mirrors'; count: number; wave: number };
+  | { kind: 'mirrors'; count: number; wave: number }
+  /**
+   * The Chamber of Creation: close hatching portals (destroy them). Portal i hatches enemies from `pools[i]`
+   * (one earlier region each) every `every` s while the player is close.
+   */
+  | { kind: 'portals'; count: number; life: number; every: number; pools: string[][] };
 
 export interface InstanceBoss {
   enemy: string;
@@ -69,6 +74,8 @@ export interface InstanceDef {
     /** Props scattered along room walls. */
     decor: string[];
     light: { asset: string; color: string; intensity: number };
+    /** The Core's memories: props and enemies are drawn with the shade look (tinted, flickering, wrong). */
+    shade?: boolean;
   };
   /** Chance of a dungeon event (an extra named elite in a side room). */
   eventChance: number;
@@ -78,6 +85,15 @@ export interface InstanceDef {
   frostVents?: number;
   /** The Cocoon Chamber: cocoons per room that hatch when the player passes close. */
   cocoons?: number;
+  // ---- The Core (docs/regions/the-core.md "Dungeons", "Memory Mirrors") ----
+  /** The Singing Halls: every enemy hunts by hearing (the mines' behaviour) and choir pillars ring. */
+  hearing?: boolean;
+  /** The Singing Halls: choir pillars per room; hitting one, or fighting near it, rings it and draws the room. */
+  pillars?: number;
+  /** The Endless Shaft: floors of the same rooms, each denser than the last (`shaftScaling`); leaving or dying ends the run. */
+  floors?: boolean;
+  /** Memory Mirrors: the lore log (`lore.<id>`) that waits in the last room. */
+  lore?: string;
 }
 
 type InstanceTheme = InstanceDef['theme'];
@@ -214,6 +230,46 @@ const BURIAL: InstanceTheme = {
   decor: ['env.wall_segment', 'prop.lumen_wrath', 'env.wall_segment', 'env.slag_rock'],
   light: { asset: 'prop.lumen_growth', color: '#5ab8ff', intensity: 30 },
 };
+
+// The Core (docs/regions/the-core.md): Lumen's memories (shade look) and its own halls.
+const MEMORY_EMBER: InstanceTheme = {
+  floor: '#3a3042',
+  ground: 'scorched_ground',
+  fog: { color: '#150c22', density: 0.026 },
+  ambient: { color: '#9a7ad0', intensity: 0.55 },
+  decor: ['prop.cargo_crate', 'prop.pipe_section', 'prop.control_terminal', 'prop.fuel_tank'],
+  light: { asset: 'prop.lumen_growth', color: '#b48cff', intensity: 36 },
+  shade: true,
+};
+const CORE_SHAFT: InstanceTheme = {
+  floor: '#2e2a3c',
+  ground: 'steel_grating',
+  fog: { color: '#0d0a16', density: 0.03 },
+  ambient: { color: '#b8a4e8', intensity: 0.5 },
+  decor: ['prop.core_console', 'env.pipe_cluster', 'env.wall_segment', 'prop.generator'],
+  light: { asset: 'prop.lumen_growth', color: '#ffe39a', intensity: 36 },
+};
+const CORE_HALLS: InstanceTheme = {
+  floor: '#3a3250',
+  ground: 'lumen_matter',
+  fog: { color: '#1a1230', density: 0.024 },
+  ambient: { color: '#d8c8ff', intensity: 0.6 },
+  decor: ['env.wall_segment', 'prop.lumen_growth', 'prop.lumen_growth', 'prop.core_console'],
+  light: { asset: 'prop.lumen_growth', color: '#ffd68a', intensity: 38 },
+};
+const CORE_CHAMBER: InstanceTheme = {
+  floor: '#403a58',
+  ground: 'lumen_infested',
+  fog: { color: '#160e28', density: 0.026 },
+  ambient: { color: '#c9b6f0', intensity: 0.6 },
+  decor: ['prop.core_console', 'prop.generator', 'prop.lumen_growth', 'env.pipe_cluster'],
+  light: { asset: 'prop.lumen_growth', color: '#fff0c8', intensity: 40 },
+};
+/** The Memory Mirrors reuse an earlier region's kit, tinted and wrong. */
+const MIRROR_FOG = { color: '#140c20', density: 0.03 };
+const MIRROR_ASH: InstanceTheme = { ...BUNKER, floor: '#363040', fog: MIRROR_FOG, ambient: { color: '#9a7ad0', intensity: 0.55 }, light: { ...BUNKER.light, color: '#c8a4ff' }, shade: true };
+const MIRROR_REFINERY: InstanceTheme = { ...FOUNDRY, floor: '#3a2c3a', fog: MIRROR_FOG, ambient: { color: '#b07a90', intensity: 0.55 }, light: { ...FOUNDRY.light, color: '#ff9a6a' }, shade: true };
+const MIRROR_VAULT: InstanceTheme = { ...SEEDVAULT, floor: '#2e3a46', fog: MIRROR_FOG, ambient: { color: '#7aa0d0', intensity: 0.55 }, light: { ...SEEDVAULT.light, color: '#9fe0ff' }, shade: true };
 
 export const INSTANCES: InstanceDef[] = [
   {
@@ -470,7 +526,145 @@ export const INSTANCES: InstanceDef[] = [
     theme: BUNKER,
     eventChance: 0.2,
   },
+  // ---- The Core (docs/regions/the-core.md "Dungeons", "Memory Mirrors") ----
+  {
+    // D1, Memory Halls: a distorted Outpost Ember; Region 1's shades, and the Shade of The First at its end.
+    id: 'core_memory_of_ember',
+    kind: 'dungeon',
+    main: [8, 9],
+    branches: [4, 5],
+    packs: ['core_halls_ash'],
+    packsPerRoom: [1, 2],
+    objective: { kind: 'collect', count: 3 },
+    boss: { enemy: 'shade_the_first', name: 'enemies.named.shade_the_first', lifeMul: 1, damageMul: 1, affixes: [], script: 'shade_the_first' },
+    theme: MEMORY_EMBER,
+    eventChance: 0.35,
+  },
+  {
+    // D2, Borderland: floor after floor of the same rooms, each denser than the last; no boss, no end.
+    id: 'core_endless_shaft',
+    kind: 'dungeon',
+    main: [5, 6],
+    branches: [2, 3],
+    packs: ['core_borderland', 'core_base'],
+    packsPerRoom: [1, 2],
+    objective: { kind: 'clear' },
+    boss: null,
+    theme: CORE_SHAFT,
+    eventChance: 0,
+    floors: true,
+  },
+  {
+    // D3, Gardens: sound is the mechanic. Enemies hunt by hearing; a ringing pillar draws the whole room.
+    id: 'core_singing_halls',
+    kind: 'dungeon',
+    main: [8, 9],
+    branches: [3, 4],
+    packs: ['core_gardens', 'core_base'],
+    packsPerRoom: [1, 2],
+    objective: { kind: 'clear' },
+    boss: { enemy: 'choir_mother', name: 'enemies.named.first_choir', lifeMul: 1, damageMul: 1, affixes: [], script: 'first_choir' },
+    theme: CORE_HALLS,
+    eventChance: 0.2,
+    hearing: true,
+    pillars: 1,
+  },
+  {
+    // D4, Heart: four portals hatch the creatures of the four earlier regions; the Brood Engine waits behind them.
+    id: 'core_chamber_of_creation',
+    kind: 'dungeon',
+    main: [8, 9],
+    branches: [4, 5],
+    packs: ['core_heart'],
+    packsPerRoom: [1, 2],
+    objective: {
+      kind: 'portals',
+      count: 4,
+      life: 1500,
+      every: 8,
+      pools: [
+        ['shade_walker', 'shade_hound'],
+        ['shade_smelter', 'welder'],
+        ['shade_weaver', 'overgrown_walker'],
+        ['crystal_walker', 'burrower'],
+      ],
+    },
+    boss: { enemy: 'brood_engine', name: 'enemies.named.brood_engine', lifeMul: 1, damageMul: 1, affixes: [], script: 'brood_engine' },
+    theme: CORE_CHAMBER,
+    eventChance: 0.35,
+  },
+  // Memory Mirrors: bunker-sized memories of Regions 1, 2 and 3, with their enemies as shades.
+  {
+    id: 'core_mirror_ash',
+    kind: 'bunker',
+    main: [3, 4],
+    branches: [0, 1],
+    packs: ['core_halls_ash'],
+    packsPerRoom: [1, 1],
+    objective: { kind: 'clear' },
+    boss: null,
+    theme: MIRROR_ASH,
+    eventChance: 0.2,
+    lore: 'cmirror.ash',
+  },
+  {
+    id: 'core_mirror_refinery',
+    kind: 'bunker',
+    main: [3, 4],
+    branches: [0, 1],
+    packs: ['core_halls_fire'],
+    packsPerRoom: [1, 1],
+    objective: { kind: 'clear' },
+    boss: null,
+    theme: MIRROR_REFINERY,
+    eventChance: 0.2,
+    lore: 'cmirror.refinery',
+  },
+  {
+    id: 'core_mirror_vault',
+    kind: 'bunker',
+    main: [3, 4],
+    branches: [0, 1],
+    packs: ['core_halls_jungle'],
+    packsPerRoom: [1, 1],
+    objective: { kind: 'clear' },
+    boss: null,
+    theme: MIRROR_VAULT,
+    eventChance: 0.2,
+    lore: 'cmirror.vault',
+  },
 ];
+
+/** The Core's instances (docs/regions/the-core.md); built where the Core's dungeon and mirror markers point. */
+export const CORE_INSTANCES = ['core_memory_of_ember', 'core_endless_shaft', 'core_singing_halls', 'core_chamber_of_creation', 'core_mirror_ash', 'core_mirror_refinery', 'core_mirror_vault'];
+
+/**
+ * The Endless Shaft's floors. Every number only ever grows with the floor and stops at its cap, so the shaft gets
+ * harder for a while and then holds: more packs per room, a bigger share of champion packs, more affixes on
+ * every elite, and tougher bodies. Floors never raise the monsters' level (the Core's range ends at 50).
+ */
+export const SHAFT_TUNING = {
+  /** Extra packs per room, +1 every two floors. */
+  packsEvery: 2,
+  maxPacks: 3,
+  /** Chance a pack is a champion pack: 0.10 on floor 1, +0.06 per floor. */
+  champion: [0.1, 0.06, 0.7] as [number, number, number],
+  /** Extra affixes on every elite, +1 every three floors. */
+  affixesEvery: 3,
+  maxAffixes: 3,
+  /** Life multiplier: +10 % per floor. */
+  life: [0.1, 3] as [number, number],
+};
+
+export function shaftScaling(floor: number): { packs: number; champion: number; affixes: number; lifeMul: number } {
+  const f = Math.max(0, Math.floor(floor) - 1);
+  return {
+    packs: Math.min(SHAFT_TUNING.maxPacks, Math.floor(f / SHAFT_TUNING.packsEvery)),
+    champion: Math.min(SHAFT_TUNING.champion[2], SHAFT_TUNING.champion[0] + SHAFT_TUNING.champion[1] * f),
+    affixes: Math.min(SHAFT_TUNING.maxAffixes, Math.floor(f / SHAFT_TUNING.affixesEvery)),
+    lifeMul: Math.min(SHAFT_TUNING.life[1], 1 + SHAFT_TUNING.life[0] * f),
+  };
+}
 
 /** Where instances are built: far outside every zone. */
 export const DEEP_MINES_INSTANCES = ['shaft_13', 'crystal_labyrinth', 'sunken_drill', 'archive', 'burial_chamber', 'dm_bunker'];

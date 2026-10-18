@@ -26,6 +26,7 @@ import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
 import { CoreLook, blurCut, cutCells, cutTexture, ghostMaterial, type CutField } from './coreLook';
 import { ChoirLinks } from './choirLinks';
+import { memoryAtmosphere, type Atmosphere } from './memoryLook';
 import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
 import { LootVisuals } from './lootVisuals';
@@ -98,6 +99,8 @@ export class GameRenderer {
     this.ash.setColor(arena.particles ?? '#b8b2aa');
     this.postfx.setGrade(arena.grade?.saturation, arena.grade?.tint);
     this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
+    this.zoneAtmosphere = { fog: arena.fog, ambient: arena.ambient, playerLight: arena.playerLight, hemisphere: arena.hemisphere, grade: arena.grade, dark: arena.dark };
+    this.memory = null;
     if (!this.ambientLight || !this.hemiLight) {
       this.ambientLight = new THREE.AmbientLight();
       this.hemiLight = new THREE.HemisphereLight('#4a5466', '#2a2018');
@@ -200,6 +203,8 @@ export class GameRenderer {
     if (grid && caves && (grid.air || grid.bridges)) {
       this.coreLook = new CoreLook(s, grid, caves, cutField, gravityFields(arena as { env?: EnvFeature[] }), arena.beams ?? [], this.glowTexture());
     }
+    // Pale Lumen ground: warnings are drawn solid instead of additive.
+    this.vfx.brightGround = this.coreLook !== null;
     // The Core's drifting light: motes rise out of the abyss instead of ash falling.
     if (this.coreLook) this.ash.setMotes(['#ffd88a', '#c8a4ff', '#fff0c8']);
     this.dark = arena.dark ?? false;
@@ -617,6 +622,26 @@ export class GameRenderer {
   }
 
   private lightSpots: { x: number; z: number; color: string; intensity: number; distance: number; height: number }[] = [];
+  /** The zone's own atmosphere, and the memory of Lumen's phase 2 laid over it (null: none). */
+  private zoneAtmosphere: Atmosphere | null = null;
+  private memory: string | null = null;
+
+  /** Lumen's phase 2: the arena takes on an earlier region's fog, light and lamp (null puts the Heart back). */
+  setMemoryLook(look: 'ash' | 'fire' | 'jungle' | 'dark' | null): void {
+    if (look === this.memory || !this.zoneAtmosphere || !this.ambientLight || !this.hemiLight) return;
+    this.memory = look;
+    const a = look ? memoryAtmosphere(look) : this.zoneAtmosphere;
+    this.setLook(a.fog, a.ambient);
+    this.hemiLight.color.set(a.hemisphere?.sky ?? '#4a5466');
+    this.hemiLight.groundColor.set(a.hemisphere?.ground ?? '#2a2018');
+    this.postfx.setGrade(a.grade?.saturation, a.grade?.tint);
+    this.playerLight.color.set(a.playerLight.color);
+    this.playerLight.intensity = a.playerLight.intensity;
+    this.playerLight.distance = a.playerLight.distance;
+    this.dark = a.dark ?? false;
+    this.scene.environmentIntensity = this.dark ? ENV_LIGHT.dark : ENV_LIGHT.surface;
+  }
+
   private zoneLook: { fog: { color: string; density: number }; ambient: { color: string; intensity: number } } | null = null;
   private ambientLight: THREE.AmbientLight | null = null;
   private hemiLight: THREE.HemisphereLight | null = null;
@@ -1171,6 +1196,14 @@ export class GameRenderer {
       if (dead && animator?.has('death')) {
         // The death clip handles the fall; just sink the body afterwards.
         if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
+        // A creature that bursts (Light Motes) leaves no body behind: it shrinks away once the clip has played.
+        const ai = world.get(e, EnemyAI);
+        if (world.get(e, Renderable)?.look && ai && enemyDef(ai.defId).onDeath?.burst) {
+          const f = deathFade(Math.max(0, dead.elapsed - 0.6));
+          obj.scale.setScalar(((obj.userData.baseScale as number | undefined) ?? 1) * f.scale);
+          obj.userData.fadeOpacity = f.opacity;
+          obj.visible = f.opacity > 0.01;
+        }
       } else if (dead && animator && fadesOnDeath(true, animator.has('death'))) {
         // No death clip (Choir singers, the Absorbed): fade and shrink where it stands.
         const f = deathFade(dead.elapsed);
@@ -1395,7 +1428,8 @@ export class GameRenderer {
       if (ls && look && !flash && !active && !hologram) {
         // An elite's glow (blue champion, yellow rare) takes over the look's own emissive colour.
         slot.material.emissive.set(glow ?? LOOKS[look].emissive);
-        slot.material.emissiveIntensity = ls.glow * dim;
+        // (The look's own glow is kept low so the body reads against pale ground; an elite's colour gets a boost.)
+        slot.material.emissiveIntensity = ls.glow * (glow ? 1.8 : 1) * dim;
         continue;
       }
       if (hologram) {
