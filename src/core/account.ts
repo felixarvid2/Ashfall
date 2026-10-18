@@ -17,11 +17,28 @@ export const AccountSchema = z.object({
   restoration: z.record(z.string(), z.object({ points: z.array(z.string()).default([]), tiers: z.number().int().default(0) })).default({}),
   /** Shared stash (all characters). */
   stash: z.array(ItemSchema.nullable()).default([]),
+  /**
+   * Account-wide endgame state (docs/endgame.md): the highest World Tier unlocked and the one chosen,
+   * aspects unlocked in the Codex, the best Deep Rift cleared, and total play time in seconds (the
+   * clock behind world bosses and the Ash Harvest rotation).
+   */
+  endgame: z
+    .object({
+      tierUnlocked: z.number().int().min(1).max(4).default(1),
+      tier: z.number().int().min(1).max(4).default(1),
+      codex: z.array(z.string()).default([]),
+      riftBest: z.number().int().nonnegative().default(0),
+      /** Deep Rifts: the highest level open (a fast clear opens two), and the best time (s) of the best level (0 = none). */
+      riftOpen: z.number().int().nonnegative().default(0),
+      riftTime: z.number().nonnegative().default(0),
+      playtime: z.number().nonnegative().default(0),
+    })
+    .prefault({}),
 });
 export type AccountData = z.infer<typeof AccountSchema>;
 
 export function emptyAccount(): AccountData {
-  return { version: 1, relics: {}, restoration: {}, stash: [] };
+  return AccountSchema.parse({ version: 1 });
 }
 
 export function loadAccount(storage: Storage | undefined): AccountData {

@@ -27,6 +27,7 @@ import { PROGRESSION } from '../data/loot/db';
 import { emptyInventory } from '../systems/loot/inventory';
 import { recomputePlayer } from '../systems/stats';
 import { newTreeState, tree } from '../systems/skillTree';
+import { enemyScalingNow } from '../systems/endgame/tiers';
 
 export function spawnPlayer(world: World, classId: string, x: number, z: number): Entity {
   const cls = classDef(classId);
@@ -97,8 +98,10 @@ export interface EnemySpawnOptions {
 export function spawnEnemy(world: World, defId: string, x: number, z: number, opts: EnemySpawnOptions = {}): Entity {
   const def = enemyDef(defId);
   const level = Math.max(1, opts.level ?? 1);
-  const life = def.life * (opts.lifeMul ?? 1) * (1 + PROGRESSION.enemyLifePerLevel * (level - 1));
-  const damage = def.damage * (1 + PROGRESSION.enemyDamagePerLevel * (level - 1));
+  // World Tier multipliers (docs/endgame.md; neutral in the campaign and in headless sims).
+  const tier = enemyScalingNow();
+  const life = def.life * (opts.lifeMul ?? 1) * tier.life * (1 + PROGRESSION.enemyLifePerLevel * (level - 1));
+  const damage = def.damage * tier.damage * (1 + PROGRESSION.enemyDamagePerLevel * (level - 1));
   const e = world.create();
   world.add(e, Transform, makeTransform(x, def.hover, z, 0));
   world.add(e, Mover, { speed: def.moveSpeed, speedMul: 1, turnRate: def.turnRate, vx: 0, vz: 0 });

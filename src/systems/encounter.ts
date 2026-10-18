@@ -4,6 +4,7 @@ import type { GameContext } from '../core/context';
 import type { World } from '../core/ecs';
 import { ENCOUNTERS } from '../data/db';
 import { spawnEnemy } from '../world/spawn';
+import { scalesToPlayer } from './endgame/tiers';
 
 export function encounterSystem(world: World, dt: number, ctx: GameContext): void {
   const id = world.first(EncounterState);
@@ -73,6 +74,8 @@ export function startNextWave(world: World, ctx: GameContext): void {
 export function monsterLevel(world: World, ctx: GameContext): number {
   const player = world.first(PlayerControlled, Progression);
   const level = player !== undefined ? world.req(player, Progression).level : 1;
+  // World Tier 2+: every zone follows the player's level (never below its own range).
+  if (scalesToPlayer(ctx)) return Math.max(level, ctx.zoneLevels[0]);
   return clamp(level, ctx.zoneLevels[0], ctx.zoneLevels[1]);
 }
 

@@ -3,6 +3,7 @@ import type { Inventory } from '../src/core/components';
 import { Rng } from '../src/core/rng';
 import { emptyAccount, AccountSchema } from '../src/core/account';
 import { ASPECT_DEFS, BASE_ITEMS } from '../src/data/loot/db';
+import { TIER_TABLE } from '../src/data/endgame/tiers';
 import { BLACKSMITH, STASH, VENDOR } from '../src/data/services';
 import { generateItem } from '../src/systems/loot/generate';
 import { emptyInventory } from '../src/systems/loot/inventory';
@@ -51,6 +52,27 @@ describe('hub services', () => {
     expect(sell(i, 0)).toBe(price);
     expect(i.gold).toBe(price);
     expect(i.grid[0]).toBeNull();
+  });
+
+  it('at a higher World Tier the trader stocks stronger gear', () => {
+    const row = TIER_TABLE[4];
+    // The same seed rolls the same first item power, so the tier adds exactly its bonus.
+    const plain = rollVendorStock(new Rng('tier'), 20, 'bastion', next);
+    const tiered = rollVendorStock(new Rng('tier'), 20, 'bastion', next, undefined, row);
+    expect(tiered[0]!.itemPower - plain[0]!.itemPower).toBe(row.itemPower);
+    const mean = (xs: { itemPower: number }[]) => xs.reduce((a, x) => a + x.itemPower, 0) / xs.length;
+    expect(mean(tiered)).toBeGreaterThan(mean(plain) + row.itemPower * 0.8);
+    // Greater affixes: a guaranteed chance makes every rolled affix greater.
+    const sure = rollVendorStock(new Rng('tier'), 20, 'bastion', next, undefined, { itemPower: 0, greaterChance: 1 });
+    expect(sure.every((i) => i.affixes.every((a) => a.greater === true))).toBe(true);
+  });
+
+  it('a reroll gets the World Tier greater-affix chance, at the item own power', () => {
+    const it = item('rare');
+    const i = inv();
+    expect(rerollAffix(new Rng('g'), i, it, 0, { itemPower: 120, greaterChance: 1 })).toEqual({ ok: true });
+    expect(it.affixes[0]!.greater).toBe(true);
+    expect(it.itemPower).toBe(120);
   });
 
   it('the blacksmith rerolls one affix to a new one, and each try costs more', () => {

@@ -2,6 +2,8 @@
  * Boss phase scripts (docs/world-and-gameplay.md §9): each phase starts below a share of life and
  * changes tempo, summons adds, throws plates that stay as cover, or covers the arena in spores.
  */
+import { WORLD_BOSS_SCRIPTS } from './endgame/worldBosses';
+
 export interface BossPhase {
   /** Starts when life drops to this fraction (the first phase uses 1). */
   below: number;
@@ -73,6 +75,7 @@ export interface BossMemory extends Pick<BossPhase, 'adds' | 'fireballs' | 'spor
 export const MEMORY_ATTACKS = ['adds', 'fireballs', 'sporeFields', 'beams', 'tentacles'] as const;
 
 export const BOSS_SCRIPTS: Record<string, BossPhase[]> = {
+  ...WORLD_BOSS_SCRIPTS,
   brood_mother: [
     { below: 1, adds: { enemy: 'bloater', count: 2, every: 12 } },
     { below: 0.5, banner: 'bosses.brood_mother.phase2', speedMul: 1.2, adds: { enemy: 'bloater', count: 3, every: 8 } },

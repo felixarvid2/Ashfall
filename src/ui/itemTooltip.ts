@@ -3,6 +3,8 @@ import { t } from '../data/i18n';
 import { ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
 import { PERCENT_STATS, type Item, type StatKey } from '../data/loot/schemas';
 import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/generate';
+import { MASTERWORK } from '../data/endgame/crafting';
+import { effectiveAffixes } from '../systems/endgame/itemMods';
 import { artUrl, itemArtUrl } from './art';
 
 export function formatStat(stat: StatKey, value: number): string {
@@ -94,15 +96,20 @@ export function renderItemTooltip(item: Item, classId: string, opts: { equipped?
       for (const s of item.implicits) imp.appendChild(el('div', '', formatStat(s.stat, s.value)));
       root.appendChild(imp);
     }
-    if (item.affixes.length) {
+    const affixes = effectiveAffixes(item);
+    if (affixes.length) {
       const aff = el('div', 'item-tip-stats');
-      for (const s of item.affixes) {
-        const row = el('div', s.greater ? 'greater' : '', `${s.greater ? '◆ ' : ''}${formatStat(s.stat, s.value)}`);
-        if (s.greater) row.title = t('items.greater');
+      for (const s of affixes) {
+        const cls = s.tempered ? 'tempered' : s.greater ? 'greater' : '';
+        const mark = s.tempered ? '⚒ ' : s.greater ? '◆ ' : '';
+        const row = el('div', cls, `${mark}${formatStat(s.stat, s.value)}${s.boosted ? ' ▲' : ''}`);
+        if (s.tempered) row.title = t('crafting.tooltip.tempered');
+        else if (s.greater) row.title = t('items.greater');
         aff.appendChild(row);
       }
       root.appendChild(aff);
     }
+    if (item.masterwork) root.appendChild(el('div', 'item-tip-masterwork', t('crafting.tooltip.masterwork', { rank: item.masterwork, max: MASTERWORK.maxRank })));
     if (item.aspect) {
       const asp = el('div', 'item-tip-aspect', `✦ ${aspectText(item.aspect.id, item.aspect.value)}`);
       const icon = artUrl(`aspects/${item.aspect.id}`);

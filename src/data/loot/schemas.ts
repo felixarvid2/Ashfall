@@ -233,6 +233,14 @@ export const ItemSchema = z.object({
   unique: z.string().optional(),
   /** Times an affix was rerolled at the blacksmith (each try costs more). */
   rerolls: z.number().int().nonnegative().optional(),
+  /** Affixes added by tempering at the blacksmith (endgame; at most two). */
+  tempered: z.array(RolledStatSchema).optional(),
+  /** Masterworking rank (endgame; 0–12, every fourth rank upgrades one affix further). */
+  masterwork: z.number().int().min(0).max(12).optional(),
+  /** Tempering charges left (endgame; absent = a full set of five). */
+  temperCharges: z.number().int().min(0).optional(),
+  /** Masterwork upgrades: indices into [...affixes, ...tempered], one per upgrade rank reached (+25 % each). */
+  masterworkUp: z.array(z.number().int().min(0)).optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;
 

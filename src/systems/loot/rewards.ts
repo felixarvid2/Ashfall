@@ -24,6 +24,8 @@ import type { GameContext } from '../../core/context';
 import type { Entity, World } from '../../core/ecs';
 import { PROGRESSION, UNIQUE_DEFS, dropTable } from '../../data/loot/db';
 import { heal } from '../combat';
+import { ensureMatrixStarted, grantMatrixXp } from '../endgame/matrix';
+import { tierMods } from '../endgame/tiers';
 import { recomputePlayer } from '../stats';
 import { addToGrid } from './inventory';
 import { generateItem, generateUnique, itemPowerFor, killXp, rollDrops, xpToNext } from './generate';
@@ -47,7 +49,11 @@ export function nextItemUid(ctx: GameContext): string {
 export function grantXp(world: World, ctx: GameContext, player: Entity, amount: number): number {
   const prog = world.get(player, Progression);
   if (!prog || amount <= 0) return 0;
-  if (prog.level >= PROGRESSION.maxLevel) return 0;
+  // Past the cap, experience fills the Neural Matrix (docs/endgame.md).
+  if (prog.level >= PROGRESSION.maxLevel) {
+    grantMatrixXp(ctx, amount);
+    return 0;
+  }
   prog.xp += amount;
   ctx.events.push({ type: 'xp', amount });
   let gained = 0;
@@ -58,7 +64,13 @@ export function grantXp(world: World, ctx: GameContext, player: Entity, amount: 
     gained++;
     ctx.events.push({ type: 'levelUp', level: prog.level });
   }
-  if (prog.level >= PROGRESSION.maxLevel) prog.xp = 0;
+  if (prog.level >= PROGRESSION.maxLevel) {
+    // The rest of the last level's experience starts the Matrix.
+    const excess = prog.xp;
+    prog.xp = 0;
+    ensureMatrixStarted(ctx);
+    grantMatrixXp(ctx, excess);
+  }
   if (gained > 0) {
     recomputePlayer(world, player);
     // Levelling up fully restores life, as in classic ARPGs.
@@ -85,21 +97,25 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
   const classId = player !== undefined ? (world.get(player, SkillUser)?.classId ?? 'bastion') : 'bastion';
   const requests = ctx.rewards;
   ctx.rewards = [];
+  const tier = tierMods(ctx);
   for (const req of requests) {
     const table = dropTable(req.table);
     if (player !== undefined && req.xp) {
       const magnet = world.get(player, StatusEffects)?.list.some((st) => st.id === 'magnet') ? PYLON_EFFECTS.magnetXp : 1;
-      grantXp(world, ctx, player, killXp(table, req.level) * magnet);
+      grantXp(world, ctx, player, killXp(table, req.level) * magnet * tier.xp);
       const lifeOnKill = world.get(player, CombatStats)?.lifeOnKill ?? 0;
       if (lifeOnKill > 0) heal(world, ctx, player, lifeOnKill);
     }
-    const drop = rollDrops(ctx.loot.rng, table, req.level, classId, () => nextItemUid(ctx), nameOf);
+    const drop = rollDrops(ctx.loot.rng, table, req.level, classId, () => nextItemUid(ctx), nameOf, tier);
+    // `count` guaranteed items; `itemPower` fixes their power (Deep Rift caches), else the table's level and the World Tier decide.
     if (req.rarity) {
-      const itemPower = itemPowerFor(req.level, ctx.loot.rng);
-      drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, nameOf }));
+      for (let n = 0; n < (req.count ?? 1); n++) {
+        const itemPower = req.itemPower ?? itemPowerFor(req.level, ctx.loot.rng) + tier.itemPower;
+        drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, nameOf, greaterBonus: tier.greaterChance }));
+      }
     }
     const unique = req.unique ? UNIQUE_DEFS.get(req.unique) : undefined;
-    if (unique) drop.items.push(generateUnique(ctx.loot.rng, unique, itemPowerFor(req.level, ctx.loot.rng), nextItemUid(ctx)));
+    if (unique) drop.items.push(generateUnique(ctx.loot.rng, unique, itemPowerFor(req.level, ctx.loot.rng) + tier.itemPower, nextItemUid(ctx)));
     const total = drop.items.length + (drop.gold > 0 ? 1 : 0);
     drop.items.forEach((item, i) => {
       const p = spawnGround(world, ctx, req.x, req.z, i, total);
@@ -109,7 +125,7 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
       ctx.events.push({ type: 'loot', entity: e, rarity: item.rarity, x: p.x, z: p.z });
     });
     // Restoration tier 3: more gold.
-    if (drop.gold > 0 && player !== undefined) drop.gold = Math.round(drop.gold * (1 + (world.get(player, AccountBonuses)?.goldFind ?? 0)));
+    if (drop.gold > 0 && player !== undefined) drop.gold = Math.round(drop.gold * (1 + (world.get(player, AccountBonuses)?.goldFind ?? 0)) * tier.gold);
     if (drop.gold > 0) {
       const p = spawnGround(world, ctx, req.x, req.z, drop.items.length, total);
       const e = world.create();

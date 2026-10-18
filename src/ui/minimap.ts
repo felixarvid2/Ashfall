@@ -7,6 +7,7 @@ import { t } from '../data/i18n';
 import type { PoiKind } from '../data/zones/zoneTypes';
 import { revealedFraction, type ZoneRuntime } from '../world/zone';
 import { extraHubs } from '../world/setPieces';
+import type { HarvestView } from '../world/harvest';
 import { artUrl } from './art';
 import { bridgeCellsOf, caveGrid } from '../data/zones/caves';
 
@@ -29,6 +30,8 @@ export interface MapMarker {
   x: number;
   z: number;
   color: string;
+  /** Default: a dot. */
+  shape?: 'dot' | 'square' | 'diamond';
 }
 
 /** A 2-D view transform: world (x, z) → canvas pixels, rotated so "up" matches the camera. */
@@ -75,6 +78,8 @@ export class MapUi {
   private readonly sin: number;
   /** Extra markers (quest objectives) drawn on both maps. */
   markers: MapMarker[] = [];
+  /** The region under the Ash Harvest and its closed caches: tinted and marked (null before World Tier 2). */
+  harvest: HarvestView | null = null;
   /** Extra line under the full map (Region Restoration). */
   extraInfo: (zone: ZoneRuntime) => string = () => '';
 
@@ -142,7 +147,7 @@ export class MapUi {
     const shown = this.shown()?.def.id;
     for (const z of zones) {
       const b = document.createElement('button');
-      b.className = `map-tab${z.def.id === shown ? ' active' : ''}`;
+      b.className = `map-tab${z.def.id === shown ? ' active' : ''}${z.def.id === this.harvest?.active.zoneId ? ' harvest' : ''}`;
       b.textContent = t(`zones.${z.def.key}.name`);
       b.addEventListener('click', () => {
         this.viewing = z.def.id;
@@ -191,7 +196,7 @@ export class MapUi {
       c.fillRect(r.x - r.size / 2 + 1, r.z - r.size / 2 + 1, r.size - 2, r.size - 2);
     }
     c.restore();
-    for (const m of this.markers) this.mark(c, ...project(v, m.x, m.z), m.color, 4, 'dot');
+    for (const m of this.markers) this.mark(c, ...project(v, m.x, m.z), m.color, 4, m.shape ?? 'dot');
     this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);
     c.strokeStyle = '#6a5a44';
     c.lineWidth = 2;
@@ -242,7 +247,7 @@ export class MapUi {
       const [sx, sy] = project(v, p.x, p.z);
       this.arrow(c, sx, sy, p.facing, 8);
     }
-    const extra = this.extraInfo(zone);
+    const extra = [this.extraInfo(zone), this.harvest?.active.zoneId === zone.def.id ? t('harvest.mapRegion') : ''].filter(Boolean).join(' · ');
     this.fullInfo.textContent = `${t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) })} · ${t('map.travel')}${extra ? ` · ${extra}` : ''}`;
   }
 
@@ -370,6 +375,18 @@ export class MapUi {
     }
     c.restore();
 
+    // Ash Harvest: the active region is tinted (the full map also gets an ember border).
+    const harvest = this.harvest?.active.zoneId === def.id ? this.harvest : null;
+    if (harvest) {
+      c.fillStyle = 'rgba(255, 110, 30, 0.1)';
+      c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+      if (range === Infinity) {
+        c.strokeStyle = 'rgba(255, 138, 58, 0.85)';
+        c.lineWidth = 4;
+        c.strokeRect(2, 2, c.canvas.width - 4, c.canvas.height - 4);
+      }
+    }
+
     // Markers in screen space so they stay upright.
     const found = zone.found;
     for (const poi of def.pois) {
@@ -382,6 +399,9 @@ export class MapUi {
     for (const tp of def.teleporters) {
       if (!zone.discovered.has(tp.id) || !near(tp.x, tp.z)) continue;
       this.mark(c, ...project(v, tp.x, tp.z), '#5ad2ff', 5, 'diamond');
+    }
+    for (const cache of harvest?.caches ?? []) {
+      if (near(cache.x, cache.z)) this.mark(c, ...project(v, cache.x, cache.z), '#ff8a3a', 5, 'diamond');
     }
     // Border crossings to other regions.
     for (const g of def.gates) {
@@ -402,7 +422,7 @@ export class MapUi {
           sy = v.cy + (dy / d) * max;
         }
       }
-      this.mark(c, sx, sy, m.color, 5, 'dot');
+      this.mark(c, sx, sy, m.color, m.shape ? 6 : 5, m.shape ?? 'dot');
     }
   }
 

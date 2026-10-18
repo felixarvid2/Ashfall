@@ -570,7 +570,7 @@ export const Turret = defineComponent<Turret>('Turret');
 export interface Interactable {
   /** Point-of-interest id (or teleporter id). */
   poi: string;
-  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject' | 'valve' | 'cage' | 'compressor' | 'lever' | 'mirror';
+  kind: import('../data/zones/zoneTypes').PoiKind | 'teleporter' | 'questObject' | 'stash' | 'portal' | 'generator' | 'instanceKey' | 'cache' | 'eventObject' | 'valve' | 'cage' | 'compressor' | 'lever' | 'mirror' | 'beacon' | 'harvestCache' | 'riftObelisk';
   /** Use radius (m). */
   radius: number;
   /** Spent for good (opened, read, claimed). */

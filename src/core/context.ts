@@ -61,6 +61,8 @@ export interface GameContext {
   quests?: import('../systems/quests').QuestRuntime;
   /** Account-wide progress (Echo Relics, Restoration); absent in headless sims. */
   account?: import('./account').AccountData;
+  /** This character's endgame progress (Neural Matrix, glyphs, shards, recipes, materials; docs/endgame.md). */
+  endgame?: import('./save').SaveData['endgame'];
 }
 
 export interface RewardRequest {
@@ -72,6 +74,9 @@ export interface RewardRequest {
   xp: boolean;
   /** Also drop one guaranteed item of this rarity (debug, boss chests). */
   rarity?: Rarity;
+  /** How many guaranteed items of `rarity` (default 1), and their fixed item power (default: by `level`). */
+  count?: number;
+  itemPower?: number;
   /** Also drop this specific unique (quest choices). */
   unique?: string;
 }

@@ -16,6 +16,8 @@ import type { EliteAffix } from '../data/elites';
 import { createSetPieces, extraHubs, type SetPieceState } from './setPieces';
 import { createEvents, type EventState } from './worldEvents';
 import { createStorm, type StormState } from './storm';
+import { HARVEST } from '../data/endgame/harvest';
+import { harvestPackMods, mixedTemplate, scaledCount } from './harvest';
 
 /** A pack wakes up when the player is this close… */
 export const PACK_WAKE = 55;
@@ -171,24 +173,33 @@ export function decodeRevealed(zone: ZoneRuntime, data: string): void {
 /** Spawn one pack's members around its anchor, with an occasional champion pack or rare elite. */
 function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string, state: PackState): void {
   const spawn = zone.def.packs.find((p) => p.id === id)!;
-  const template = packTemplate(spawn.template);
   const rng = new Rng(`${id}-${state.spawns}-${ctx.rng.seed}`);
   state.spawns++;
+  // Ash Harvest (docs/endgame.md): in the active region packs are bigger, more often elite and partly from other regions.
+  const harvest = harvestPackMods(ctx, zone.def.id);
+  const mixed = harvest ? mixedTemplate(harvest, zone.def.id, rng) : null;
+  const template = packTemplate(mixed ?? spawn.template);
   const level = monsterLevel(world, ctx);
   const ids: string[] = [];
   for (const m of template.members) {
     if (m.chance !== undefined && !rng.chance(m.chance)) continue;
-    const n = rng.int(m.count[0], m.count[1]);
+    const rolled = rng.int(m.count[0], m.count[1]);
+    const n = harvest ? scaledCount(rolled, harvest.packMul, rng) : rolled;
     for (let i = 0; i < n; i++) ids.push(m.enemy);
   }
-  const champion = rng.chance(template.championChance);
+  const champion = rng.chance(template.championChance * (harvest?.eliteMul ?? 1));
   // Named elites (the Absorbed), the Choir and rooted turrets are groups of their own: no affixes, no copies.
   const plain = (enemy: string) => {
     const d = enemyDef(enemy);
     return !d.named && !d.choir && !d.rooted && d.lifespan === undefined;
   };
+  // Another region's pack brings no set-piece enemies along (the Absorbed, the Choir, rooted turrets, giants).
+  if (mixed) {
+    const kept = ids.filter((enemy) => plain(enemy) && !HARVEST.mixExcluded.includes(enemy));
+    if (kept.length) ids.splice(0, ids.length, ...kept);
+  }
   const rarePicks = ids.flatMap((enemy, i) => (plain(enemy) ? [i] : []));
-  const rareIndex = !champion && rng.chance(template.rareChance) && rarePicks.length ? rarePicks[rng.int(0, rarePicks.length - 1)]! : -1;
+  const rareIndex = !champion && rng.chance(template.rareChance * (harvest?.eliteMul ?? 1)) && rarePicks.length ? rarePicks[rng.int(0, rarePicks.length - 1)]! : -1;
   const shared = champion ? championAffixes(rng) : [];
   const extra: Entity[] = [];
   state.members = ids.map((enemy, i) => {

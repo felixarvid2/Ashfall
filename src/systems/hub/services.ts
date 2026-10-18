@@ -11,6 +11,10 @@ import { ASPECT_DEFS, BASE_ITEMS, rarityDef } from '../../data/loot/db';
 import type { Item } from '../../data/loot/schemas';
 import { addToGrid } from '../loot/inventory';
 import { generateItem, itemPowerFor, rollAffixes, salvageValue } from '../loot/generate';
+import type { TierMods } from '../endgame/tiers';
+
+/** The part of the World Tier the shops use: bonus item power and greater-affix chance (neutral in the campaign). */
+export type ShopTier = Pick<TierMods, 'itemPower' | 'greaterChance'>;
 
 export type ServiceResult = { ok: true } | { ok: false; reason: 'gold' | 'full' | 'empty' | 'invalid' | 'noAspect' | 'cacheFull' | 'type' };
 
@@ -18,10 +22,12 @@ const fail = (reason: Exclude<ServiceResult, { ok: true }>['reason']): ServiceRe
 
 // ---- Trader --------------------------------------------------------------------------
 
-export function rollVendorStock(rng: Rng, level: number, classId: string, uid: () => string, nameOf?: (baseId: string) => string): Item[] {
+/** The trader's stock; at a higher World Tier it rolls with the tier's item power and greater-affix chance like drops do. */
+export function rollVendorStock(rng: Rng, level: number, classId: string, uid: () => string, nameOf?: (baseId: string) => string, tier?: ShopTier): Item[] {
   return Array.from({ length: VENDOR.stockSize }, () =>
     generateItem(rng, {
-      itemPower: itemPowerFor(level, rng),
+      itemPower: itemPowerFor(level, rng) + (tier?.itemPower ?? 0),
+      ...(tier ? { greaterBonus: tier.greaterChance } : {}),
       classId,
       uid: uid(),
       rarity: rng.weighted(VENDOR.rarity),
@@ -64,8 +70,11 @@ export function rerollCost(item: Item): number {
   return Math.round(BLACKSMITH.rerollBase * (item.itemPower / 100) * BLACKSMITH.rerollGrowth ** (item.rerolls ?? 0));
 }
 
-/** Replace one affix with a new random one the item doesn't already have. */
-export function rerollAffix(rng: Rng, inv: Inventory, item: Item, affixIndex: number): ServiceResult {
+/**
+ * Replace one affix with a new random one the item doesn't already have. The new affix is rolled at the item's own
+ * power (it already carries the tier it dropped at), with the World Tier's greater-affix chance on top.
+ */
+export function rerollAffix(rng: Rng, inv: Inventory, item: Item, affixIndex: number, tier?: ShopTier): ServiceResult {
   const old = item.affixes[affixIndex];
   const base = BASE_ITEMS.get(item.base);
   if (!old || !base || item.unique || item.crystal) return fail('invalid');
@@ -73,7 +82,7 @@ export function rerollAffix(rng: Rng, inv: Inventory, item: Item, affixIndex: nu
   if (inv.gold < cost) return fail('gold');
   const taken = new Set(item.affixes.map((a) => a.affix));
   // Roll a few candidates and keep the first that is new to the item.
-  const candidates = rollAffixes(rng, base.type, 8, item.itemPower, rarityDef(item.rarity).greaterChance);
+  const candidates = rollAffixes(rng, base.type, 8, item.itemPower, Math.min(1, rarityDef(item.rarity).greaterChance + (tier?.greaterChance ?? 0)));
   const next = candidates.find((c) => !taken.has(c.affix));
   if (!next) return fail('invalid');
   inv.gold -= cost;

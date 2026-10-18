@@ -27,6 +27,7 @@ import { at } from '../data/zones/cinderFlats';
 import { monsterLevel } from '../systems/encounter';
 import { grantXp } from '../systems/loot/rewards';
 import { spawnEnemy } from './spawn';
+import { harvestEventCooldownMul } from './harvest';
 import { makeElite, type ZoneRuntime } from './zone';
 
 export type EventType =
@@ -334,7 +335,8 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
 function finish(world: World, ctx: GameContext, zone: ZoneRuntime, id: string, ev: EventState, result: Tier | 'failed'): void {
   ev.state = 'cooldown';
   ev.result = result;
-  ev.readyAt = ctx.time + EVENT_TUNING.cooldown;
+  // Ash Harvest: events in the active region come back twice as fast.
+  ev.readyAt = ctx.time + EVENT_TUNING.cooldown * harvestEventCooldownMul(ctx);
   for (const o of ev.objects) {
     if (!world.isAlive(o)) continue;
     // Enemies (the hunted elite) stay; event props go.

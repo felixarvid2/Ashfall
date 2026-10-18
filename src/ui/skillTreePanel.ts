@@ -4,6 +4,7 @@
  * bar editor and a full respec for gold.
  */
 import { placeTooltipForPortrait } from './itemTooltip';
+import type { MatrixPanel } from './matrixPanel';
 import { t } from '../data/i18n';
 import { artUrl } from './art';
 import { classDef, skill } from '../data/db';
@@ -20,6 +21,8 @@ export interface SkillTreeView {
   compiled: Record<string, CompiledSkill>;
   respecCost: number;
   gold: number;
+  /** The Neural Matrix tab shows from the level cap on. */
+  matrixUnlocked: boolean;
 }
 
 export interface SkillTreeActions {
@@ -57,7 +60,11 @@ export class SkillTreePanel {
   private readonly root: HTMLDivElement;
   private readonly body: HTMLDivElement;
   private readonly tooltip: HTMLDivElement;
+  private readonly title: HTMLHeadingElement;
   private selectedSlot: number | null = null;
+  /** The Neural Matrix view (endgame) shown in place of the skill branches. */
+  private matrix: MatrixPanel | null = null;
+  private matrixMode = false;
 
   constructor(
     parent: HTMLElement,
@@ -70,6 +77,7 @@ export class SkillTreePanel {
     const title = document.createElement('h2');
     title.textContent = t('tree.title');
     this.body = document.createElement('div');
+    this.title = title;
     this.root.append(title, this.body);
     this.tooltip = document.createElement('div');
     this.tooltip.className = 'item-tooltip';
@@ -82,15 +90,52 @@ export class SkillTreePanel {
     return !this.root.hidden;
   }
 
+  /** Adds the Neural Matrix as a second view of this panel. */
+  setMatrix(matrix: MatrixPanel): void {
+    this.matrix = matrix;
+    matrix.onBack = () => this.showMatrix(false);
+  }
+
+  get matrixOpen(): boolean {
+    return this.open && this.matrixMode;
+  }
+
   toggle(): void {
     this.root.hidden = !this.root.hidden;
     this.selectedSlot = null;
     this.tooltip.hidden = true;
-    if (this.open) this.refresh();
+    if (!this.open) this.matrix?.hide();
+    if (this.open) {
+      this.matrixMode = false;
+      this.syncMode();
+      this.refresh();
+    }
+  }
+
+  /** Switch between the skill tree and the Neural Matrix. */
+  showMatrix(on: boolean): void {
+    if (!this.matrix) return;
+    this.matrixMode = on;
+    this.selectedSlot = null;
+    this.tooltip.hidden = true;
+    this.syncMode();
+    if (on) this.matrix.show();
+    else this.matrix.hide();
+    this.refresh();
+  }
+
+  private syncMode(): void {
+    this.root.classList.toggle('matrix-mode', this.matrixMode);
+    this.title.textContent = t(this.matrixMode ? 'matrix.title' : 'tree.title');
   }
 
   refresh(): void {
     if (!this.open) return;
+    if (this.matrixMode && this.matrix) {
+      this.body.replaceChildren(this.matrix.element);
+      this.matrix.refresh();
+      return;
+    }
     const v = this.view();
     const header = document.createElement('div');
     header.className = 'tree-header';
@@ -104,7 +149,18 @@ export class SkillTreePanel {
     reset.addEventListener('click', () => {
       if (confirm(t('tree.resetConfirm', { gold: v.respecCost }))) this.actions.reset();
     });
-    header.append(points, reset);
+    const tools = document.createElement('span');
+    tools.className = 'tree-tools';
+    if (v.matrixUnlocked && this.matrix) {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'matrix-tab';
+      tab.textContent = t('matrix.tab');
+      tab.addEventListener('click', () => this.showMatrix(true));
+      tools.append(tab);
+    }
+    tools.append(reset);
+    header.append(points, tools);
 
     // Action bar editor: click a slot, then a learned skill. Right-click clears.
     const bar = document.createElement('div');

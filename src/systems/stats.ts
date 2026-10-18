@@ -163,6 +163,12 @@ export function computePlayerStats(
   };
 }
 
+/** Extra effects from outside the player entity (the Neural Matrix); set once by the game, read on every recompute. */
+let outsideEffects: (() => Effect[]) | undefined;
+export function setExtraEffects(fn: (() => Effect[]) | undefined): void {
+  outsideEffects = fn;
+}
+
 /** Apply computed stats to the player entity (after equipping, levelling up, loading). */
 export function recomputePlayer(world: World, e: Entity): PlayerStats | null {
   const user = world.get(e, SkillUser);
@@ -172,7 +178,11 @@ export function recomputePlayer(world: World, e: Entity): PlayerStats | null {
   const cls = classDef(user.classId);
   const skillTree = tree(user.classId);
   const account = world.get(e, AccountBonuses)?.effects ?? [];
-  const stats = computePlayerStats(cls, prog.level, inv.equipped, [...treeEffects(skillTree, user.tree), ...account]);
+  const stats = computePlayerStats(cls, prog.level, inv.equipped, [
+    ...treeEffects(skillTree, user.tree),
+    ...account,
+    ...(outsideEffects?.() ?? []),
+  ]);
   user.compiled = compileSkills(learnedSkills(skillTree, user.tree), stats.effects);
   // Forget action-bar entries for skills that are no longer learned (after a respec).
   user.slots = user.slots.map((id) => (id && user.compiled[id] ? id : null));

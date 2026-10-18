@@ -55,6 +55,8 @@ export const CONDITIONS = [
   // Attacker-side conditions (evaluated on the one dealing damage).
   'highResource',
   'hasBarrier',
+  // The attacker has more than 80 % of its life (Neural Matrix rare nodes).
+  'highLife',
   'evasive',
   'stealthed',
   // The attacker is one of the player's minions.
