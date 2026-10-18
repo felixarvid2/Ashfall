@@ -30,8 +30,6 @@ describe('painted art', () => {
     for (const e of ENEMIES) if (e.dropTable === 'dt.boss') expect(ART_FILES.has(`bosses/${e.id}`), e.id).toBe(true);
     for (const z of ZONES) {
       const slug = z.id.replace(/^zone\./, '');
-      // The Core's painting and map are made in R5-D; until then its card borrows the Mines' and its map is drawn from the grid.
-      if (slug === 'the_core') continue;
       expect(ART_FILES.has(`regions/${slug}`), slug).toBe(true);
       expect(ART_FILES.has(`maps/${slug}`), slug).toBe(true);
     }

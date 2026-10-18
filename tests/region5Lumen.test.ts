@@ -19,7 +19,7 @@ import { blastSystem } from '../src/world/interactables';
 import { activeMemory, bossSystem } from '../src/systems/boss';
 import { applyDamage, kill } from '../src/systems/combat';
 import { createQuestRuntime } from '../src/systems/quests';
-import { LUMEN_TUNING, chooseLumen, lumenGateSpots } from '../src/world/lumen';
+import { LUMEN_TUNING, chooseLumen, lumenCameraFocus, lumenGateSpots } from '../src/world/lumen';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from '../src/world/setPieces';
 import { spawnPlayer } from '../src/world/spawn';
 import { createZoneRuntime } from '../src/world/zone';
@@ -69,6 +69,21 @@ describe('Lumen: the arena', () => {
     expect(events(f.ctx).some((e) => e.type === 'banner' && e.key === 'bosses.lumen.intro')).toBe(true);
     const scene = { ...MENU_SCENE, phase: 'play' as const, zoneId: THE_CORE.id, bossEngaged: true };
     expect(pickMusic(scene)).toBe('music.boss');
+  });
+
+  it('leans the camera toward Lumen while it is fought, so the boss stays on screen', () => {
+    const f = setup();
+    const pt = f.world.req(f.player, Transform);
+    // Before the fight: on the player.
+    expect(lumenCameraFocus(f.world, f.zone, pt.x, pt.z)).toEqual({ x: pt.x, z: pt.z });
+    start(f);
+    const focus = lumenCameraFocus(f.world, f.zone, pt.x, pt.z);
+    // 20 m away: half the way, capped; straight toward the boss, never past it.
+    expect(focus.x).toBeCloseTo(pt.x);
+    const lean = focus.z - pt.z;
+    expect(lean).toBeCloseTo(Math.min(20 * LUMEN_TUNING.frameLean, LUMEN_TUNING.frameMax));
+    expect(lean).toBeGreaterThan(3);
+    expect(lean).toBeLessThanOrEqual(LUMEN_TUNING.frameMax);
   });
 
   it('has a string for every banner, memory and line it uses', () => {
@@ -235,6 +250,23 @@ describe('Lumen: phase 2, the memories', () => {
     expect(st.state).toBe('fight');
     expect(st.gates.length).toBeGreaterThan(0);
     expect(world.req(st.boss!, Boss).phase).toBe(0);
+  });
+
+  it('the beat\'s shape stands in front of the player, not beside the distant boss', () => {
+    const f = setup();
+    const { world, ctx, player } = f;
+    // Fighting from near the edge of the arena, 26 m from Lumen.
+    const pt = world.req(player, Transform);
+    pt.z = pt.prevZ = H.z - 26;
+    const { boss, b, h } = start(f);
+    h.current = h.max * 0.3;
+    run(world, ctx, SYSTEMS, 2);
+    expect(b.phase).toBe(2);
+    const ft = world.req(b.form!, Transform);
+    const bt = world.req(boss, Transform);
+    expect(Math.hypot(ft.x - pt.x, ft.z - pt.z)).toBeLessThanOrEqual(6);
+    expect(Math.hypot(ft.x - pt.x, ft.z - pt.z)).toBeGreaterThanOrEqual(2);
+    expect(Math.hypot(ft.x - bt.x, ft.z - bt.z)).toBeLessThan(Math.hypot(pt.x - bt.x, pt.z - bt.z));
   });
 
   it('dying in the beat closes it: the shape is gone and the choice is asked again next time', () => {

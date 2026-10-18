@@ -1277,7 +1277,8 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 2,
     aggroRange: 60,
     preferredRange: [10, 40],
-    scale: 2.2,
+    // Tall enough (4.5 m x 2.6 x the boss 1.3 = 15 m) to stand over the arena and be seen from well out in it.
+    scale: 2.6,
     glow: '#fff0c8',
     collider: { radius: 3.2, mass: 1000 },
     // Pays nothing by itself: the set piece (src/world/lumen.ts) pays the boss table, which needs no portrait.
@@ -1598,7 +1599,7 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 1.8,
     aggroRange: 30,
     collider: { radius: 2.2, mass: 200 },
-    dropTable: 'dt.core_boss',
+    dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 4.6, arcDeg: 140, windup: 1.5, recovery: 1.0, cooldown: 1.4, damageType: 'physical', knockback: 3.5 },
   },
   {
@@ -1618,7 +1619,7 @@ export const ENEMIES: EnemyInput[] = [
     preferredRange: [6, 14],
     scale: 2.0,
     collider: { radius: 1.4, mass: 200 },
-    dropTable: 'dt.core_boss',
+    dropTable: 'dt.boss',
     attack: { kind: 'projectile', windup: 1.0, cooldown: 2.6, speed: 10, radius: 0.4, maxRange: 20, damageType: 'energy', burst: 3, burstInterval: 0.25, spreadDeg: 14 },
     rooted: true,
     choir: true,
@@ -1639,7 +1640,7 @@ export const ENEMIES: EnemyInput[] = [
     aggroRange: 28,
     scale: 0.88,
     collider: { radius: 2.2, mass: 300 },
-    dropTable: 'dt.core_boss',
+    dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 5, arcDeg: 220, windup: 1.3, recovery: 1.0, cooldown: 1.9, damageType: 'physical', knockback: 4 },
     shieldAlly: { every: 8, radius: 14, duration: 4, count: 3 },
   },

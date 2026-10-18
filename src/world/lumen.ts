@@ -25,6 +25,12 @@ export const LUMEN_TUNING = {
   lifeMul: 2,
   /** Away this long after a win and the Heart can be fought again. */
   rearm: 600,
+  /**
+   * The camera leans toward Lumen while it is fought (the arena is 80 m across, the camera shows about 25): half the
+   * way to it, but never more than this many metres off the player (further and the player slides under the hotbar or off the top).
+   */
+  frameLean: 0.5,
+  frameMax: 5,
 };
 
 export interface LumenState {
@@ -62,6 +68,23 @@ export function lumenGateSpots(): { x: number; z: number }[] {
     const a = (i / n) * Math.PI * 2;
     return { x: LUMEN_HEART.x + Math.sin(a) * LUMEN_TUNING.ring, z: LUMEN_HEART.z + Math.cos(a) * LUMEN_TUNING.ring };
   });
+}
+
+/**
+ * Where the camera should look during the fight: a lean from the player toward Lumen so the boss (a tall structure)
+ * stays on screen at the ranges the arena is fought from. The player's own position when there is no fight.
+ */
+export function lumenCameraFocus(world: World, zone: ZoneRuntime, px: number, pz: number): { x: number; z: number } {
+  const st = zone.setPieces.lumen;
+  if (!st || st.state !== 'fight' || st.boss === null || !world.isAlive(st.boss)) return { x: px, z: pz };
+  const bt = world.get(st.boss, Transform);
+  if (!bt) return { x: px, z: pz };
+  const dx = bt.x - px;
+  const dz = bt.z - pz;
+  const d = Math.hypot(dx, dz);
+  if (d < 1e-3) return { x: px, z: pz };
+  const lean = Math.min(d * LUMEN_TUNING.frameLean, LUMEN_TUNING.frameMax);
+  return { x: px + (dx / d) * lean, z: pz + (dz / d) * lean };
 }
 
 function closeArena(world: World, st: LumenState): void {

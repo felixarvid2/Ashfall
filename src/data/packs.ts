@@ -301,8 +301,8 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'core_halls_fire',
     members: [
       { enemy: 'shade_smelter', count: [1, 2] },
-      { enemy: 'shade_sentinel', count: [1, 1], chance: 0.5 },
-      { enemy: 'shade_walker', count: [2, 3], chance: 0.6 },
+      { enemy: 'shade_sentinel', count: [1, 1], chance: 0.6 },
+      { enemy: 'shade_walker', count: [3, 4] },
       { enemy: 'absorbed_lenn', count: [1, 1], chance: 0.12 },
       { enemy: 'absorbed_rhee', count: [1, 1], chance: 0.12 },
     ],

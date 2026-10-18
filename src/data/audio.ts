@@ -21,8 +21,9 @@ export const ZONE_AUDIO: Record<string, ZoneAudio> = {
   'zone.refinery_district': { music: 'music.refinery_district', boss: 'music.boss', ambience: 'amb.industrial' },
   'zone.hydroponic_vaults': { music: 'music.hydroponic_vaults', boss: 'music.boss', ambience: 'amb.hum' },
   'zone.deep_mines': { music: 'music.deep_mines', boss: 'music.boss_mines', ambience: 'amb.mine' },
-  // The Core: placeholder exploration track until a fitting choral piece is found (docs/regions/the-core.md);
-  // the bosses, Lumen above all, get the main boss theme.
+  // The Core: music.deep_mines is a PLACEHOLDER on purpose (the Deep Mines' track also plays after the Lumen win),
+  // kept until a Core track (a fitting choral piece, docs/regions/the-core.md) exists; then change `music` here only.
+  // The bosses, Lumen above all, get the main boss theme.
   'zone.the_core': { music: 'music.deep_mines', boss: 'music.boss', ambience: 'amb.hum' },
 };
 

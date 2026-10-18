@@ -7,7 +7,7 @@ import { AwarenessMarkers, NavDebugOverlay } from './navOverlay';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { Boss, CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CLASS_WEAPONS } from '../data/weapons';
@@ -680,6 +680,9 @@ export class GameRenderer {
     // colour, which read as a black floor.)
     const map = this.instanceFloorTexture(theme.ground ?? 'military_concrete', w, d);
     const tint = new THREE.Color(theme.floor).lerp(new THREE.Color('#ffffff'), 0.7);
+    // Pale painted floors (the Core's pearl stone) keep the brightness they are given in the zone, or the lamps blow them out.
+    const gain = BASE_LOOK[(theme.ground ?? '') as GroundTexture]?.gain;
+    if (gain) tint.multiplyScalar(gain);
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map, color: tint, roughness: 0.95, metalness: 0.05 }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.set((bounds.minX + bounds.maxX) / 2, 0.01, (bounds.minZ + bounds.maxZ) / 2);
@@ -1130,6 +1133,9 @@ export class GameRenderer {
         }
         // Tall props between the camera and the player turn see-through (smokestacks, towers).
         this.setFaded(obj, this.occludes(r, tr.x, tr.z));
+      } else if (world.get(e, Boss)?.script === 'lumen') {
+        // Lumen is a rooted tower of light: it fades the same way when the player stands behind it.
+        this.setFaded(obj, this.occludes(r, tr.x, tr.z));
       }
       obj.position.set(
         tr.prevX + (tr.x - tr.prevX) * alpha,
@@ -1469,9 +1475,9 @@ export class GameRenderer {
     return true;
   }
 
-  /** Follow a world position with the camera and draw a frame. */
-  render(frameDt: number, followX: number, followY: number, followZ: number): void {
-    this.rig.update(followX, followY, followZ, frameDt);
+  /** Follow a world position with the camera and draw a frame; `look` moves the camera's focus off the player (a boss fight). */
+  render(frameDt: number, followX: number, followY: number, followZ: number, look?: { x: number; z: number }): void {
+    this.rig.update(look?.x ?? followX, followY, look?.z ?? followZ, frameDt);
     const f = this.rig.focusPoint;
     // Keep the shadow frustum centred on the action.
     this.playerLight.position.set(followX, 4.5, followZ);

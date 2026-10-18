@@ -80,7 +80,7 @@ export function setupCore(world: World, ctx: GameContext, rt: InstanceRuntime, r
       for (let i = 0; i < def.pillars; i++) {
         const e = world.create();
         world.add(e, Transform, makeTransform(c.x + rng.range(-6, 6), 0, c.z + rng.range(-6, 6), 0));
-        world.add(e, Renderable, { assetId: 'prop.core_column', scale: 0.5, glow: '#ffe39a' });
+        world.add(e, Renderable, { assetId: 'prop.core_column', scale: 0.85, glow: '#ff9a2a' });
         world.add(e, Faction, { team: 'enemy' });
         world.add(e, Health, { current: PILLAR.life, max: PILLAR.life });
         world.add(e, Collider, { radius: 0.9, mass: Infinity, layer: 'ground', isStatic: true });

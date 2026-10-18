@@ -101,8 +101,6 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   { id: 'dt.locked_chest', itemChance: 1, extraItems: 2, goldChance: 1, gold: [12, 24], crystalChance: 0.35, rarityBias: { rare: 3, legendary: 2.5 }, minRarity: 'magic', xp: 0 },
   // Bosses and their caches: lots of loot, a guaranteed legendary comes on top (first kill).
   { id: 'dt.boss', itemChance: 1, extraItems: 3, goldChance: 1, gold: [30, 60], crystalChance: 0.6, rarityBias: { rare: 3, legendary: 4, unique: 3 }, minRarity: 'magic', xp: 400 },
-  // The Core's dungeon bosses: a boss's drops (no painted portrait yet, which `dt.boss` would require).
-  { id: 'dt.core_boss', itemChance: 1, extraItems: 3, goldChance: 1, gold: [30, 60], crystalChance: 0.6, rarityBias: { rare: 3, legendary: 4, unique: 3 }, minRarity: 'magic', xp: 400 },
   { id: 'dt.dungeon_cache', itemChance: 1, extraItems: 2, goldChance: 1, gold: [20, 40], crystalChance: 0.4, rarityBias: { rare: 3, legendary: 3 }, minRarity: 'magic', xp: 0 },
   { id: 'dt.event_bronze', itemChance: 0.8, goldChance: 1, gold: [8, 14], crystalChance: 0.1, rarityBias: { magic: 2 }, xp: 0 },
   { id: 'dt.event_silver', itemChance: 1, extraItems: 1, goldChance: 1, gold: [14, 24], crystalChance: 0.2, rarityBias: { rare: 2 }, minRarity: 'magic', xp: 0 },

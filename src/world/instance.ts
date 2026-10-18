@@ -339,7 +339,8 @@ function populate(world: World, rt: InstanceRuntime, room: InstanceRoom): void {
   if (room.kind === 'start' || (room.kind === 'boss' && !rt.def.floors)) return;
   const c = roomCenter(room);
   const sc = rt.def.floors ? shaftScaling(rt.core?.shaft?.floor ?? 1) : null;
-  const packs = rt.rng.int(rt.def.packsPerRoom[0], rt.def.packsPerRoom[1]) + (sc?.packs ?? 0);
+  const extra = sc?.packs ?? 0;
+  const packs = rt.rng.int(rt.def.packsPerRoom[0], rt.def.packsPerRoom[1]) + Math.floor(extra) + (extra % 1 > 0 && rt.rng.chance(extra % 1) ? 1 : 0);
   for (let p = 0; p < packs; p++) {
     const template = packTemplate(rt.rng.pick(rt.def.packs));
     const elite = sc

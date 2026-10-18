@@ -142,7 +142,7 @@ import { VENDOR } from './data/services';
 import { championAffixes, eliteSystem } from './systems/elites';
 import { activeMemory, bossSystem, inBeat, resetBoss } from './systems/boss';
 import { CREDIT_KEYS, epilogueKeys, type LumenChoice } from './data/lumen';
-import { chooseLumen } from './world/lumen';
+import { chooseLumen, lumenCameraFocus } from './world/lumen';
 import { EpilogueScreen } from './ui/epilogue';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
@@ -723,9 +723,8 @@ export class Game {
     this.lastTarget = null;
     // Arriving in another region: its painting and name sweep in, once the zone is drawing.
     if (old?.def.id !== id) {
-      // The Core has no painting yet (R5-D): it borrows the Deep Mines card, since the way in is Kade's drill.
       const slug = id.replace(/^zone\./, '');
-      const card = artUrl(`regions/${slug}`) ?? (slug === 'the_core' ? artUrl('regions/deep_mines') : null);
+      const card = artUrl(`regions/${slug}`);
       if (card) this.pendingCard = { image: card, name: t(`zones.${def.key}.name`), sub: t('hud.regionNumber', { n: def.region }), frames: 4 };
     }
   }
@@ -877,7 +876,7 @@ export class Game {
     const tr = this.playerTransform;
     const px = tr.prevX + (tr.x - tr.prevX) * alpha;
     const pz = tr.prevZ + (tr.z - tr.prevZ) * alpha;
-    this.renderer.render(frameDt, px, 0, pz);
+    this.renderer.render(frameDt, px, 0, pz, this.zone ? lumenCameraFocus(this.world, this.zone, px, pz) : undefined);
     audio.setListener(px, pz, this.ctx.cameraYaw);
     this.updateAudio(px, pz, frameDt);
     this.damageNumbers.update(frameDt, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));

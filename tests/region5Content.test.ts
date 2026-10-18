@@ -45,13 +45,13 @@ const clearField = (world: World, ctx: ReturnType<typeof makeCtx>) => {
 const alive = (world: World) => world.query(EnemyAI).filter((e) => !world.has(e, Dead));
 const objects = (world: World, kind: string) => world.query(Interactable).filter((e) => world.req(e, Interactable).kind === kind);
 
-function inside(defId: string, poi = `dungeon.${defId}`, level = 45) {
+function inside(defId: string, poi = `dungeon.${defId}`, level = 45, seed = 's1') {
   const world = new World();
   const zone = createZoneRuntime(THE_CORE);
   const ctx = makeCtx({ worldHalfSize: 2600, quests: createQuestRuntime(), account: emptyAccount(), zone, zoneLevels: [40, 50] });
   const player = spawnPlayer(world, 'bastion', 0, 0);
   world.req(player, Health).max = world.req(player, Health).current = 1e7;
-  const rt = buildInstance(world, ctx, defId, poi, 's1', level, { x: 10, z: 10 });
+  const rt = buildInstance(world, ctx, defId, poi, seed, level, { x: 10, z: 10 });
   ctx.instance = rt;
   moveTo(world, player, rt.start.x, rt.start.z);
   return { world, ctx, zone, player, rt };
@@ -168,6 +168,29 @@ describe('The Endless Shaft', () => {
     expect(shaftScaling(0)).toEqual(shaftScaling(1));
   });
 
+  it('is denser from floor 2 and keeps rising every floor until the cap', () => {
+    expect(shaftScaling(2).packs).toBeGreaterThan(0);
+    const capFloor = Math.ceil(SHAFT_TUNING.maxPacks / SHAFT_TUNING.packsPerFloor) + 1;
+    for (let f = 2; f <= capFloor; f++) expect(shaftScaling(f).packs, `floor ${f}`).toBeGreaterThan(shaftScaling(f - 1).packs);
+    expect(shaftScaling(capFloor + 5).packs).toBe(SHAFT_TUNING.maxPacks);
+    expect(shaftScaling(2).champion).toBeGreaterThan(shaftScaling(1).champion);
+    expect(shaftScaling(2).lifeMul).toBeGreaterThan(1);
+  });
+
+  it('floor 2 really holds more monsters than floor 1 (averaged over layouts)', () => {
+    const total = (floor: number) => {
+      let n = 0;
+      for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) {
+        const g = inside('core_endless_shaft', 'dungeon.core_endless_shaft', 45, seed);
+        g.rt.core!.shaft!.floor = floor;
+        wakeAll(g);
+        n += alive(g.world).length;
+      }
+      return n;
+    };
+    expect(total(2)).toBeGreaterThan(total(1) * 1.2);
+  });
+
   it('keeps monsters within the Core level range even when the dungeon asks for 51', () => {
     const { rt } = inside('core_endless_shaft', 'dungeon.core_endless_shaft', 51);
     expect(rt.level).toBe(50);
@@ -200,6 +223,7 @@ describe('The Endless Shaft', () => {
     expect(signals(ctx)).toContainEqual({ type: 'objective', id: 'dungeon.core_endless_shaft.floor_8' });
     expect(bestShaftFloor(zone.found)).toBe(9);
     expect(counts[8]!).toBeGreaterThan(counts[0]! * 1.5);
+    expect(counts[1]!).toBeGreaterThan(counts[0]!);
     expect(objectiveText(world, rt, t)).toContain('deepest: 9');
   });
 
@@ -364,6 +388,22 @@ describe('The Chamber of Creation', () => {
 
 describe('Memory Mirrors', () => {
   const MIRRORS = [['core.mirror.0', 'core_mirror_ash', 'ash'], ['core.mirror.1', 'core_mirror_refinery', 'refinery'], ['core.mirror.2', 'core_mirror_vault', 'vault']] as const;
+
+  it('hold comparable crowds: at least a few shades in every populated room, in all three', () => {
+    for (const [, id] of MIRRORS) {
+      const def = INSTANCES.find((d) => d.id === id)!;
+      let least = 0;
+      for (const p of def.packs) least += packTemplate(p).members.filter((m) => m.chance === undefined).reduce((n, m) => n + m.count[0], 0);
+      expect(least, id).toBeGreaterThanOrEqual(3);
+      let total = 0;
+      for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) {
+        const g = inside(id, 'core.mirror.x', 45, seed);
+        wakeAll(g);
+        total += alive(g.world).length;
+      }
+      expect(total / 6, id).toBeGreaterThanOrEqual(11);
+    }
+  });
 
   it('are bunker-sized, cleared by killing the shades, and leave a lore log and a reward chest', () => {
     for (const [poi, id, key] of MIRRORS) {

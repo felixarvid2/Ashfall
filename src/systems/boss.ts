@@ -407,8 +407,12 @@ function beatStart(world: World, ctx: GameContext, boss: Boss, beat: NonNullable
   const player = world.first(PlayerControlled, Transform);
   const pt = player !== undefined ? world.req(player, Transform) : undefined;
   const facing = pt ? Math.atan2(pt.x - tr.x, pt.z - tr.z) : 0;
+  // It stands a few paces in front of the player (on the line to the boss), not beside the boss: the player may be
+  // fighting from the far side of the arena, out of the camera's view of it.
+  const gap = pt ? Math.hypot(pt.x - tr.x, pt.z - tr.z) : 0;
+  const at = pt && gap > 4 ? Math.max(1.5, gap - Math.min(5, gap * 0.6)) : 7;
   const f = world.create();
-  world.add(f, Transform, makeTransform(tr.x + Math.sin(facing) * 7, 0, tr.z + Math.cos(facing) * 7, facing + Math.PI));
+  world.add(f, Transform, makeTransform(tr.x + Math.sin(facing) * at, 0, tr.z + Math.cos(facing) * at, facing + Math.PI));
   world.add(f, Renderable, { assetId: beat.form.asset, scale: beat.form.scale, glow: beat.form.glow, look: 'lumen' });
   world.add(f, DisplayName, { key: beat.form.name });
   boss.form = f;

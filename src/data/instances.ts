@@ -249,13 +249,14 @@ const CORE_SHAFT: InstanceTheme = {
   decor: ['prop.core_console', 'env.pipe_cluster', 'env.wall_segment', 'prop.generator'],
   light: { asset: 'prop.lumen_growth', color: '#ffe39a', intensity: 36 },
 };
+// Pale pearl floor: the ambient and the lamps stay low, or the floor, the pillars and the HUD text over it wash out.
 const CORE_HALLS: InstanceTheme = {
   floor: '#3a3250',
   ground: 'lumen_matter',
   fog: { color: '#1a1230', density: 0.024 },
-  ambient: { color: '#d8c8ff', intensity: 0.6 },
+  ambient: { color: '#b8a8e8', intensity: 0.34 },
   decor: ['env.wall_segment', 'prop.lumen_growth', 'prop.lumen_growth', 'prop.core_console'],
-  light: { asset: 'prop.lumen_growth', color: '#ffd68a', intensity: 38 },
+  light: { asset: 'prop.lumen_growth', color: '#e8a860', intensity: 22 },
 };
 const CORE_CHAMBER: InstanceTheme = {
   floor: '#403a58',
@@ -644,22 +645,26 @@ export const CORE_INSTANCES = ['core_memory_of_ember', 'core_endless_shaft', 'co
  * every elite, and tougher bodies. Floors never raise the monsters' level (the Core's range ends at 50).
  */
 export const SHAFT_TUNING = {
-  /** Extra packs per room, +1 every two floors. */
-  packsEvery: 2,
+  /**
+   * Extra packs per room: +0.6 on every floor (a room gets one more pack with that chance), so floor 2 is already
+   * visibly busier than floor 1 (an average room goes from 1.5 packs to 2.1); capped at +3 from floor 6.
+   */
+  packsPerFloor: 0.6,
   maxPacks: 3,
   /** Chance a pack is a champion pack: 0.10 on floor 1, +0.06 per floor. */
   champion: [0.1, 0.06, 0.7] as [number, number, number],
-  /** Extra affixes on every elite, +1 every three floors. */
-  affixesEvery: 3,
+  /** Extra affixes on every elite, +1 every two floors from floor 3. */
+  affixesEvery: 2,
   maxAffixes: 3,
   /** Life multiplier: +10 % per floor. */
   life: [0.1, 3] as [number, number],
 };
 
+/** `packs` is fractional: the whole part is added to every room, the rest is the chance of one more. */
 export function shaftScaling(floor: number): { packs: number; champion: number; affixes: number; lifeMul: number } {
   const f = Math.max(0, Math.floor(floor) - 1);
   return {
-    packs: Math.min(SHAFT_TUNING.maxPacks, Math.floor(f / SHAFT_TUNING.packsEvery)),
+    packs: Math.min(SHAFT_TUNING.maxPacks, f * SHAFT_TUNING.packsPerFloor),
     champion: Math.min(SHAFT_TUNING.champion[2], SHAFT_TUNING.champion[0] + SHAFT_TUNING.champion[1] * f),
     affixes: Math.min(SHAFT_TUNING.maxAffixes, Math.floor(f / SHAFT_TUNING.affixesEvery)),
     lifeMul: Math.min(SHAFT_TUNING.life[1], 1 + SHAFT_TUNING.life[0] * f),
