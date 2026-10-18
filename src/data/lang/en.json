@@ -3302,6 +3302,10 @@
   "touch": {
     "attack": "Attack",
     "use": "Use",
+    "fullscreen": {
+      "needsTab": "Open the game in its own tab for full screen.",
+      "needsHomeScreen": "On iPhone: Share, then Add to Home Screen, to play full screen."
+    },
     "menu": {
       "inventory": "Bag",
       "character": "Hero",
@@ -3310,6 +3314,7 @@
       "quests": "Quests",
       "mount": "Bike",
       "fullscreen": "Full screen",
+      "fullscreenExit": "Exit full screen",
       "close": "Close",
       "flare": "Flare",
       "sound": "Sound",

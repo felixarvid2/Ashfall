@@ -121,7 +121,6 @@ export const MENU_ICONS: Record<string, string> = {
   quests: 'lorc/scroll-unfurled',
   mount: 'delapouite/scooter',
   flare: 'delapouite/torch',
-  fullscreen: 'kenney:larger',
   close: 'kenney:cross',
 };
 

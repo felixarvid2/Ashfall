@@ -326,7 +326,7 @@ export class Game {
       toggleMute: () => this.toggleMute(),
       muteKey: () => keyLabel(resolveKeybindings(this.settings).toggleMute[0] ?? 'KeyN'),
     });
-    this.touchControls = new TouchControls(uiRoot, this.input, this.hud.slotElements, this.soundUi.touchEntries());
+    this.touchControls = new TouchControls(uiRoot, this.input, this.hud.slotElements, this.soundUi.touchEntries(), (message) => this.toasts.show(message, 'info', 3500));
     this.soundUi.refresh();
     installUiSounds(uiRoot, audio);
     this.applyTouchControls();

@@ -19,8 +19,8 @@ describe('third-party assets', () => {
   });
 
   it('every touch menu button has an icon', () => {
-    for (const id of ['inventory', 'character', 'skills', 'map', 'quests', 'mount', 'flare']) expect(existsSync(asset(`ui/menu/${id}.svg`)), id).toBe(true);
-    for (const id of ['fullscreen', 'close']) expect(existsSync(asset(`ui/menu/${id}.png`)), id).toBe(true);
+    for (const id of ['inventory', 'character', 'skills', 'map', 'quests', 'mount', 'flare', 'fullscreen', 'fullscreen-exit']) expect(existsSync(asset(`ui/menu/${id}.svg`)), id).toBe(true);
+    expect(existsSync(asset('ui/menu/close.png'))).toBe(true);
   });
 
   it('external models are credited and optimized', () => {
