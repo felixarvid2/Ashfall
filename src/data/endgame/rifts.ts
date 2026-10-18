@@ -16,6 +16,8 @@ export const RIFT = {
   monsterLevel: 50,
   /** Enemy life and damage × this per rift level. */
   perLevel: 1.06,
+  /** Seconds in which the exit must be used twice to abandon a running rift. */
+  abandonWindow: 8,
   /** Seconds to fill the bar and kill the guardian. */
   time: 600,
   /** Progress points that fill the bar. About 6–7 of the ~14 rooms' packs, i.e. 5–7 minutes of fighting. */

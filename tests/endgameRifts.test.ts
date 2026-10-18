@@ -490,6 +490,30 @@ describe('Deep Rifts: a clear', () => {
     expect(g.ctx.events.peek().some((e) => e.type === 'interact' && e.kind === 'portal')).toBe(true);
   });
 
+  it('leaving a running rift asks first: the exit must be used twice within the window', () => {
+    const g = inRift(5);
+    const exit = objects(g.world, 'portal').find((e) => g.world.req(e, Interactable).poi === 'exit')!;
+    const it = g.world.req(exit, Interactable);
+    const kinds = () => g.ctx.events.drain().filter((e) => e.type === 'interact').map((e) => (e as { kind: string }).kind);
+    g.ctx.events.drain();
+    expect(g.rift.phase).toBe('running');
+    expect(instanceInteract(g.world, g.ctx, exit, it)).toBe(true);
+    expect(kinds()).toEqual(['riftAbandon']);
+    // Too late: it asks again.
+    g.rift.elapsed += RIFT.abandonWindow + 1;
+    expect(instanceInteract(g.world, g.ctx, exit, it)).toBe(true);
+    expect(kinds()).toEqual(['riftAbandon']);
+    // In time: it leaves.
+    g.rift.elapsed += RIFT.abandonWindow / 2;
+    expect(instanceInteract(g.world, g.ctx, exit, it)).toBe(true);
+    expect(kinds()).toEqual(['portal']);
+    // The guardian phase asks too.
+    g.rift.phase = 'guardian';
+    g.rift.elapsed += RIFT.abandonWindow + 1;
+    instanceInteract(g.world, g.ctx, exit, it);
+    expect(kinds()).toEqual(['riftAbandon']);
+  });
+
   it('completeRift can be driven directly (nothing granted twice)', () => {
     const g = inRift(20);
     const res = completeRift(g.world, g.ctx, riftHost(g.rt), g.rift, { x: g.rt.start.x, z: g.rt.start.z });

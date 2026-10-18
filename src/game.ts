@@ -161,7 +161,7 @@ import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
 import { worldBossMarker, worldBossSystem } from './world/worldBoss';
 import { WorldBossHud } from './ui/worldBossHud';
-import { worldBossPortrait } from './data/endgame/worldBosses';
+import { WORLD_BOSS, worldBossPortrait } from './data/endgame/worldBosses';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
 import { harvestSystem, harvestView } from './world/harvest';
 import { HarvestHud } from './ui/harvestHud';
@@ -339,8 +339,12 @@ export class Game {
 
     this.damageNumbers = new DamageNumbers(uiRoot);
     this.toasts = new Toasts(uiRoot);
-    this.worldBossHud = new WorldBossHud(uiRoot, (message) => this.toasts.show(message, 'info', 4500));
-    this.harvestHud = new HarvestHud(uiRoot);
+    // The endgame status rows (rift timer, world boss, Ash Harvest) share one column; style.css positions it.
+    const endgameStack = document.createElement('div');
+    endgameStack.className = 'endgame-stack';
+    uiRoot.append(endgameStack);
+    this.worldBossHud = new WorldBossHud(endgameStack, (message) => this.toasts.show(message, 'info', 4500));
+    this.harvestHud = new HarvestHud(endgameStack);
     this.hud = new Hud(uiRoot, () => this.respawn());
     this.fade = document.createElement('div');
     this.fade.className = 'zone-fade';
@@ -440,7 +444,7 @@ export class Game {
       reroll: (gi, ai) => {
         const inv = this.world.req(this.player, Inventory);
         const item = inv.grid[gi];
-        if (item) this.serviceResult(rerollAffix(this.ctx.loot.rng, inv, item, ai));
+        if (item) this.serviceResult(rerollAffix(this.ctx.loot.rng, inv, item, ai, tierMods(this.ctx)));
       },
       salvageJunk: () => {
         const gold = salvageJunk(this.world.req(this.player, Inventory));
@@ -521,7 +525,7 @@ export class Game {
         return r;
       },
     });
-    this.riftHudUi = new RiftHud(uiRoot);
+    this.riftHudUi = new RiftHud(endgameStack);
     this.servicePanel.onToggle = (open) => {
       if (open) {
         this.inventoryPanel.toggle(true);
@@ -1145,7 +1149,7 @@ export class Game {
           step: this.stepText(id),
           kind: def.kind,
           level: def.level,
-          rewards: t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold }),
+          rewards: t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp), gold: def.rewards.gold }),
           tracked: rt.tracked === id,
         };
       }),
@@ -1231,7 +1235,7 @@ export class Game {
   private questOffer(npc: string, id: string): void {
     const def = questDef(id);
     const text = `${t(`quests.${id}.offer`)}
-${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
+${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp), gold: def.rewards.gold })}`;
     this.dialogue.show(
       this.page(npc, text, [
         {
@@ -1292,7 +1296,7 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
   private restockVendor(): void {
     const user = this.world.req(this.player, SkillUser);
     const level = this.world.req(this.player, Progression).level;
-    this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`));
+    this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`), tierMods(this.ctx));
     this.vendorRestockAt = this.ctx.time + VENDOR.refreshSeconds;
   }
 
@@ -1475,6 +1479,9 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         }
         this.autosave();
         break;
+      case 'riftAbandon':
+        this.notice('rifts.abandonWarn', 'info');
+        break;
       case 'riftExit':
         // Out of time: the rift throws you out.
         this.riftPanel.close();
@@ -1483,7 +1490,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
         break;
       case 'tierUnlock':
         saveAccount(this.storage, this.ctx.account!);
-        this.toasts.show(t('worldTiers.unlockedToast'));
+        this.toasts.show(t('worldTiers.unlockedToast'), 'info', 7000);
+        this.toasts.show(t('worldTiers.unlockedIntro', { minutes: WORLD_BOSS.interval / 60 }), 'info', 12000);
         break;
       case 'feature':
         if (detail) this.hud.showBanner(t(`features.${detail}.used`), 2);

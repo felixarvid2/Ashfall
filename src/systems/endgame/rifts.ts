@@ -40,6 +40,8 @@ export interface RiftState {
   attempts: number;
   /** The exit was used once while attempts were left: the next use leaves. */
   warned: boolean;
+  /** `elapsed` when the exit was last used mid-run: using it again within `RIFT.abandonWindow` seconds abandons the run. */
+  abandonAt: number;
   /** Seconds until a collapsed rift throws the player out. */
   collapse: number;
   /** Results of a clear, for the panel and tests. */
@@ -100,6 +102,7 @@ export function createRift(level: number): RiftState {
     surge: RIFT.surgeEvery,
     attempts: 0,
     warned: false,
+    abandonAt: -Infinity,
     collapse: 3.5,
     result: null,
     cacheOpened: false,

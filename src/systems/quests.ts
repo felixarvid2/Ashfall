@@ -28,6 +28,7 @@ import { INTERACT_RADIUS } from '../data/interactables';
 import { NPCS, QUESTS, questDef } from '../data/quests/db';
 import type { QuestDef, QuestStep } from '../data/quests/schema';
 import { monsterLevel } from './encounter';
+import { tierMods } from './endgame/tiers';
 import { grantXp } from './loot/rewards';
 import { makeElite } from '../world/zone';
 import { spawnEnemy } from '../world/spawn';
@@ -180,7 +181,8 @@ function advance(world: World, ctx: GameContext, id: string): void {
 function payReward(world: World, ctx: GameContext, r: { xp: number; gold: number; item?: string | undefined; unique?: string | undefined }): void {
   const player = world.first(PlayerControlled, Inventory);
   if (player === undefined) return;
-  if (r.xp > 0) grantXp(world, ctx, player, r.xp);
+  // The World Tier's XP multiplier applies to quests as it does to kills.
+  if (r.xp > 0) grantXp(world, ctx, player, Math.round(r.xp * tierMods(ctx).xp));
   if (r.gold > 0) world.req(player, Inventory).gold += r.gold;
   const tr = world.req(player, Transform);
   if (r.item) ctx.rewards.push({ table: 'dt.quest_reward', level: monsterLevel(world, ctx), x: tr.x, z: tr.z, xp: false, rarity: r.item as never });

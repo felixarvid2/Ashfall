@@ -463,3 +463,28 @@ body, gold-white rim), which hides their low-poly style. Shades and the Absorbed
 
 ### 2026-10-18 — Zone gates can require a finished quest
 A zone gate can now check for a finished quest, as the bore from the Deep Mines does (it needs `mq.governor`).
+
+### 2026-10-18 — Endgame: tiers, rifts, world bosses, harvest, matrix
+The numbers are in docs/endgame.md ("As built"). The choices behind them:
+- **World bosses every 45 minutes of play, not every 3 hours.** The brief's three hours would mean most players never
+  see one in a browser session. The interval, warning (5 min) and lifetime (15 min) are data (`WORLD_BOSS`). The
+  schedule is a pure function of the account's play time, so it needs no timer state and survives reloads. The cost:
+  a killed boss comes back after a reload inside its window.
+- **Deep Rifts suspend World Tiers.** A rift has its own scaling (×1.06 per level on level 50), so a tier on top would
+  make rift levels mean different things per tier. Outside a rift the tier is unchanged; the badge reads WT I inside.
+- **Ash Shards are lost on death.** Half of the carried shards vanish (the brief had them drop on the ground). With
+  the shard counter on the character, a pickup would need ground entities that persist across zone loads; this keeps
+  the Harvest simple and still makes dying cost something.
+- **Matrix rules.** Points cost 60 % of the last campaign level's XP, +2 % per point already earned, to a cap of 200.
+  Boards are 9×9 and join only at an allocated gate, rotatable while untouched, so a build is a path you commit to.
+  Glyphs scale the normal and magic nodes of their family within radius 3 (+8 % per glyph level, 21 levels) and
+  unlock a bonus at 8 or 16 attribute points. Upgrades succeed always up to rift level / 5, then fall 25 points per level.
+- **Leaving a running rift needs a second use of the exit within 8 seconds** instead of a browser `confirm()`: a modal
+  can be blocked inside the artifact iframe (it would return "no" and trap the player), and a toast works on touch.
+  The cleared-rift warning already worked this way.
+- **The shops and quests follow the World Tier.** Trader stock rolls with the tier's item power and greater-affix
+  chance; rerolls add the tier's greater-affix chance but keep the item's own power (it already carries its tier);
+  quest XP gets the tier's XP multiplier.
+- **One status column for the endgame HUD.** Rift timer, world boss countdown and Harvest line share a column instead
+  of each claiming a corner, so they cannot overlap each other or the minimap and quest tracker.
+

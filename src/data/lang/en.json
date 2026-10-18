@@ -3952,6 +3952,8 @@
     "guardianAppears": "{name}",
     "collapse": "The rift collapses.",
     "collapsed": "The rift collapsed. No upgrades.",
+    "abandonWarn": "The rift is still running. Use the exit again to abandon it: the run pays nothing.",
+    "abandonConfirm": "Leave the rift now? The run is lost and pays nothing.",
     "objective": {
       "running": "Rift {level}: slay enemies ({percent}%)",
       "guardian": "Rift {level}: slay the Rift Guardian",
@@ -3981,6 +3983,7 @@
     "combat": "The beacon will not answer while enemies are fighting you.",
     "picked": "World Tier set: {tier}.",
     "unlockedToast": "World Tier II unlocked: Veteran. Choose it at a Tier Beacon in any hub.",
+    "unlockedIntro": "The endgame is open. Deep Rifts wait at the Rift Obelisks in Outpost Ember and the Last Camp, a world boss appears every {minutes} minutes, and one region at a time falls under the Ash Harvest.",
     "1": { "name": "Survivor", "unlock": "Available from the start." },
     "2": { "name": "Veteran", "unlock": "Defeat Lumen." },
     "3": { "name": "Nightmare", "unlock": "Clear Deep Rift 20." },

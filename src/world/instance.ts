@@ -565,6 +565,12 @@ export function instanceInteract(world: World, ctx: GameContext, target: Entity,
         ctx.events.push({ type: 'interact', kind: 'riftCleared', id: String(rt.rift.level) });
         return true;
       }
+      // A rift still running asks once: the exit must be used a second time within a few seconds to abandon the run.
+      if (rt.rift && (rt.rift.phase === 'running' || rt.rift.phase === 'guardian') && rt.rift.elapsed - rt.rift.abandonAt > RIFT.abandonWindow) {
+        rt.rift.abandonAt = rt.rift.elapsed;
+        ctx.events.push({ type: 'interact', kind: 'riftAbandon', id: String(rt.rift.level) });
+        return true;
+      }
       ctx.events.push({ type: 'interact', kind: 'portal', id: 'exit' });
       return true;
     case 'valve':

@@ -3,6 +3,7 @@ import { DisplayName, Escort, Health, Interactable, Inventory, Npc, Progression,
 import { World, type Entity } from '../src/core/ecs';
 import type { GameContext } from '../src/core/context';
 import { emptyAccount } from '../src/core/account';
+import { TIER_TABLE } from '../src/data/endgame/tiers';
 import { NPCS, QUESTS, questDef } from '../src/data/quests/db';
 import { CINDER_FLATS } from '../src/data/zones/cinderFlats';
 import en from '../src/data/lang/en.json';
@@ -75,6 +76,28 @@ describe('quest data', () => {
       });
     }
     for (const n of NPCS.values()) expect(lang.npcs[n.id]?.name).toBeTruthy();
+  });
+});
+
+describe('quest rewards', () => {
+  /** Plays Wake Up to its end at the given World Tier and returns the experience the quest paid. */
+  function xpAtTier(tier: number): number {
+    const { world, ctx, rt } = setup();
+    ctx.account!.endgame.tierUnlocked = tier;
+    ctx.account!.endgame.tier = tier;
+    tick(world, ctx);
+    ctx.events.drain();
+    rt.active.set('mq.wake_up', { step: 2, progress: 0 });
+    ctx.zone!.discovered.add('tp.impact');
+    tick(world, ctx);
+    expect(rt.done.has('mq.wake_up')).toBe(true);
+    return ctx.events.drain().reduce((sum, e) => sum + (e.type === 'xp' ? e.amount : 0), 0);
+  }
+
+  it('applies the World Tier XP multiplier', () => {
+    const base = xpAtTier(1);
+    expect(base).toBe(questDef('mq.wake_up').rewards.xp);
+    for (const tier of [2, 3, 4] as const) expect(xpAtTier(tier)).toBe(Math.round(base * TIER_TABLE[tier].xp));
   });
 });
 

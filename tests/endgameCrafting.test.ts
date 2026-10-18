@@ -5,6 +5,7 @@ import { Rng } from '../src/core/rng';
 import { SaveDataSchema } from '../src/core/save';
 import { CODEX_ASPECTS, MASTERWORK, RECIPES, RECIPE_DEFS, RECIPE_IDS, SALVAGE_DUST, TEMPERING } from '../src/data/endgame/crafting';
 import { INSTANCES } from '../src/data/instances';
+import { TIER_TABLE } from '../src/data/endgame/tiers';
 import { ASPECT_DEFS, BASE_ITEMS } from '../src/data/loot/db';
 import { STAT_KEYS } from '../src/data/loot/schemas';
 import {
@@ -26,7 +27,7 @@ import {
   unlockCodexForDungeon,
 } from '../src/systems/endgame/crafting';
 import { effectiveAffixes, masterworkMultiplier } from '../src/systems/endgame/itemMods';
-import { generateItem, itemStats } from '../src/systems/loot/generate';
+import { generateItem, itemStats, powerScale, roundStat } from '../src/systems/loot/generate';
 import { emptyInventory } from '../src/systems/loot/inventory';
 import { salvage } from '../src/systems/loot/inventory';
 import { makeCtx } from './helpers';
@@ -311,5 +312,28 @@ describe('Codex of Power', () => {
     const def = ASPECT_DEFS.get('brutality')!;
     expect(base).toBeGreaterThanOrEqual(def.min);
     expect(base).toBeLessThanOrEqual(def.max * 1.7);
+  });
+
+  it('follows the real tierMods: stronger with every tier, from the chosen tier only', () => {
+    const def = ASPECT_DEFS.get('brutality')!;
+    const at = (unlocked: number, chosen: number) => {
+      const ctx = ctxAt(unlocked);
+      ctx.account!.endgame.tier = chosen;
+      return codexValue(ctx, 'brutality', 140);
+    };
+    const values = [1, 2, 3, 4].map((n) => at(4, n));
+    for (let i = 1; i < values.length; i++) expect(values[i]!).toBeGreaterThan(values[i - 1]!);
+    // Tier 1 is the middle of the range at the item's own power.
+    const mid = (def.min + def.max) / 2;
+    expect(values[0]!).toBeCloseTo(roundStat(mid * powerScale(def.scaling, 140)), 5);
+    // The exact formula, per tier.
+    for (const n of [2, 3, 4] as const) {
+      const row = TIER_TABLE[n];
+      const tt = Math.min(1, 0.5 + row.greaterChance);
+      expect(values[n - 1]!).toBeCloseTo(roundStat((def.min + (def.max - def.min) * tt) * powerScale(def.scaling, 140 + row.itemPower)), 5);
+    }
+    // A tier that is chosen but not unlocked does not count; neither does a context without an account.
+    expect(at(1, 4)).toBe(values[0]);
+    expect(codexValue(makeCtx(), 'brutality', 140)).toBe(values[0]);
   });
 });

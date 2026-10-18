@@ -4,8 +4,25 @@
 
 ## Current phase
 
-**Region 5: The Core (levels 40–50) ✅ built — waiting for your playtest feedback.** Plan:
-docs/regions/the-core.md, measurements: docs/regions/the-core-playtest.md.
+**Endgame ✅ built — waiting for your playtest feedback.** Plan and "As built" numbers: docs/endgame.md;
+choices: docs/decisions.md (2026-10-18, endgame).
+- **World Tiers:** defeating Lumen unlocks Veteran (tier 2); Deep Rift 20 and 40 unlock Nightmare and Apocalypse.
+  Switch at the Tier Beacon in any hub (out of combat); the tier shows under the region name. Tiers scale enemy life
+  and damage, XP, gold, item power, greater-affix chance and unique drops, and also the trader's stock, rerolls and
+  quest XP.
+- **Neural Matrix** (skill panel, after level 50): up to 200 points, five 9×9 boards joined at gates, twelve glyphs.
+- **Deep Rifts:** a Rift Obelisk in Outpost Ember and the Last Camp; levels 1–100, 10 minutes, a Rift Guardian,
+  glyph upgrades, a cache. Leaving a running rift asks you to use the exit twice.
+- **World bosses:** one every 45 minutes of play (announced 5 minutes ahead, there for 15): Ashen Colossus, Mother
+  of Spores, Hollow Engine.
+- **Ash Harvest:** one region at a time for 20 minutes, Ash Shards, three Harvest Caches per region.
+- **Crafting:** tempering, masterworking (blacksmith) and the Codex of Power (technician).
+- **HUD:** the rift timer, world boss countdown and Harvest line share one status column (top left on desktop, under
+  the region name on phones).
+- Endgame state is in the character save (`endgame`) and the account (`endgame`: tiers, Codex, rift best, play time).
+
+### Earlier: Region 5: The Core (levels 40–50) ✅ built. Plan: docs/regions/the-core.md, measurements:
+docs/regions/the-core-playtest.md.
 - The bore from the Deep Mines opens after Governor Kade. Zone gates can now require a finished quest.
 - The Borderland, The Hanging Gardens (11 floating islands, 13 energy bridges; 3 of them switch off on a cycle
   and push riders to safety), The Memory Halls (distorted patches of all four earlier regions), The Heart, and
@@ -270,6 +287,28 @@ Controls: **WASD** move · **LMB/RMB/1–4** the six action-bar slots (set them 
 Click-to-move (debug panel): left-click ground to walk, left-click an enemy to attack it,
 Shift + left-click to attack in place.
 
+## What to test (Endgame)
+1. Defeat Lumen (or, with `?debug`, set `ashfall.ctx.account.endgame.tierUnlocked = 4` in the console). A toast points you to the Tier Beacon, the
+   Rift Obelisks, the world bosses and the Ash Harvest. Open the Tier Beacon in a hub: tier 2 is open, 3 and 4 are locked.
+2. Switch to tier 2 and fight: enemies hit harder and have more life; XP, gold and item power go up. Check the
+   trader's stock and quest XP too.
+3. At level 50 the XP bar turns into Matrix points (skill panel, Neural Matrix tab). Take nodes along paths, attach a second
+   board at a gate (rotate it before taking nodes), socket a glyph and watch the nodes around it grow. Try zoom and
+   pan with the wheel and drag, and on a phone with a pinch.
+4. Rift Obelisk (Outpost Ember or the Last Camp): pick a level, run it, fill the bar, kill the guardian. Check the timer
+   and the status column, the cache, the glyph upgrades, and that rift 20 unlocks tier 3. Walk into the start portal
+   mid-run: it warns, a second use within 8 seconds abandons the run.
+5. World boss: with `?debug` set `ashfall.ctx.account.endgame.playtime = 2400`, or wait. You get a toast, a map marker and a countdown five
+   minutes before it appears. Fight all three phases, open the chest (legendary, recipes, Lumen Dust).
+6. Ash Harvest: the map tab shows the region under the Harvest (20 minutes each). Kill things there for shards and
+   spend 250 at a Harvest Cache. Die once and see half of the shards go.
+7. Blacksmith: temper an item with a recipe you found (two affixes, five charges), masterwork it a few ranks, reset
+   it. Technician: imprint an aspect from the Codex after your first clear of its dungeon.
+8. HUD on a phone (portrait and landscape): the region name, tier badge, rift timer, world boss line and Harvest
+   line must not cover the minimap, quest tracker, menu or action buttons.
+9. **Tell me:** is tier 2 the right step up from the campaign, are rifts 10 minutes too long or short, are the matrix
+   points too slow or too fast, and does anything you earn feel pointless?
+
 ## What to test (Region 5 – The Core)
 1. Defeat Governor Kade, then take the bore from the Deep Mines to the Core.
 2. The Hanging Gardens: cross the energy bridges, time the three that switch off, and feel the gravity shimmer
@@ -441,9 +480,8 @@ Shift + left-click to attack in place.
   full exploration takes ≈ 5 h 19 min (target 3–5 h).
 - Region 5: the themed Core events (bridge collapse, choir awakening, memory surge, gravity storm) are not built.
 - Region 5: Absorbed NPC models only have idle clips; Lumen is only partly on screen from parts of the arena edge.
-- Region 5: balance at levels 40–50 is only unit-tested. The Core as an endgame area and World Tiers are deferred.
-- Region 1: no durability on death (§13); Codex unlocks, tempering and
-  masterworking come with Phase 7; Force Wall and Laser Grid elite affixes come later.
+- Region 5: balance at levels 40–50 is only unit-tested.
+- Region 1: no durability on death (§13); Force Wall and Laser Grid elite affixes come later.
 - Region 1: dungeons are a bit short (~6 min) and road packs a bit dense — see the playtest report.
 - Region 2: the bot's balance playthrough covers levels 1–10 only, so district difficulty (levels 10–20)
   is untested beyond unit tests; leaving the district mid-escort or mid-event restarts it next time;
@@ -465,10 +503,20 @@ Shift + left-click to attack in place.
 - Raw Meshy downloads (`assets/source/**/*.glb`) are not in git; re-download within 3 days or regenerate.
 - Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
+- Endgame: balance is unplayed. Tier multipliers, matrix costs, rift timing (600 s, 120 points), glyph odds,
+  shard and cache costs and the crafting prices are first guesses, only unit-tested.
+- Endgame: the three world boss models (Ashen Colossus, Mother of Spores, Hollow Engine) are reused models in the
+  Lumen look and have not been checked on screen.
+- Endgame: pinch-zoom on the matrix panel is untested on a real phone.
+- Endgame: Ash Shards are lost for good when you die (half of them); there is no pickup on the ground.
+- Endgame: a world boss that was killed comes back after a reload within its 15-minute window (the kill is not saved).
+- Endgame: Hardcore, seasons, a Swedish interface and leaderboards are deferred (docs/endgame.md).
 
 ## Next steps
-- **Your playtest feedback on The Core (and the earlier regions)** → then the endgame phase. Replace the
-  placeholder models of regions 3–5 when Meshy credits are available.
+- **Your playtest feedback on the endgame (and the earlier regions)** → then a balance pass on tiers, matrix
+  and rifts, and a look at the world boss models on screen. Replace the placeholder models of regions 3–5 when
+  Meshy credits are available.
+- Endgame follow-ups if wanted: a shard pickup on death, saving a killed world boss, a Swedish interface.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).
 - Your playtest feedback on Phase 4a/4b (Spectre and Xenomant feel, character select).

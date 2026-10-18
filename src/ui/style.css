@@ -247,7 +247,7 @@ html, body {
 
 .target-frame {
   position: absolute;
-  top: 64px;
+  top: 76px;
   left: 50%;
   transform: translateX(-50%);
   width: 320px;
@@ -676,7 +676,7 @@ html, body {
 .aspect-name { color: #ff9a3a; font-size: 0.85em; }
 .aspect-desc { color: #cfc4b0; font-size: 0.75em; margin: 2px 0; }
 .tooltip-price { margin-top: 6px; color: #ffd27a; font-size: 0.85em; }
-.event-box { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); text-align: center; background: rgba(10, 9, 8, 0.7); border: 1px solid #6a4a20; padding: 4px 14px; pointer-events: none; }
+.event-box { position: absolute; left: 50%; top: 76px; transform: translateX(-50%); text-align: center; background: rgba(10, 9, 8, 0.7); border: 1px solid #6a4a20; padding: 4px 14px; pointer-events: none; }
 .event-box[hidden] { display: none; }
 .event-title { color: #ffd23a; font-size: 0.8em; letter-spacing: 0.2em; text-transform: uppercase; }
 .event-text { color: #e8dcc8; font-size: 0.8em; }
@@ -808,7 +808,7 @@ html.touch-device, html.touch-device body {
 #ui.touch-ui .wave-tracker { top: 124px; left: auto; right: calc(env(safe-area-inset-right) + 10px); transform: none; text-align: right; }
 #ui.touch-ui .wave-title { font-size: 0.75em; letter-spacing: 0.15em; }
 #ui.touch-ui .wave-sub { font-size: 0.65em; }
-#ui.touch-ui .quest-tracker { top: 160px; right: calc(env(safe-area-inset-right) + 8px); width: 180px; }
+#ui.touch-ui .quest-tracker { top: 182px; right: calc(env(safe-area-inset-right) + 8px); width: 180px; }
 #ui.touch-ui .quest-row:not(.tracked) { display: none; }
 #ui.touch-ui .target-frame { top: 56px; width: 220px; }
 #ui.touch-ui .event-box { top: 100px; }
@@ -1106,15 +1106,13 @@ html.touch-device .hint-mouse { display: none; }
 .tier-note { margin: 8px 0 0; font-size: 0.75em; color: #8a7e6c; }
 #ui.touch-ui .tier-panel { left: 8px; top: 54px; }
 
-/* Ash Harvest: the active region and the Ash Shard counter, left of the minimap. */
-.harvest-hud { position: absolute; top: 52px; right: 206px; max-width: 240px; text-align: right; pointer-events: none; }
+/* Ash Harvest: the active region and the Ash Shard counter (a row of the endgame stack). */
+.harvest-hud { order: 2; padding: 3px 10px; border-left: 2px solid #ff8a3a; background: rgba(20, 12, 6, 0.6); pointer-events: none; }
 .harvest-hud[hidden], .harvest-hud [hidden] { display: none; }
 .harvest-line { font-size: 0.72em; letter-spacing: 0.08em; text-transform: uppercase; color: #ffb36a; text-shadow: 0 0 3px #000; }
 .harvest-shards { margin-top: 3px; font-size: 0.8em; color: #e8dcc8; text-shadow: 0 0 3px #000; transition: color 0.2s; }
 .harvest-shards.gain { color: #ffe29a; }
 .harvest-shards.ready { color: #ffb36a; text-shadow: 0 0 6px rgba(255, 138, 58, 0.8); }
-#ui.touch-ui .harvest-hud { top: 10px; right: calc(env(safe-area-inset-right) + 128px); max-width: 160px; }
-#ui.touch-ui.portrait .harvest-hud { top: calc(var(--sat) + 10px); right: calc(var(--sar) + 120px); }
 .map-tab.harvest { color: #ffb36a; border-color: #7a4a1e; }
 
 /* Deep Rifts: the obelisk / result panel, and the timer + progress bar inside a rift. */
@@ -1130,7 +1128,7 @@ html.touch-device .hint-mouse { display: none; }
 .rift-enter { text-align: center; margin-top: 10px; border-color: #7a5cc8; color: #e6d8ff; }
 .rift-glyph { text-align: left; }
 .rift-log { margin: 8px 0; font-size: 0.78em; color: #e8dcc8; white-space: pre-line; line-height: 1.5; }
-.rift-hud { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 24px)); pointer-events: none; text-align: center; z-index: 12; }
+.rift-hud { order: 0; padding: 4px 10px 5px; border-left: 2px solid #7a5cc8; background: rgba(12, 9, 22, 0.6); pointer-events: none; text-align: center; }
 .rift-hud[hidden] { display: none; }
 .rift-hud-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8em; letter-spacing: 0.14em; text-transform: uppercase; color: #cdb8ff; text-shadow: 0 0 3px #000; }
 .rift-hud-time { font-size: 1.35em; color: #ffe9b8; letter-spacing: 0.08em; }
@@ -1141,13 +1139,28 @@ html.touch-device .hint-mouse { display: none; }
 .rift-hud[data-phase="failed"] .rift-hud-fill { background: #8a2a2a; }
 .rift-hud-status { margin-top: 2px; font-size: 0.68em; letter-spacing: 0.12em; text-transform: uppercase; color: #a698c8; text-shadow: 0 0 3px #000; }
 #ui.touch-ui .rift-panel { left: 50%; top: 118px; }
-#ui.touch-ui .rift-hud { top: calc(env(safe-area-inset-top) + 70px); }
 
 /* World boss tracker: under the title, top left. */
-.worldboss-hud { position: absolute; top: 96px; left: 16px; max-width: 360px; padding: 3px 10px; font-size: 0.75em; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd0a0; border-left: 2px solid #ff4a2a; background: rgba(20, 8, 6, 0.6); text-shadow: 0 0 3px #000; pointer-events: none; }
+.worldboss-hud { order: 1; padding: 3px 10px; font-size: 0.75em; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd0a0; border-left: 2px solid #ff4a2a; background: rgba(20, 8, 6, 0.6); text-shadow: 0 0 3px #000; pointer-events: none; }
 .worldboss-hud[hidden] { display: none; }
-#ui.touch-ui .worldboss-hud { top: 56px; left: calc(env(safe-area-inset-left) + 8px); max-width: 200px; font-size: 0.65em; }
-#ui.touch-ui.portrait .worldboss-hud { top: calc(var(--sat) + 8px); left: calc(var(--sal) + 8px); max-width: calc(100vw - 150px); }
+#ui.touch-ui .worldboss-hud { font-size: 0.65em; }
+
+/*
+ * The endgame status stack: Deep Rift timer, world boss countdown and Ash Harvest in one column, so they can never
+ * overlap each other. Desktop: top left under the title. Touch landscape: left, under the menu row. Touch portrait:
+ * left, under the region name and World Tier badge (the bars, menu grid and target frame sit above it).
+ */
+.endgame-stack { position: absolute; top: 96px; left: 16px; width: min(360px, calc(100vw - 32px)); display: flex; flex-direction: column; align-items: stretch; gap: 5px; pointer-events: none; z-index: 12; }
+#ui.touch-ui .endgame-stack { top: 56px; left: calc(env(safe-area-inset-left) + 8px); width: min(250px, 40vw); gap: 3px; }
+#ui.touch-ui.portrait .endgame-stack { top: calc(var(--sat) + 290px); left: calc(var(--sal) + 8px); width: min(300px, calc(100vw - 16px - var(--sal) - var(--sar))); gap: 2px; }
+/* Compact rows in portrait: on a 640 px tall phone the column has to end above the Dodge and potion buttons. */
+#ui.touch-ui.portrait .endgame-stack > * { padding-top: 2px; padding-bottom: 2px; }
+#ui.touch-ui.portrait .rift-hud-head { font-size: 0.62em; }
+#ui.touch-ui.portrait .rift-hud-bar { height: 6px; margin-top: 1px; }
+#ui.touch-ui.portrait .rift-hud-status { font-size: 0.55em; margin-top: 1px; }
+#ui.touch-ui.portrait .worldboss-hud { font-size: 0.56em; }
+#ui.touch-ui.portrait .harvest-line { font-size: 0.56em; }
+#ui.touch-ui.portrait .harvest-shards { font-size: 0.66em; margin-top: 1px; }
 
 /* ---- Neural Matrix (inside the skill panel) ---------------------------------------- */
 .tree-panel.matrix-mode { width: min(1000px, calc(100vw - 32px)); height: calc(100vh - 110px); max-height: calc(100vh - 110px); }
