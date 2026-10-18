@@ -151,6 +151,10 @@ export interface InstanceRuntime {
   extra: ObjectiveExtra;
 }
 
+export function hasInstance(id: string): boolean {
+  return INSTANCES.some((d) => d.id === id);
+}
+
 export function instanceDef(id: string): InstanceDef {
   const def = INSTANCES.find((d) => d.id === id);
   if (!def) throw new Error(`Unknown instance ${id}`);

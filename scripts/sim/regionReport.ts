@@ -1,5 +1,5 @@
 /**
- * npm run region:report [-- district|vaults|mines] — the measurements behind docs/regions/<region>-playtest.md
+ * npm run region:report [-- district|vaults|mines|core] — the measurements behind docs/regions/<region>-playtest.md
  * (docs/world-and-gameplay.md §15.3). Combines the region layout with the bot's measured kill
  * rate to estimate quest and exploration times, fight spacing and Legendary drops, and checks for
  * places the player could get stuck (points of interest inside collision).
@@ -18,6 +18,7 @@ import { GAMMA, GREAT_DOME, HYDROPONIC_VAULTS, VAULTS_GATE, hv } from '../../src
 import { GAMMA_TUNING } from '../../src/world/vaultSetPieces';
 import { AURUM, DEEP_MINES, DRILL_CONTROL, MINES_GATE, dm } from '../../src/data/zones/deepMines';
 import { AURUM_TUNING } from '../../src/world/mineSetPieces';
+import { CORE_GATE, ELEVATOR_BASE, LUMEN_HEART, THE_CORE, island } from '../../src/data/zones/theCore';
 import { ENEMY_DEFS } from '../../src/data/db';
 import { rollDrops } from '../../src/systems/loot/generate';
 import { generateLayout } from '../../src/world/instance';
@@ -26,8 +27,8 @@ import { PLANS } from './plans';
 import { playthrough } from './playthrough';
 
 const arg = process.argv[2];
-const which = arg === 'district' || arg === 'vaults' || arg === 'mines' ? arg : 'cinder';
-const zone = which === 'district' ? REFINERY_DISTRICT : which === 'vaults' ? HYDROPONIC_VAULTS : which === 'mines' ? DEEP_MINES : CINDER_FLATS;
+const which = arg === 'district' || arg === 'vaults' || arg === 'mines' || arg === 'core' ? arg : 'cinder';
+const zone = which === 'district' ? REFINERY_DISTRICT : which === 'vaults' ? HYDROPONIC_VAULTS : which === 'mines' ? DEEP_MINES : which === 'core' ? THE_CORE : CINDER_FLATS;
 const speed = CLASSES.get('bastion')!.moveSpeed;
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -68,7 +69,7 @@ const distToSegment = (px: number, pz: number, ax: number, az: number, bx: numbe
 const at = (x: number, z: number) => ({ x, z });
 const npc = (id: string) => at(NPCS.get(id)!.x, NPCS.get(id)!.z);
 const tp = (id: string) => {
-  const t = [CINDER_FLATS, REFINERY_DISTRICT, HYDROPONIC_VAULTS, DEEP_MINES].flatMap((z) => z.teleporters).find((x) => x.id === id)!;
+  const t = [CINDER_FLATS, REFINERY_DISTRICT, HYDROPONIC_VAULTS, DEEP_MINES, THE_CORE].flatMap((z) => z.teleporters).find((x) => x.id === id)!;
   return at(t.x, t.z);
 };
 type Leg = { label: string; to: { x: number; z: number }; fight?: number; extra?: number; discover?: string };
@@ -160,8 +161,21 @@ const minesRoute: Leg[] = [
   { label: 'Governor Kade', to: at(DRILL_CONTROL.x, DRILL_CONTROL.z), extra: 330 },
   { label: 'Brask', to: npc('brask') },
 ];
-const route: Leg[] = which === 'district' ? districtRoute : which === 'vaults' ? vaultsRoute : which === 'mines' ? minesRoute : cinderRoute;
-const CONFIG = which === 'mines'
+// The Core (R5-A greybox): the walk up from the bore. Dungeons, quests and the fights at the Base and the Heart arrive in R5-C.
+const coreRoute: Leg[] = [
+  { label: 'The Last Camp', to: tp('tp.camp'), discover: 'tp.camp' },
+  { label: 'Garden Landing', to: tp('tp.gardens'), discover: 'tp.gardens' },
+  { label: 'Across the Hanging Gardens', to: at(island('g6').x, island('g6').z), extra: 4 * 8 },
+  { label: 'Hall of First Memory', to: tp('tp.halls'), discover: 'tp.halls' },
+  // The Base: waves of shades and Lumen creatures with three minibosses (placeholder estimate).
+  { label: 'The Elevator Base', to: at(ELEVATOR_BASE.x, ELEVATOR_BASE.z), extra: 420, discover: 'tp.base' },
+  { label: 'Heart Causeway', to: tp('tp.heart'), discover: 'tp.heart' },
+  { label: 'Lumen', to: at(LUMEN_HEART.x, LUMEN_HEART.z), extra: 480 },
+];
+const route: Leg[] = which === 'core' ? coreRoute : which === 'district' ? districtRoute : which === 'vaults' ? vaultsRoute : which === 'mines' ? minesRoute : cinderRoute;
+const CONFIG = which === 'core'
+  ? { name: 'The Core', dungeons: [] as string[], bunker: '', story: '', storyLeg: -1, start: CORE_GATE.arrive, hub: 'tp.camp', guaranteed: 0 }
+  : which === 'mines'
   ? { name: 'The Deep Mines', dungeons: ['shaft_13', 'crystal_labyrinth', 'sunken_drill', 'archive', 'burial_chamber'], bunker: 'dm_bunker', story: 'archive', storyLeg: 8, start: MINES_GATE.arrive, hub: 'tp.zero', guaranteed: 5 + 2 }
   : which === 'vaults'
   ? { name: 'The Hydroponic Vaults', dungeons: ['seed_bank_depths', 'cocoon_chamber', 'irrigation_system', 'sleeping_lab'], bunker: 'hv_bunker', story: 'sleeping_lab', storyLeg: 8, start: VAULTS_GATE.arrive, hub: 'tp.lab9', guaranteed: 4 + 2 }
@@ -200,7 +214,7 @@ function dungeonTime(id: string): { rooms: number; seconds: number } {
   }
   return { rooms: rooms / 20, seconds: seconds / 20 };
 }
-route[CONFIG.storyLeg]!.extra = dungeonTime(CONFIG.story).seconds;
+if (CONFIG.story) route[CONFIG.storyLeg]!.extra = dungeonTime(CONFIG.story).seconds;
 if (which === 'vaults') route[4]!.extra = dungeonTime('seed_bank_depths').seconds;
 if (which === 'mines') route[4]!.extra = dungeonTime('shaft_13').seconds;
 
@@ -235,7 +249,7 @@ const mainQuestSeconds = walkSeconds + fightSeconds + setPieceSeconds;
 const openShare = cave ? cave.data.reduce((a, v) => a + v, 0) / cave.data.length : 1;
 const sweep = ((zone.halfSize * 2) ** 2 * openShare) / (2 * 36);
 const allPacks = zone.packs.reduce((s, p) => s + packClear(p.template), 0);
-const instances = CONFIG.dungeons.reduce((sum, id) => sum + dungeonTime(id).seconds, 0) + 6 * dungeonTime(CONFIG.bunker).seconds;
+const instances = CONFIG.dungeons.reduce((sum, id) => sum + dungeonTime(id).seconds, 0) + (CONFIG.bunker ? 6 * dungeonTime(CONFIG.bunker).seconds : 0);
 const exploreSeconds = sweep / speed + allPacks + instances + setPieceSeconds;
 
 // ---- Time between fights on the roads ----------------------------------------------------
@@ -254,7 +268,7 @@ function legendaries(seed: string): number {
   const rng = new Rng(seed);
   let n = 0;
   let uid = 0;
-  const level = which === 'mines' ? 35 : which === 'vaults' ? 25 : which === 'district' ? 15 : 6;
+  const level = which === 'core' ? 45 : which === 'mines' ? 35 : which === 'vaults' ? 25 : which === 'district' ? 15 : 6;
   for (const p of zone.packs) {
     const t = packTemplate(p.template);
     for (const m of t.members) {
@@ -302,9 +316,9 @@ for (const q of QUESTS.values()) {
 const manifest = JSON.parse(readFileSync(new URL('../../assets/manifest.json', import.meta.url), 'utf8')) as { assets: { id: string; meshy?: { creditsSpent?: number } }[] };
 const region2 = ['enemy.smelter', 'enemy.welder', 'boss.vire', 'npc.pump_engineer', 'npc.defector', 'env.smokestack', 'env.pipe_cluster', 'env.slag_rock', 'env.furnace_block', 'env.catwalk', 'env.industrial_wall', 'env.pump_house', 'prop.the_pillar', 'prop.giant_crane', 'prop.smelters_cathedral', 'prop.vent', 'prop.coolant_valve', 'prop.prisoner_cage', 'prop.compressor', 'prop.motorbike', 'enemy.slagborn', 'enemy.cargo_loader', 'enemy.lumen_tentacle'];
 const region1 = ['enemy.spore_hound', 'enemy.sergeant', 'boss.the_first', 'npc.cook', 'npc.blacksmith', 'npc.technician', 'prop.meridian_freighter', 'prop.elevator_foundation', 'prop.refinery_silhouette', 'prop.escape_pod', 'prop.fuel_station', 'prop.teleporter', 'prop.stim_pylon', 'prop.echo_relic', 'prop.signal_tower', 'prop.supply_chest', 'prop.spore_feeder', 'prop.spore_nest', 'prop.generator', 'prop.explosive_barrel', 'prop.water_tanker', 'icon.keycard', 'icon.lore_log', 'icon.echo_relic'];
-const newAssets = which === 'vaults' || which === 'mines' ? [] : which === 'district' ? region2 : region1;
+const newAssets = which === 'vaults' || which === 'mines' || which === 'core' ? [] : which === 'district' ? region2 : region1;
 const credits = manifest.assets.filter((a) => newAssets.includes(a.id)).reduce((s, a) => s + (a.meshy?.creditsSpent ?? 0), 0);
-const srcText = readFileSync(new URL(`../../src/data/zones/${which === 'mines' ? 'deepMines' : which === 'vaults' ? 'hydroponicVaults' : which === 'district' ? 'refineryDistrict' : 'cinderFlats'}.ts`, import.meta.url), 'utf8');
+const srcText = readFileSync(new URL(`../../src/data/zones/${which === 'core' ? 'theCore' : which === 'mines' ? 'deepMines' : which === 'vaults' ? 'hydroponicVaults' : which === 'district' ? 'refineryDistrict' : 'cinderFlats'}.ts`, import.meta.url), 'utf8');
 const reused = manifest.assets.filter((a) => !newAssets.includes(a.id) && !a.id.startsWith('icon.') && !a.id.startsWith('char.') && srcText.includes(a.id)).length;
 
 console.log(`# ${CONFIG.name} measurements (estimates from layout + bot kill rate)\n`);

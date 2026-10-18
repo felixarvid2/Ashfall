@@ -38,6 +38,21 @@ export const MINES_GATE = {
   arrive: { x: 60 * S, z: -320 * S },
 };
 
+/**
+ * The bore Kade's Main Drill punched through the floor, on the dry shore of Drill Lake south-east of the drill
+ * (the drill itself stands in the water, which slows anyone wading). It leads up
+ * into the Core's Borderland and stays sealed until the last main quest (`mq.governor`) is done.
+ */
+export const DRILL_BORE = {
+  id: 'gate.dm.core',
+  x: MAIN_DRILL.x + 75,
+  z: MAIN_DRILL.z - 27,
+  radius: 7,
+  to: { zone: 'zone.the_core', gate: 'gate.core.mines' },
+  arrive: { x: MAIN_DRILL.x + 88, z: MAIN_DRILL.z - 32 },
+  requires: { quest: 'mq.governor', locked: 'zones.gateLocked.bore' },
+};
+
 export const MINE_SUBZONES = {
   shafts: { c: dm(0, -170), r: 130 * S },
   caves: { c: dm(-210, 40), r: 120 * S },
@@ -256,6 +271,12 @@ function buildProps(): PropPlacement[] {
     if (!clear(x, z, 3) || inWater(x, z, 3)) continue;
     props.push({ asset: 'env.slag_rock', x, z, rot: rng.range(0, 6.28), scale: rng.range(0.5, 1.4), collider: 0.7 * 1.4 });
   }
+  // The drill bore: a hole in the floor that glows gold, with work lights round the rim.
+  props.push(
+    { asset: 'prop.lumen_growth', x: DRILL_BORE.x, z: DRILL_BORE.z, scale: 2.2, glow: '#ffd88a', light: { color: '#ffd88a', intensity: 110, distance: 26, height: 3 } },
+    lamp(DRILL_BORE.x - 9, DRILL_BORE.z + 3, '#ffe2b0', 90),
+    lamp(DRILL_BORE.x + 9, DRILL_BORE.z + 3, '#ffe2b0', 90),
+  );
   return props;
 }
 
@@ -269,6 +290,7 @@ function buildPacks(): PackSpawn[] {
     !inWater(x, z, 1) &&
     Math.hypot(x - ZERO.x, z - ZERO.z) > ZERO.radius + 24 &&
     Math.hypot(x - MINES_GATE.arrive.x, z - MINES_GATE.arrive.z) > 40 &&
+    Math.hypot(x - DRILL_BORE.x, z - DRILL_BORE.z) > 36 &&
     Math.hypot(x - DRILL_CONTROL.x, z - DRILL_CONTROL.z) > DRILL_CONTROL.radius + 8 &&
     Math.hypot(x - AURUM.x, z - AURUM.z) > AURUM.radius + 4;
   const templateAt = (x: number, z: number): string => {
@@ -453,7 +475,7 @@ export const DEEP_MINES: ZoneDef = {
     .map((p) => (openGround(p.x, p.z) ? p : { ...p, ...(nearestWalkable(GRID, p.x, p.z) ?? p) }))
     .filter((p) => p.kind !== 'chest' || !insideProp(p.x, p.z)),
   mapCell: 8,
-  gates: [MINES_GATE],
+  gates: [MINES_GATE, DRILL_BORE],
   env: MINES_ENV,
   caves: MINES_CAVES,
   region: 4,

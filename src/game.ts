@@ -60,6 +60,7 @@ import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
 import { navigationSystem } from './systems/navigation';
 import { UNDERGROUND, litFloodlights, rockSystem, undergroundState, undergroundSystem } from './world/underground';
+import { bridgeSystem, gravitySystem } from './world/theCore';
 import { isAlive, kill } from './systems/combat';
 import { deathSystem } from './systems/death';
 import { encounterSystem, startNextWave } from './systems/encounter';
@@ -140,7 +141,7 @@ import {
 import { VENDOR } from './data/services';
 import { championAffixes, eliteSystem } from './systems/elites';
 import { bossSystem, resetBoss } from './systems/boss';
-import { buildInstance, clearInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
+import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
@@ -284,6 +285,8 @@ export class Game {
       .add('forcedMove', forcedMoveSystem)
       .add('environment', environmentSystem)
       .add('underground', undergroundSystem)
+      .add('gravity', gravitySystem)
+      .add('bridges', bridgeSystem)
       .add('delayedStrikes', delayedStrikeSystem)
       .add('collision', collisionSystem)
       .add('rock', rockSystem)
@@ -715,7 +718,9 @@ export class Game {
     this.lastTarget = null;
     // Arriving in another region: its painting and name sweep in, once the zone is drawing.
     if (old?.def.id !== id) {
-      const card = artUrl(`regions/${id.replace(/^zone\./, '')}`);
+      // The Core has no painting yet (R5-D): it borrows the Deep Mines card, since the way in is Kade's drill.
+      const slug = id.replace(/^zone\./, '');
+      const card = artUrl(`regions/${slug}`) ?? (slug === 'the_core' ? artUrl('regions/deep_mines') : null);
       if (card) this.pendingCard = { image: card, name: t(`zones.${def.key}.name`), sub: t('hud.regionNumber', { n: def.region }), frames: 4 };
     }
   }
@@ -842,6 +847,7 @@ export class Game {
     if (this.zone) {
       const zone = this.zone;
       this.renderer.updateCooled(zone.cooled, this.ctx.time);
+      this.renderer.updateCore(this.ctx.time);
       if (zone.def.dark) {
         // Floodlights switched on and burning flares light the dark.
         const st = undergroundState(zone);
@@ -1498,6 +1504,8 @@ ${t('questUi.rewards', { xp: def.rewards.xp, gold: def.rewards.gold })}`;
     const poi = zone?.def.pois.find((p) => p.id === poiId);
     if (!zone || !poi || this.ctx.instance) return;
     const defId = poi.kind === 'dungeon' ? String(poi.data?.dungeon ?? '') : String(poi.data?.instance ?? 'bunker');
+    // The Core's dungeons and mirrors are markers until R5-C builds them.
+    if (!hasInstance(defId)) return this.notice('interact.notBuilt', 'info');
     // Wake-up packs far away would only sit there: put them back to sleep.
     for (const st of zone.packs.values()) {
       if (st.state !== 'active') continue;

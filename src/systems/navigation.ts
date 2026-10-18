@@ -21,7 +21,7 @@
 import { Blast, Collider, Dead, EnemyAI, Hazard, PlayerControlled, Transform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
-import { caveGrid, walkableAt } from '../data/zones/caves';
+import { airAt, caveGrid, walkableAt } from '../data/zones/caves';
 
 export const NAV = {
   /** Cell size (m) and window half-size (cells) around the player. */
@@ -161,7 +161,11 @@ export function buildGrid(world: World, ctx: GameContext, px: number, pz: number
   if (cave) {
     for (let j = 0; j < n; j++) {
       const z = z0 + (j + 0.5) * cell;
-      for (let i = 0; i < n; i++) if (!walkableAt(cave, x0 + (i + 0.5) * cell, z)) blocked[j * n + i] = WALK | SIGHT;
+      for (let i = 0; i < n; i++) {
+        const x = x0 + (i + 0.5) * cell;
+        // Open air (an abyss) can't be walked but can be seen across.
+        if (!walkableAt(cave, x, z)) blocked[j * n + i] = airAt(cave, x, z) ? WALK : WALK | SIGHT;
+      }
     }
   }
   // Static colliders: their footprint plus clearance can't be walked; big ones also block sight.
@@ -384,7 +388,9 @@ export function lineOfSight(ctx: GameContext, ax: number, az: number, bx: number
   const steps = Math.ceil(len);
   for (let s = 1; s < steps; s++) {
     const t = s / steps;
-    if (!walkableAt(cave, ax + (bx - ax) * t, az + (bz - az) * t)) return false;
+    const x = ax + (bx - ax) * t;
+    const z = az + (bz - az) * t;
+    if (!walkableAt(cave, x, z) && !airAt(cave, x, z)) return false;
   }
   return true;
 }

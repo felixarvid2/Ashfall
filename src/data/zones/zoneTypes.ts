@@ -50,6 +50,8 @@ export interface ZoneGateDef {
   to: { zone: string; gate: string };
   /** Where a player coming through from the other side appears. */
   arrive: { x: number; z: number };
+  /** Locked until this quest is completed (the trigger then shows `locked` instead of crossing). */
+  requires?: { quest: string; /** Language key of the notice shown while it is locked. */ locked: string };
 }
 
 /** Environmental mechanics placed in a zone (Refinery District). */
@@ -69,7 +71,26 @@ export type EnvFeature =
   /** Shallow water: slows everyone wading through it. Drained water (dungeon levers) is gone. */
   | { kind: 'water'; id: string; x: number; z: number; radius: number }
   /** A tunnel stretch that collapses (warned with dust and creaking) when the player comes close (Deep Mines). */
-  | { kind: 'caveIn'; id: string; x: number; z: number; radius: number };
+  | { kind: 'caveIn'; id: string; x: number; z: number; radius: number }
+  /**
+   * Unstable Gravity (The Core): every `period` seconds the field shimmers for 1.5 s, then pulls everything
+   * inside for 4 s. `abyss` fields pull towards the nearest drop; `rotate` fields pull along `dir` (radians,
+   * 0 = +z), turning by `turn` each cycle. A field is a circle, or a rectangle (`rect`, half-extents
+   * along x and z) whose `radius` is its bounding circle.
+   */
+  | {
+      kind: 'gravity';
+      id: string;
+      x: number;
+      z: number;
+      radius: number;
+      rect?: { hx: number; hz: number };
+      mode: 'abyss' | 'rotate';
+      period: number;
+      offset: number;
+      dir?: number;
+      turn?: number;
+    };
 
 export interface PackSpawn {
   id: string;

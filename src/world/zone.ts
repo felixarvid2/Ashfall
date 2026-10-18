@@ -63,6 +63,8 @@ export interface ZoneRuntime {
   cooled: Map<string, number>;
   /** Deep Mines: flares, cave-ins and noise (created on first use). */
   underground?: import('./underground').UndergroundState;
+  /** The Core: which gravity shimmers were already shown (created on first use). */
+  core?: import('./theCore').CoreState;
 }
 
 export function createZoneRuntime(def: ZoneDef): ZoneRuntime {
@@ -258,7 +260,10 @@ export function zoneSystem(world: World, dt: number, ctx: GameContext): void {
   }
   if (atGate && zone.gateReady && !world.has(player, Dead)) {
     zone.gateReady = false;
-    ctx.events.push({ type: 'zoneGate', gate: atGate });
+    const lock = zone.def.gates.find((g) => g.id === atGate)?.requires;
+    // A locked gate says why; stepping away and back says it again.
+    if (lock && !ctx.quests?.done.has(lock.quest)) ctx.events.push({ type: 'notice', key: lock.locked });
+    else ctx.events.push({ type: 'zoneGate', gate: atGate });
   } else if (clear) zone.gateReady = true;
   const hub = hubAt(zone, ptr.x, ptr.z);
   if ((hub?.id ?? null) !== zone.inHub) {

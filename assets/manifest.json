@@ -4091,6 +4091,444 @@
           1
         ]
       }
+    },
+    {
+      "id": "enemy.light_being",
+      "category": "enemy",
+      "prompt": "Lumen light being: a small hovering mechanical drone-creature (free low-poly model, Lumen look applied in game)",
+      "source": "external",
+      "credit": "Quaternius Cyberpunk Game Kit Enemy_Flying (CC0)",
+      "targetPolycount": 3000,
+      "textureSize": 512,
+      "heightMeters": 1.6,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Idle",
+          "walk": "Walk",
+          "run": "Run",
+          "attack": "Attack",
+          "shoot": "Shoot",
+          "death": "Dead"
+        }
+      },
+      "file": "enemies/light_being.glb",
+      "stats": {
+        "triangles": 2966,
+        "bytes": 68696,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#f2e6b0",
+        "size": [
+          0.7,
+          1.6,
+          0.7
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.8,
+        "showFacing": true,
+        "facingColor": "#ffffff"
+      }
+    },
+    {
+      "id": "enemy.guardian_lancer",
+      "category": "enemy",
+      "prompt": "Guardian Lancer: a large four-legged cannon walker (free low-poly model, Lumen look applied in game)",
+      "source": "external",
+      "credit": "Quaternius Cyberpunk Game Kit Enemy_Large (CC0)",
+      "targetPolycount": 3000,
+      "textureSize": 512,
+      "heightMeters": 2.6,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Idle",
+          "walk": "Walk",
+          "run": "Run",
+          "attack": "Attack",
+          "attack2": "Attack.001",
+          "shoot": "Shoot",
+          "leap": "Jump",
+          "death": "Death"
+        }
+      },
+      "file": "enemies/guardian_lancer.glb",
+      "stats": {
+        "triangles": 2924,
+        "bytes": 97628,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#e8dcae",
+        "size": [
+          1.4,
+          2.6,
+          1.4
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.7,
+        "showFacing": true,
+        "facingColor": "#ffffff"
+      }
+    },
+    {
+      "id": "enemy.light_mote",
+      "category": "enemy",
+      "prompt": "Light mote: a tiny flying swarm creature that headbutts (free low-poly model, Lumen look applied in game)",
+      "source": "external",
+      "credit": "Quaternius Ultimate Space Kit Enemy_ExtraSmall (CC0)",
+      "targetPolycount": 1700,
+      "textureSize": 512,
+      "heightMeters": 0.6,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Flying_Idle",
+          "walk": "Fast_Flying",
+          "run": "Fast_Flying",
+          "attack": "Headbutt",
+          "attack2": "Punch",
+          "hit": "HitReact",
+          "death": "Death"
+        }
+      },
+      "file": "enemies/light_mote.glb",
+      "stats": {
+        "triangles": 1572,
+        "bytes": 38228,
+        "textures": 1
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#fff2c4",
+        "size": [
+          0.5,
+          0.6,
+          0.5
+        ],
+        "emissive": "#ffe08a",
+        "emissiveIntensity": 1
+      }
+    },
+    {
+      "id": "enemy.core_guardian",
+      "category": "enemy",
+      "prompt": "Core Guardian: a tall heavy combat mech (free low-poly model, Lumen look applied in game)",
+      "source": "external",
+      "credit": "Quaternius Animated Mech Pack Stan, Flat Colors glTF (CC0)",
+      "targetPolycount": 6000,
+      "textureSize": 512,
+      "heightMeters": 3.5,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Idle",
+          "walk": "Walk",
+          "run": "Run",
+          "attack": "Punch",
+          "attack2": "Kick",
+          "slam": "SwordSlash",
+          "shoot": "Shoot",
+          "leap": "Jump",
+          "hit": "HitRecieve_1",
+          "death": "Death"
+        }
+      },
+      "file": "enemies/core_guardian.glb",
+      "stats": {
+        "triangles": 5972,
+        "bytes": 372220,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#e8dcae",
+        "size": [
+          2.2,
+          3.5,
+          2.2
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.6,
+        "showFacing": true,
+        "facingColor": "#ffffff"
+      }
+    },
+    {
+      "id": "enemy.choir_singer",
+      "category": "enemy",
+      "prompt": "Choir singer: a rooted alien chrysalis with eyes that empowers enemies around it (free low-poly model, Lumen look applied in game)",
+      "source": "external",
+      "credit": "Quaternius Modular SciFi MegaKit Alien_Oculichrysalis (CC0)",
+      "targetPolycount": 6500,
+      "textureSize": 512,
+      "heightMeters": 2.2,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Alien_Idle"
+        }
+      },
+      "file": "enemies/choir_singer.glb",
+      "stats": {
+        "triangles": 6440,
+        "bytes": 55672,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#fff2c4",
+        "size": [
+          0.9,
+          2.2,
+          0.9
+        ],
+        "emissive": "#ffe08a",
+        "emissiveIntensity": 0.9
+      }
+    },
+    {
+      "id": "prop.core_column",
+      "category": "prop",
+      "prompt": "Reactor column wrapped in pipes, derelict facility",
+      "source": "external",
+      "credit": "Quaternius Modular SciFi MegaKit Column_Pipes (CC0)",
+      "targetPolycount": 3000,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_column.glb",
+      "lods": [
+        "props/core_column_lod1.glb",
+        "props/core_column_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 2998,
+        "bytes": 188928,
+        "textures": 9
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#7a7f88",
+        "size": [
+          0.9,
+          5,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "prop.core_wall_panel",
+      "category": "prop",
+      "prompt": "Four-metre wall section with an ornamented panel, derelict facility",
+      "source": "external",
+      "credit": "Quaternius Modular SciFi MegaKit WallAstra_Straight (CC0)",
+      "targetPolycount": 400,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_wall_panel.glb",
+      "lods": [
+        "props/core_wall_panel_lod1.glb",
+        "props/core_wall_panel_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 355,
+        "bytes": 160472,
+        "textures": 11
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#7a7f88",
+        "size": [
+          1.2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "prop.core_platform",
+      "category": "prop",
+      "prompt": "Round metal platform, six metres across",
+      "source": "external",
+      "credit": "Quaternius Modular SciFi MegaKit Platform_Round1 (CC0)",
+      "targetPolycount": 800,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_platform.glb",
+      "lods": [
+        "props/core_platform_lod1.glb",
+        "props/core_platform_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 720,
+        "bytes": 97996,
+        "textures": 6
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#6a6f78",
+        "size": [
+          6,
+          0.2,
+          6
+        ]
+      }
+    },
+    {
+      "id": "prop.core_console",
+      "category": "prop",
+      "prompt": "Computer console with a screen",
+      "source": "external",
+      "credit": "Quaternius Modular SciFi MegaKit Prop_Computer (CC0)",
+      "targetPolycount": 600,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_console.glb",
+      "lods": [
+        "props/core_console_lod1.glb",
+        "props/core_console_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 519,
+        "bytes": 81772,
+        "textures": 4
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a5058",
+        "size": [
+          0.8,
+          1.6,
+          0.6
+        ]
+      }
+    },
+    {
+      "id": "prop.core_cable",
+      "category": "prop",
+      "prompt": "Thick power cable lying across the floor",
+      "source": "external",
+      "credit": "Quaternius Modular SciFi MegaKit Prop_Cable_3 (CC0)",
+      "targetPolycount": 2000,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_cable.glb",
+      "lods": [
+        "props/core_cable_lod1.glb",
+        "props/core_cable_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1998,
+        "bytes": 96568,
+        "textures": 6
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#2a2d33",
+        "size": [
+          1.6,
+          0.15,
+          5.7
+        ]
+      }
+    },
+    {
+      "id": "prop.core_door",
+      "category": "prop",
+      "prompt": "Square doorway frame, five metres high",
+      "source": "external",
+      "credit": "Quaternius Modular SciFi MegaKit Door_Frame_Square (CC0)",
+      "targetPolycount": 300,
+      "textureSize": 512,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_door.glb",
+      "lods": [
+        "props/core_door_lod1.glb",
+        "props/core_door_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 280,
+        "bytes": 49072,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a6f78",
+        "size": [
+          4.9,
+          5,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "prop.core_pipe",
+      "category": "prop",
+      "prompt": "Short pipe segment of the melting machinery",
+      "source": "external",
+      "credit": "Kenney Space Station Kit pipe (CC0)",
+      "targetPolycount": 100,
+      "textureSize": 256,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_pipe.glb",
+      "lods": [
+        "props/core_pipe_lod1.glb",
+        "props/core_pipe_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 20,
+        "bytes": 3748,
+        "textures": 1
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#8a8f98",
+        "size": [
+          0.25,
+          0.5,
+          0.25
+        ]
+      }
+    },
+    {
+      "id": "prop.core_pipe_ring",
+      "category": "prop",
+      "prompt": "Pipe segment with a collar ring",
+      "source": "external",
+      "credit": "Kenney Space Station Kit pipe-ring (CC0)",
+      "targetPolycount": 100,
+      "textureSize": 256,
+      "status": "optimized",
+      "meshy": {},
+      "file": "props/core_pipe_ring.glb",
+      "lods": [
+        "props/core_pipe_ring_lod1.glb",
+        "props/core_pipe_ring_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 40,
+        "bytes": 3992,
+        "textures": 1
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#8a8f98",
+        "size": [
+          0.35,
+          0.5,
+          0.35
+        ]
+      }
     }
   ]
 }

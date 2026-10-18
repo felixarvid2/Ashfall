@@ -1393,7 +1393,12 @@
         "caves": "The Crystal Caves",
         "lake": "Drill Lake",
         "elder": "The Elder Halls",
-        "aurum": "Mining Station Aurum"
+        "aurum": "Mining Station Aurum",
+        "camp": "The Last Camp",
+        "gardens": "Garden Landing",
+        "halls": "Hall of First Memory",
+        "base": "The Elevator Base",
+        "heart": "Heart Causeway"
       }
     },
     "refineryDistrict": {
@@ -1431,6 +1436,20 @@
         "zero": "Elevator Station Zero",
         "aurum": "Mining Station Aurum (reclaimed)"
       }
+    },
+    "theCore": {
+      "name": "The Core",
+      "greatCavern": "The Great Cavern",
+      "borderland": "The Borderland",
+      "hangingGardens": "The Hanging Gardens",
+      "memoryHalls": "The Memory Halls",
+      "heart": "The Heart",
+      "hub": {
+        "camp": "The Last Camp"
+      }
+    },
+    "gateLocked": {
+      "bore": "The bore is sealed. Whatever Kade's drill woke is not finished with the Mines yet."
     }
   },
   "map": {
@@ -1482,7 +1501,8 @@
     "pylonBanner": "{name}",
     "pylonToast": "{name}: {desc}",
     "close": "Close",
-    "loreXp": "+{xp} XP"
+    "loreXp": "+{xp} XP",
+    "notBuilt": "Sealed. Whatever waits behind this has not woken yet."
   },
   "pylons": {
     "overcharge": {
@@ -1752,6 +1772,56 @@
       "3": {
         "title": "Memory crystal IV",
         "body": "And then, a human voice laid over the old one: 'Fascinating. They want a body. I have one to offer — on my terms.' — Governor A. Kade"
+      }
+    },
+    "core": {
+      "0": {
+        "title": "Bore log, last entry",
+        "body": "Depth four thousand metres. The rock stopped being rock around three-eight. It is warm now, and it is breathing. We kept drilling. Nobody gave the order to stop."
+      },
+      "1": {
+        "title": "Scrawled on a mine cart",
+        "body": "IT WAS NEVER ASLEEP. IT WAS WAITING FOR SOMEONE TO MAKE A DOOR."
+      },
+      "2": {
+        "title": "Technician's note",
+        "body": "The pipes still carry coolant. Only now the coolant is gold, and it is warm, and it is going the wrong way: into the walls, not out of them."
+      },
+      "3": {
+        "title": "Camp ledger",
+        "body": "Day 3: eleven of us. Day 9: nineteen. Nobody remembers anyone arriving. Nobody remembers anyone leaving. We keep the count anyway."
+      },
+      "4": {
+        "title": "Service tunnel sign",
+        "body": "SEALED FOR YOUR PROTECTION. THE SHAFT IS NOT A WAY OUT. THE SHAFT IS A WAY UP."
+      },
+      "5": {
+        "title": "Survey drone recording",
+        "body": "Structure ahead: a column, four hundred metres across, running up out of sensor range. Material: steel, and something else. The something else is humming a tune."
+      },
+      "6": {
+        "title": "Gardener's note",
+        "body": "The bridges are not for us. We are for the bridges. When they flicker, step off. It does not want you to fall. It has never wanted that."
+      },
+      "7": {
+        "title": "Voice log, unknown",
+        "body": "I saw my own house. The kitchen, the light on the table, the dog. I walked in. It was a field of gold, and it said my name the way she used to."
+      },
+      "8": {
+        "title": "Memory Halls plaque",
+        "body": "EVERYTHING HERE HAS BEEN LOVED. EVERYTHING HERE HAS BEEN KEPT. NOTHING HERE HAS BEEN ALLOWED TO END."
+      },
+      "9": {
+        "title": "Climber's journal",
+        "body": "Fifteen hundred steps to the causeway. The light pulses once a second. By the end I was walking in time with it, and I was glad."
+      },
+      "10": {
+        "title": "Fragment, in gold light",
+        "body": "I did not take them. They came to the light, and I kept them from the dark. Is that not what you wanted, once, for your own?"
+      },
+      "11": {
+        "title": "Last message from the Elevator Base",
+        "body": "We hold the shaft. Whatever is climbing it will have to climb past us. If you read this, tell the surface we did not run."
       }
     }
   },

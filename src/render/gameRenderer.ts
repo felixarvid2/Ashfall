@@ -17,8 +17,9 @@ import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena
 import { buildGroundSplat } from './groundSplat';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnvFeature } from '../data/zones/zoneTypes';
-import { caveGrid, type CaveGrid } from '../data/zones/caves';
+import { bridgeCellsOf, bridgeState, caveGrid, type BridgeCycle, type CaveGrid } from '../data/zones/caves';
 import { scatterInstances } from '../world/arena';
+import { gravityFields, gravityPhase, type Gravity } from '../world/theCore';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
 import { AssetLibrary, type TintSlot } from './assets';
@@ -167,7 +168,9 @@ export class GameRenderer {
     const domes = (arena as { domes?: { x: number; z: number; radius: number }[] }).domes ?? [];
     if (domes.length) this.buildDomes(s, domes);
     const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+    this.coreLook = null;
     if (grid) this.buildCaveWalls(s, grid);
+    if (grid?.air || grid?.bridges) this.buildCoreLook(s, grid, gravityFields(arena as { env?: EnvFeature[] }));
     this.dark = arena.dark ?? false;
     this.useEnvironment(this.dark ? ENV_LIGHT.dark : ENV_LIGHT.surface);
     this.dynamicLights = [];
@@ -705,8 +708,15 @@ export class GameRenderer {
    */
   private buildCaveWalls(root: THREE.Group, grid: CaveGrid): void {
     const H = 3.6;
-    const { n, cell, half, data } = grid;
+    const { n, cell, half } = grid;
+    // As drawn, an energy bridge is light laid over open air: its cells are not ground.
+    const bridgeCells = bridgeCellsOf(grid);
+    const data = bridgeCells.size ? grid.data.slice() : grid.data;
+    for (const k of bridgeCells) data[k] = 0;
     const open = (i: number, j: number) => i >= 0 && j >= 0 && i < n && j < n && data[j * n + i] === 1;
+    // Open air (an abyss, a melt pool) has no rock: no cap over it and no wall beside it, but a glowing drop.
+    const air = (i: number, j: number) => i >= 0 && j >= 0 && i < n && j < n && (grid.air?.[j * n + i] === 1 || bridgeCells.has(j * n + i));
+    const solid = (i: number, j: number) => !open(i, j) && !air(i, j);
     const rng = new Rng('cave-walls');
     // Deterministic per-corner jitter so neighbouring wall pieces share their corners.
     const jitter = (i: number, j: number) => {
@@ -717,12 +727,12 @@ export class GameRenderer {
     for (let j = 0; j < n; j++) {
       let i = 0;
       while (i < n) {
-        if (open(i, j)) {
+        if (!solid(i, j)) {
           i++;
           continue;
         }
         const start = i;
-        while (i < n && !open(i, j)) i++;
+        while (i < n && solid(i, j)) i++;
         const x0 = start * cell - half;
         const x1 = i * cell - half;
         const z0 = j * cell - half;
@@ -733,7 +743,7 @@ export class GameRenderer {
     const capGeo = new THREE.BufferGeometry();
     capGeo.setAttribute('position', new THREE.Float32BufferAttribute(capPos, 3));
     capGeo.computeVertexNormals();
-    const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color: '#050404' }));
+    const cap = new THREE.Mesh(capGeo, new THREE.MeshBasicMaterial({ color: grid.air ? '#0c0814' : '#050404' }));
     root.add(cap);
     const wallPos: number[] = [];
     const wallCol: number[] = [];
@@ -761,6 +771,14 @@ export class GameRenderer {
       const shade = 0.75 + rng.next() * 0.35;
       for (let k = 0; k < 6; k++) wallCol.push(0.95 * shade, 0.88 * shade, 0.8 * shade);
     };
+    // The edge of a floating island: glowing Lumen matter falling away into the dark.
+    const SKIRT = 7;
+    const lipPos: number[] = [];
+    const lipCol: number[] = [];
+    const lip = (ax: number, az: number, bx: number, bz: number) => {
+      lipPos.push(ax, 0, az, bx, 0, bz, bx, -SKIRT, bz, ax, 0, az, bx, -SKIRT, bz, ax, -SKIRT, az);
+      lipCol.push(1, 0.88, 0.62, 1, 0.88, 0.62, 0.18, 0.08, 0.34, 1, 0.88, 0.62, 0.18, 0.08, 0.34, 0.18, 0.08, 0.34);
+    };
     for (let j = 0; j < n; j++) {
       for (let i = 0; i < n; i++) {
         if (!open(i, j)) continue;
@@ -768,11 +786,11 @@ export class GameRenderer {
         const z0 = j * cell - half;
         const x1 = x0 + cell;
         const z1 = z0 + cell;
-        // Faces point into the open cell.
-        if (!open(i, j - 1)) quad(x1, z0, x0, z0, [i + 1, j], [i, j]);
-        if (!open(i, j + 1)) quad(x0, z1, x1, z1, [i, j + 1], [i + 1, j + 1]);
-        if (!open(i - 1, j)) quad(x0, z0, x0, z1, [i, j], [i, j + 1]);
-        if (!open(i + 1, j)) quad(x1, z1, x1, z0, [i + 1, j + 1], [i + 1, j]);
+        // Faces point into the open cell; where the neighbour is open air the island just ends.
+        if (!open(i, j - 1)) (air(i, j - 1) ? lip(x1, z0, x0, z0) : quad(x1, z0, x0, z0, [i + 1, j], [i, j]));
+        if (!open(i, j + 1)) (air(i, j + 1) ? lip(x0, z1, x1, z1) : quad(x0, z1, x1, z1, [i, j + 1], [i + 1, j + 1]));
+        if (!open(i - 1, j)) (air(i - 1, j) ? lip(x0, z0, x0, z1) : quad(x0, z0, x0, z1, [i, j], [i, j + 1]));
+        if (!open(i + 1, j)) (air(i + 1, j) ? lip(x1, z1, x1, z0) : quad(x1, z1, x1, z0, [i + 1, j + 1], [i + 1, j]));
       }
     }
     const wallGeo = new THREE.BufferGeometry();
@@ -783,6 +801,135 @@ export class GameRenderer {
     const walls = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, flatShading: true, side: THREE.DoubleSide, ...this.rockMaps() }));
     walls.receiveShadow = true;
     root.add(walls);
+    if (lipPos.length) {
+      const lipGeo = new THREE.BufferGeometry();
+      lipGeo.setAttribute('position', new THREE.Float32BufferAttribute(lipPos, 3));
+      lipGeo.setAttribute('color', new THREE.Float32BufferAttribute(lipCol, 3));
+      root.add(new THREE.Mesh(lipGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+    }
+    this.buildAbyss(root, grid, open, air);
+  }
+
+  /** The glowing drop under open air: dark violet in the deep, bright where it meets ground. */
+  private buildAbyss(root: THREE.Group, grid: CaveGrid, open: (i: number, j: number) => boolean, air: (i: number, j: number) => boolean): void {
+    const { n, cell, half } = grid;
+    const near = (i: number, j: number, r: number) => {
+      for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) if (open(i + di, j + dj)) return true;
+      return false;
+    };
+    // Linear colours, kept low: bloom turns anything bright into a white sheet.
+    const tiers = [
+      [0.012, 0.006, 0.05],
+      [0.04, 0.02, 0.14],
+      [0.16, 0.08, 0.34],
+    ];
+    const pos: number[] = [];
+    const col: number[] = [];
+    const Y = 0.02;
+    for (let j = 0; j < n; j++) {
+      let i = 0;
+      while (i < n) {
+        if (!air(i, j)) {
+          i++;
+          continue;
+        }
+        // Runs of equal brightness merge into one strip.
+        const tier = near(i, j, 1) ? 2 : near(i, j, 4) ? 1 : 0;
+        const start = i;
+        while (i < n && air(i, j) && (near(i, j, 1) ? 2 : near(i, j, 4) ? 1 : 0) === tier) i++;
+        const x0 = start * cell - half;
+        const x1 = i * cell - half;
+        const z0 = j * cell - half;
+        const z1 = z0 + cell;
+        pos.push(x0, Y, z0, x0, Y, z1, x1, Y, z1, x0, Y, z0, x1, Y, z1, x1, Y, z0);
+        for (let k = 0; k < 6; k++) col.push(...tiers[tier]!);
+      }
+    }
+    if (!pos.length) return;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    root.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true })));
+  }
+
+  /** The Core: energy bridges (light strips that fade when off) and the shimmer over gravity fields. */
+  private coreLook: {
+    bridges: { id: string; cycle: BridgeCycle | undefined; mats: THREE.MeshBasicMaterial[]; level: number }[];
+    fields: { field: Gravity; mat: THREE.MeshBasicMaterial }[];
+    last: number;
+  } | null = null;
+
+  private buildCoreLook(root: THREE.Group, grid: CaveGrid, fields: Gravity[]): void {
+    const look: NonNullable<typeof this.coreLook> = { bridges: [], fields: [], last: 0 };
+    for (const b of grid.bridges ?? []) {
+      const dx = b.def.b[0] - b.def.a[0];
+      const dz = b.def.b[1] - b.def.a[1];
+      const full = Math.hypot(dx, dz);
+      // Only the stretch over open air is drawn (the ends lie on islands): from the bridge's own cells.
+      let t0 = Infinity;
+      let t1 = -Infinity;
+      for (const k of b.cells) {
+        const x = ((k % grid.n) + 0.5) * grid.cell - grid.half;
+        const z = (Math.floor(k / grid.n) + 0.5) * grid.cell - grid.half;
+        const along = ((x - b.def.a[0]) * dx + (z - b.def.a[1]) * dz) / full;
+        t0 = Math.min(t0, along);
+        t1 = Math.max(t1, along);
+      }
+      if (t0 > t1) continue;
+      t0 -= grid.cell / 2;
+      t1 += grid.cell / 2;
+      const len = t1 - t0;
+      const centre = (t0 + t1) / 2 / full;
+      const group = new THREE.Group();
+      group.position.set(b.def.a[0] + dx * centre, 0.07, b.def.a[1] + dz * centre);
+      group.rotation.y = Math.atan2(dx, dz);
+      // A wide soft body, a bright core and two rails.
+      const mats: THREE.MeshBasicMaterial[] = [];
+      const strip = (width: number, offset: number, color: string, opacity: number, y: number) => {
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+        mats.push(mat);
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, len), mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.set(offset, y, 0);
+        group.add(mesh);
+      };
+      strip(b.def.width, 0, '#3a2670', 0.9, 0);
+      strip(b.def.width * 0.4, 0, '#9a86d8', 0.7, 0.01);
+      strip(0.4, -b.def.width / 2 + 0.2, '#c8b8f0', 0.9, 0.02);
+      strip(0.4, b.def.width / 2 - 0.2, '#c8b8f0', 0.9, 0.02);
+      look.bridges.push({ id: b.def.id, cycle: b.def.cycle, mats, level: 1 });
+      root.add(group);
+    }
+    for (const field of fields) {
+      const mat = new THREE.MeshBasicMaterial({ map: makeGlowTexture(), color: '#b48cff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      const w = field.rect ? field.rect.hx * 2 : field.radius * 2;
+      const d = field.rect ? field.rect.hz * 2 : field.radius * 2;
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(field.x, 0.09, field.z);
+      root.add(mesh);
+      look.fields.push({ field, mat });
+    }
+    this.coreLook = look;
+  }
+
+  /** Called every frame with the game clock: bridges fade and flicker with their cycle, gravity fields shimmer. */
+  updateCore(time: number): void {
+    const look = this.coreLook;
+    if (!look) return;
+    const dt = Math.max(0, Math.min(0.1, time - look.last));
+    look.last = time;
+    for (const b of look.bridges) {
+      const st = bridgeState(b.cycle, time);
+      // Flicker: the light stutters in the last second before it goes out.
+      const target = !st.on ? 0 : st.flicker ? (Math.sin(time * 38) > 0 ? 1 : 0.15) : 1;
+      b.level += (target - b.level) * Math.min(1, dt * (st.on ? 14 : 7));
+      b.mats.forEach((m, i) => (m.opacity = b.level * [0.9, 0.7, 0.9, 0.9][i]!));
+    }
+    for (const { field, mat } of look.fields) {
+      const { phase } = gravityPhase(field, time);
+      mat.opacity = phase === 'idle' ? 0 : phase === 'shimmer' ? 0.12 + 0.1 * Math.sin(time * 16) : 0.18 + 0.04 * Math.sin(time * 5);
+    }
   }
 
   private rockTextures: { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture } | null = null;
