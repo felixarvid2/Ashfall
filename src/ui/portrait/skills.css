@@ -190,7 +190,7 @@
 .dialogue-chip.gold { color: #ffd23a; }
 /* Nothing of the thumb cluster stays over the sheet while a conversation is open. */
 #ui.touch-ui.portrait:has(.dialogue-panel:not([hidden])) .slots { visibility: hidden; }
-#ui.touch-ui .dialogue-panel { max-height: min(60vh, calc(100dvh - 12px - var(--sat) - var(--sab))); }
+#ui.touch-ui.portrait .panel.dialogue-panel { max-height: min(60vh, calc(100dvh - 12px - var(--sat) - var(--sab))); }
 
 /* ---- Neural Matrix: header (P069), buttons (P068), board and detail (P067, P071), glyph picker (P070) ---- */
 .matrix-head { display: flex; flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: var(--space-2); }
