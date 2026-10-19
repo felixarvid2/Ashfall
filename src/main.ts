@@ -1,3 +1,12 @@
+// Styles: the base sheet, then the portrait touch layout overrides (one file per area, in this order).
+import './ui/style.css';
+import './ui/portrait/base.css';
+import './ui/portrait/controls.css';
+import './ui/portrait/hud.css';
+import './ui/portrait/world.css';
+import './ui/portrait/items.css';
+import './ui/portrait/skills.css';
+import './ui/portrait/services.css';
 import { validateGameData } from './data/validate';
 import { Game } from './game';
 import { t } from './data/i18n';
