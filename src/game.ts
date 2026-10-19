@@ -80,6 +80,7 @@ import { enemyNear } from './systems/targeting';
 import { DamageNumbers } from './ui/damageNumbers';
 import { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
+import { sortGrid, type SortMode } from './ui/inventoryLogic';
 import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
 import { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels } from './ui/lootLabels';
@@ -464,11 +465,18 @@ export class Game {
       () => this.world.req(this.player, Inventory),
       () => this.world.req(this.player, SkillUser).classId,
       {
-        equip: (i) => this.equipItem(i),
+        equip: (i, slot) => this.equipItem(i, slot),
         unequip: (slot) => this.unequipItem(slot),
         salvage: (i) => this.salvageItem(i),
+        salvageMany: (indices) => this.salvageItems(indices),
+        salvageJunk: () => {
+          const gold = salvageJunk(this.world.req(this.player, Inventory));
+          if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
+          this.afterInventoryChange();
+        },
+        sort: (mode) => this.sortInventory(mode),
         socket: (c, target) => this.socketItem(c, target),
-        compare: (item) => this.compare(item),
+        compare: (item, slot) => this.compare(item, slot),
         iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       },
     );
@@ -497,8 +505,8 @@ export class Game {
         const item = inv.grid[gi];
         if (item) this.serviceResult(rerollAffix(this.ctx.loot.rng, inv, item, ai, tierMods(this.ctx)));
       },
-      salvageJunk: () => {
-        const gold = salvageJunk(this.world.req(this.player, Inventory));
+      salvageJunk: (keep) => {
+        const gold = salvageJunk(this.world.req(this.player, Inventory), keep);
         if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
         this.afterInventoryChange();
       },
@@ -509,12 +517,16 @@ export class Game {
         if (item) this.serviceResult(imprintAspect(inv, ci, item));
       },
       toStash: (gi) => {
-        this.serviceResult(toStash(this.world.req(this.player, Inventory), gi, stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots)));
+        const r = toStash(this.world.req(this.player, Inventory), gi, stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots));
+        this.serviceResult(r);
+        if (r.ok) this.toasts.show(t('services.stash.movedIn'));
         saveAccount(this.storage, this.ctx.account!);
         this.autosave();
       },
       fromStash: (i) => {
-        this.serviceResult(fromStash(this.world.req(this.player, Inventory), stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots), i));
+        const r = fromStash(this.world.req(this.player, Inventory), stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots), i);
+        this.serviceResult(r);
+        if (r.ok) this.toasts.show(t('services.stash.movedOut'));
         saveAccount(this.storage, this.ctx.account!);
         this.autosave();
       },
@@ -550,6 +562,7 @@ export class Game {
       unlocked: () => this.ctx.account?.endgame.tierUnlocked ?? 1,
       chosen: () => currentTier(this.ctx),
       inCombat: () => playerInCombat(this.world, this.ctx),
+      riftBest: () => this.ctx.account?.endgame.riftBest ?? 0,
       pick: (tier) => {
         if (!chooseTier(this.world, this.ctx, tier)) return;
         saveAccount(this.storage, this.ctx.account!);
@@ -595,6 +608,12 @@ export class Game {
         this.inventoryOpenedByService = false;
       }
     };
+    // Portrait: the service and its backpack share the screen, so closing the backpack ends the service too.
+    panelStack.onChange(() => {
+      if (this.servicePanel.open && !this.inventoryPanel.open && uiRoot.classList.contains('touch-ui') && uiRoot.classList.contains('portrait')) {
+        this.servicePanel.close();
+      }
+    });
     this.characterPanel = new CharacterPanel(uiRoot, () => ({
       className: t(`items.classes.${this.world.req(this.player, SkillUser).classId}`),
       progression: this.world.req(this.player, Progression),
@@ -602,6 +621,18 @@ export class Game {
       derived: this.world.req(this.player, DerivedStats),
       health: this.world.req(this.player, Health),
       resourceMax: this.world.req(this.player, Resource).max,
+      name: this.characterName || undefined,
+      classId: this.world.req(this.player, SkillUser).classId,
+      resource: (() => {
+        const r = this.world.req(this.player, Resource);
+        return { kind: r.kind, current: r.current, max: r.max };
+      })(),
+      gold: this.world.req(this.player, Inventory).gold,
+      bag: (() => {
+        const grid = this.world.req(this.player, Inventory).grid;
+        return { used: grid.filter((i) => i !== null).length, max: grid.length };
+      })(),
+      portraitUrl: this.renderer.assets.iconUrl(`icon.portrait_${this.world.req(this.player, SkillUser).classId}`, import.meta.env.BASE_URL),
     }));
     this.skillTreePanel = new SkillTreePanel(
       uiRoot,
@@ -1388,21 +1419,21 @@ export class Game {
 
   private questOffer(npc: string, id: string): void {
     const def = questDef(id);
-    const text = `${t(`quests.${id}.offer`)}
-${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp), gold: def.rewards.gold })}`;
-    this.dialogue.show(
-      this.page(npc, text, [
-        {
-          label: t('questUi.accept'),
-          onClick: () => {
-            startQuest(this.world, this.ctx, id);
-            this.world.flushDestroyed();
-            this.dialogue.show(this.npcRoot(npc));
-          },
+    // The offer shows as a card (title, level, reward chips); Accept is the filled button and comes last.
+    const page = this.page(npc, t(`quests.${id}.offer`), [
+      { label: t('questUi.decline'), onClick: () => this.dialogue.show(this.npcRoot(npc)) },
+      {
+        label: t('questUi.accept'),
+        primary: true,
+        onClick: () => {
+          startQuest(this.world, this.ctx, id);
+          this.world.flushDestroyed();
+          this.dialogue.show(this.npcRoot(npc));
         },
-        { label: t('questUi.decline'), onClick: () => this.dialogue.show(this.npcRoot(npc)) },
-      ]),
-    );
+      },
+    ]);
+    page.offer = { title: t(`quests.${id}.title`), level: def.level, xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp), gold: def.rewards.gold };
+    this.dialogue.show(page);
   }
 
   private questTalk(npc: string, id: string): void {
@@ -2254,9 +2285,9 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
 
   // ---- Inventory actions (called by the UI) ---------------------------------
 
-  equipItem(index: number): void {
+  equipItem(index: number, slot?: Slot): void {
     const user = this.world.req(this.player, SkillUser);
-    const r = equipFromGrid(this.world.req(this.player, Inventory), index, user.classId);
+    const r = equipFromGrid(this.world.req(this.player, Inventory), index, user.classId, slot);
     if (!r.ok) this.notice(`loot.cannot.${r.reason}`, 'error');
     else audio.play('ui.equip');
     this.afterInventoryChange();
@@ -2274,6 +2305,29 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
     const gold = salvage(inv, index);
     if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
     if (dust > 0) this.toasts.show(t('crafting.salvageDust', { n: dust }));
+    this.afterInventoryChange();
+  }
+
+  /** Salvage several backpack items at once (multi-select): one toast for the lot. */
+  salvageItems(indices: number[]): void {
+    const inv = this.world.req(this.player, Inventory);
+    let gold = 0;
+    let dust = 0;
+    for (const index of indices) {
+      const item = inv.grid[index];
+      if (!item) continue;
+      dust += grantSalvageDust(this.ctx, item);
+      gold += salvage(inv, index);
+    }
+    if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
+    if (dust > 0) this.toasts.show(t('crafting.salvageDust', { n: dust }));
+    this.afterInventoryChange();
+  }
+
+  /** Reorder the backpack (Sort button); the cells keep their items, only the order changes. */
+  sortInventory(mode: SortMode): void {
+    const inv = this.world.req(this.player, Inventory);
+    inv.grid.splice(0, inv.grid.length, ...sortGrid(inv.grid, mode));
     this.afterInventoryChange();
   }
 
@@ -2298,12 +2352,14 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
   }
 
   /** Compare a backpack item with what is equipped in the slot it would go to. */
-  private compare(item: Item): { stats: { stat: import('./data/loot/schemas').StatKey; delta: number }[]; damagePct: number; life: number } | null {
+  private compare(item: Item, forSlot?: Slot): { stats: { stat: import('./data/loot/schemas').StatKey; delta: number }[]; damagePct: number; life: number } | null {
     const inv = this.world.req(this.player, Inventory);
     const user = this.world.req(this.player, SkillUser);
     const base = BASE_ITEMS.get(item.base);
     if (!base || slotsFor(base.type).length === 0) return null;
-    const slot: Slot | null = slotsFor(base.type).length > 1 ? (targetSlot(inv, item) ?? null) : (slotsFor(base.type)[0] ?? null);
+    const slot: Slot | null = forSlot && slotsFor(base.type).includes(forSlot)
+      ? forSlot
+      : slotsFor(base.type).length > 1 ? (targetSlot(inv, item) ?? null) : (slotsFor(base.type)[0] ?? null);
     if (!slot) return null;
     const current = inv.equipped[slot];
     const prog = this.world.req(this.player, Progression);

@@ -91,11 +91,11 @@ export function rerollAffix(rng: Rng, inv: Inventory, item: Item, affixIndex: nu
   return { ok: true };
 }
 
-/** Salvage every common and magic item in the backpack. Returns gold gained. */
-export function salvageJunk(inv: Inventory): number {
+/** Salvage every common and magic item in the backpack, except the grid indexes in `keep`. Returns gold gained. */
+export function salvageJunk(inv: Inventory, keep?: ReadonlySet<number>): number {
   let gold = 0;
   inv.grid.forEach((item, i) => {
-    if (!item || item.crystal || (item.rarity !== 'common' && item.rarity !== 'magic')) return;
+    if (!item || item.crystal || (item.rarity !== 'common' && item.rarity !== 'magic') || keep?.has(i)) return;
     gold += salvageValue(item);
     inv.grid[i] = null;
   });

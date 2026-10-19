@@ -1,1 +1,264 @@
-/* Portrait touch layout overrides: skills. Loaded after style.css (src/main.ts), so equal-specificity rules here win. */
+/* Portrait touch layout overrides: skills. Loaded after style.css (src/main.ts), so equal-specificity rules here win.
+   Owns: the skill tree (P061-P066), the Neural Matrix (P067-P071) and the dialogue panel (P081-P083).
+   Metrics are em/token based so they follow the text-size setting (P022, P024). */
+
+/* ---- Skill tree: header (P063) ------------------------------------------------------------------------- */
+.tree-header { flex-wrap: wrap; gap: var(--space-2); }
+.tree-tools { display: flex; align-items: center; gap: var(--space-2); position: relative; }
+.tree-more { display: none; }
+#ui.touch-ui .tree-header { flex-wrap: nowrap; margin-bottom: var(--space-2); }
+#ui.touch-ui .tree-points {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-3);
+  background: #15120f;
+  border: 1px solid #2a2420;
+  font-size: var(--fs-small);
+  letter-spacing: 0.04em;
+}
+#ui.touch-ui .tree-tools { flex: none; }
+#ui.touch-ui .tree-more { display: block; min-width: var(--tap-min); font-size: 1.2em; line-height: 1; }
+#ui.touch-ui .tree-reset {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 6;
+  margin-top: var(--space-1);
+  white-space: nowrap;
+  background: #1a1612;
+  border-color: #8a2a20;
+  color: #ff8a7a;
+}
+#ui.touch-ui .tree-tools.menu-open .tree-reset { display: block; }
+
+/* ---- Skill tree: action bar (P064) --------------------------------------------------------------------- */
+#ui.touch-ui .tree-slot { width: max(48px, 3.2em); height: max(48px, 3.2em); }
+#ui.touch-ui .tree-slot .slot-key {
+  display: block;
+  z-index: 1;
+  left: 2px;
+  bottom: 1px;
+  padding: 0 3px;
+  font-size: max(var(--fs-min), 0.7em);
+  background: rgba(10, 8, 7, 0.8);
+}
+.tree-assign-banner {
+  margin: var(--space-1) 0;
+  padding: var(--space-2) var(--space-3);
+  text-align: center;
+  font-size: var(--fs-small);
+  color: #1a1612;
+  background: var(--ui-accent);
+}
+.tree-assign-banner[hidden] { display: none; }
+.tree-node.assignable { outline: 2px dashed var(--ui-accent); outline-offset: -2px; box-shadow: 0 0 8px rgba(232, 200, 106, 0.45); }
+.tree-node.dim { opacity: 0.3; }
+
+/* ---- Skill tree: jump chips and branch list (P062, P065) ----------------------------------------------- */
+.tree-jump { display: none; }
+#ui.touch-ui .tree-jump {
+  display: flex;
+  gap: var(--space-1);
+  flex: none;
+  overflow-x: auto;
+  padding: var(--space-1) 0;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+#ui.touch-ui .tree-jump::-webkit-scrollbar { display: none; }
+#ui.touch-ui .tree-jump button {
+  flex: none;
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--ui-text);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+}
+#ui.touch-ui .tree-scroll { position: relative; }
+#ui.touch-ui .tree-branch { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); align-items: stretch; }
+#ui.touch-ui .tree-branch-label { padding: var(--space-1) 0; }
+#ui.touch-ui .tree-branch.locked { opacity: 0.7; }
+#ui.touch-ui .tree-branch.locked .tree-branch-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-2);
+  background: #15120f;
+  cursor: pointer;
+}
+#ui.touch-ui .tree-branch.locked .tree-branch-label::after { content: '▾'; margin-left: var(--space-2); }
+#ui.touch-ui .tree-branch.collapsed { opacity: 0.55; }
+#ui.touch-ui .tree-branch.collapsed .tree-branch-label::after { content: '▸'; }
+#ui.touch-ui .tree-branch.collapsed .tree-nodes { display: none; }
+#ui.touch-ui .tree-nodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.8em, 1fr)); gap: var(--space-2) var(--space-1); }
+#ui.touch-ui .tree-node {
+  width: auto;
+  min-width: 0;
+  min-height: max(var(--tap-min), 5.6em);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-1);
+  font-size: max(var(--fs-min), 0.8em);
+  overflow-wrap: anywhere;
+}
+#ui.touch-ui .tree-node img { width: 2.8em; height: 2.8em; }
+#ui.touch-ui .tree-node.selected { outline: 2px solid var(--ui-accent); outline-offset: -1px; }
+
+/* ---- Skill tree: why a node is blocked, rank pips, "or" between exclusive modifiers (P066) -------------- */
+.tree-pips { display: flex; justify-content: center; gap: 3px; margin-top: 3px; }
+.tree-pips i { width: 0.55em; height: 0.55em; border-radius: 50%; border: 1px solid #6a5a3a; }
+.tree-pips i.on { background: #e8c86a; border-color: #e8c86a; }
+.tree-pips { display: none; }
+#ui.touch-ui .tree-pips { display: flex; }
+#ui.touch-ui .tree-node:has(.tree-pips) .tree-node-rank { display: none; }
+.tree-node.blocked { opacity: 0.6; }
+.tree-lock {
+  position: absolute;
+  top: 0.55em;
+  right: 0.4em;
+  width: 0.8em;
+  height: 0.6em;
+  border-radius: 2px;
+  background: #8c8378;
+}
+.tree-lock::before {
+  content: '';
+  position: absolute;
+  left: 0.12em;
+  top: -0.42em;
+  width: 0.36em;
+  height: 0.4em;
+  border: 2px solid #8c8378;
+  border-bottom: 0;
+  border-radius: 0.3em 0.3em 0 0;
+}
+.tree-pair { display: flex; align-items: stretch; gap: 5px; }
+.tree-or { align-self: center; font-size: max(var(--fs-min), 0.75em); color: var(--ui-muted); }
+#ui.touch-ui .tree-pair { grid-column: span 2; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: var(--space-1); }
+
+/* ---- Dialogue: header, 48 px options, offer card (P081-P083) -------------------------------------------- */
+.dialogue-panel { display: flex; flex-direction: column; overflow: hidden; }
+.dialogue-panel[hidden] { display: none; }
+.dialogue-head { display: flex; align-items: center; gap: var(--space-3); flex: none; margin-bottom: var(--space-2); }
+.dialogue-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.6em;
+  height: 2.6em;
+  border-radius: 50%;
+  color: var(--ui-accent);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  font-weight: 700;
+}
+.dialogue-who { flex: 1; min-width: 0; }
+.dialogue-role { margin-bottom: 0; font-size: max(var(--fs-min), 0.8em); }
+.dialogue-close {
+  flex: none;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  font: inherit;
+  font-size: 1.4em;
+  line-height: 1;
+  color: var(--ui-text);
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+}
+.dialogue-text { flex: 0 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
+.dialogue-text.advance { cursor: pointer; }
+.dialogue-buttons { flex: none; }
+.dialogue-buttons button { min-height: 48px; padding: 1.25em var(--space-3); line-height: 1.25; }
+.dialogue-buttons button.primary { color: #1a1612; background: var(--ui-accent); border-color: var(--ui-accent); font-weight: 700; }
+.dialogue-buttons button.primary:hover { color: #1a1612; filter: brightness(1.1); }
+.dialogue-tag { display: inline-block; padding: 1px 6px; border: 1px solid #6a5a3a; border-radius: 999px; font-size: max(var(--fs-min), 0.75em); }
+.dialogue-offer { margin: 0 0 var(--space-3); padding: var(--space-3); background: #15120f; border: 1px solid #332c26; border-left: 3px solid var(--ui-accent); }
+.dialogue-offer-title { color: var(--ui-accent); letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.95em; }
+.dialogue-chips { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); margin-top: var(--space-2); }
+.dialogue-chip { padding: 2px 8px; font-size: max(var(--fs-min), 0.8em); color: var(--ui-text); background: #24201c; border: 1px solid var(--ui-border); border-radius: 999px; }
+.dialogue-chip.xp { color: #8ab4ff; }
+.dialogue-chip.gold { color: #ffd23a; }
+/* Nothing of the thumb cluster stays over the sheet while a conversation is open. */
+#ui.touch-ui.portrait:has(.dialogue-panel:not([hidden])) .slots { visibility: hidden; }
+#ui.touch-ui .dialogue-panel { max-height: min(60vh, calc(100dvh - 12px - var(--sat) - var(--sab))); }
+
+/* ---- Neural Matrix: header (P069), buttons (P068), board and detail (P067, P071), glyph picker (P070) ---- */
+.matrix-head { display: flex; flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: var(--space-2); }
+.matrix-head-row { display: flex; align-items: center; gap: var(--space-2); }
+.matrix-head-row .matrix-count { flex: 1; min-width: 0; text-align: center; font-size: var(--fs-small); }
+#ui.touch-ui .matrix-head-row .matrix-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  background: #15120f;
+  border: 1px solid #2a2420;
+}
+.matrix-back { white-space: nowrap; }
+.matrix-reset { white-space: nowrap; }
+.matrix-progress { display: flex; flex-direction: column; gap: var(--space-1); }
+.matrix-xpbar { height: 6px; background: #1a1612; border: 1px solid #2a2420; }
+.matrix-xpbar i { display: block; height: 100%; background: #e8c86a; }
+.matrix-progress .matrix-xp { font-size: max(var(--fs-min), 0.78em); }
+.matrix .matrix-primary {
+  width: 100%;
+  min-height: var(--tap-min);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  color: #1a1612;
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+}
+.matrix .matrix-primary:disabled { opacity: 0.45; }
+.matrix-node.focus .matrix-shape { stroke: #fff; stroke-width: 3; filter: drop-shadow(0 0 6px rgba(181, 122, 255, 0.9)); }
+.matrix-ghost { pointer-events: none; }
+.matrix-ghost-board { fill: rgba(107, 255, 122, 0.07); stroke: rgba(107, 255, 122, 0.65); stroke-width: 2; stroke-dasharray: 8 5; }
+.matrix-ghost-node { fill: rgba(190, 215, 200, 0.4); }
+.matrix-ghost-node.gate { fill: #6bff7a; }
+.matrix-ghost-label { fill: rgba(107, 255, 122, 0.55); font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; }
+.gate-rot { flex-wrap: nowrap; }
+.gate-rot button { flex: 1; min-width: 0; }
+.gate-rot .gate-rot-step { flex: none; min-width: var(--tap-min); }
+
+#ui.touch-ui .matrix-viewport { flex: 1 1 0; min-height: 200px; }
+#ui.touch-ui.portrait .matrix-detail { flex: 0 1 auto; max-height: 46%; }
+#ui.touch-ui .matrix-glyphs { flex: none; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; }
+#ui.touch-ui .matrix-glyphs button { flex: none; }
+#ui.touch-ui .matrix-zoom button { width: var(--tap-min); height: var(--tap-min); }
+
+/* The glyph picker sheet: one 56 px row per glyph. */
+.glyph-sheet { display: flex; flex-direction: column; gap: var(--space-2); }
+.glyph-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  text-align: left;
+  color: var(--ui-text);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+}
+.glyph-row.current { border-color: #b57aff; }
+.glyph-row.in-use { opacity: 0.8; }
+.glyph-row-level { flex: none; display: grid; place-items: center; width: 2.4em; height: 2.4em; border-radius: 4px; color: #fff; font-weight: 700; background: #3a2a5a; border: 1px solid #b57aff; }
+.glyph-row-text { min-width: 0; }
+.glyph-row-name { font-size: var(--fs-body); }
+.glyph-row-sub { font-size: max(var(--fs-min), 0.8em); color: var(--ui-muted); }
+.glyph-remove { justify-content: center; color: #ff8a7a; border-color: #8a2a20; }
+#ui.touch-ui .gate-form > .muted:first-child { display: none; }
+.gate-boards { flex-wrap: nowrap; }
+.gate-boards button { flex: 1 1 0; min-width: 0; padding-left: var(--space-1); padding-right: var(--space-1); overflow-wrap: anywhere; }

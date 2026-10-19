@@ -97,7 +97,6 @@ html, body { overscroll-behavior: none; }
 #ui .panel > .panel-tip { display: flex; flex-direction: row; flex: none; min-height: 0; }
 /* The old per-panel close controls are replaced by the header's. */
 .panel.has-header .service-close, .panel.has-header .sound-close { display: none; }
-#ui .touch-close { display: none !important; }
 #ui.touch-ui.portrait .map-panel .panel-header { margin: -5px -5px var(--space-2); padding: 5px; }
 
 #ui.touch-ui .panel-header { touch-action: none; padding-top: 14px; }

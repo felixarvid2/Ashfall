@@ -1,7 +1,7 @@
 /** Item tooltip: rarity-coloured name, stats, sockets and a comparison against equipped gear. */
 import { t } from '../data/i18n';
 import { ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
-import { PERCENT_STATS, type Item, type StatKey } from '../data/loot/schemas';
+import { PERCENT_STATS, type Item, type Slot, type StatKey } from '../data/loot/schemas';
 import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/generate';
 import { MASTERWORK } from '../data/endgame/crafting';
 import { effectiveAffixes } from '../systems/endgame/itemMods';
@@ -61,21 +61,24 @@ export function placeTooltipForPortrait(tooltip: HTMLElement, anchor: DOMRect): 
   return true;
 }
 
-export function renderItemTooltip(item: Item, classId: string, opts: { equipped?: boolean; comparison?: Comparison | null } = {}): HTMLElement {
+export function renderItemTooltip(
+  item: Item,
+  classId: string,
+  opts: { equipped?: boolean; comparison?: Comparison | null; /** The sheet pins icon, name, type and power above the scrolling body. */ noHeader?: boolean } = {},
+): HTMLElement {
   const root = el('div', 'item-tip');
   const rarity = rarityDef(item.rarity);
   root.style.setProperty('--rarity', rarity.color);
   const base = BASE_ITEMS.get(item.base);
 
-  // The painted icon beside the name, in its rarity's look.
-  const art = itemArtUrl(item);
-  if (art) root.appendChild(Object.assign(document.createElement('img'), { src: art, alt: '', className: 'item-tip-icon' }));
-  root.appendChild(el('div', 'item-tip-name', itemDisplayName(item)));
-  const typeLine = item.crystal
-    ? t('items.types.crystal')
-    : `${t(`items.rarity.${item.rarity}`)} ${base ? t(`items.types.${base.type}`) : ''}`;
-  root.appendChild(el('div', 'item-tip-type', typeLine));
-  if (!item.crystal) root.appendChild(el('div', 'item-tip-power', t('items.itemPower', { power: item.itemPower })));
+  if (!opts.noHeader) {
+    // The painted icon beside the name, in its rarity's look.
+    const art = itemArtUrl(item);
+    if (art) root.appendChild(Object.assign(document.createElement('img'), { src: art, alt: '', className: 'item-tip-icon' }));
+    root.appendChild(el('div', 'item-tip-name', itemDisplayName(item)));
+    root.appendChild(el('div', 'item-tip-type', itemTypeLine(item)));
+    if (!item.crystal) root.appendChild(el('div', 'item-tip-power', t('items.itemPower', { power: item.itemPower })));
+  }
   if (opts.equipped) root.appendChild(el('div', 'item-tip-equipped', t('items.equipped')));
 
   if (item.crystal) {
@@ -142,24 +145,201 @@ export function renderItemTooltip(item: Item, classId: string, opts: { equipped?
     }
   }
 
-  if (opts.comparison) {
-    const cmp = el('div', 'item-tip-compare');
-    cmp.appendChild(el('div', 'muted', t('items.compare')));
-    const line = (label: string, delta: number, pct: boolean) => {
-      if (Math.abs(delta) < (pct ? 0.0005 : 0.5)) return;
-      const up = delta > 0;
-      const text = pct ? `${(Math.abs(delta) * 100).toFixed(1)}%` : `${Math.round(Math.abs(delta))}`;
-      cmp.appendChild(el('div', up ? 'up' : 'down', `${up ? '▲' : '▼'} ${text} ${label}`));
-    };
-    line(t('items.damageEstimate'), opts.comparison.damagePct, true);
-    line(t('stats.maxLife'), opts.comparison.life, false);
-    for (const d of opts.comparison.stats) {
-      if (d.stat === 'maxLife' || d.stat === 'weaponDamage') continue;
-      line(t(`stats.${d.stat}`), d.delta, PERCENT_STATS.has(d.stat));
-    }
-    root.appendChild(cmp);
-  }
+  if (opts.comparison) root.appendChild(renderComparison(opts.comparison));
 
   if (!opts.equipped) root.appendChild(el('div', 'item-tip-salvage muted', t('items.salvageFor', { gold: salvageValue(item) })));
+  return root;
+}
+
+function itemTypeLine(item: Item): string {
+  const base = BASE_ITEMS.get(item.base);
+  return item.crystal ? t('items.types.crystal') : `${t(`items.rarity.${item.rarity}`)} ${base ? t(`items.types.${base.type}`) : ''}`;
+}
+
+/** The "Compared to equipped" block: one line per stat difference. */
+export function renderComparison(comparison: Comparison): HTMLElement {
+  const cmp = el('div', 'item-tip-compare');
+  cmp.appendChild(el('div', 'muted', t('items.compare')));
+  const line = (label: string, delta: number, pct: boolean) => {
+    if (Math.abs(delta) < (pct ? 0.0005 : 0.5)) return;
+    const up = delta > 0;
+    const text = pct ? `${(Math.abs(delta) * 100).toFixed(1)}%` : `${Math.round(Math.abs(delta))}`;
+    cmp.appendChild(el('div', up ? 'up' : 'down', `${up ? '▲' : '▼'} ${text} ${label}`));
+  };
+  line(t('items.damageEstimate'), comparison.damagePct, true);
+  line(t('stats.maxLife'), comparison.life, false);
+  for (const d of comparison.stats) {
+    if (d.stat === 'maxLife' || d.stat === 'weaponDamage') continue;
+    line(t(`stats.${d.stat}`), d.delta, PERCENT_STATS.has(d.stat));
+  }
+  return cmp;
+}
+
+/** The headline of a comparison as short chips: "+0.2% Damage", "+152 Armor", "−1 socket" (at most four). */
+export function compareVerdict(comparison: Comparison, item: Item, equipped: Item | null): { text: string; up: boolean }[] {
+  const parts: { text: string; up: boolean }[] = [];
+  if (Math.abs(comparison.damagePct) >= 0.0005) {
+    const d = comparison.damagePct;
+    parts.push({ text: `${d > 0 ? '+' : '−'}${(Math.abs(d) * 100).toFixed(1)}% ${t('items.damageEstimate')}`, up: d > 0 });
+  }
+  if (Math.abs(comparison.life) >= 0.5) parts.push({ text: formatStat('maxLife', comparison.life), up: comparison.life > 0 });
+  const stats: { text: string; up: boolean }[] = [];
+  for (const d of comparison.stats) {
+    if (d.stat === 'maxLife' || d.stat === 'weaponDamage') continue;
+    if (Math.abs(d.delta) < (PERCENT_STATS.has(d.stat) ? 0.0005 : 0.5)) continue;
+    stats.push({ text: formatStat(d.stat, d.delta), up: d.delta > 0 });
+  }
+  const sockets: { text: string; up: boolean }[] = [];
+  const socketDelta = item.sockets.length - (equipped?.sockets.length ?? 0);
+  if (socketDelta !== 0) {
+    sockets.push({ text: t(Math.abs(socketDelta) === 1 ? 'items.verdict.socketOne' : 'items.verdict.socketMany', { n: `${socketDelta > 0 ? '+' : '−'}${Math.abs(socketDelta)}` }), up: socketDelta > 0 });
+  }
+  return [...parts, ...stats].slice(0, 4 - sockets.length).concat(sockets);
+}
+
+/** One slot an item could be worn in, with what is there now (P053: rings have two). */
+export interface CompareTarget {
+  slot: Slot;
+  /** "Ring 1", "Helm". */
+  label: string;
+  equipped: Item | null;
+  comparison: Comparison | null;
+}
+
+export interface ItemSheetOptions {
+  /** The item is worn: no comparison, no salvage line. */
+  equipped?: boolean;
+  /** Where the item could go; empty for crystals and items that are not gear. */
+  targets?: CompareTarget[];
+  /** The target compared first. */
+  defaultSlot?: Slot;
+  /** Extra lines under the item, e.g. what socketing would add. */
+  extra?: HTMLElement[];
+}
+
+/** The symbols the tooltip uses, explained (P057). Touch screens have no `title` hover text. */
+export function renderAffixLegend(): HTMLElement {
+  const box = el('div', 'item-legend');
+  box.appendChild(el('div', 'muted', t('items.legend.title')));
+  const rows: [string, string][] = [
+    ['◆', t('items.legend.greater')],
+    ['⚒', t('crafting.tooltip.tempered')],
+    ['▲', t('items.legend.boosted')],
+    ['✦', t('items.legend.aspect')],
+    ['◇', t('items.legend.emptySocket')],
+  ];
+  for (const [symbol, text] of rows) {
+    const row = el('div', 'item-legend-row');
+    row.append(el('span', 'item-legend-symbol', symbol), el('span', '', text));
+    box.appendChild(row);
+  }
+  return box;
+}
+
+let legendShown = false;
+
+/**
+ * Item details for the bottom sheet (P055, P056, P057): a pinned header with the name, power and a one-line
+ * verdict, tabs "This item | Equipped | Changes" for gear that can be compared, and a symbol legend behind "i".
+ */
+export function renderItemSheet(item: Item, classId: string, opts: ItemSheetOptions = {}): HTMLElement {
+  const root = el('div', 'item-sheet');
+  root.style.setProperty('--rarity', rarityDef(item.rarity).color);
+  const targets = opts.equipped ? [] : (opts.targets ?? []);
+  let target = targets.find((x) => x.slot === opts.defaultSlot) ?? targets[0];
+
+  // Pinned part: identity, verdict, tabs.
+  const pin = el('div', 'item-sheet-pin');
+  const id = el('div', 'item-sheet-id');
+  const art = itemArtUrl(item);
+  if (art) id.appendChild(Object.assign(document.createElement('img'), { src: art, alt: '', className: 'item-sheet-icon' }));
+  const names = el('div', 'item-sheet-names');
+  names.append(el('div', 'item-tip-name', itemDisplayName(item)));
+  const sub = item.crystal ? itemTypeLine(item) : `${itemTypeLine(item)} · ${t('items.itemPower', { power: item.itemPower })}`;
+  names.append(el('div', 'item-tip-type', sub));
+  const info = Object.assign(document.createElement('button'), { type: 'button', className: 'item-legend-btn', textContent: 'i' });
+  info.setAttribute('aria-label', t('items.legend.title'));
+  info.setAttribute('aria-expanded', 'false');
+  id.append(names, info);
+  const verdict = el('div', 'item-sheet-verdict');
+  const tabsRow = el('div', 'item-sheet-tabs');
+  const slotRow = el('div', 'item-sheet-tabs item-sheet-slots');
+  pin.append(id, verdict);
+
+  const legend = renderAffixLegend();
+  legend.hidden = true;
+  const setLegend = (open: boolean) => {
+    legend.hidden = !open;
+    info.setAttribute('aria-expanded', String(open));
+    info.classList.toggle('on', open);
+  };
+  info.addEventListener('click', () => setLegend(legend.hidden !== false));
+  // Shown once on the first legendary tooltip of the session.
+  if (!legendShown && (item.rarity === 'legendary' || item.rarity === 'unique' || item.rarity === 'mythic')) {
+    legendShown = true;
+    setLegend(true);
+  }
+
+  const view = el('div', 'item-sheet-view');
+  type ViewName = 'item' | 'equipped' | 'changes';
+  let current: ViewName = 'item';
+
+  const render = () => {
+    const comparison = target?.comparison ?? null;
+    verdict.replaceChildren();
+    if (comparison) {
+      const parts = compareVerdict(comparison, item, target?.equipped ?? null);
+      if (parts.length === 0) verdict.appendChild(el('span', 'chip', t('items.sheet.noChange')));
+      for (const p of parts) verdict.appendChild(el('span', `chip ${p.up ? 'up' : 'down'}`, p.text));
+    }
+    verdict.hidden = !comparison;
+    for (const b of tabsRow.querySelectorAll('button')) b.classList.toggle('on', (b as HTMLElement).dataset.view === current);
+    for (const b of slotRow.querySelectorAll('button')) b.classList.toggle('on', (b as HTMLElement).dataset.slot === target?.slot);
+    const body: HTMLElement[] = [];
+    if (current === 'equipped') {
+      body.push(
+        target?.equipped
+          ? renderItemTooltip(target.equipped, classId, { equipped: true })
+          : el('div', 'muted item-sheet-empty', t('items.sheet.nothingEquipped', { slot: target?.label ?? '' })),
+      );
+    } else if (current === 'changes') {
+      body.push(comparison ? renderComparison(comparison) : el('div', 'muted', t('items.sheet.noChange')));
+    } else {
+      body.push(renderItemTooltip(item, classId, { equipped: opts.equipped, noHeader: true }), ...(opts.extra ?? []));
+    }
+    view.replaceChildren(...body);
+  };
+
+  if (targets.length > 0) {
+    const names3: [ViewName, string][] = [
+      ['item', t('items.sheet.tabItem')],
+      ['equipped', t('items.sheet.tabEquipped')],
+      ['changes', t('items.sheet.tabChanges')],
+    ];
+    for (const [name, label] of names3) {
+      const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label, className: 'seg-btn' });
+      b.dataset.view = name;
+      b.addEventListener('click', () => {
+        current = name;
+        render();
+      });
+      tabsRow.appendChild(b);
+    }
+    pin.appendChild(tabsRow);
+    if (targets.length > 1) {
+      for (const x of targets) {
+        const b = Object.assign(document.createElement('button'), { type: 'button', textContent: t('items.sheet.vs', { slot: x.label }), className: 'seg-btn' });
+        b.dataset.slot = x.slot;
+        b.addEventListener('click', () => {
+          target = x;
+          render();
+        });
+        slotRow.appendChild(b);
+      }
+      pin.appendChild(slotRow);
+    }
+  }
+  root.append(pin, legend, view);
+  render();
   return root;
 }

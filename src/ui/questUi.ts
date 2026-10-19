@@ -5,72 +5,9 @@
 import { t } from '../data/i18n';
 import { haptic } from './haptics';
 
-export interface DialogueButton {
-  label: string;
-  /** Small tag before the label ("New quest", "Quest"). */
-  tag?: string;
-  onClick: () => void;
-}
-
-export interface DialoguePage {
-  speaker: string;
-  role?: string;
-  text: string;
-  buttons: DialogueButton[];
-}
-
-export class DialoguePanel {
-  private readonly panel: HTMLDivElement;
-  private readonly name: HTMLDivElement;
-  private readonly role: HTMLDivElement;
-  private readonly text: HTMLDivElement;
-  private readonly buttons: HTMLDivElement;
-
-  constructor(root: HTMLElement) {
-    this.panel = document.createElement('div');
-    this.panel.className = 'panel dialogue-panel';
-    this.panel.hidden = true;
-    this.panel.dataset.testid = 'dialogue';
-    this.name = document.createElement('div');
-    this.name.className = 'dialogue-name';
-    this.role = document.createElement('div');
-    this.role.className = 'dialogue-role';
-    this.text = document.createElement('div');
-    this.text.className = 'dialogue-text';
-    this.buttons = document.createElement('div');
-    this.buttons.className = 'dialogue-buttons';
-    this.panel.append(this.name, this.role, this.text, this.buttons);
-    root.appendChild(this.panel);
-  }
-
-  get open(): boolean {
-    return !this.panel.hidden;
-  }
-
-  show(page: DialoguePage): void {
-    this.name.textContent = page.speaker;
-    this.role.textContent = page.role ?? '';
-    this.role.hidden = !page.role;
-    this.text.replaceChildren(
-      ...page.text.split('\n').map((line) => Object.assign(document.createElement('p'), { textContent: line })),
-    );
-    this.buttons.replaceChildren(
-      ...page.buttons.map((b, i) => {
-        const el = document.createElement('button');
-        el.dataset.testid = `dialogue-option-${i}`;
-        if (b.tag) el.appendChild(Object.assign(document.createElement('span'), { className: 'dialogue-tag', textContent: b.tag }));
-        el.append(b.label);
-        el.addEventListener('click', b.onClick);
-        return el;
-      }),
-    );
-    this.panel.hidden = false;
-  }
-
-  close(): void {
-    this.panel.hidden = true;
-  }
-}
+// The conversation panel lives in its own module (P081-P083); re-exported so existing imports keep working.
+import { DialoguePanel, type DialogueButton, type DialoguePage } from './dialoguePanel';
+export { DialoguePanel, type DialogueButton, type DialoguePage };
 
 type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
 

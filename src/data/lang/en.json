@@ -484,7 +484,62 @@
     "compare": "Compared to equipped",
     "hint": "Right-click: equip · Shift+click: salvage · Click a crystal, then an item: socket",
     "damageEstimate": "Damage",
-    "hintTouch": "Hold an item: equip · Hold an equipped item: unequip · Tap a crystal, then an item: socket"
+    "hintTouch": "Tap an item for its details and actions · Tap a crystal, then the item to socket · Hold an item: quick equip",
+    "legend": {
+      "title": "What the symbols mean",
+      "greater": "Greater affix: rolled higher than normal",
+      "boosted": "Boosted by masterwork",
+      "aspect": "Legendary or unique power",
+      "emptySocket": "Empty socket: tap a crystal, then this item"
+    },
+    "sheet": {
+      "tabItem": "This item",
+      "tabEquipped": "Equipped",
+      "tabChanges": "Changes",
+      "vs": "vs {slot}",
+      "noChange": "No change",
+      "nothingEquipped": "Nothing is equipped in {slot}."
+    },
+    "verdict": {
+      "socketOne": "{n} socket",
+      "socketMany": "{n} sockets"
+    },
+    "bag": {
+      "sort": "Sort",
+      "sortBy": { "rarity": "Rarity", "slot": "Slot", "power": "Item power", "newest": "Newest" },
+      "select": "Select",
+      "selectDone": "Done",
+      "filters": { "all": "All", "weapons": "Weapons", "armor": "Armor", "jewelry": "Jewelry", "crystals": "Crystals", "better": "Better" },
+      "filterLabel": "Filter items",
+      "count": "{used} / {max}",
+      "full": "Bag full",
+      "salvageJunk": "Salvage junk: {gold} gold",
+      "salvageJunkArmed": "Confirm: {gold} gold",
+      "noJunk": "No common or magic items to salvage.",
+      "equip": "Equip",
+      "equipSlot": "Equip as {slot}: replaces {item}",
+      "equipSlotEmpty": "Equip as {slot}: empty",
+      "cannotEquip": "Cannot equip",
+      "unequip": "Unequip",
+      "salvage": "Salvage: {gold} gold",
+      "socketInto": "Socket into an item",
+      "socketBanner": "Pick an item to socket. {crystal}: {bonus}",
+      "socketCancel": "Cancel",
+      "socketPreview": "Socketing adds: {stat}",
+      "socketAction": "Socket crystal",
+      "socketNone": "No item has a free socket.",
+      "selectedBar": "Salvage {n} items: {gold} gold",
+      "selectedOne": "Salvage 1 item: {gold} gold",
+      "selectPrompt": "Tap items to select them",
+      "salvageManyTitle": "Salvage {n} items?",
+      "salvageManyBody": "You get {gold} gold. Rare or better items in this selection cannot be recovered.",
+      "salvageOneTitle": "Salvage {name}?",
+      "salvageOneBody": "You get {gold} gold. This cannot be undone.",
+      "salvageButton": "Salvage",
+      "better": "Better than what you wear",
+      "worse": "Worse than what you wear",
+      "new": "New"
+    }
   },
   "stats": {
     "strength": "Strength",
@@ -548,6 +603,38 @@
       "utility": "Utility"
     },
     "armorReduction": "Physical damage reduction",
+    "charPanel": {
+      "skills": "Skills",
+      "skillsPoints": "Skills ({n})",
+      "bag": "Bag",
+      "bagFull": "Bag ({used}/{max})",
+      "resource": "{resource}",
+      "xpMax": "Max level",
+      "value": "Current value"
+    },
+    "statInfo": {
+      "strength": "If Strength is your class's main attribute, each point adds 0.1% damage. Otherwise each point adds 0.5 Armor.",
+      "dexterity": "Each point adds 0.02% critical strike chance. If it is your class's main attribute, each point also adds 0.1% damage.",
+      "intelligence": "Each point adds 0.05% to all resistances. If it is your class's main attribute, each point also adds 0.1% damage.",
+      "willpower": "Each point adds 0.1% resource generation. If it is your class's main attribute, each point also adds 0.1% damage.",
+      "damage": "Your estimated damage per hit with every bonus counted. Use it to compare gear and builds.",
+      "weaponDamage": "The base damage of your equipped weapon. Every skill multiplies this number.",
+      "critChance": "The chance that a hit is a critical strike. Raised by Dexterity, gear and passives. Capped at 80%.",
+      "critDamage": "How much extra damage a critical strike deals on top of a normal hit.",
+      "attackSpeed": "How much faster you attack and cast basic skills. Raised by gear and passives.",
+      "bonus": "A damage bonus that adds to your other damage bonuses. Comes from gear, passives and temporary effects.",
+      "maxLife": "How much damage you can take before you die. Raised by level, gear and passives.",
+      "armor": "Reduces physical damage you take. Stronger attackers get through the same Armor more easily.",
+      "armorReduction": "The share of physical damage your Armor stops from an enemy of your level.",
+      "resist": "Reduces damage of this type that you take. Raised by Intelligence, gear and passives. Capped at 70%.",
+      "damageReduction": "A share of all damage you take that is ignored. Capped at 50%.",
+      "cooldownReduction": "Makes your skill cooldowns shorter. Capped at 50%.",
+      "resourceGen": "Makes your class resource build up faster.",
+      "moveSpeed": "How much faster you run than your base speed. Capped at 50%.",
+      "barrierBonus": "Makes the barriers you create absorb more damage.",
+      "potionHealing": "How much more life a stim pack restores.",
+      "lifeOnKill": "Life you recover every time you kill an enemy."
+    },
     "close": "Close"
   },
   "matrix": {
@@ -568,7 +655,7 @@
     "zoomOut": "Zoom out",
     "recenter": "Show all boards",
     "hint": "Drag to pan, scroll or pinch to zoom. Click a node you can reach to take it; a gate lets you attach another board.",
-    "hintTouch": "Drag to pan, pinch to zoom. Tap a node you can reach to take it; a gate lets you attach another board.",
+    "hintTouch": "Tap a node. Pinch to zoom.",
     "kinds": {
       "start": "Start",
       "normal": "Normal node",
@@ -652,6 +739,12 @@
     "rotateHint": "Rotating or detaching needs the board's nodes to be unallocated.",
     "gateEntry": "This gate joins the board to the one before it.",
     "noBoards": "Every board is attached.",
+    "allocateButton": "Allocate ({points} point)",
+    "chooseGlyph": "Choose a glyph",
+    "changeGlyph": "Change glyph",
+    "glyphReach": "radius {radius}, +{pct}% on nodes",
+    "glyphHere": "in this socket",
+    "rotate90": "Rotate 90 degrees",
     "glyphs": {
       "brawn": {
         "name": "Brawn"
@@ -1325,7 +1418,18 @@
         "desc": "Your melee attacks deal x25% damage, Scalpel Slash heals for 6% more, and you take 10% less damage."
       }
     },
-    "barHintTouch": "Tap an action bar slot, then a learned skill to assign it. Hold a slot to clear it."
+    "barHintTouch": "Tap an action bar slot, then a learned skill to assign it. Hold a slot to clear it.",
+    "pointsTouch": "{points} skill points",
+    "more": "More",
+    "pickForSlot": "Pick a skill for slot {slot}",
+    "learn": "Learn (1 point)",
+    "addRank": "Add rank {rank}/{max}",
+    "maxRank": "Max rank",
+    "equip": "Equip to bar",
+    "onBar": "On the action bar",
+    "barFull": "Action bar full: tap a slot first",
+    "confirmChoose": "Confirm: choose {name}",
+    "or": "or"
   },
   "aspects": {
     "fissure": {
@@ -1526,6 +1630,12 @@
     "deleteTitle": "Delete character?",
     "deleteDetails": "{class}, level {level}. This cannot be undone.",
     "deleteButton": "Delete",
+    "options": "Character options",
+    "continue": "Continue: {name}, Level {level}",
+    "lastPlayed": "Last played {when}",
+    "ago": { "now": "just now", "minutes": "{n} min ago", "hours": "{n} h ago", "days": "{n} days ago" },
+    "creditsButton": "Credits",
+    "creditsTitle": "Credits",
     "chooseClass": "Choose a class",
     "namePlaceholder": "Name",
     "create": "Begin",
@@ -3290,6 +3400,8 @@
       "mystery": "Mystery"
     },
     "rewards": "Rewards: {xp} XP · {gold} gold",
+    "rewardXp": "{xp} XP",
+    "rewardGold": "{gold} gold",
     "level": "Level {level}",
     "completedList": "Completed",
     "completedBanner": "Quest complete"
@@ -3372,7 +3484,11 @@
       "noRecipes": "You know no tempering recipes yet. World bosses, Harvest caches and Rift Guardians teach them.",
       "charges": "Tempering charges: {n}/{max}",
       "options": "Can add: {stats}",
-      "add": "Temper ({gold} gold)",
+      "add": "Temper",
+      "lockedShort": "locked",
+      "cannotShort": "not available",
+      "pickReplace": "Both tempered slots are full. Choose which affix the next tempering replaces.",
+      "replacing": "Replaces: {stat}",
       "replace": "Replace: {stat}"
     },
     "masterwork": {
@@ -3384,6 +3500,11 @@
       "cost": "Next rank: {gold} gold, {dust} Lumen Dust, {shards} Rift Shards.",
       "raise": "Raise to rank {rank}",
       "maxed": "This item is at the highest rank.",
+      "cannotShort": "not available",
+      "upgradeNote": "This rank also upgrades one random affix by 25%.",
+      "needGold": "Not enough gold",
+      "needDust": "Not enough Lumen Dust",
+      "needShards": "Not enough Rift Shards",
       "reset": "Reset to rank 0 ({gold} gold)"
     },
     "tooltip": {
@@ -3394,6 +3515,8 @@
       "title": "Codex of Power ({n}/{total})",
       "hint": "Clear a dungeon for the first time to unlock its aspect for every character. Select a rare or legendary item to imprint one, as often as you like.",
       "locked": "Locked: clear {dungeon}",
+      "lockedTitle": "Locked ({n})",
+      "progress": "{done} of {total} dungeons cleared",
       "imprint": "Imprint ({gold} gold)",
       "unlocked": "Codex of Power: {aspect} unlocked by clearing {dungeon}."
     },
@@ -3403,21 +3526,46 @@
     "vendor": {
       "title": "Benny's Trade",
       "hint": "Click an item to buy it. Click an item in your backpack to sell it.",
-      "hintTouch": "Tap an item to buy it. Tap an item in your backpack to sell it.",
+      "hintTouch": "Tap an item to see its price, then buy it. Tap an item in your backpack to sell it.",
       "price": "Price: {gold} gold",
-      "sellFor": "Sells for {gold} gold"
+      "sellFor": "Sells for {gold} gold",
+      "sold": "Sold",
+      "buyTitle": "Buy",
+      "sellTitle": "Sell"
+    },
+    "trade": {
+      "buyLine": "Price {gold} gold. You have {have}; {after} left after buying.",
+      "sellLine": "Sells for {gold} gold. You have {have}; {after} after selling.",
+      "buy": "Buy - {gold} gold",
+      "sell": "Sell - {gold} gold",
+      "confirm": "Confirm - {gold} gold"
     },
     "blacksmith": {
       "title": "Hekla's Forge",
       "hint": "Select an item in your backpack to reroll one of its affixes.",
       "reroll": "reroll ({gold} gold)",
       "cannot": "This item has no affixes that can be reworked.",
-      "salvageJunk": "Salvage all common and magic items in the backpack"
+      "salvageJunk": "Salvage all common and magic items in the backpack",
+      "sectionReroll": "Reroll",
+      "rerollCount": "{n} affixes",
+      "rerollNote": "Replaces an affix with a new random one, rolled at item power {power}. Each reroll costs more.",
+      "salvageNone": "Nothing to salvage",
+      "salvageCount": "Salvage {n} items - about {gold} gold",
+      "salvageCountOne": "Salvage 1 item - about {gold} gold",
+      "salvageSummaryOne": "Salvaging 1 item for about {gold} gold. This cannot be undone.",
+      "salvageTitle": "Salvage common and magic items?",
+      "salvageSummary": "Salvaging {n} items for about {gold} gold. This cannot be undone.",
+      "salvageMore": "and {n} more",
+      "salvageConfirm": "Salvage",
+      "keep": "Keep"
     },
     "technician": {
       "title": "Pell's Workbench",
       "hint": "Select a legendary to extract its aspect, or a rare or legendary to imprint one.",
-      "extract": "Extract aspect ({gold} gold)",
+      "extract": "Extract {aspect} ({gold} gold)",
+      "noAspect": "none",
+      "change": "Aspect: {from} -> {to}",
+      "replaces": "Replaces: {aspect}",
       "extractWarn": "The item is destroyed; its aspect goes into your cache.",
       "imprint": "Imprint ({gold} gold)",
       "cache": "Aspect cache ({n})",
@@ -3426,7 +3574,12 @@
     "stash": {
       "title": "Stash",
       "hint": "Shared by all your characters. Click a stash item to take it; click a backpack item to store it.",
-      "hintTouch": "Shared by all your characters. Tap a stash item to take it; tap a backpack item to store it."
+      "hintTouch": "Shared by all your characters. Tap a stash item to take it; tap a backpack item to store it.",
+      "count": "Stash {used}/{total} - shared by all characters",
+      "empty": "Nothing stored yet. Tap a backpack item to store it.",
+      "storeJunk": "Store all junk ({n})",
+      "movedIn": "Moved to stash.",
+      "movedOut": "Moved to backpack."
     },
     "cannot": {
       "gold": "Not enough gold.",
@@ -3905,6 +4058,8 @@
     "unmute": "Turn sound on ({key})",
     "settings": "Sound settings",
     "close": "Close",
+    "lower": "Lower {name} volume",
+    "raise": "Raise {name} volume",
     "master": "Master",
     "music": "Music",
     "sfx": "Effects",
@@ -4026,6 +4181,17 @@
     "title": "Tier Beacon",
     "badge": "WT {roman} {name}",
     "active": "Active",
+    "locked": "Locked",
+    "switch": "Switch",
+    "combatBanner": "In combat - tier locked",
+    "progress": "Best rift {best} / {need}",
+    "chips": {
+      "campaign": "No scaling",
+      "enemies": "Foes +{life}% life +{damage}% dmg",
+      "rewards": "+{pct}% XP, gold",
+      "rewardsSplit": "+{xp}% XP +{gold}% gold",
+      "loot": "+{power} power"
+    },
     "intro": "Choose how hard the world fights back. Higher tiers reward more. The change applies to enemies that spawn from now on.",
     "combat": "The beacon will not answer while enemies are fighting you.",
     "picked": "World Tier set: {tier}.",

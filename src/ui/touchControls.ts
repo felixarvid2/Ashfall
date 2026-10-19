@@ -33,7 +33,7 @@ const SLOT_ACTIONS: ({ hold: Action } | { button: number } | { attack: true } | 
 ];
 
 /** Menu button icons live in public/assets/ui/menu/ (white glyphs, tinted through a CSS mask). */
-const menuIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/menu/${id}.${id === 'close' ? 'png' : 'svg'}`;
+const menuIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/menu/${id}.svg`;
 
 /** The five panel buttons that stay on the menu row (44 px); everything else lives behind the "more" button. */
 const MENU: { id: string; action: Action }[] = [
@@ -256,10 +256,6 @@ export class TouchControls {
     document.addEventListener('pointerdown', outside, true);
     this.cleanups.push(() => document.removeEventListener('pointerdown', outside, true));
 
-    // Portrait panels cover the menu and a phone has no Escape key: a close button floats over them.
-    const close = menuButton('close', t('touch.menu.close'), () => this.closePanels());
-    close.classList.add('touch-close');
-
     // Thumb-reach menu (portrait): a round button above the stick zone that opens the five panels as a vertical sheet.
     const fab = document.createElement('div');
     fab.className = 'touch-fab';
@@ -285,7 +281,7 @@ export class TouchControls {
     document.addEventListener('pointerdown', fabOutside, true);
     this.cleanups.push(() => document.removeEventListener('pointerdown', fabOutside, true));
 
-    this.elements.push(zone, menu, close, fab);
+    this.elements.push(zone, menu, fab);
     root.append(...this.elements);
     for (const el of this.elements) el.hidden = true;
 
@@ -362,19 +358,6 @@ export class TouchControls {
     this.more.hidden = !open;
     this.moreButton.setAttribute('aria-expanded', String(open));
     this.moreButton.classList.toggle('open', open);
-  }
-
-  private closePanels(): void {
-    if (panelStack.openIds().length > 0) {
-      panelStack.closeAll();
-      return;
-    }
-    for (const p of TOGGLE_PANELS) if (this.panelOpen(p.selector)) this.input.pressAction(p.action);
-    // Panels without a toggle action close through their own button.
-    for (const sel of OTHER_PANELS) {
-      const panel = this.root.querySelector(`${sel}:not([hidden])`);
-      panel?.querySelector<HTMLElement>('.panel-close, .service-close, .sound-close, .dialogue-close, button')?.click();
-    }
   }
 
   private bindSlot(el: HTMLElement, action: SlotAction): void {
