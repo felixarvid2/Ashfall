@@ -3,7 +3,8 @@
  * (drag), node tooltips, allocation by click or tap, board attaching at gates and glyph socketing.
  * It lives inside the skill panel (K) once the character is at the level cap.
  */
-import { t } from '../data/i18n';
+import { t, touchText } from '../data/i18n';
+import { confirmSheet } from './confirmSheet';
 import {
   BOARDS,
   BOARD_SIZE,
@@ -193,7 +194,14 @@ export class MatrixPanel {
     left.append(pts, xp);
     const cost = respecCost(e);
     const reset = button(t('matrix.reset', { gold: cost }), () => {
-      if (confirm(t('matrix.resetConfirm', { gold: cost }))) this.actions.respec();
+      void confirmSheet({
+        title: t('matrix.resetTitle'),
+        body: t('matrix.resetConfirm', { gold: cost }),
+        confirmLabel: t('matrix.resetButton'),
+        danger: true,
+      }).then((ok) => {
+        if (ok) this.actions.respec();
+      });
     });
     reset.disabled = e.nodes.length === 0 || v.gold < cost;
     const tools = div('matrix-tools');
@@ -506,7 +514,7 @@ export class MatrixPanel {
     if (owned) tip.appendChild(div('item-tip-equipped', t('matrix.state.owned')));
     else {
       const r = canAllocate(e, node.id);
-      tip.appendChild(div(r.ok ? 'item-tip-stats' : 'item-tip-req', r.ok ? t('matrix.state.available') : t(`matrix.cannot.${(r as Extract<AllocateResult, { ok: false }>).reason}`)));
+      tip.appendChild(div(r.ok ? 'item-tip-stats' : 'item-tip-req', r.ok ? touchText('matrix.state.available') : t(`matrix.cannot.${(r as Extract<AllocateResult, { ok: false }>).reason}`)));
     }
     return tip;
   }
@@ -517,7 +525,7 @@ export class MatrixPanel {
     if (!sel) {
       const glyph = this.selectedGlyph ? GLYPH_DEFS.get(this.selectedGlyph) : undefined;
       if (glyph) rows.push(this.glyphCard(e, glyph));
-      else rows.push(div('muted', t('matrix.hint')));
+      else rows.push(div('muted', touchText('matrix.hint')));
     } else {
       rows.push(this.describe(sel));
       if (sel.kind === 'gate') rows.push(...this.gateControls(e, sel));

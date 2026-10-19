@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { registerLanguage, setLanguage, t } from '../src/data/i18n';
+import { registerLanguage, setLanguage, setTouchWording, t, touchText } from '../src/data/i18n';
 
 describe('i18n', () => {
   afterEach(() => setLanguage('en'));
@@ -26,5 +26,24 @@ describe('i18n', () => {
 
   it('rejects unknown languages', () => {
     expect(() => setLanguage('zz')).toThrow();
+  });
+});
+
+describe('touch wording', () => {
+  afterEach(() => setTouchWording(false));
+
+  it('fills the aim phrase of skill texts for mouse and touch', () => {
+    expect(t('skills.bastion.orbital_strike.desc')).toContain('at the cursor');
+    setTouchWording(true);
+    expect(t('skills.bastion.orbital_strike.desc')).toContain('at your target');
+    expect(t('skills.bastion.orbital_strike.desc')).not.toContain('{aim');
+  });
+
+  it('touchText picks the Touch variant only on touch', () => {
+    expect(touchText('map.travel')).toMatch(/^Click/);
+    setTouchWording(true);
+    expect(touchText('map.travel')).toMatch(/^Tap/);
+    // No variant: the plain string.
+    expect(touchText('save.saved')).toBe('Game saved');
   });
 });

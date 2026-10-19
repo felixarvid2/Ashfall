@@ -4,7 +4,7 @@
  * The inventory opens beside it; clicking a backpack item routes to the open service.
  */
 import type { Inventory } from '../core/components';
-import { t } from '../data/i18n';
+import { t, touchText } from '../data/i18n';
 import type { Item } from '../data/loot/schemas';
 import {
   buyPrice,
@@ -153,7 +153,7 @@ export class ServicePanel {
       }
       grid.appendChild(cell);
     });
-    return [grid, div('inv-hint', t('services.vendor.hint'))];
+    return [grid, div('inv-hint', touchText('services.vendor.hint'))];
   }
 
   private stash(): HTMLElement[] {
@@ -169,7 +169,7 @@ export class ServicePanel {
       }
       grid.appendChild(cell);
     });
-    return [grid, div('inv-hint', t('services.stash.hint'))];
+    return [grid, div('inv-hint', touchText('services.stash.hint'))];
   }
 
   private selectedItem(inv: Inventory): Item | null {

@@ -1,4 +1,5 @@
 /** Floating damage numbers as pooled DOM elements positioned over the canvas. */
+import type { Entity } from '../core/ecs';
 import type { GameEvent } from '../core/events';
 
 interface Num {
@@ -10,6 +11,25 @@ interface Num {
   life: number;
   drift: number;
   active: boolean;
+  /** Screen-space drift in px over the number's life (damage taken floats left). */
+  slide: number;
+  /** Touch merging: the target and the running sum while the 120 ms window is open. */
+  target: Entity | null;
+  sum: number;
+  kind: string;
+  born: number;
+}
+
+/** Touch: hits on one target within this window become one number. */
+export const MERGE_WINDOW = 0.12;
+/** Touch: at most this many numbers live at once. */
+export const TOUCH_MAX = 24;
+/** Touch: damage-over-time ticks under this share of the target's life are not shown. */
+export const DOT_MIN_SHARE = 0.03;
+
+/** Whether a DoT tick is big enough to show on touch (an unknown max life shows everything). */
+export function dotWorthShowing(amount: number, maxLife: number): boolean {
+  return maxLife <= 0 || amount >= maxLife * DOT_MIN_SHARE;
 }
 
 export type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
@@ -18,31 +38,61 @@ export class DamageNumbers {
   private readonly layer: HTMLDivElement;
   private readonly pool: Num[] = [];
   private readonly screen = { x: 0, y: 0 };
+  private clock = 0;
 
-  constructor(root: HTMLElement, private readonly max = 80) {
+  constructor(
+    private readonly root: HTMLElement,
+    private readonly max = 80,
+    /** Max life of an entity (0 when unknown), for the touch DoT filter. */
+    private readonly maxLifeOf: (e: Entity) => number = () => 0,
+  ) {
     this.layer = document.createElement('div');
     this.layer.className = 'damage-layer';
     root.appendChild(this.layer);
+  }
+
+  private get touch(): boolean {
+    return this.root.classList.contains('touch-ui');
   }
 
   handle(event: GameEvent): void {
     if (event.type === 'damage') {
       const total = event.amount + event.absorbed;
       if (total < 0.5) return;
+      const touch = this.touch;
+      if (touch && event.dot && !dotWorthShowing(total, this.maxLifeOf(event.target))) return;
       let cls = 'dmg';
       if (event.toPlayer) cls += ' dmg-taken';
       else if (event.crit) cls += ' dmg-crit';
       if (event.dot) cls += ' dmg-dot';
       if (event.amount < 0.5 && event.absorbed > 0) cls += ' dmg-absorbed';
-      this.spawn(event.x, event.y, event.z, String(Math.round(total)), cls);
+      if (touch && this.merge(event.target, cls, total)) return;
+      const n = this.spawn(event.x, event.y, event.z, String(Math.round(total)), cls);
+      if (touch) {
+        n.target = event.target;
+        n.sum = total;
+        n.kind = cls;
+        if (event.toPlayer) n.slide = -44;
+      }
     } else if (event.type === 'miss') {
-      this.spawn(event.x, event.y, event.z, 'Miss', 'dmg dmg-dot');
+      // Misses are enemy evasion only; on a phone they just add noise.
+      if (!this.touch) this.spawn(event.x, event.y, event.z, 'Miss', 'dmg dmg-dot');
     } else if (event.type === 'heal') {
       this.spawn(event.x, event.y, event.z, `+${Math.round(event.amount)}`, 'dmg dmg-heal');
     }
   }
 
+  /** Adds a hit to a number spawned for the same target moments ago (touch). */
+  private merge(target: Entity, kind: string, amount: number): boolean {
+    const n = this.pool.find((p) => p.active && p.target === target && p.kind === kind && this.clock - p.born < MERGE_WINDOW);
+    if (!n) return false;
+    n.sum += amount;
+    n.el.textContent = String(Math.round(n.sum));
+    return true;
+  }
+
   update(dt: number, project: Project): void {
+    this.clock += dt;
     for (const n of this.pool) {
       if (!n.active) continue;
       n.age += dt;
@@ -58,13 +108,16 @@ export class DamageNumbers {
       }
       n.el.style.display = '';
       const pop = t < 0.12 ? 1 + (0.12 - t) * 4 : 1;
-      n.el.style.transform = `translate(${this.screen.x}px, ${this.screen.y}px) translate(-50%, -50%) scale(${pop})`;
+      n.el.style.transform = `translate(${this.screen.x + n.slide * t}px, ${this.screen.y}px) translate(-50%, -50%) scale(${pop})`;
       n.el.style.opacity = String(t > 0.65 ? 1 - (t - 0.65) / 0.35 : 1);
     }
   }
 
-  private spawn(x: number, y: number, z: number, text: string, cls: string): void {
-    let n = this.pool.find((p) => !p.active);
+  private spawn(x: number, y: number, z: number, text: string, cls: string): Num {
+    let n: Num | undefined;
+    // Touch keeps the screen readable: at most TOUCH_MAX live numbers, the oldest makes room.
+    if (this.touch && this.pool.filter((p) => p.active).length >= TOUCH_MAX) n = this.pool.filter((p) => p.active).reduce((a, b) => (a.age > b.age ? a : b));
+    else n = this.pool.find((p) => !p.active);
     if (!n) {
       if (this.pool.length >= this.max) {
         // Recycle the oldest number when the screen is flooded.
@@ -72,7 +125,7 @@ export class DamageNumbers {
       } else {
         const el = document.createElement('div');
         this.layer.appendChild(el);
-        n = { el, x: 0, y: 0, z: 0, age: 0, life: 0.9, drift: 0, active: false };
+        n = { el, x: 0, y: 0, z: 0, age: 0, life: 0.9, drift: 0, active: false, slide: 0, target: null, sum: 0, kind: '', born: 0 };
         this.pool.push(n);
       }
     }
@@ -86,6 +139,10 @@ export class DamageNumbers {
     // Visual-only spread so stacked numbers don't overlap perfectly.
     n.drift = (Math.random() - 0.5) * 1.2;
     n.active = true;
+    n.slide = 0;
+    n.target = null;
+    n.born = this.clock;
     n.el.style.display = 'none';
+    return n;
   }
 }

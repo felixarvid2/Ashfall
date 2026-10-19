@@ -26,7 +26,7 @@ import {
   worldBossUniques,
 } from '../src/world/worldBoss';
 import { createZoneRuntime } from '../src/world/zone';
-import { worldBossLine } from '../src/ui/worldBossHud';
+import { worldBossLine, worldBossShortLine } from '../src/ui/worldBossHud';
 import { makeCtx, run } from './helpers';
 
 const { interval, warning, lifetime } = WORLD_BOSS;
@@ -283,8 +283,14 @@ describe('maps and HUD', () => {
     ctx.zone = createZoneRuntime(ZONES.find((z) => z.id !== event.spot.zone)!);
     expect(worldBossMarker(ctx)).toBeNull();
     expect(worldBossLine(ctx)).not.toBe('');
+    // The phone form is short: the name and the clock, with the region only when the player is elsewhere.
+    const name = t(`worldBoss.${event.def.id}.name`);
+    expect(worldBossShortLine(ctx)).toBe(`${name}  13:20 · ${region}`);
+    ctx.zone = createZoneRuntime(ZONES.find((z) => z.id === event.spot.zone)!);
+    expect(worldBossShortLine(ctx)).toBe(`${name}  13:20`);
     ctx.account!.endgame.playtime = 10;
     expect(worldBossLine(ctx)).toBe('');
+    expect(worldBossShortLine(ctx)).toBe('');
   });
 });
 

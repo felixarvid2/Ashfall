@@ -1,5 +1,6 @@
 /** "E  Open Supply Crate" prompt over the nearest usable object, and the lore log reader. */
 import { t } from '../data/i18n';
+import { haptic } from './haptics';
 
 type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
 
@@ -10,9 +11,12 @@ export class InteractPrompt {
   private readonly el: HTMLDivElement;
   private readonly screen = { x: 0, y: 0 };
   private current = '';
+  /** The last target the prompt popped for, and when it was hidden (a flicker at the edge must not re-pop). */
+  private lastTarget = '';
+  private hiddenAt = 0;
 
   constructor(
-    root: HTMLElement,
+    private readonly root: HTMLElement,
     private readonly iconUrl: (id: string) => string | null = () => null,
     onTap: () => void = () => {},
   ) {
@@ -26,24 +30,40 @@ export class InteractPrompt {
 
   /** Show the prompt for an object at (x, z), or hide it with `null`. */
   update(target: { x: number; z: number; kind: string } | null, keyLabel: string, project: Project): void {
+    const touch = this.root.classList.contains('touch-ui');
+    // Upright phone: the prompt docks at a fixed spot above the thumbs (world.css) instead of following the object.
+    const docked = touch && this.root.classList.contains('portrait');
     if (!target || !project(target.x, 1.6, target.z, this.screen)) {
+      if (!this.el.hidden) this.hiddenAt = performance.now();
       this.el.hidden = true;
       return;
     }
-    const text = t('interact.prompt', { key: keyLabel, action: t(`interact.actions.${target.kind}`) });
+    const text = `${t('interact.prompt', { key: keyLabel, action: t(`interact.actions.${target.kind}`) })}|${touch}`;
     if (text !== this.current) {
       this.current = text;
       this.el.replaceChildren();
       const key = document.createElement('span');
-      key.className = 'interact-key';
-      key.textContent = keyLabel;
+      // Touch has no keyboard: a tap glyph instead of a "Use" key chip.
+      key.className = touch ? 'interact-key interact-tap' : 'interact-key';
+      if (touch) key.setAttribute('aria-label', keyLabel);
+      else key.textContent = keyLabel;
       const icon = ICONS[target.kind] ? this.iconUrl(ICONS[target.kind]!) : null;
       if (icon) this.el.append(Object.assign(document.createElement('img'), { className: 'interact-icon', src: icon, alt: '' }));
       this.el.append(key, ` ${t(`interact.actions.${target.kind}`)}`);
       this.el.dataset.testid = 'interact-prompt';
     }
+    // A new target (or the same one after a pause) pops in once, with a short buzz on touch.
+    const id = `${target.kind}@${Math.round(target.x)},${Math.round(target.z)}`;
+    if (id !== this.lastTarget || (this.el.hidden && performance.now() - this.hiddenAt > 1500)) {
+      this.el.classList.remove('pop');
+      void this.el.offsetWidth;
+      this.el.classList.add('pop');
+      if (touch) haptic('tap');
+    }
+    this.lastTarget = id;
     this.el.hidden = false;
-    this.el.style.transform = `translate(${this.screen.x}px, ${this.screen.y}px) translate(-50%, -100%)`;
+    this.el.classList.toggle('docked', docked);
+    this.el.style.transform = docked ? '' : `translate(${this.screen.x}px, ${this.screen.y}px) translate(-50%, -100%)`;
   }
 }
 

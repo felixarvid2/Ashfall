@@ -52,3 +52,20 @@ describe('camera framing by aspect', () => {
     expect(rig.camera.position.distanceTo(rig.focusPoint)).toBeCloseTo(14, 6);
   });
 });
+
+describe('camera framing on short phones', () => {
+  it('keeps the player lower (about 46% from the top) under 700 px of height', () => {
+    expect(viewForAspect(320 / 640, 38, 640).shift).toBeLessThan(viewForAspect(390 / 844, 38, 844).shift);
+    const rig = new CameraRig(320 / 640);
+    rig.setAspect(320 / 640, 640);
+    rig.snapTo(10, 0, 5);
+    rig.camera.updateMatrixWorld();
+    const p = rig.focusPoint.clone().project(rig.camera);
+    expect((1 - p.y) / 2).toBeCloseTo(0.46, 3);
+  });
+
+  it('taller phones keep the 38% framing', () => {
+    expect(viewForAspect(390 / 844, 38, 844).shift).toBe(0.25);
+  });
+});
+

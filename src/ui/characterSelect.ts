@@ -4,6 +4,8 @@
  */
 import { CLASSES } from '../data/db';
 import { t } from '../data/i18n';
+import { confirmSheet } from './confirmSheet';
+import { panelStack } from './panelStack';
 import { artUrl, cssUrl } from './art';
 
 export interface SlotSummary {
@@ -27,6 +29,8 @@ const ALL_CLASSES = ['bastion', 'spectre', 'xenomant'];
 export class CharacterSelect {
   private readonly root: HTMLDivElement;
   private readonly body: HTMLDivElement;
+  /** Hidden marker for the class picker, so Back/Escape return to the slot list (panel stack). */
+  private readonly picker: HTMLDivElement;
 
   constructor(
     parent: HTMLElement,
@@ -50,15 +54,23 @@ export class CharacterSelect {
     // The painted title scene behind the menu.
     const backdrop = artUrl('menu/title');
     if (backdrop) this.root.style.setProperty('--menu-art', cssUrl(backdrop));
+    this.picker = document.createElement('div');
+    this.picker.hidden = true;
+    this.root.append(this.picker);
     parent.appendChild(this.root);
+    if (!panelStack.has('class-picker')) {
+      panelStack.register({ id: 'class-picker', el: this.picker, kind: 'modal', header: false, close: () => this.showSlots() });
+    }
     this.showSlots();
   }
 
   close(): void {
+    this.picker.hidden = true;
     this.root.remove();
   }
 
   private showSlots(): void {
+    this.picker.hidden = true;
     const heading = document.createElement('h2');
     heading.textContent = t('select.title');
     const list = document.createElement('div');
@@ -98,10 +110,16 @@ export class CharacterSelect {
     del.title = t('select.delete');
     del.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (confirm(t('select.deleteConfirm', { name: c.name }))) {
+      void confirmSheet({
+        title: t('select.deleteTitle'),
+        body: [t('select.deleteConfirm', { name: c.name }), t('select.deleteDetails', { class: t(`items.classes.${c.classId}`), level: c.level })],
+        confirmLabel: t('select.deleteButton'),
+        danger: true,
+      }).then((ok) => {
+        if (!ok) return;
         this.actions.remove(slot.index);
         this.showSlots();
-      }
+      });
     });
     card.append(name, info, del);
     card.addEventListener('click', () => this.actions.play(slot.index));
@@ -195,6 +213,7 @@ export class CharacterSelect {
     row.append(nameInput, create, back);
 
     this.body.replaceChildren(heading, classes, details, row);
+    this.picker.hidden = false;
     render();
     nameInput.focus();
   }

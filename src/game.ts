@@ -2,6 +2,7 @@
  * Top-level game: wires ECS, systems, input, rendering, UI and saving together.
  */
 import {
+  AttackTarget,
   Renderable,
   DisplayName,
   Elite,
@@ -18,6 +19,7 @@ import {
   ForcedMove,
   GroundItem,
   Health,
+  InteractTarget,
   Inventory,
   Invulnerable,
   MoveTarget,
@@ -52,7 +54,7 @@ import {
 } from './core/save';
 import { SpatialHash } from './core/spatial';
 import { STATUS_DEFS, classDef, skill } from './data/db';
-import { t } from './data/i18n';
+import { setTouchWording, t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
 import { START_ZONE, ZONES, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
 import type { ZoneDef } from './data/zones/zoneTypes';
@@ -81,6 +83,7 @@ import { InventoryPanel } from './ui/inventoryPanel';
 import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
 import { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels } from './ui/lootLabels';
+import { haptic, setHaptics } from './ui/haptics';
 import { playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
 import { soundsForEvent } from './audio/eventSounds';
@@ -108,7 +111,7 @@ import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
 import { loadAccount, relicEffects, saveAccount } from './core/account';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
-import { keyLabel } from './ui/hud';
+import { bossPhaseTicks, keyLabel } from './ui/hud';
 import { LORE_XP_PER_LEVEL, PYLONS } from './data/interactables';
 import {
   choose,
@@ -126,7 +129,7 @@ import {
   waitingOn,
 } from './systems/quests';
 import { NPCS, questDef } from './data/quests/db';
-import { DialoguePanel, NpcPlates, QuestLog, QuestTracker, type DialogueButton, type DialoguePage, type QuestLogEntry, type TrackedQuest } from './ui/questUi';
+import { DialoguePanel, NpcPlates, QuestLog, QuestTracker, type DialogueButton, type DialoguePage, type QuestLogDone, type QuestLogEntry, type TrackedQuest } from './ui/questUi';
 import { STASH_POSITION } from './data/quests/cinderFlats';
 import { ServicePanel, type ServiceKind } from './ui/servicePanel';
 import { TierPanel, tierBadgeText } from './ui/tierPanel';
@@ -156,11 +159,17 @@ import { activeMemory, bossSystem, inBeat, resetBoss } from './systems/boss';
 import { CREDIT_KEYS, epilogueKeys, type LumenChoice } from './data/lumen';
 import { chooseLumen, lumenCameraFocus } from './world/lumen';
 import { EpilogueScreen } from './ui/epilogue';
+import { panelStack } from './ui/panelStack';
+import { registerGamePanels } from './ui/panelRegistry';
+import { SettingsPanel } from './ui/settingsPanel';
+import { CoachMarks } from './ui/onboarding';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
-import { worldBossMarker, worldBossSystem } from './world/worldBoss';
+import { worldBossMarker, worldBossRuntime, worldBossSystem } from './world/worldBoss';
 import { WorldBossHud } from './ui/worldBossHud';
+import { EndgameStack } from './ui/endgameStack';
+import { EdgeArrow, placeEdgeArrow } from './ui/edgeArrows';
 import { WORLD_BOSS, worldBossPortrait } from './data/endgame/worldBosses';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
 import { harvestSystem, harvestView } from './world/harvest';
@@ -181,6 +190,11 @@ const ZONE_FADE = 0.35;
 const AUTOSAVE_INTERVAL = 60;
 /** How long the target frame keeps showing the last enemy you hit. */
 const TARGET_MEMORY = 4;
+/** Touch: the target frame lingers 8 s after the last hit, and as long as the enemy is within TARGET_NEAR metres. */
+const TARGET_MEMORY_TOUCH = 8;
+const TARGET_NEAR = 12;
+/** Menus do not pause the game while a live enemy is this close (metres). */
+const PAUSE_ENEMY_RANGE = 12;
 /** ?nav in the address bar starts with the wayfinding overlay on (it can also be ticked in the debug panel). */
 const NAV_OVERLAY = typeof location !== 'undefined' && new URLSearchParams(location.search).has('nav');
 
@@ -212,6 +226,12 @@ export class Game {
   private readonly loreReader: LoreReader;
   private readonly dialogue: DialoguePanel;
   private readonly epilogue: EpilogueScreen;
+  private settingsPanel!: SettingsPanel;
+  private uiRoot!: HTMLElement;
+  /** The backpack was opened by a hub service, so closing the service closes it too. */
+  private inventoryOpenedByService = false;
+  private pauseFrame = 0;
+  private menuPausedNow = false;
   private readonly npcPlates: NpcPlates;
   private readonly elitePlates: NpcPlates;
   private readonly questTracker: QuestTracker;
@@ -222,6 +242,10 @@ export class Game {
   private readonly tierPanel: TierPanel;
   private readonly riftPanel: RiftPanel;
   private readonly riftHudUi: RiftHud;
+  private readonly endgameChip: EndgameStack;
+  private readonly bossArrow: EdgeArrow;
+  /** The enemy the target frame shows (its floating plate is hidden on a phone). */
+  private hudTarget: Entity | null = null;
   private vendorStock: (Item | null)[] = [];
   /** Simulated time when the trader restocks (also on level up). */
   private vendorRestockAt = -Infinity;
@@ -256,7 +280,11 @@ export class Game {
     const firstRun = !this.hasStoredSettings();
     this.settings = loadSettings(this.storage);
     // Phones start on medium graphics (no 2× pixel ratio, lighter post-processing).
-    if (firstRun && isTouchDevice()) this.settings.graphics = 'medium';
+    if (firstRun && isTouchDevice()) {
+      this.settings.graphics = 'medium';
+      // The FPS meter is a setting on phones (Settings > Display) and starts off.
+      this.settings.showFps = false;
+    }
     document.documentElement.style.setProperty('--text-scale', String(this.settings.textScale));
     this.saves = new SaveStore(this.storage);
     audio.bind(this.settings.audio);
@@ -337,7 +365,11 @@ export class Game {
       .add('instance', instanceSystem)
       .add('restoration', restorationSystem);
 
-    this.damageNumbers = new DamageNumbers(uiRoot);
+    // Panel framework: Back/Escape, the shared header, one panel at a time, the tab bar (src/ui/panelStack.ts).
+    this.uiRoot = uiRoot;
+    panelStack.init(uiRoot);
+    setHaptics(this.settings.haptics);
+    this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0);
     this.toasts = new Toasts(uiRoot);
     // The endgame status rows (rift timer, world boss, Ash Harvest) share one column; style.css positions it.
     const endgameStack = document.createElement('div');
@@ -346,10 +378,16 @@ export class Game {
     this.worldBossHud = new WorldBossHud(endgameStack, (message) => this.toasts.show(message, 'info', 4500));
     this.harvestHud = new HarvestHud(endgameStack);
     this.hud = new Hud(uiRoot, () => this.respawn());
+    // On a phone the stack lives in the HUD's left column (one chip, see portrait/hud.css).
+    this.hud.leftColumn.append(endgameStack);
     this.fade = document.createElement('div');
     this.fade.className = 'zone-fade';
     uiRoot.append(this.fade);
-    this.lootLabels = new LootLabels(uiRoot, (e) => this.requestPickup(e));
+    this.lootLabels = new LootLabels(
+      uiRoot,
+      (e) => this.requestPickup(e),
+      (message) => this.toasts.show(message, 'info', 1800),
+    );
     this.interactPrompt = new InteractPrompt(
       uiRoot,
       (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
@@ -379,12 +417,25 @@ export class Game {
     this.loreReader = new LoreReader(uiRoot);
     this.dialogue = new DialoguePanel(uiRoot);
     this.epilogue = new EpilogueScreen(uiRoot);
-    this.npcPlates = new NpcPlates(uiRoot);
+    this.npcPlates = new NpcPlates(uiRoot, (id) => this.walkToNpc(id));
     this.elitePlates = new NpcPlates(uiRoot);
-    this.questTracker = new QuestTracker(uiRoot);
-    this.questLog = new QuestLog(uiRoot, () => this.questLogEntries(), (id) => {
-      if (this.ctx.quests) this.ctx.quests.tracked = id;
-    });
+    this.questTracker = new QuestTracker(uiRoot, () => this.input.pressAction('quests'));
+    this.questLog = new QuestLog(
+      uiRoot,
+      () => this.questLogEntries(),
+      (id) => {
+        if (this.ctx.quests) this.ctx.quests.tracked = id;
+      },
+      {
+        // The map shows the quest markers; it opens only if it is closed (the key toggles it).
+        showOnMap: () => {
+          if (!this.mapUi.open) this.input.pressAction('map');
+        },
+        openMap: () => {
+          if (!this.mapUi.open) this.input.pressAction('map');
+        },
+      },
+    );
     this.mapUi = new MapUi(
       uiRoot,
       () => this.ctx.zone,
@@ -525,13 +576,23 @@ export class Game {
         return r;
       },
     });
-    this.riftHudUi = new RiftHud(endgameStack);
+    this.riftHudUi = new RiftHud(endgameStack, uiRoot);
+    this.bossArrow = new EdgeArrow(uiRoot);
+    this.endgameChip = new EndgameStack(
+      endgameStack,
+      { rift: this.riftHudUi.element, worldBoss: this.worldBossHud.element, harvest: this.harvestHud.element },
+      () => this.input.pressAction('map'),
+    );
     this.servicePanel.onToggle = (open) => {
       if (open) {
+        this.inventoryOpenedByService = !this.inventoryPanel.open;
         this.inventoryPanel.toggle(true);
         this.inventoryPanel.setGridClick((i) => this.servicePanel.backpackClick(i));
       } else {
         this.inventoryPanel.setGridClick(null);
+        // The backpack the service opened closes with it (the player's own open backpack stays).
+        if (this.inventoryOpenedByService && this.inventoryPanel.open) this.inventoryPanel.toggle(false);
+        this.inventoryOpenedByService = false;
       }
     };
     this.characterPanel = new CharacterPanel(uiRoot, () => ({
@@ -671,6 +732,30 @@ export class Game {
     this.devtools.setMoveMode(this.settings.moveMode);
     this.devtools.setTouchControls(this.settings.touchControls);
     this.refreshHint();
+
+    // Settings panel (sound, display, controls) and the registration of every panel with the stack.
+    this.settingsPanel = new SettingsPanel(uiRoot, {
+      settings: () => this.settings,
+      apply: (patch) => this.applySettings(patch),
+      soundUi: this.soundUi,
+      toggleMute: () => this.toggleMute(),
+    });
+    this.soundUi.openSettings = () => this.settingsPanel.toggle('sound');
+    registerGamePanels(uiRoot, {
+      inventory: this.inventoryPanel,
+      character: this.characterPanel,
+      skills: this.skillTreePanel,
+      map: this.mapUi,
+      quests: this.questLog,
+      settings: this.settingsPanel,
+      service: this.servicePanel,
+      tier: this.tierPanel,
+      rift: this.riftPanel,
+      lore: this.loreReader,
+      closeDialogue: () => this.closeDialogue(),
+    });
+    uiRoot.style.setProperty('--paused-label', JSON.stringify(t('panels.paused')));
+    new CoachMarks(uiRoot);
 
     this.player = spawnPlayer(this.world, DEFAULT_CLASS, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
     this.populateZone();
@@ -930,6 +1015,11 @@ export class Game {
     if (input.wasPressed('quests')) this.questLog.toggle();
     if (input.wasPressed('toggleMute')) this.toggleMute();
     if (this.loreReader.open && (input.wasPressed('pickup') || input.wasPressed('map'))) this.loreReader.close();
+    // A menu is open and nothing threatens the player: the world waits (settings: pause in menus).
+    if (this.menuPaused()) {
+      input.endTick();
+      return;
+    }
 
     // World Tiers: the play time clock, and the enemy scaling every new spawn picks up.
     tickPlaytime(this.ctx, dt);
@@ -1005,9 +1095,14 @@ export class Game {
       this.hud.regionCard(this.pendingCard.image, this.pendingCard.name, this.pendingCard.sub);
       this.pendingCard = null;
     }
-    this.hud.update(this.hudState(), frameDt);
+    const hudState = this.hudState();
+    this.hud.update(hudState, frameDt);
+    this.touchControls.sync(hudState.combat ?? false, hudState.xp.skillPoints);
     this.worldBossHud.update(this.ctx);
     this.riftHudUi.update(this.ctx.instance?.rift ? riftHud(this.ctx.instance.rift) : null);
+    this.endgameChip.update(frameDt);
+    this.updateBossArrow();
+    this.questTracker.tick(frameDt, hudState.combat ?? false);
     this.mapUi.markers = this.ctx.instance
       ? this.instanceMarkers()
       : questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
@@ -1032,10 +1127,20 @@ export class Game {
     }));
   }
 
+  /** Tactile cues for the big moments (src/ui/haptics.ts): a heavy hit taken, death, a legendary drop. */
+  private hapticFor(event: GameEvent): void {
+    if (event.type === 'damage' && event.toPlayer && !event.dot) {
+      const max = this.world.get(this.player, Health)?.max ?? 0;
+      if (max > 0 && event.amount > max * 0.1) haptic('bigHit');
+    } else if (event.type === 'death' && event.isPlayer) haptic('death');
+    else if (event.type === 'loot' && (event.rarity === 'legendary' || event.rarity === 'unique' || event.rarity === 'mythic')) haptic('legendary');
+  }
+
   private handleEvents(events: GameEvent[]): void {
     this.renderer.handleEvents(events);
     for (const event of events) {
       this.damageNumbers.handle(event);
+      this.hapticFor(event);
       for (const cue of soundsForEvent(event)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
       switch (event.type) {
         case 'hitstop':
@@ -1044,7 +1149,8 @@ export class Game {
           break;
         case 'damage':
           if (!event.toPlayer && this.world.has(event.target, EnemyAI)) {
-            this.lastTarget = { entity: event.target, until: this.realTime + TARGET_MEMORY };
+            // On a phone there is no cursor to re-aim with: the frame stays longer (and while it is near, see hudState).
+            this.lastTarget = { entity: event.target, until: this.realTime + (this.touchControls.shown ? TARGET_MEMORY_TOUCH : TARGET_MEMORY) };
           }
           break;
         case 'wave':
@@ -1058,13 +1164,16 @@ export class Game {
           break;
         case 'pickup':
           if (event.kind === 'gold') playGoldSound();
-          else playPickupSound();
+          else {
+            playPickupSound();
+            this.touchControls.setDot('inventory', true);
+          }
           this.inventoryPanel.refresh();
           break;
         case 'levelUp':
           this.music.sting();
           this.vendorRestockAt = -Infinity;
-          this.hud.showBanner(t('ui.levelUp', { level: event.level }), 2.5);
+          this.hud.levelUp(this.world.req(this.player, Progression).skillPoints, t('ui.levelUp', { level: event.level }), t('hud.levelUpSub'), () => this.input.pressAction('skills'));
           this.toasts.show(t('ui.skillPoint'));
           this.characterPanel.refresh();
           this.skillTreePanel.refresh();
@@ -1136,7 +1245,7 @@ export class Game {
     });
   }
 
-  private questLogEntries(): { active: QuestLogEntry[]; done: string[] } {
+  private questLogEntries(): { active: QuestLogEntry[]; done: QuestLogDone[] } {
     const rt = this.ctx.quests;
     if (!rt) return { active: [], done: [] };
     return {
@@ -1153,19 +1262,47 @@ export class Game {
           tracked: rt.tracked === id,
         };
       }),
-      done: [...rt.done.keys()].map((id) => t(`quests.${id}.title`)),
+      done: [...rt.done.keys()].map((id) => {
+        const def = questDef(id);
+        return {
+          id,
+          title: t(`quests.${id}.title`),
+          summary: t(`quests.${id}.summary`),
+          rewards: t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp), gold: def.rewards.gold }),
+        };
+      }),
     };
   }
 
   private updateQuestUi(px: number, pz: number): void {
     const rt = this.ctx.quests;
     if (!rt) return;
+    // Distance and direction to the tracked quest's nearest marker (H056): the arrow points the way on screen.
+    let where: { dist: number; angle: number } | null = null;
+    if (rt.tracked) {
+      let best: { x: number; z: number } | null = null;
+      let bestD = Infinity;
+      for (const m of questMarkers(this.world, this.ctx)) {
+        if (m.quest !== rt.tracked) continue;
+        const d = Math.hypot(m.x - px, m.z - pz);
+        if (d < bestD) {
+          bestD = d;
+          best = m;
+        }
+      }
+      const a = { x: 0, y: 0 };
+      const b = { x: 0, y: 0 };
+      if (best && this.renderer.toScreen(px, 0, pz, a) && this.renderer.toScreen(best.x, 0, best.z, b)) {
+        where = { dist: bestD, angle: (Math.atan2(b.x - a.x, a.y - b.y) * 180) / Math.PI };
+      }
+    }
     const tracked: TrackedQuest[] = this.orderedQuests().map((id) => ({
       id,
       title: t(`quests.${id}.title`),
       step: this.stepText(id),
       kind: questDef(id).kind,
       tracked: rt.tracked === id,
+      ...(rt.tracked === id && where ? where : {}),
     }));
     this.questTracker.update(tracked);
     const plates: { id: string; x: number; z: number; name: string; marker: '!' | '?' | '' }[] = [];
@@ -1184,6 +1321,8 @@ export class Game {
       const tr = this.world.req(e, Transform);
       // Ash Storms hide name plates until enemies are close.
       if (Math.hypot(tr.x - px, tr.z - pz) > 26 - 16 * (this.zone?.storm.exposure ?? 0)) continue;
+      // The target frame already names the targeted elite (phone: one name at a time).
+      if (e === this.hudTarget && this.hud.portrait) continue;
       const el = this.world.req(e, Elite);
       const dn = this.world.get(e, DisplayName);
       const ai = this.world.get(e, EnemyAI);
@@ -1206,6 +1345,21 @@ export class Game {
   private closeDialogue(): void {
     this.dialogue.close();
     this.talkingTo = null;
+  }
+
+  /** Touch: tapping an NPC's name plate walks there and talks (like clicking the NPC with a mouse). */
+  private walkToNpc(id: string): void {
+    if (this.world.has(this.player, Dead)) return;
+    const npc = this.world.query(Npc, Transform).find((e) => this.world.req(e, Npc).id === id);
+    if (npc === undefined) return;
+    this.world.remove(this.player, MoveTarget);
+    this.world.remove(this.player, AttackTarget);
+    this.world.remove(this.player, InteractTarget);
+    this.world.remove(this.player, PickupTarget);
+    const tr = this.world.req(npc, Transform);
+    this.world.add(this.player, InteractTarget, { target: npc });
+    this.world.add(this.player, MoveTarget, { x: tr.x, z: tr.z });
+    haptic('tap');
   }
 
   private talkTo(npc: string): void {
@@ -1309,6 +1463,7 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
 
   private onQuestEvent(id: string, state: 'started' | 'progress' | 'step' | 'completed' | 'failed'): void {
     const title = t(`quests.${id}.title`);
+    this.touchControls.setDot('quests', true);
     switch (state) {
       case 'started':
         this.toasts.show(t('questUi.started', { title }));
@@ -1640,9 +1795,14 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
       this.cursor = cursor;
       this.renderer.renderer.domElement.style.cursor = cursor;
     }
-    if (te === null && this.lastTarget && this.realTime < this.lastTarget.until && isAlive(w, this.lastTarget.entity)) {
-      te = this.lastTarget.entity;
+    if (te === null && this.lastTarget && isAlive(w, this.lastTarget.entity)) {
+      const last = this.lastTarget.entity;
+      const lt = w.get(last, Transform);
+      const pt = this.playerTransform;
+      const near = this.touchControls.shown && lt !== undefined && Math.hypot(lt.x - pt.x, lt.z - pt.z) < TARGET_NEAR;
+      if (this.realTime < this.lastTarget.until || near) te = last;
     }
+    this.hudTarget = te;
     if (te !== null && isAlive(w, te)) {
       const ai = w.req(te, EnemyAI);
       const th = w.req(te, Health);
@@ -1657,6 +1817,7 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
         max: th.max,
         statuses,
         ...(portrait ? { portrait } : {}),
+        ...bossPhaseTicks(w.get(te, Boss)?.script ?? undefined),
         ...(elite ? { color: ELITE_COLORS[elite.kind], affixes: elite.affixes.map((a) => t(`elites.affixes.${a}`)) } : {}),
       };
     }
@@ -1672,10 +1833,17 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
       },
       slots,
       dodge: { cooldown: user.dodgeCooldown, max: cls.dodge.cooldown },
-      potion: { charges: user.potionCharges, max: cls.potion.charges + (w.get(p, AccountBonuses)?.potionCharges ?? 0) },
+      potion: {
+        charges: user.potionCharges,
+        max: cls.potion.charges + (w.get(p, AccountBonuses)?.potionCharges ?? 0),
+        recharge: user.potionRecharge,
+        rechargeMax: cls.potion.recharge,
+      },
+      combat: enemyNear(w, this.ctx, this.playerTransform.x, this.playerTransform.z, 15) !== null,
       wave: enc && enc.wave > 0 ? { wave: enc.wave, alive: enc.alive, phase: enc.phase, timer: enc.timer } : null,
       ...(this.zone ? { location: this.locationLabel() } : {}),
-      ...((this.ctx.account?.endgame.tierUnlocked ?? 1) >= 2 ? { tier: tierBadgeText(currentTier(this.ctx)) } : {}),
+      // Inside a rift the rift row replaces the tier badge (the tier outside does not apply there).
+      ...((this.ctx.account?.endgame.tierUnlocked ?? 1) >= 2 && !this.ctx.instance?.rift ? { tier: tierBadgeText(currentTier(this.ctx)) } : {}),
       ...(() => {
         const tr = this.playerTransform;
         const ev = this.ctx.instance ? null : activeEvent(this.zone, tr.x, tr.z);
@@ -1903,6 +2071,35 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
   private readonly announced = new Set<Entity>();
 
   /** A boss engaging the player gets its portrait and name swept onto the screen. */
+  /** A chevron on the screen edge towards an engaged boss (or the world boss) that is off the visible field (H070). */
+  private updateBossArrow(): void {
+    if (!this.touchControls.shown) {
+      this.bossArrow.update(null);
+      return;
+    }
+    let boss: Entity | null = null;
+    for (const e of this.world.query(Boss, Transform)) {
+      if (this.world.req(e, Boss).engaged && !this.world.has(e, Dead)) {
+        boss = e;
+        break;
+      }
+    }
+    const wb = worldBossRuntime(this.ctx).entity;
+    if (boss === null && wb !== null && this.world.isAlive(wb) && !this.world.has(wb, Dead)) boss = wb;
+    const tr = boss !== null ? this.world.get(boss, Transform) : undefined;
+    const pt = this.playerTransform;
+    const from = { x: 0, y: 0 };
+    const to = { x: 0, y: 0 };
+    if (!tr || !this.renderer.toScreen(pt.x, pt.y, pt.z, from) || !this.renderer.toScreen(tr.x, tr.y, tr.z, to)) {
+      this.bossArrow.update(null);
+      return;
+    }
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // In the free band under the hero and above the thumb controls (clear of the top chrome and the left column).
+    this.bossArrow.update(placeEdgeArrow(from, to, { w, h }, { left: 24, right: 24, top: Math.round(h * 0.42), bottom: Math.round(h * 0.42) }));
+  }
+
   private announceBosses(): void {
     for (const e of this.world.query(Boss, EnemyAI)) {
       if (this.announced.has(e) || !this.world.req(e, Boss).engaged || this.world.has(e, Dead)) continue;
@@ -1913,6 +2110,7 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
       const dn = this.world.get(e, DisplayName);
       const name = dn ? (dn.literal ? dn.key : t(dn.key)) : t(`enemies.${ai.defId}`);
       this.hud.bossIntro(name, portrait, t('hud.bossIntro'));
+      haptic('boss');
     }
     for (const e of this.announced) if (!this.world.isAlive(e)) this.announced.delete(e);
   }
@@ -2269,7 +2467,47 @@ ${t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp),
     const mode = this.settings.touchControls;
     const on = mode === 'on' || (mode === 'auto' && isTouchDevice());
     this.touchControls.setActive(on);
+    this.touchControls.setLayout(this.settings.touchLayout, this.settings.buttonScale);
     this.hud.setTouch(on);
+    setTouchWording(on);
+  }
+
+  /** The settings panel changes settings here: apply each one at once and save. */
+  applySettings(patch: Partial<Settings>): void {
+    Object.assign(this.settings, patch);
+    if (patch.textScale !== undefined) document.documentElement.style.setProperty('--text-scale', String(patch.textScale));
+    if (patch.graphics !== undefined) this.renderer.setQuality(patch.graphics);
+    if (patch.screenShake !== undefined) this.renderer.screenShake = patch.screenShake;
+    if (patch.showFps !== undefined) this.devtools.setShowFps(patch.showFps);
+    if (patch.haptics !== undefined) setHaptics(patch.haptics);
+    if (patch.moveMode !== undefined) {
+      this.devtools.setMoveMode(patch.moveMode);
+      this.refreshHint();
+    }
+    if (patch.touchControls !== undefined) this.devtools.setTouchControls(patch.touchControls);
+    if (patch.touchControls !== undefined || patch.touchLayout !== undefined || patch.buttonScale !== undefined) this.applyTouchControls();
+    saveSettings(this.storage, this.settings);
+  }
+
+  /** True while a full-screen menu is open, nothing is close by and the setting asks for a pause. */
+  private menuPaused(): boolean {
+    const open = this.settings.pauseInMenus && this.uiRoot.classList.contains('touch-ui') && this.uiRoot.classList.contains('has-panel') && !this.world.has(this.player, Dead);
+    if (!open) {
+      this.menuPausedNow = false;
+    } else if (this.pauseFrame++ % 10 === 0) {
+      // Re-check the surroundings a few times a second: safe in a hub, else no live enemy within 12 m.
+      const tr = this.playerTransform;
+      const hub = !!this.zone?.inHub;
+      this.menuPausedNow =
+        hub ||
+        !this.world.query(EnemyAI, Transform).some((e) => {
+          if (this.world.has(e, Dead)) return false;
+          const et = this.world.req(e, Transform);
+          return Math.hypot(et.x - tr.x, et.z - tr.z) < PAUSE_ENEMY_RANGE;
+        });
+    }
+    this.uiRoot.classList.toggle('menu-paused', open && this.menuPausedNow);
+    return open && this.menuPausedNow;
   }
 
   setMoveMode(mode: MoveMode): void {

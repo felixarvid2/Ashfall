@@ -3,13 +3,15 @@
  * interest, rotated to match the camera. Clicking a discovered teleporter on the full map travels there;
  * tabs switch between the regions you have visited.
  */
-import { t } from '../data/i18n';
+import { t, touchText } from '../data/i18n';
 import type { PoiKind } from '../data/zones/zoneTypes';
 import { revealedFraction, type ZoneRuntime } from '../world/zone';
 import { extraHubs } from '../world/setPieces';
 import type { HarvestView } from '../world/harvest';
 import { artUrl } from './art';
 import { bridgeCellsOf, caveGrid } from '../data/zones/caves';
+import { confirmSheet } from './confirmSheet';
+import { haptic } from './haptics';
 
 const MINI_SIZE = 180;
 /** Metres shown from the centre of the minimap to its edge. */
@@ -25,6 +27,51 @@ const POI_STYLE: Partial<Record<PoiKind, { color: string; r: number; shape: 'dot
   relic: { color: '#9fb8ff', r: 3, shape: 'diamond' },
   signalTower: { color: '#8ad2ff', r: 3, shape: 'dot' },
 };
+
+/** A tap on the full map snaps to a discovered teleporter within this many CSS px (P077). */
+export const PICK_RADIUS_PX = 28;
+export const MAP_MAX_ZOOM = 4;
+
+/** The id of the point nearest to (x, y) within `radius`, or null. Units are whatever the caller uses (canvas px). */
+export function pickNearest(points: { id: string; x: number; y: number }[], x: number, y: number, radius: number): string | null {
+  let best: string | null = null;
+  let bestD = radius;
+  for (const p of points) {
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d <= bestD) {
+      bestD = d;
+      best = p.id;
+    }
+  }
+  return best;
+}
+
+/** Pan and zoom of the full map: the canvas (side `size` CSS px) is drawn at `translate(tx, ty) scale(z)`. */
+export interface MapZoom {
+  z: number;
+  tx: number;
+  ty: number;
+}
+
+/** Keeps the zoomed canvas covering its viewport. */
+export function clampZoom(s: MapZoom, size: number): MapZoom {
+  const z = Math.min(MAP_MAX_ZOOM, Math.max(1, s.z));
+  const min = size - size * z;
+  return { z, tx: Math.min(0, Math.max(min, s.tx)), ty: Math.min(0, Math.max(min, s.ty)) };
+}
+
+/** Zooms to `z` keeping the point under (cx, cy) (viewport px) where it is. */
+export function zoomAround(s: MapZoom, z: number, cx: number, cy: number, size: number): MapZoom {
+  const nz = Math.min(MAP_MAX_ZOOM, Math.max(1, z));
+  const px = (cx - s.tx) / s.z;
+  const py = (cy - s.ty) / s.z;
+  return clampZoom({ z: nz, tx: cx - px * nz, ty: cy - py * nz }, size);
+}
+
+/** Pans/zooms so the canvas point (px, py) (unzoomed CSS px) sits in the middle of the viewport. */
+export function centerOn(s: MapZoom, px: number, py: number, size: number): MapZoom {
+  return clampZoom({ z: s.z, tx: size / 2 - px * s.z, ty: size / 2 - py * s.z }, size);
+}
 
 export interface MapMarker {
   x: number;
@@ -71,8 +118,24 @@ export class MapUi {
   /** Painted region maps (FLUX.2 Turbo), shown only where you have explored. */
   private readonly painted = new Map<string, { image: CanvasImageSource; ready: boolean; masked: HTMLCanvasElement; version: number } | null>();
   private readonly tabs: HTMLDivElement;
+  private readonly viewport: HTMLDivElement;
+  private readonly locateBtn: HTMLButtonElement;
+  private readonly legend: HTMLDivElement;
   /** Zone shown on the full map (null = the one you are in). */
   private viewing: string | null = null;
+  /** The region last viewed this session, kept while you stay in the zone you opened it in (P079). */
+  private static remembered: { viewing: string; current: string } | null = null;
+  /** The teleporter picked on the full map, waiting for "Travel" (P076). */
+  private selected: string | null = null;
+  private zoom: MapZoom = { z: 1, tx: 0, ty: 0 };
+  /** Canvas units per CSS px, so markers keep a readable size on a small screen (minimap, full map). */
+  private miniK = 1;
+  private fullK = 1;
+  private footerKey = '';
+  /** Tapping the minimap (touch) opens the full map. */
+  onMiniTap: () => void = () => {
+    if (!this.instance()) this.toggle();
+  };
   private timer = 0;
   private readonly cos: number;
   private readonly sin: number;
@@ -100,6 +163,8 @@ export class MapUi {
     this.mini = document.createElement('canvas');
     this.mini.className = 'minimap';
     this.mini.width = this.mini.height = MINI_SIZE;
+    this.mini.setAttribute('aria-label', t('map.title'));
+    this.mini.addEventListener('click', () => this.onMiniTap());
     this.miniCtx = this.mini.getContext('2d')!;
 
     this.full = document.createElement('div');
@@ -112,12 +177,49 @@ export class MapUi {
     this.fullCanvas.className = 'map-canvas';
     this.fullCtx = this.fullCanvas.getContext('2d')!;
     this.fullInfo = document.createElement('div');
-    this.fullInfo.className = 'inv-hint';
+    this.fullInfo.className = 'map-info';
     this.tabs = document.createElement('div');
     this.tabs.className = 'map-tabs';
-    this.full.append(title, this.tabs, this.fullCanvas, this.fullInfo);
-    this.fullCanvas.addEventListener('click', (e) => this.onMapClick(e));
+    this.tabs.addEventListener('scroll', () => this.tabFades(), { passive: true });
+    this.viewport = document.createElement('div');
+    this.viewport.className = 'map-viewport';
+    this.locateBtn = document.createElement('button');
+    this.locateBtn.type = 'button';
+    this.locateBtn.className = 'map-locate';
+    this.locateBtn.textContent = '\u25CE';
+    this.locateBtn.title = this.locateBtn.ariaLabel = t('map.locate');
+    this.locateBtn.addEventListener('click', () => this.locate());
+    this.viewport.append(this.fullCanvas, this.locateBtn);
+    this.legend = this.buildLegend();
+    this.full.append(title, this.tabs, this.viewport, this.legend, this.fullInfo);
+    this.installGestures();
     parent.append(this.mini, this.full);
+  }
+
+  /** The full-map panel (for the panel stack). */
+  get panel(): HTMLElement {
+    return this.full;
+  }
+
+  /** Chip row under the map: what the markers mean. */
+  private buildLegend(): HTMLDivElement {
+    const row = document.createElement('div');
+    row.className = 'map-legend';
+    const entries: [string, string, string][] = [
+      ['teleporter', '#5ad2ff', '\u25C6'],
+      ['quest', '#ffd23a', '\u25CF'],
+      ['boss', '#ff2a2a', '\u25C6'],
+      ['you', '#ffd27a', '\u25B2'],
+    ];
+    for (const [key, color, glyph] of entries) {
+      const chip = document.createElement('span');
+      chip.className = 'map-legend-chip';
+      const mark = Object.assign(document.createElement('i'), { textContent: glyph });
+      mark.style.color = color;
+      chip.append(mark, t(`map.legend.${key}`));
+      row.append(chip);
+    }
+    return row;
   }
 
   get open(): boolean {
@@ -126,10 +228,16 @@ export class MapUi {
 
   toggle(): void {
     this.full.hidden = !this.full.hidden;
-    this.viewing = null;
+    this.selected = null;
+    this.resetZoom();
+    const current = this.zone()?.def.id ?? '';
+    const last = MapUi.remembered;
+    // Reopening shows the region you looked at last, until you travel to another one.
+    this.viewing = last && last.current === current && this.zones().some((z) => z.def.id === last.viewing) ? last.viewing : null;
     if (this.open) {
       this.buildTabs();
       this.drawFull();
+      this.tabFades();
     }
   }
 
@@ -151,11 +259,28 @@ export class MapUi {
       b.textContent = t(`zones.${z.def.key}.name`);
       b.addEventListener('click', () => {
         this.viewing = z.def.id;
+        MapUi.remembered = { viewing: z.def.id, current: this.zone()?.def.id ?? '' };
+        this.selected = null;
+        this.resetZoom();
         this.buildTabs();
         this.drawFull();
       });
       this.tabs.append(b);
     }
+    // Keep the active tab in view (the row scrolls with many regions); only this row, not the page.
+    const active = this.tabs.querySelector<HTMLElement>('.map-tab.active');
+    if (active) {
+      const left = active.offsetLeft - (this.tabs.clientWidth - active.offsetWidth) / 2;
+      this.tabs.scrollLeft = Math.max(0, left);
+    }
+    this.tabFades();
+  }
+
+  /** Edge fades on the tab row show that it scrolls. */
+  private tabFades(): void {
+    const el = this.tabs;
+    el.classList.toggle('fade-l', el.scrollLeft > 4);
+    el.classList.toggle('fade-r', el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }
 
   update(dt: number): void {
@@ -165,6 +290,8 @@ export class MapUi {
     this.timer -= dt;
     if (this.timer > 0) return;
     this.timer = 0.15;
+    const cssW = this.mini.clientWidth;
+    this.miniK = cssW > 0 ? 1 / Math.max(0.75, Math.min(1, cssW / MINI_SIZE)) : 1;
     const inst = this.instance();
     if (inst) {
       this.drawInstance(inst.rooms);
@@ -196,13 +323,33 @@ export class MapUi {
       c.fillRect(r.x - r.size / 2 + 1, r.z - r.size / 2 + 1, r.size - 2, r.size - 2);
     }
     c.restore();
-    for (const m of this.markers) this.mark(c, ...project(v, m.x, m.z), m.color, 4, m.shape ?? 'dot');
+    for (const m of this.markers) this.rimMark(c, v, ...project(v, m.x, m.z), m.color, 5 * this.miniK, m.shape ?? 'dot');
     this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);
-    c.strokeStyle = '#6a5a44';
-    c.lineWidth = 2;
+    this.miniRing(c);
+  }
+
+  /** The minimap rim: a light stroke with a dark edge so it reads on bright ground (the Core), and an "N" tick. */
+  private miniRing(c: CanvasRenderingContext2D): void {
+    const r = MINI_SIZE / 2 - 2;
     c.beginPath();
-    c.arc(MINI_SIZE / 2, MINI_SIZE / 2, MINI_SIZE / 2 - 2, 0, Math.PI * 2);
+    c.arc(MINI_SIZE / 2, MINI_SIZE / 2, r, 0, Math.PI * 2);
+    c.strokeStyle = '#000';
+    c.lineWidth = 4;
     c.stroke();
+    c.strokeStyle = '#c8b28a';
+    c.lineWidth = 2;
+    c.stroke();
+    // North (world -z) rotates with the map; the letter stays upright.
+    const nx = MINI_SIZE / 2 + this.sin * (r - 12 * this.miniK);
+    const ny = MINI_SIZE / 2 - this.cos * (r - 12 * this.miniK);
+    c.font = `bold ${Math.round(12 * this.miniK)}px sans-serif`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.lineWidth = 3;
+    c.strokeStyle = '#000';
+    c.strokeText('N', nx, ny);
+    c.fillStyle = '#ffd27a';
+    c.fillText('N', nx, ny);
   }
 
   private fullView(zone: ZoneRuntime): View {
@@ -226,11 +373,7 @@ export class MapUi {
     this.drawWorld(c, zone, v, MINI_RANGE * 1.5);
     c.restore();
     this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);
-    c.strokeStyle = '#6a5a44';
-    c.lineWidth = 2;
-    c.beginPath();
-    c.arc(MINI_SIZE / 2, MINI_SIZE / 2, MINI_SIZE / 2 - 2, 0, Math.PI * 2);
-    c.stroke();
+    this.miniRing(c);
   }
 
   private drawFull(): void {
@@ -239,16 +382,57 @@ export class MapUi {
     const here = zone === this.zone();
     const c = this.fullCtx;
     const v = this.fullView(zone);
+    // Markers keep their on-screen size when the canvas is scaled down to a phone or zoomed in.
+    this.fullK = MAP_SIZE / ((this.fullCanvas.offsetWidth || MAP_SIZE) * this.zoom.z);
+    const k = this.fullK;
     c.fillStyle = '#080706';
     c.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
     this.drawWorld(c, zone, v, Infinity, here);
     if (here) {
       const p = this.player();
       const [sx, sy] = project(v, p.x, p.z);
-      this.arrow(c, sx, sy, p.facing, 8);
+      this.arrow(c, sx, sy, p.facing, 9 * k);
     }
-    const extra = [this.extraInfo(zone), this.harvest?.active.zoneId === zone.def.id ? t('harvest.mapRegion') : ''].filter(Boolean).join(' · ');
-    this.fullInfo.textContent = `${t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) })} · ${t('map.travel')}${extra ? ` · ${extra}` : ''}`;
+    this.drawSelected(c, zone, v);
+    const chips = [t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) }), this.extraInfo(zone), this.harvest?.active.zoneId === zone.def.id ? t('harvest.mapRegion') : ''].filter(Boolean);
+    this.updateFooter(chips, touchText('map.travel'));
+  }
+
+  /** Footer: a chip each for exploration, restoration tier and the Ash Harvest, then a one-line hint (P078). */
+  private updateFooter(chips: string[], hint: string): void {
+    const key = `${chips.join('|')}#${hint}`;
+    if (key === this.footerKey) return;
+    this.footerKey = key;
+    const row = document.createElement('div');
+    row.className = 'map-chips';
+    for (const text of chips) row.append(Object.assign(document.createElement('span'), { className: 'map-chip', textContent: text }));
+    this.fullInfo.replaceChildren(row, Object.assign(document.createElement('div'), { className: 'map-hint', textContent: hint }));
+  }
+
+  /** The picked teleporter gets a ring and its name. */
+  private drawSelected(c: CanvasRenderingContext2D, zone: ZoneRuntime, v: View): void {
+    const tp = this.selected ? zone.def.teleporters.find((x) => x.id === this.selected) : undefined;
+    if (!tp) return;
+    const k = this.fullK;
+    const [sx, sy] = project(v, tp.x, tp.z);
+    c.strokeStyle = '#fff';
+    c.lineWidth = 2.5 * k;
+    c.beginPath();
+    c.arc(sx, sy, 13 * k, 0, Math.PI * 2);
+    c.stroke();
+    const name = t(`zones.teleporters.${tp.id}`);
+    c.font = `bold ${Math.round(14 * k)}px ${getComputedStyle(this.full).fontFamily || 'sans-serif'}`;
+    c.textAlign = 'center';
+    c.textBaseline = 'bottom';
+    const half = c.measureText(name).width / 2 + 4 * k;
+    const x = Math.min(MAP_SIZE - half, Math.max(half, sx));
+    const y = sy - 18 * k < 16 * k ? sy + 34 * k : sy - 16 * k;
+    c.lineWidth = 4 * k;
+    c.strokeStyle = '#000';
+    c.lineJoin = 'round';
+    c.strokeText(name, x, y);
+    c.fillStyle = '#fff';
+    c.fillText(name, x, y);
   }
 
   private fogCanvas(zone: ZoneRuntime): HTMLCanvasElement {
@@ -387,49 +571,72 @@ export class MapUi {
       }
     }
 
-    // Markers in screen space so they stay upright.
+    // Markers in screen space so they stay upright. `k` converts CSS px to canvas px.
+    const full = range === Infinity;
+    const k = full ? this.fullK : this.miniK;
     const found = zone.found;
     for (const poi of def.pois) {
       const style = POI_STYLE[poi.kind];
       if (!style || !near(poi.x, poi.z) || !seen(poi.x, poi.z)) continue;
       if (poi.kind === 'relic' && !found.has(poi.id)) continue; // relics stay hidden until found
-      if (found.has(poi.id) && (poi.kind === 'event' || poi.kind === 'signalTower')) this.mark(c, ...project(v, poi.x, poi.z), '#5a5a5a', style.r, style.shape);
-      else this.mark(c, ...project(v, poi.x, poi.z), style.color, style.r, style.shape);
+      // On the full map every marker is at least ~5 px (CSS) in radius.
+      const r = full ? Math.max(style.r, 5) * k : style.r * k;
+      if (found.has(poi.id) && (poi.kind === 'event' || poi.kind === 'signalTower')) this.mark(c, ...project(v, poi.x, poi.z), '#5a5a5a', r, style.shape);
+      else this.mark(c, ...project(v, poi.x, poi.z), style.color, r, style.shape);
     }
+    // Teleporters: 14 px across on the full map so a thumb can find them (P077).
     for (const tp of def.teleporters) {
       if (!zone.discovered.has(tp.id) || !near(tp.x, tp.z)) continue;
-      this.mark(c, ...project(v, tp.x, tp.z), '#5ad2ff', 5, 'diamond');
+      this.mark(c, ...project(v, tp.x, tp.z), '#5ad2ff', (full ? 7 : 5) * k, 'diamond');
     }
     for (const cache of harvest?.caches ?? []) {
-      if (near(cache.x, cache.z)) this.mark(c, ...project(v, cache.x, cache.z), '#ff8a3a', 5, 'diamond');
+      if (near(cache.x, cache.z)) this.mark(c, ...project(v, cache.x, cache.z), '#ff8a3a', (full ? 6 : 5) * k, 'diamond');
     }
     // Border crossings to other regions.
     for (const g of def.gates) {
       if (!near(g.x, g.z) || !seen(g.x, g.z)) continue;
-      this.mark(c, ...project(v, g.x, g.z), '#e8e0d0', 6, 'square');
+      this.mark(c, ...project(v, g.x, g.z), '#e8e0d0', (full ? 6 : 5) * k, 'square');
     }
     if (!here) return;
     for (const m of this.markers) {
-      let [sx, sy] = project(v, m.x, m.z);
-      // On the minimap, off-range quest markers are pinned to the rim.
-      if (range !== Infinity) {
-        const dx = sx - v.cx;
-        const dy = sy - v.cy;
-        const d = Math.hypot(dx, dy);
-        const max = v.cx - 8;
-        if (d > max) {
-          sx = v.cx + (dx / d) * max;
-          sy = v.cy + (dy / d) * max;
-        }
-      }
-      this.mark(c, sx, sy, m.color, m.shape ? 6 : 5, m.shape ?? 'dot');
+      const [sx, sy] = project(v, m.x, m.z);
+      // On the minimap, markers outside the circle are pinned to the rim as a triangle pointing at them.
+      if (!full) this.rimMark(c, v, sx, sy, m.color, (m.shape ? 6 : 5) * k, m.shape ?? 'dot');
+      else this.mark(c, sx, sy, m.color, (m.shape ? 7 : 6) * k, m.shape ?? 'dot');
     }
+  }
+
+  /** A minimap marker; outside the circle it becomes a triangle on the rim that points outward. */
+  private rimMark(c: CanvasRenderingContext2D, v: View, sx: number, sy: number, color: string, r: number, shape: 'dot' | 'square' | 'diamond'): void {
+    const dx = sx - v.cx;
+    const dy = sy - v.cy;
+    const d = Math.hypot(dx, dy);
+    const max = v.cx - 6 * this.miniK - 4;
+    if (d <= max) {
+      this.mark(c, sx, sy, color, r, shape);
+      return;
+    }
+    c.save();
+    c.translate(v.cx + (dx / d) * max, v.cy + (dy / d) * max);
+    c.rotate(Math.atan2(dy, dx));
+    const s = 6 * this.miniK;
+    c.fillStyle = color;
+    c.strokeStyle = '#000';
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(s, 0);
+    c.lineTo(-s * 0.7, s * 0.85);
+    c.lineTo(-s * 0.7, -s * 0.85);
+    c.closePath();
+    c.fill();
+    c.stroke();
+    c.restore();
   }
 
   private mark(c: CanvasRenderingContext2D, x: number, y: number, color: string, r: number, shape: 'dot' | 'square' | 'diamond'): void {
     c.fillStyle = color;
     c.strokeStyle = '#000';
-    c.lineWidth = 1;
+    c.lineWidth = Math.max(1, r / 5);
     c.beginPath();
     if (shape === 'dot') c.arc(x, y, r, 0, Math.PI * 2);
     else if (shape === 'square') c.rect(x - r, y - r, r * 2, r * 2);
@@ -462,27 +669,167 @@ export class MapUi {
     c.restore();
   }
 
-  private onMapClick(e: MouseEvent): void {
+  private resetZoom(): void {
+    this.zoom = { z: 1, tx: 0, ty: 0 };
+    this.applyZoom();
+  }
+
+  private applyZoom(): void {
+    const { z, tx, ty } = this.zoom;
+    this.fullCanvas.style.transformOrigin = '0 0';
+    this.fullCanvas.style.transform = z === 1 ? '' : `translate(${tx}px, ${ty}px) scale(${z})`;
+    this.timer = 0; // redraw soon: markers are drawn at a constant on-screen size
+  }
+
+  /** Side of the map viewport in CSS px (unzoomed). */
+  private viewSize(): number {
+    return this.fullCanvas.offsetWidth || MAP_SIZE;
+  }
+
+  /** Drag to pan, pinch or wheel to zoom, double-tap to zoom in or out; a short tap selects a teleporter. */
+  private installGestures(): void {
+    const vp = this.viewport;
+    vp.style.touchAction = 'none';
+    const pointers = new Map<number, { x: number; y: number }>();
+    let moved = false;
+    let downAt = 0;
+    let down = { x: 0, y: 0 };
+    let lastTap = { t: 0, x: 0, y: 0 };
+    const rel = (x: number, y: number) => {
+      const r = vp.getBoundingClientRect();
+      return { x: x - r.left, y: y - r.top };
+    };
+    const pair = () => {
+      const [a, b] = [...pointers.values()] as [{ x: number; y: number }, { x: number; y: number }];
+      return { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+    };
+    vp.addEventListener('pointerdown', (e) => {
+      if ((e.target as HTMLElement).closest('.map-locate')) return;
+      try {
+        vp.setPointerCapture(e.pointerId);
+      } catch {
+        // Synthetic events have no active pointer to capture.
+      }
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) {
+        moved = false;
+        downAt = e.timeStamp;
+        down = { x: e.clientX, y: e.clientY };
+      } else moved = true;
+    });
+    vp.addEventListener('pointermove', (e) => {
+      const prev = pointers.get(e.pointerId);
+      if (!prev) return;
+      const size = this.viewSize();
+      if (pointers.size >= 2) {
+        const before = pair();
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        const after = pair();
+        const m = rel(after.mx, after.my);
+        let next = zoomAround(this.zoom, this.zoom.z * (after.d / Math.max(1, before.d)), m.x, m.y, size);
+        next = clampZoom({ ...next, tx: next.tx + (after.mx - before.mx), ty: next.ty + (after.my - before.my) }, size);
+        this.zoom = next;
+        this.applyZoom();
+        return;
+      }
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 8) moved = true;
+      if (moved && this.zoom.z > 1) {
+        this.zoom = clampZoom({ ...this.zoom, tx: this.zoom.tx + (e.clientX - prev.x), ty: this.zoom.ty + (e.clientY - prev.y) }, size);
+        this.applyZoom();
+      }
+    });
+    // A short, still touch is a tap; it is handled on the `click` that follows, so a sheet it opens cannot
+    // receive that same click (the confirm sheet's scrim closes on tap-outside).
+    let clean = false;
+    const up = (e: PointerEvent) => {
+      if (!pointers.delete(e.pointerId)) return;
+      clean = pointers.size === 0 && !moved && e.type === 'pointerup' && e.timeStamp - downAt <= 600;
+    };
+    vp.addEventListener('pointerup', up);
+    vp.addEventListener('pointercancel', up);
+    vp.addEventListener('click', (e) => {
+      if (!clean || (e.target as HTMLElement).closest('.map-locate')) return;
+      clean = false;
+      if (this.pickAt(e.clientX, e.clientY)) {
+        lastTap = { t: 0, x: 0, y: 0 };
+        return;
+      }
+      // Two taps on empty ground zoom in (or back out).
+      if (e.timeStamp - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+        const m = rel(e.clientX, e.clientY);
+        this.zoom = this.zoom.z > 1.05 ? { z: 1, tx: 0, ty: 0 } : zoomAround(this.zoom, 2.5, m.x, m.y, this.viewSize());
+        this.applyZoom();
+        lastTap = { t: 0, x: 0, y: 0 };
+      } else lastTap = { t: e.timeStamp, x: e.clientX, y: e.clientY };
+    });
+    vp.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        const m = rel(e.clientX, e.clientY);
+        this.zoom = zoomAround(this.zoom, this.zoom.z * (e.deltaY < 0 ? 1.25 : 0.8), m.x, m.y, this.viewSize());
+        this.applyZoom();
+      },
+      { passive: false },
+    );
+  }
+
+  /** Centres the map on the player, zoomed in (the "locate" button). */
+  private locate(): void {
+    const zone = this.shown();
+    if (!zone || zone !== this.zone()) return;
+    const p = this.player();
+    const [sx, sy] = project(this.fullView(zone), p.x, p.z);
+    const size = this.viewSize();
+    const k = size / MAP_SIZE;
+    this.zoom = centerOn({ ...this.zoom, z: Math.max(2, this.zoom.z) }, sx * k, sy * k, size);
+    this.applyZoom();
+    haptic('tap');
+  }
+
+  /** The discovered teleporter nearest to a tap (within PICK_RADIUS_PX CSS px), or null. */
+  private teleporterAt(clientX: number, clientY: number): string | null {
+    const zone = this.shown();
+    if (!zone) return null;
+    const rect = this.fullCanvas.getBoundingClientRect();
+    if (rect.width === 0) return null;
+    const sx = ((clientX - rect.left) / rect.width) * MAP_SIZE;
+    const sy = ((clientY - rect.top) / rect.height) * MAP_SIZE;
+    const v = this.fullView(zone);
+    const points = zone.def.teleporters.filter((tp) => zone.discovered.has(tp.id)).map((tp) => {
+      const [x, y] = project(v, tp.x, tp.z);
+      return { id: tp.id, x, y };
+    });
+    return pickNearest(points, sx, sy, (PICK_RADIUS_PX * MAP_SIZE) / rect.width);
+  }
+
+  /** A tap on the map: selects a teleporter and asks before travelling. True when it hit one. */
+  private pickAt(clientX: number, clientY: number): boolean {
+    const id = this.teleporterAt(clientX, clientY);
+    if (!id) return false;
+    void this.askTravel(id);
+    return true;
+  }
+
+  private async askTravel(id: string): Promise<void> {
     const zone = this.shown();
     if (!zone) return;
-    const rect = this.fullCanvas.getBoundingClientRect();
-    const sx = ((e.clientX - rect.left) / rect.width) * MAP_SIZE;
-    const sy = ((e.clientY - rect.top) / rect.height) * MAP_SIZE;
-    const [x, z] = unproject(this.fullView(zone), sx, sy);
-    let best: string | null = null;
-    let bestD = 16;
-    for (const tp of zone.def.teleporters) {
-      if (!zone.discovered.has(tp.id)) continue;
-      const d = Math.hypot(tp.x - x, tp.z - z);
-      if (d < bestD) {
-        bestD = d;
-        best = tp.id;
-      }
-    }
-    if (best) {
-      this.travel(best);
-      this.toggle();
-    }
+    const tp = zone.def.teleporters.find((x) => x.id === id);
+    if (!tp) return;
+    this.selected = id;
+    this.timer = 0;
+    haptic('select');
+    this.drawFull();
+    const here = zone === this.zone();
+    const p = this.player();
+    const body = here ? t('map.travelDistance', { m: Math.round(Math.hypot(tp.x - p.x, tp.z - p.z)) }) : t('map.travelRegion', { region: t(`zones.${zone.def.key}.name`) });
+    const ok = await confirmSheet({ title: t('map.travelTitle', { name: t(`zones.teleporters.${id}`) }), body, confirmLabel: t('map.travelButton') });
+    this.selected = null;
+    this.timer = 0;
+    if (!ok) return;
+    this.travel(id);
+    if (this.open) this.toggle();
   }
 }
 

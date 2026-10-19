@@ -6,6 +6,7 @@
 import { placeTooltipForPortrait } from './itemTooltip';
 import type { MatrixPanel } from './matrixPanel';
 import { t } from '../data/i18n';
+import { confirmSheet } from './confirmSheet';
 import { artUrl } from './art';
 import { classDef, skill } from '../data/db';
 import type { SkillTree, TreeNode } from '../data/skillTree/schema';
@@ -147,7 +148,14 @@ export class SkillTreePanel {
     reset.textContent = t('tree.reset', { gold: v.respecCost });
     reset.disabled = v.gold < v.respecCost || pointsInTree(v.state) <= 1;
     reset.addEventListener('click', () => {
-      if (confirm(t('tree.resetConfirm', { gold: v.respecCost }))) this.actions.reset();
+      void confirmSheet({
+        title: t('tree.resetTitle'),
+        body: t('tree.resetConfirm', { gold: v.respecCost }),
+        confirmLabel: t('tree.resetButton'),
+        danger: true,
+      }).then((ok) => {
+        if (ok) this.actions.reset();
+      });
     });
     const tools = document.createElement('span');
     tools.className = 'tree-tools';

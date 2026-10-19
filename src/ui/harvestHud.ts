@@ -9,6 +9,8 @@ import { clock, type HarvestView } from '../world/harvest';
 export class HarvestHud {
   private readonly el: HTMLDivElement;
   private readonly line: HTMLDivElement;
+  private readonly lineLong: HTMLSpanElement;
+  private readonly lineShort: HTMLSpanElement;
   private readonly shards: HTMLDivElement;
   private last = '';
   private lastShards = -1;
@@ -21,11 +23,19 @@ export class HarvestHud {
     this.el.hidden = true;
     this.line = document.createElement('div');
     this.line.className = 'harvest-line';
+    this.lineLong = Object.assign(document.createElement('span'), { className: 'harvest-long' });
+    this.lineShort = Object.assign(document.createElement('span'), { className: 'harvest-short' });
+    this.line.append(this.lineLong, this.lineShort);
     this.shards = document.createElement('div');
     this.shards.className = 'harvest-shards';
     this.shards.dataset.testid = 'harvest-shards';
     this.el.append(this.line, this.shards);
     root.append(this.el);
+  }
+
+  /** The row, for the phone's endgame chip. */
+  get element(): HTMLElement {
+    return this.el;
   }
 
   update(view: HarvestView | null, shards: number, dt: number): void {
@@ -34,8 +44,13 @@ export class HarvestHud {
     if (this.el.hidden) return;
     this.line.hidden = !view;
     if (view) {
-      const text = t('harvest.line', { region: t(`zones.${view.zoneKey}.name`), time: clock(view.active.remaining) });
-      if (text !== this.last) this.line.textContent = this.last = text;
+      const region = t(`zones.${view.zoneKey}.name`);
+      const time = clock(view.active.remaining);
+      const text = t('harvest.line', { region, time });
+      if (text !== this.last) {
+        this.last = this.lineLong.textContent = text;
+        this.lineShort.textContent = t('harvest.lineShort', { region, time });
+      }
     }
     this.shards.hidden = !showShards;
     // The counter flashes when shards come in.

@@ -31,6 +31,10 @@ export interface TouchMenuEntry {
 
 export class SoundUi {
   readonly panel: HTMLDivElement;
+  /** The volume rows (master, music, effects, interface): the settings panel shows them in its Sound tab. */
+  readonly rows: HTMLDivElement;
+  /** When set, the volume button opens this (the settings panel) instead of the small panel above. */
+  openSettings: (() => void) | null = null;
   private readonly muteButtons: HTMLButtonElement[] = [];
   private readonly sliders = new Map<(typeof SLIDERS)[number], HTMLInputElement>();
 
@@ -55,7 +59,9 @@ export class SoundUi {
     this.panel.hidden = true;
     const title = document.createElement('h2');
     title.textContent = t('sound.title');
-    this.panel.append(title);
+    this.rows = document.createElement('div');
+    this.rows.className = 'sound-rows';
+    this.panel.append(title, this.rows);
     for (const key of SLIDERS) {
       const row = document.createElement('label');
       row.className = 'sound-row';
@@ -74,7 +80,7 @@ export class SoundUi {
       input.addEventListener('change', () => hooks.save());
       this.sliders.set(key, input);
       row.append(name, input);
-      this.panel.append(row);
+      this.rows.append(row);
     }
     const close = document.createElement('button');
     close.className = 'sound-close';
@@ -113,6 +119,7 @@ export class SoundUi {
   }
 
   toggle(open = this.panel.hidden): void {
+    if (this.openSettings) return this.openSettings();
     this.panel.hidden = !open;
     if (open) this.refresh();
   }

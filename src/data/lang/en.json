@@ -25,6 +25,8 @@
     "slotEmpty": "Empty slot",
     "controlsHintClick": "{lmb} move, attack and use · {rmb} skill · 1–4 skills · Shift+{lmb} attack in place · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {map} map · {quests} quests · {debug} debug",
     "respawnTap": "Tap to rise again",
+    "levelUpSub": "Skill points to spend \u00b7 tap",
+    "riseAgain": "Rise again",
     "exposure": "Spores {pct}%",
     "flares": "Flares {n}/{max} [{key}]"
   },
@@ -144,13 +146,13 @@
       },
       "orbital_strike": {
         "name": "Orbital Strike",
-        "desc": "Call down an orbital strike at the cursor. After a short warning it deals massive damage, stuns and makes enemies Vulnerable."
+        "desc": "Call down an orbital strike {aim}. After a short warning it deals massive damage, stuns and makes enemies Vulnerable."
       }
     },
     "spectre": {
       "quick_shot": {
         "name": "Quick Shot",
-        "desc": "A fast shot at the cursor. Generates Focus."
+        "desc": "A fast shot {aim}. Generates Focus."
       },
       "vibro_slash": {
         "name": "Vibro Slash",
@@ -174,7 +176,7 @@
       },
       "phase_shift": {
         "name": "Phase Shift",
-        "desc": "Blink to the cursor, briefly untouchable."
+        "desc": "Blink {aimTo}, briefly untouchable."
       },
       "minefield": {
         "name": "Minefield",
@@ -200,11 +202,11 @@
       },
       "spore_burst": {
         "name": "Spore Burst",
-        "desc": "Release a cloud of spores at the cursor that poisons enemies inside it for 5 seconds."
+        "desc": "Release a cloud of spores {aim} that poisons enemies inside it for 5 seconds."
       },
       "parasite_link": {
         "name": "Parasite Link",
-        "desc": "Latch onto the enemy nearest the cursor for 3 seconds, draining its life and healing you for 25% of the damage."
+        "desc": "Latch onto the enemy {aimNearest} for 3 seconds, draining its life and healing you for 25% of the damage."
       },
       "chitin_armor": {
         "name": "Chitin Armor",
@@ -216,19 +218,19 @@
       },
       "raise_corpse": {
         "name": "Raise Corpse",
-        "desc": "Raise up to 2 corpses near the cursor as minions that fight for you (up to 6). Needs corpses."
+        "desc": "Raise up to 2 corpses {aimNear} as minions that fight for you (up to 6). Needs corpses."
       },
       "grasping_tendrils": {
         "name": "Grasping Tendrils",
-        "desc": "Tendrils burst from the ground at the cursor, holding enemies in place for 2 seconds and poisoning them."
+        "desc": "Tendrils burst from the ground {aim}, holding enemies in place for 2 seconds and poisoning them."
       },
       "corpse_explosion": {
         "name": "Corpse Explosion",
-        "desc": "Detonate up to 3 corpses near the cursor in toxic blasts. Needs corpses."
+        "desc": "Detonate up to 3 corpses {aimNear} in toxic blasts. Needs corpses."
       },
       "wrath_of_lumen": {
         "name": "Wrath of Lumen",
-        "desc": "A colossal Lumen creature erupts at the cursor for 12 seconds. It draws enemies to itself and slams everything around it."
+        "desc": "A colossal Lumen creature erupts {aim} for 12 seconds. It draws enemies to itself and slams everything around it."
       }
     }
   },
@@ -518,6 +520,9 @@
   },
   "loot": {
     "inventoryFull": "Inventory full",
+    "more": "+{n} items",
+    "pickedUpOne": "Picked up 1 item",
+    "pickedUp": "Picked up {n} items",
     "salvaged": "Salvaged for {gold} gold",
     "cannot": {
       "full": "Inventory full",
@@ -555,12 +560,15 @@
     "maxed": "All {max} matrix points earned",
     "reset": "Reset ({gold} gold)",
     "resetConfirm": "Refund all matrix points for {gold} gold? Glyphs are taken out of their sockets.",
+    "resetTitle": "Reset the matrix?",
+    "resetButton": "Reset",
     "pointBanner": "Neural Matrix: +{points} point ({total} earned)",
     "glyphBanner": "Glyph found: {name}",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "recenter": "Show all boards",
-    "hint": "Drag to pan, scroll or pinch to zoom. Tap a node you can reach to take it; a gate lets you attach another board.",
+    "hint": "Drag to pan, scroll or pinch to zoom. Click a node you can reach to take it; a gate lets you attach another board.",
+    "hintTouch": "Drag to pan, pinch to zoom. Tap a node you can reach to take it; a gate lets you attach another board.",
     "kinds": {
       "start": "Start",
       "normal": "Normal node",
@@ -608,7 +616,8 @@
     },
     "state": {
       "owned": "Allocated",
-      "available": "Click to allocate (1 point)"
+      "available": "Click to allocate (1 point)",
+      "availableTouch": "Tap to allocate (1 point)"
     },
     "cannot": {
       "unknown": "That board is not attached.",
@@ -687,6 +696,8 @@
     "points": "{points} skill points available",
     "reset": "Reset ({gold} gold)",
     "resetConfirm": "Refund all skill points for {gold} gold?",
+    "resetTitle": "Reset your skills?",
+    "resetButton": "Reset",
     "barHint": "Click an action bar slot, then a learned skill to assign it. Right-click a slot to clear it.",
     "unlockAt": "unlocks at {points} points",
     "damage": "Damage: {pct}% of weapon damage",
@@ -1512,6 +1523,9 @@
     "corrupt": "Damaged save – create a new character",
     "delete": "Delete character",
     "deleteConfirm": "Delete {name} for good?",
+    "deleteTitle": "Delete character?",
+    "deleteDetails": "{class}, level {level}. This cannot be undone.",
+    "deleteButton": "Delete",
     "chooseClass": "Choose a class",
     "namePlaceholder": "Name",
     "create": "Begin",
@@ -1637,7 +1651,19 @@
     "title": "Map",
     "discovered": "Teleporter discovered: {name}",
     "travel": "Click a discovered teleporter to travel.",
+    "travelTouch": "Tap a discovered teleporter, then Travel. Pinch to zoom.",
     "explored": "{pct}% explored",
+    "locate": "Centre on me",
+    "travelTitle": "Travel to {name}?",
+    "travelDistance": "{m} m from here.",
+    "travelRegion": "In {region}.",
+    "travelButton": "Travel",
+    "legend": {
+      "teleporter": "Teleporter",
+      "quest": "Quest",
+      "boss": "Boss",
+      "you": "You"
+    },
     "safe": "Safe zone",
     "enterHub": "Entering {name}",
     "leaveHub": "Leaving {name}",
@@ -3250,7 +3276,14 @@
     "log": "Quests",
     "tracked": "Tracked",
     "track": "Track",
+    "untrack": "Stop tracking",
     "noQuests": "No active quests.",
+    "emptyHint": "Talk to people marked !",
+    "openMap": "Open map",
+    "showOnMap": "Show on map",
+    "activeTab": "Active ({n})",
+    "completedTab": "Completed ({n})",
+    "trackHint": "Tap the star to follow a quest on the HUD.",
     "kinds": {
       "main": "Main quest",
       "side": "Side quest",
@@ -3370,6 +3403,7 @@
     "vendor": {
       "title": "Benny's Trade",
       "hint": "Click an item to buy it. Click an item in your backpack to sell it.",
+      "hintTouch": "Tap an item to buy it. Tap an item in your backpack to sell it.",
       "price": "Price: {gold} gold",
       "sellFor": "Sells for {gold} gold"
     },
@@ -3391,7 +3425,8 @@
     },
     "stash": {
       "title": "Stash",
-      "hint": "Shared by all your characters. Click a stash item to take it; click a backpack item to store it."
+      "hint": "Shared by all your characters. Click a stash item to take it; click a backpack item to store it.",
+      "hintTouch": "Shared by all your characters. Tap a stash item to take it; tap a backpack item to store it."
     },
     "cannot": {
       "gold": "Not enough gold.",
@@ -3896,7 +3931,9 @@
       "close": "Close",
       "flare": "Flare",
       "sound": "Sound",
-      "soundSettings": "Volume"
+      "soundSettings": "Settings",
+      "more": "More",
+      "menu": "Menu"
     },
     "modes": {
       "auto": "Auto",
@@ -3907,6 +3944,8 @@
   "ending": {
     "continue": "Continue",
     "skip": "Skip",
+    "tapContinue": "Tap to continue",
+    "creditsHint": "Hold to pause. Tap for Skip.",
     "listenTitle": "What Was Remembered",
     "fightTitle": "What Was Left",
     "epilogue": {
@@ -3936,6 +3975,14 @@
     "open": "Open levels: 1 to {max}. A clear with more than half the time left opens two new levels.",
     "effects": "Enemies have ×{mul} life and damage. Cache items: item power {power}.",
     "enter": "Enter Rift {level}",
+    "enterTimed": "Enter Rift {level} \u00b7 {time}",
+    "quickBest": "Best cleared",
+    "quickHighest": "Highest open",
+    "quickEasier": "Easier \u22125",
+    "chipLife": "Life \u00d7{mul}",
+    "chipPower": "Item power {power}",
+    "glyphMax": "Max",
+    "done": "Done",
     "cleared": "Rift {level} cleared",
     "resultTime": "Cleared in {time}. Levels open: up to {open}.",
     "fast": "Fast clear: two new levels are open.",
@@ -4000,6 +4047,7 @@
     "line": "Ash Harvest: {region} — {time} left",
     "shards": "Ash Shards: {n}",
     "shardsCache": "Ash Shards: {n} / {cost}",
+    "lineShort": "{region} \u00b7 {time}",
     "mapRegion": "Ash Harvest",
     "mapCache": "Harvest Cache",
     "needShards": "Not enough Ash Shards for a Harvest Cache.",
@@ -4009,8 +4057,10 @@
   },
   "worldBoss": {
     "hudWarning": "World boss: {boss} in {time} \u2014 {region}",
+    "hudShort": "{boss}  {time}",
+    "hudShortRegion": "{boss}  {time} \u00b7 {region}",
     "hudAlive": "World boss: {boss} \u2014 {region} \u2014 {time} left",
-    "warning": "World boss: {boss} appears in {minutes} min in {region}.",
+    "warning": "World boss in {minutes} min: {boss}",
     "appeared": "World boss: {boss} has appeared in {region}.",
     "gone": "The world boss has gone.",
     "defeated": "World boss defeated",
@@ -4040,5 +4090,49 @@
   "underground": {
     "noFlares": "No flares left. They come back with time.",
     "creak": "The roof creaks…"
+  },
+  "panels": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "backToTop": "Back to top",
+    "gotIt": "Got it",
+    "help": "Show the tip",
+    "paused": "Paused",
+    "tabs": "Panels"
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": { "sound": "Sound", "display": "Display", "controls": "Controls" },
+    "textSize": "Text size",
+    "textPreview": "The scout reads the ash and the wind.",
+    "sizes": { "s": "S", "m": "M", "l": "L", "xl": "XL" },
+    "graphics": "Graphics",
+    "graphicsLevels": { "low": "Low", "medium": "Medium", "high": "High" },
+    "graphicsHint": {
+      "low": "No post-processing. Best for older phones.",
+      "medium": "Lighter effects. The phone default.",
+      "high": "Full effects."
+    },
+    "screenShake": "Screen shake",
+    "showFps": "Show FPS",
+    "vibration": "Vibration",
+    "vibrationHint": "Short buzzes for hits, loot and level-ups.",
+    "pauseInMenus": "Pause in menus",
+    "pauseInMenusHint": "Stops the game while a menu is open and no enemy is close.",
+    "touchControls": "Touch controls",
+    "moveMode": "Movement",
+    "moveModes": { "click": "Tap to move", "wasd": "Stick / keys" },
+    "thumbLayout": "Thumb layout",
+    "layouts": { "right": "Right hand", "left": "Left hand" },
+    "buttonSize": "Button size",
+    "on": "On",
+    "off": "Off"
+  },
+  "onboarding": {
+    "skip": "Skip tips",
+    "move": "Drag on the left half of the screen to move.",
+    "attack": "Tap the big button to attack. It aims for you.",
+    "menu": "The icons at the top open your bag, skills and map.",
+    "interact": "Tap the prompt to use or talk."
   }
 }
