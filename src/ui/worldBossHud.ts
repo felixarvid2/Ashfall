@@ -1,6 +1,6 @@
 /**
  * World boss tracker (docs/endgame.md): a line under the title while a world boss is announced or alive
- * ("World boss: The Ashen Colossus in 4:12 — Refinery District"), plus the toasts for its announcement,
+ * ("World boss: The Ashen Colossus in 4:12 — Refinery District"; "The Ashen Colossus  4:12" on a phone), plus the toasts for its announcement,
  * its appearance, its leaving and what its chest paid.
  */
 import type { GameContext } from '../core/context';
@@ -23,9 +23,23 @@ export function worldBossLine(ctx: GameContext): string {
   return t(st.phase === 'warning' ? 'worldBoss.hudWarning' : 'worldBoss.hudAlive', { boss, time: clock(st.secondsLeft), region });
 }
 
+/** The short phone form: "The Ashen Colossus  4:12", with the region after a tag only when the player is elsewhere. */
+export function worldBossShortLine(ctx: GameContext): string {
+  const st = activeWorldBoss(ctx);
+  if (!st) return '';
+  const boss = t(`worldBoss.${st.event.def.id}.name`);
+  const time = clock(st.secondsLeft);
+  const here = ctx.zone?.def.id === st.event.spot.zone;
+  if (here) return t('worldBoss.hudShort', { boss, time });
+  return t('worldBoss.hudShortRegion', { boss, time, region: t(`zones.${zoneDef(st.event.spot.zone).key}.name`) });
+}
+
 export class WorldBossHud {
   private readonly el: HTMLDivElement;
+  private readonly long: HTMLSpanElement;
+  private readonly short: HTMLSpanElement;
   private text = '';
+  private shortText = '';
   /** What was announced last: `phase:index`. */
   private seen = '';
   private seenIndex = 0;
@@ -38,14 +52,25 @@ export class WorldBossHud {
     this.el = document.createElement('div');
     this.el.className = 'worldboss-hud';
     this.el.hidden = true;
+    this.long = Object.assign(document.createElement('span'), { className: 'wb-long' });
+    this.short = Object.assign(document.createElement('span'), { className: 'wb-short' });
+    this.el.append(this.long, this.short);
     root.append(this.el);
+  }
+
+  /** The row, for the phone's endgame chip. */
+  get element(): HTMLElement {
+    return this.el;
   }
 
   update(ctx: GameContext): void {
     const text = worldBossLine(ctx);
-    if (text !== this.text) {
+    const shortText = worldBossShortLine(ctx);
+    if (text !== this.text || shortText !== this.shortText) {
       this.text = text;
-      this.el.textContent = text;
+      this.shortText = shortText;
+      this.long.textContent = text;
+      this.short.textContent = shortText;
       this.el.hidden = text === '';
     }
     const rt = worldBossRuntime(ctx);

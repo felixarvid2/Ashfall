@@ -92,6 +92,14 @@ export const SettingsSchema = z.object({
   /** Touch controls: 'auto' shows them on touch screens. */
   touchControls: z.enum(['auto', 'on', 'off']).default('auto'),
   screenShake: z.boolean().default(true),
+  /** Freeze the simulation while a menu is open and no enemy is within 12 m (always safe in the hub). */
+  pauseInMenus: z.boolean().default(true),
+  /** Vibration on touch devices (src/ui/haptics.ts). */
+  haptics: z.boolean().default(true),
+  /** Thumb layout: 'left' mirrors the joystick and the action buttons for left-handed play (`#ui.lefty`). */
+  touchLayout: z.enum(['right', 'left']).default('right'),
+  /** Size of the thumb buttons (`--btn-scale` on `#ui`). */
+  buttonScale: z.number().min(0.8).max(1.3).default(1),
   showFps: z.boolean().default(true),
   graphics: z.enum(['low', 'medium', 'high']).default('high'),
   textScale: z.number().min(0.75).max(2).default(1),

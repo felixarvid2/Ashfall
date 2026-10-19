@@ -43,7 +43,8 @@ const SCENARIOS = {
       await page.tap(`[data-testid=touch-menu-${id}]`);
       await wait(page, 1000);
       screenshots.push(await shot(page, out, `portrait-${name}`));
-      if (await page.locator('.touch-close').isVisible().catch(() => false)) await page.tap('.touch-close');
+      const close = page.locator('.panel:not([hidden]) [data-testid=panel-close]').first();
+      if (await close.isVisible().catch(() => false)) await close.tap();
       await wait(page, 800);
       panelsAfterClose[id] = await page.evaluate(() => [...document.querySelectorAll('.panel:not([hidden])')].map((e) => e.className));
     }
@@ -73,7 +74,7 @@ const SCENARIOS = {
     await wait(page, 600);
     screenshots.push(await shot(page, out, 'tooltip-item'));
     notes.itemTooltip = await tip();
-    await page.tap('.touch-close').catch(() => {});
+    await page.locator('.panel:not([hidden]) [data-testid=panel-close]').first().tap().catch(() => {});
     await wait(page, 500);
     await page.tap('[data-testid=touch-menu-skills]');
     await wait(page, 800);
@@ -133,17 +134,21 @@ const SCENARIOS = {
     await hideHud(page, '.fps-meter, .debug-panel');
     screenshots.push(await shot(page, out, 'audio-hud'));
     const open = mobile ? '[data-testid=touch-menu-sound-settings]' : '[data-testid=sound-open]';
+    if (mobile) await page.tap('[data-testid=touch-menu-more]'); // sound lives in the overflow popover
     await (mobile ? page.tap(open) : page.click(open));
     await wait(page, 800);
     screenshots.push(await shot(page, out, 'audio-panel'));
-    await page.evaluate(() => document.querySelector('.sound-panel')?.getBoundingClientRect()).then((r) => { notes.panelRect = r && [r.left, r.top, r.right, r.bottom].map(Math.round); });
-    notes.panelSliders = await page.evaluate(() => document.querySelectorAll('.sound-panel input[type=range]').length);
-    await (mobile ? page.tap('.sound-close') : page.click('.sound-close')).catch(() => {});
+    // The volume sliders are the Sound tab of the settings panel.
+    await page.evaluate(() => document.querySelector('.settings-panel')?.getBoundingClientRect()).then((r) => { notes.panelRect = r && [r.left, r.top, r.right, r.bottom].map(Math.round); });
+    notes.panelSliders = await page.evaluate(() => document.querySelectorAll('.settings-panel input[type=range]').length);
+    const closeSettings = '.settings-panel [data-testid=panel-close]';
+    await (mobile ? page.tap(closeSettings) : page.click(closeSettings)).catch(() => {});
     await wait(page, 500);
     await page.evaluate(() => { const g = window.ashfall; g.enterZone('zone.deep_mines', 0, 0); });
     await wait(page, 9000);
     notes.deepMines = await dbg();
     const mute = mobile ? '[data-testid=touch-menu-sound]' : '[data-testid=sound-mute]';
+    if (mobile) await page.tap('[data-testid=touch-menu-more]');
     await (mobile ? page.tap(mute) : page.click(mute));
     await wait(page, 500);
     notes.muted = (await dbg()).muted;
@@ -152,6 +157,46 @@ const SCENARIOS = {
     await page.reload();
     await page.waitForSelector('[data-testid=slot-0]', { timeout: 180000 });
     notes.storedAfterReload = await page.evaluate(() => localStorage.getItem('ashfall.settings'));
+    return { screenshots, notes };
+  },
+
+  /** Panel framework: header close, Back, tab bar, swipe down, settings, confirm sheet (phone portrait). */
+  async panels({ page, out, start }) {
+    const screenshots = [];
+    const notes = {};
+    await start();
+    await wait(page, 2000);
+    const state = () => page.evaluate(() => ({
+      root: document.querySelector('#ui').className,
+      open: [...document.querySelectorAll('.panel:not([hidden])')].map((e) => e.dataset.panel ?? e.className),
+      closes: [...document.querySelectorAll('.panel:not([hidden]) .panel-close')].filter((e) => e.offsetParent).map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }),
+    }));
+    await page.tap('[data-testid=touch-menu-inventory]');
+    await wait(page, 1500);
+    notes.inventory = await state();
+    screenshots.push(await shot(page, out, 'panels-inventory'));
+    await page.goBack();
+    await wait(page, 1000);
+    notes.afterBack = await state();
+    await page.tap('[data-testid=touch-menu-inventory]');
+    await wait(page, 1000);
+    await page.tap('[data-testid=panel-tab-skills]');
+    await wait(page, 1000);
+    notes.afterTab = await state();
+    screenshots.push(await shot(page, out, 'panels-skills'));
+    await page.locator('.panel:not([hidden]) [data-testid=panel-close]').first().tap();
+    await wait(page, 1000);
+    notes.afterClose = await state();
+    await page.tap('[data-testid=touch-menu-more]');
+    await page.tap('[data-testid=touch-menu-sound-settings]');
+    await wait(page, 1000);
+    notes.settings = await state();
+    screenshots.push(await shot(page, out, 'panels-settings'));
+    await page.tap('[data-testid=settings-tab-display]');
+    screenshots.push(await shot(page, out, 'panels-settings-display'));
+    await page.keyboard.press('Escape');
+    await wait(page, 800);
+    notes.afterEscape = await state();
     return { screenshots, notes };
   },
 
@@ -170,6 +215,7 @@ const DEFAULTS = {
   tooltip: { viewport: '390x844', mobile: true },
   instance: { viewport: '1100x760', mobile: false },
   zone: { viewport: '1100x760', mobile: false },
+  panels: { viewport: '390x844', mobile: true },
   landscape: { viewport: '844x390', mobile: true },
   audio: { viewport: '1280x720', mobile: false },
 };

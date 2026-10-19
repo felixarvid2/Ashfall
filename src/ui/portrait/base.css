@@ -1,0 +1,509 @@
+/* Portrait touch layout overrides: base. Loaded after style.css (src/main.ts), so equal-specificity rules here win.
+   Owns: design tokens and layer order, safe areas, the shared panel chrome (header, tab bar, scrim, sheets),
+   notices, settings, the epilogue, minimum text and tap sizes. The other portrait/*.css files build on it. */
+
+/* ---- Tokens ------------------------------------------------------------------------------------------ */
+:root {
+  /* Safe-area insets everywhere (viewport-fit=cover lets the page run under notches and home indicators). */
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  /* Smallest tap target; grows with the text size setting. */
+  --tap-min: max(44px, calc(44px * var(--text-scale)));
+  /* Smallest text in the touch UI. */
+  --fs-min: 12px;
+  /* Spacing and type scale. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --fs-body: 1em;
+  --fs-small: 0.85em;
+  --fs-label: 0.8em;
+  --fs-title: 1em;
+  /* Layers, lowest to highest: HUD (below 30), scrim 29, panels 30, tab bar 31, life strip 35, item tooltips 40,
+     tooltip sheet 45, confirm sheet 55, toasts 58, epilogue 60. */
+  --z-scrim: 29;
+  --z-panel: 30;
+  --z-tabbar: 31;
+  --z-strip: 35;
+  --z-sheet: 45;
+  --z-modal: 55;
+  --z-toast: 58;
+  --z-epilogue: 60;
+  --panel-bg: #0e0c0b;
+}
+#ui.touch-ui { --sat: env(safe-area-inset-top, 0px); --sar: env(safe-area-inset-right, 0px); --sab: env(safe-area-inset-bottom, 0px); --sal: env(safe-area-inset-left, 0px); }
+
+/* ---- Scrolling: panels scroll vertically, never chain to the page (P016) -------------------------------- */
+html, body { overscroll-behavior: none; }
+#ui .panel:not(.tree-panel), .tree-scroll, .char-select, .epilogue-card, .matrix-detail, .tooltip-sheet .sheet-body {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---- Pointer events: what the shared components re-enable -------------------------------------------------- */
+#ui .epilogue, #ui .epilogue *,
+#ui .confirm-sheet, #ui .confirm-sheet *,
+#ui .tooltip-sheet, #ui .tooltip-sheet *,
+#ui .panel-scrim, #ui .panel-tabbar, #ui .panel-tabbar * { pointer-events: auto; }
+
+/* ---- Panel header: title, one close button, grab handle, sticky (P003, P004, P011) -------------------------- */
+.panel { --panel-pad-y: 12px; }
+#ui.touch-ui.portrait .map-panel { --panel-pad-y: 5px; }
+.panel-header {
+  position: sticky;
+  /* Sticky offsets count from the panel's content box, so the header sits flush with the panel's top edge. */
+  top: calc(-1 * var(--panel-pad-y));
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: -12px -14px var(--space-2);
+  padding: 8px 14px 6px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid #2a2420;
+}
+.panel-header .panel-title, .panel-header h2 { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.panel-header-extra { display: flex; align-items: center; gap: var(--space-2); flex: none; color: #ffd27a; font-size: var(--fs-small); }
+.panel-grab { display: none; }
+.panel-close {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 1.5em;
+  line-height: 1;
+  color: var(--ui-text);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+}
+.panel-close:hover { border-color: var(--ui-accent); color: #fff; }
+.panel-help {
+  width: 28px; height: 28px; padding: 0; font: inherit; border-radius: 50%; color: var(--ui-muted);
+  background: none; border: 1px solid var(--ui-border); cursor: pointer;
+}
+/* Panels such as the skill tree lay out their direct <div> children as columns; the header and the scroll chip stay as built. */
+#ui .panel > .panel-header { display: flex; flex-direction: row; flex: none; min-height: 0; }
+#ui .panel > .panel-top-wrap { display: block; flex: none; min-height: 0; }
+#ui .panel > .panel-tip { display: flex; flex-direction: row; flex: none; min-height: 0; }
+/* The old per-panel close controls are replaced by the header's. */
+.panel.has-header .service-close { display: none; }
+#ui.touch-ui.portrait .map-panel .panel-header { margin: -5px -5px var(--space-2); padding: 5px; }
+
+#ui.touch-ui .panel-header { touch-action: none; padding-top: 14px; }
+#ui.touch-ui .panel-close { width: var(--tap-min); height: var(--tap-min); margin: -6px -8px -6px 0; }
+#ui.touch-ui .panel-help { width: 36px; height: 36px; }
+#ui.touch-ui.portrait .panel-grab {
+  display: block;
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  margin-left: -18px;
+  border-radius: 2px;
+  background: #4a423a;
+}
+.map-panel .panel-header, #ui.touch-ui .tooltip-sheet .panel-header { position: relative; }
+
+/* First-open tip banner (P032): the permanent hint lines of the touch UI move here. */
+.panel-hint-src { display: none !important; }
+.panel-tip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: max(var(--fs-min), 0.85em);
+  line-height: 1.35;
+  color: var(--ui-text);
+  background: #1a1612;
+  border-left: 3px solid var(--ui-accent);
+}
+.panel-tip span { flex: 1; }
+.panel-tip button { flex: none; min-height: var(--tap-min); padding: 0 var(--space-3); font: inherit; color: var(--ui-accent); background: none; border: 1px solid var(--ui-accent); cursor: pointer; }
+
+/* Scroll cues: a fade at the bottom while there is more, a back-to-top chip after 600 px (P018). */
+.panel.scroll-more::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  display: block;
+  height: 28px;
+  margin: -28px -14px 0;
+  background: linear-gradient(transparent, var(--panel-bg));
+  pointer-events: none;
+}
+.panel-top-wrap { position: sticky; bottom: 16px; z-index: 4; height: 0; pointer-events: none; }
+.panel-top {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  border-radius: 50%;
+  font: inherit;
+  font-size: 1.3em;
+  color: var(--ui-text);
+  background: rgba(30, 26, 23, 0.95);
+  border: 1px solid var(--ui-border);
+  pointer-events: auto;
+}
+.panel.scrolled .panel-top { display: block; }
+
+/* ---- Scrim and tab bar ------------------------------------------------------------------------------------- */
+.panel-scrim { position: absolute; inset: 0; z-index: var(--z-scrim); background: rgba(0, 0, 0, 0.45); }
+.panel-scrim[hidden] { display: none; }
+.panel-tabbar { display: none; }
+#ui.touch-ui.portrait .panel-tabbar:not([hidden]) {
+  display: flex;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-tabbar);
+  padding: 0 var(--sar) var(--sab) var(--sal);
+  background: var(--panel-bg);
+  border-top: 1px solid var(--ui-border);
+}
+.panel-tab {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
+  padding: 4px 0 2px;
+  font: inherit;
+  color: var(--ui-muted);
+  background: none;
+  border: none;
+  border-top: 2px solid transparent;
+  cursor: pointer;
+}
+.panel-tab.active { color: var(--ui-accent); border-top-color: var(--ui-accent); }
+.panel-tab-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+.panel-tab-label { font-size: max(var(--fs-min), 0.7em); line-height: 1; }
+.panel-tab.has-dot::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 20px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ui-accent);
+  box-shadow: 0 0 0 2px var(--panel-bg);
+}
+
+/* ---- Portrait panels: opaque, one at a time, below a thin life strip (P005, P007, P008) -------------------- */
+#ui.touch-ui.portrait .panel {
+  top: calc(var(--sat) + 12px);
+  background: var(--panel-bg);
+  max-height: calc(100vh - 18px - var(--sat) - var(--sab));
+  max-height: calc(100dvh - 18px - var(--sat) - var(--sab));
+  z-index: var(--z-panel);
+  overflow-x: hidden;
+}
+#ui.touch-ui.portrait.has-tabbar .panel {
+  max-height: calc(100vh - 18px - var(--sat) - 48px - var(--sab));
+  max-height: calc(100dvh - 18px - var(--sat) - 48px - var(--sab));
+}
+#ui.touch-ui.portrait .tree-panel.matrix-mode, #ui.touch-ui.portrait .tree-panel { max-height: calc(100dvh - 18px - var(--sat) - var(--sab)); }
+#ui.touch-ui.portrait.has-tabbar .tree-panel, #ui.touch-ui.portrait.has-tabbar .tree-panel.matrix-mode { max-height: calc(100dvh - 18px - var(--sat) - 48px - var(--sab)); }
+#ui.touch-ui.portrait .map-panel { top: 50%; }
+#ui.touch-ui.portrait .dialogue-panel { top: auto; bottom: calc(var(--sab) + 8px); }
+
+/* Panel open/close motion; off for reduced motion (P015). */
+@keyframes panel-in { from { opacity: 0; translate: 0 24px; } }
+#ui.touch-ui .panel.is-opening, #ui.touch-ui .tooltip-sheet:not([hidden]), #ui.touch-ui .confirm-sheet:not([hidden]) { animation: panel-in 160ms ease-out; }
+#ui.touch-ui .panel.is-closing { transition: opacity 120ms ease-in, translate 120ms ease-in; opacity: 0; translate: 0 24px; }
+@media (prefers-reduced-motion: reduce) {
+  #ui .panel.is-opening, #ui .tooltip-sheet, #ui .confirm-sheet { animation: none !important; }
+  #ui .panel.is-closing { transition: none !important; }
+}
+
+/* The HUD under a full-screen panel is hidden, except a thin life strip across the top. */
+#ui.touch-ui.portrait.has-panel :is(.orb:not(.orb-life), .xp-bar, .touch-menu, .minimap, .quest-tracker, .wave-tracker,
+  .endgame-stack, .target-frame, .buff-bar, .exposure-meter, .flare-count, .event-box, .slots, .touch-stick-zone,
+  .fps-meter, .interact-prompt, .loot-labels, .npc-plates, .damage-layer, .center-banner, .boss-card, .region-card, .tier-badge) {
+  visibility: hidden !important;
+}
+#ui.touch-ui.portrait.has-panel .orb-life {
+  z-index: var(--z-strip);
+  top: var(--sat);
+  height: 6px;
+  left: var(--sal);
+  right: var(--sar);
+  width: auto;
+}
+#ui.touch-ui.portrait.has-panel .orb-life .orb-text { display: none; }
+
+/* ---- Notices: toasts above every panel, a snackbar at the bottom while a panel is open (P010) -------------- */
+#ui .toast-stack { z-index: var(--z-toast); }
+#ui.touch-ui.portrait.has-panel .toast-stack, #ui.touch-ui.portrait.has-sheet .toast-stack {
+  top: auto;
+  bottom: calc(var(--sab) + 16px);
+  left: var(--sal);
+  right: var(--sar);
+  width: auto;
+  transform: none;
+  padding: 0 var(--space-3);
+}
+#ui.touch-ui.portrait.has-tabbar .toast-stack { bottom: calc(var(--sab) + 64px); }
+#ui.touch-ui.portrait.has-panel .toast, #ui.touch-ui.portrait.has-sheet .toast { width: 100%; min-height: 44px; display: flex; align-items: center; font-size: max(var(--fs-min), 0.9em); background: #1a1612; }
+
+/* ---- Confirmation sheet (P012, P013) -------------------------------------------------------------------- */
+.confirm-sheet {
+  position: absolute;
+  left: calc(var(--sal) + 8px);
+  right: calc(var(--sar) + 8px);
+  bottom: calc(var(--sab) + 8px);
+  z-index: var(--z-modal);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--space-4);
+  background: var(--panel-bg);
+  border: 1px solid var(--ui-border);
+  border-top: 2px solid var(--ui-accent);
+}
+.confirm-sheet[hidden] { display: none; }
+.confirm-title { margin: 0 0 var(--space-2); font-size: 1.05em; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ui-accent); }
+.confirm-body p { margin: 0 0 var(--space-2); line-height: 1.4; font-size: max(var(--fs-min), 0.95em); }
+.confirm-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); }
+.confirm-actions button {
+  flex: 1;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  font: inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-text);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+}
+.confirm-actions .confirm-ok { border-color: var(--ui-accent); color: var(--ui-accent); }
+.confirm-actions .confirm-ok.danger { background: #6a1a14; border-color: #d9443a; color: #fff; }
+.confirm-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* Two-tap buttons (armConfirm): the armed state is loud. */
+button.armed { background: #3a2410 !important; border-color: var(--ui-accent) !important; color: #ffd27a !important; }
+
+/* ---- Tooltip sheet (P054) ------------------------------------------------------------------------------- */
+.tooltip-sheet {
+  position: absolute;
+  left: calc(var(--sal) + 6px);
+  right: calc(var(--sar) + 6px);
+  bottom: calc(var(--sab) + 6px);
+  z-index: var(--z-sheet);
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+  max-height: min(72vh, 640px);
+  max-height: min(72dvh, 640px);
+  margin: 0 auto;
+  background: var(--panel-bg);
+  border: 1px solid var(--ui-border);
+  border-top: 2px solid var(--ui-accent);
+}
+.tooltip-sheet[hidden] { display: none; }
+.tooltip-sheet .panel-header { margin: 0; padding: 14px var(--space-3) 4px; }
+.tooltip-sheet .sheet-title { margin: 0; font-size: 1em; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ui-accent); }
+.tooltip-sheet .sheet-title[hidden] { display: none; }
+.tooltip-sheet .sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-2) var(--space-3); }
+.tooltip-sheet .sheet-body.has-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-3); }
+.tooltip-sheet .item-tip { width: auto; }
+.tooltip-sheet .sheet-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) var(--space-3) calc(var(--space-2)); border-top: 1px solid #2a2420; }
+.tooltip-sheet .sheet-action {
+  flex: 1 1 120px;
+  min-height: 48px;
+  font: inherit;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ui-text);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+}
+.tooltip-sheet .sheet-action.primary { color: var(--ui-accent); border-color: var(--ui-accent); }
+.tooltip-sheet .sheet-action.danger { color: #ff8a7a; border-color: #8a2a20; }
+.tooltip-sheet .sheet-action:disabled { opacity: 0.45; }
+
+/* ---- Settings panel (P025-P029) ------------------------------------------------------------------------- */
+.settings-panel { left: 50%; margin-left: -180px; top: 60px; width: 360px; }
+#ui.touch-ui.portrait .settings-panel { left: calc(var(--sal) + 6px); margin-left: 0; width: auto; }
+.settings-tabs { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: 0 0 var(--space-3); }
+.settings-tab, .seg {
+  flex: 1 1 4.5em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  font: inherit;
+  color: var(--ui-text);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+}
+#ui.touch-ui .settings-tab, #ui.touch-ui .seg { min-height: var(--tap-min); }
+.settings-tab.active, .seg.active { color: var(--ui-accent); border-color: var(--ui-accent); background: #2a1c10; }
+.settings-page[hidden] { display: none; }
+.settings-row { padding: var(--space-3) 0; border-bottom: 1px solid #2a2420; }
+.settings-label { margin-bottom: var(--space-2); letter-spacing: 0.08em; text-transform: uppercase; font-size: max(var(--fs-min), 0.85em); color: var(--ui-text); }
+.settings-seg { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.settings-hint, .settings-preview { margin: var(--space-2) 0 0; font-size: max(var(--fs-min), 0.8em); line-height: 1.35; color: #a39a8d; }
+.settings-preview { color: var(--ui-text); font-size: 1em; }
+.settings-switch-row { display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: var(--space-3); }
+.settings-switch-row .settings-label { margin: 0; }
+.settings-switch-row .settings-hint { grid-column: 1 / -1; }
+.switch { position: relative; width: 64px; height: var(--tap-min); padding: 0; background: none; border: none; cursor: pointer; }
+.switch::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 28px;
+  margin-top: -14px;
+  border-radius: 14px;
+  background: #2a2420;
+  border: 1px solid var(--ui-border);
+}
+.switch.on::before { background: #5a3412; border-color: var(--ui-accent); }
+.switch-knob { position: absolute; top: 50%; left: 8px; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: #8c8378; transition: left 0.12s; }
+.switch.on .switch-knob { left: 34px; background: var(--ui-accent); }
+.settings-page .sound-row { display: grid; grid-template-columns: 5.5em 1fr; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; font-size: max(var(--fs-min), 0.9em); }
+.settings-page .sound-row input[type='range'] { width: 100%; min-height: 28px; }
+#ui.touch-ui .settings-page .sound-row input[type='range'] { height: var(--tap-min); }
+
+/* ---- Epilogue and credits (P001, P023, P100) -------------------------------------------------------------- */
+.epilogue { z-index: var(--z-epilogue); }
+.epilogue-card {
+  padding: max(24px, var(--sat)) max(20px, var(--sar)) max(24px, var(--sab)) max(20px, var(--sal));
+  -webkit-user-select: none;
+  user-select: none;
+}
+.epilogue button { min-height: 48px; min-width: 48px; padding-left: var(--space-5); padding-right: var(--space-5); }
+.epilogue-skip { right: max(16px, var(--sar)); bottom: max(16px, var(--sab)); }
+.epilogue-hint { margin-top: var(--space-4); font-size: max(var(--fs-min), 0.8em); letter-spacing: 0.08em; color: #8c8378; }
+.epilogue-hint.credits-hint { position: absolute; left: 0; right: 96px; bottom: max(24px, calc(var(--sab) + 8px)); margin: 0; padding-left: max(16px, var(--sal)); text-align: left; }
+.epilogue-credits { padding-top: var(--sat); }
+.epilogue-credits p { color: #b8afa2; font-size: 1.05em; line-height: 1.5; }
+.epilogue-credits.paused, .epilogue.paused .epilogue-credits { animation-play-state: paused; }
+
+/* ---- Legibility: no touch-UI text under 12 px (P019), contrast (P021) --------------------------------------- */
+#ui.touch-ui :is(.inv-hint, .inv-cell .abbr, .inv-cell .slot-label, .tree-branch-label, .tree-node, .dialogue-role, .log-kind,
+  .log-done, .service-grid .price, .service-sub, .aspect-desc, .tier-effects, .tier-lock, .tier-note, .rift-note, .rift-open,
+  .rift-effects, .rift-log, .matrix-xp, .matrix .muted, .matrix-glyphs-title, .char-select-credits, .item-tip-power) {
+  font-size: max(var(--fs-min), 0.8em);
+}
+#ui.touch-ui .inv-cell .slot-label, #ui.touch-ui .inv-cell .abbr { color: #a39a8d; overflow-wrap: anywhere; line-height: 1.1; }
+#ui.touch-ui .inv-hint { color: rgba(216, 208, 196, 0.85); }
+
+/* ---- Tap targets: 44 px at least in the touch panels (P020) ------------------------------------------------- */
+#ui.touch-ui .panel :is(button, input[type='range'], select):not(.panel-top):not(.panel-help):not(.inv-cell) { min-height: var(--tap-min); }
+#ui.touch-ui .panel input[type='range'] { height: var(--tap-min); }
+#ui.touch-ui .panel :is(.rift-step, .matrix-tab) { min-width: var(--tap-min); }
+#ui.touch-ui .panel .service-btn { padding-top: 8px; padding-bottom: 8px; }
+
+/* ---- Landscape touch: safe areas and overlaps (H090, H091) ------------------------------------------------- */
+#ui.touch-ui:not(.portrait) .touch-menu:not([hidden]) { left: calc(var(--sal) + 8px); top: calc(var(--sat) + 8px); }
+#ui.touch-ui:not(.portrait) .minimap { top: calc(var(--sat) + 8px); right: calc(var(--sar) + 8px); }
+/* The tracker sits left of the minimap instead of over the skill arc; the region label under the menu row. */
+#ui.touch-ui:not(.portrait) .quest-tracker { top: calc(var(--sat) + 8px); right: calc(var(--sar) + 128px); width: 180px; }
+#ui.touch-ui:not(.portrait) .wave-tracker { top: calc(var(--sat) + 56px); left: calc(var(--sal) + 8px); right: auto; text-align: left; }
+#ui.touch-ui:not(.portrait) .target-frame { top: calc(var(--sat) + 56px); }
+/* The endgame rows start under the region label (two lines, 56-96) instead of on top of it. */
+#ui.touch-ui:not(.portrait) .endgame-stack { top: calc(var(--sat) + 100px); }
+#ui.touch-ui:not(.portrait) .toast-stack { top: calc(var(--sat) + 56px); }
+#ui.touch-ui:not(.portrait) .event-box { top: calc(var(--sat) + 100px); }
+#ui.touch-ui:not(.portrait) .buff-bar { bottom: calc(var(--sab) + 90px); }
+#ui.touch-ui:not(.portrait) .panel { top: calc(var(--sat) + 54px); max-width: calc(100vw - 16px - var(--sal) - var(--sar)); }
+#ui.touch-ui:not(.portrait) .inventory-panel { right: calc(var(--sar) + 8px); }
+#ui.touch-ui:not(.portrait) :is(.character-panel, .quest-log, .service-panel) { left: calc(var(--sal) + 8px); }
+@media (max-height: 420px) {
+  /* A very short landscape screen: the tracker would cover the skill buttons. */
+  #ui.touch-ui:not(.portrait) .quest-tracker { display: none; }
+}
+
+/* ---- Other screens: safe areas (P023) ------------------------------------------------------------------------ */
+@media (orientation: portrait) {
+  .char-select { padding-bottom: max(48px, calc(var(--sab) + 32px)); padding-left: var(--sal); padding-right: var(--sar); }
+}
+.lore-panel { padding-bottom: max(12px, var(--sab)); }
+.death-screen { padding-top: var(--sat); padding-bottom: var(--sab); }
+
+/* ---- Paused by an open menu (settings: pause in menus) --------------------------------------------------- */
+#ui.menu-paused .panel-header-extra::before {
+  content: var(--paused-label);
+  padding: 2px 8px;
+  font-size: max(var(--fs-min), 0.75em);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9ad0ff;
+  border: 1px solid #3a6a8a;
+}
+
+/* ---- First-run coach marks (P031) -------------------------------------------------------------------------- */
+.coach-mark {
+  position: fixed;
+  z-index: 28;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: max(var(--fs-min), 0.85em);
+  line-height: 1.35;
+  color: var(--ui-text);
+  background: #1a1612;
+  border: 1px solid var(--ui-accent);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+}
+.coach-mark[hidden] { display: none; }
+.coach-mark::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: calc(var(--arrow-x, 20px) - 6px);
+  width: 10px;
+  height: 10px;
+  background: #1a1612;
+  border-right: 1px solid var(--ui-accent);
+  border-bottom: 1px solid var(--ui-accent);
+  transform: rotate(45deg);
+}
+.coach-mark.below::after { bottom: auto; top: -7px; transform: rotate(225deg); }
+#ui .coach-mark, #ui .coach-mark * { pointer-events: none; }
+#ui .coach-mark .coach-skip { pointer-events: auto; min-height: 32px; padding: 0 var(--space-2); font: inherit; font-size: max(var(--fs-min), 0.8em); color: var(--ui-muted); background: none; border: none; text-decoration: underline; }
+
+/* The FPS meter is a setting on phones too (Settings > Display): bottom left, small. */
+#ui.touch-ui .fps-meter:not([hidden]) {
+  display: block;
+  top: auto;
+  right: auto;
+  left: calc(var(--sal) + 6px);
+  bottom: calc(var(--sab) + 4px);
+  font-size: max(var(--fs-min), 0.75em);
+  pointer-events: none;
+}

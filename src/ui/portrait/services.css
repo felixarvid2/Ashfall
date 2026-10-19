@@ -1,0 +1,230 @@
+/* Portrait touch layout overrides: services. Loaded after style.css (src/main.ts), so equal-specificity rules here win.
+   Owns: the hub service panels (vendor, blacksmith, technician, stash), the Tier Beacon and the volume rows of the
+   settings Sound tab (P084-P097). Spacing and type use the tokens from base.css (--space-*, --fs-*). */
+
+/* ---- Service and backpack share the screen (P084) -------------------------------------------------------------------- */
+/* The service takes the top half with its own scroll and sticky header; the backpack grid fills the rest. */
+#ui.touch-ui.portrait:has(.service-panel:not([hidden])) .service-panel {
+  top: calc(var(--sat) + 12px);
+  bottom: auto;
+  height: calc(52vh - var(--sat) - 12px);
+  height: calc(52dvh - var(--sat) - 12px);
+  max-height: none;
+  z-index: var(--z-panel);
+}
+#ui.touch-ui.portrait:has(.service-panel:not([hidden])) .inventory-panel {
+  top: calc(52vh + 4px);
+  top: calc(52dvh + 4px);
+  bottom: calc(var(--sab) + 6px);
+  height: auto;
+  max-height: none;
+  z-index: var(--z-panel);
+  border-top: 2px solid var(--ui-border);
+}
+/* Only the grid matters while shopping: no header, paper doll, gold or hints. */
+#ui.touch-ui.portrait:has(.service-panel:not([hidden])) .inventory-panel :is(.panel-header, .inv-doll, .inv-toolbar, .inv-banners, .inv-gold, .inv-selbar, .inv-hint, .panel-tip) { display: none; }
+#ui.touch-ui.portrait:has(.service-panel:not([hidden])) .inventory-panel { padding-top: var(--space-2); }
+#ui.touch-ui.portrait:has(.service-panel:not([hidden])) .inventory-panel .inv-grid {
+  grid-template-columns: repeat(auto-fill, minmax(max(48px, 3.2em), 1fr));
+  gap: var(--space-1);
+}
+.inv-cell.svc-selected { outline: 2px solid var(--ui-accent); outline-offset: -2px; }
+
+/* ---- Header gold (P011) ---------------------------------------------------------------------------------------------- */
+.service-gold { color: #ffd27a; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---- Shared: buttons, notes, chips ---------------------------------------------------------------------------------- */
+.service-panel .service-body { display: flex; flex-direction: column; gap: var(--space-1); }
+.service-panel .service-btn { font-size: var(--fs-body); margin: var(--space-1) 0; padding: var(--space-2) var(--space-3); }
+.service-panel .service-btn.armed { color: #14110f; background: var(--ui-accent); border-color: var(--ui-accent); font-weight: 700; }
+.service-panel .service-btn.big { min-height: 48px; text-align: center; font-weight: 700; }
+.service-panel .service-btn.quiet { background: none; color: var(--ui-muted); }
+.service-panel .service-btn.danger { border-color: #7a2a22; color: #ff9a8a; }
+.service-panel .service-btn.danger.armed { color: #fff; background: #a8321f; border-color: #d4503a; }
+.service-note, .service-panel .inv-hint { margin: var(--space-1) 0; font-size: max(var(--fs-min), var(--fs-small)); line-height: 1.4; color: #b4a998; }
+.service-note.lack { color: #ff8a7a; }
+.service-sub { margin: var(--space-3) 0 var(--space-1); font-size: max(var(--fs-min), var(--fs-label)); letter-spacing: 0.12em; }
+.service-count { font-size: var(--fs-small); color: #cfc4b0; letter-spacing: 0.04em; }
+.service-empty { margin: var(--space-2) 0; padding: var(--space-3); font-size: var(--fs-small); text-align: center; color: #cfc4b0; border: 1px dashed #4a423a; }
+.chip { display: inline-block; padding: 1px var(--space-2); font-size: max(var(--fs-min), var(--fs-label)); line-height: 1.5; color: #d8d0c4; background: #1e1a17; border: 1px solid #3a322a; border-radius: 10px; }
+.chip.tempered { color: #c78bff; border-color: #5a3d7a; }
+.chip.greater { color: #ffc060; border-color: #7a5a22; }
+.chip.group { color: #9a8f80; }
+.chip.hl { background: #3a2a14; border-color: var(--ui-accent); color: #fff; }
+.chip.cost.have { color: #9fdc9f; border-color: #2f5a2f; }
+.chip.cost.lack { color: #ff8a7a; border-color: #7a2a22; }
+.cost-chips { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: var(--space-1) 0; }
+
+/* ---- Vendor: 64 px cells with a price pill below (P086) ------------------------------------------------------------- */
+.service-panel .service-grid { margin: var(--space-2) 0; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: var(--space-2); }
+.service-panel .service-grid.stash-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: var(--space-1); }
+.stock-slot { display: flex; flex-direction: column; gap: var(--space-1); cursor: pointer; min-width: 0; }
+.stock-slot .inv-cell { width: 100%; }
+.price-pill {
+  text-align: center;
+  padding: 1px var(--space-1);
+  font-size: max(var(--fs-min), var(--fs-label));
+  line-height: 1.5;
+  color: #ffd27a;
+  background: #1e1a17;
+  border: 1px solid #5a4a22;
+  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.stock-slot.unaffordable .price-pill { color: #ff8a7a; border-color: #7a2a22; }
+.stock-slot.sold { cursor: default; opacity: 0.45; }
+.stock-slot.sold .price-pill { color: #8a7e6c; border-color: #3a322a; text-decoration: line-through; }
+.item-tip .service-price { margin-top: var(--space-2); }
+
+/* ---- Pinned item card (P087, P093) ----------------------------------------------------------------------------------- */
+.service-card {
+  position: sticky;
+  top: calc(var(--svc-head, 52px) - var(--panel-pad-y));
+  z-index: 2;
+  display: flex;
+  gap: var(--space-3);
+  margin: 0 calc(-1 * var(--space-1)) var(--space-2);
+  padding: var(--space-2);
+  background: #17130f;
+  border: 1px solid #3a322a;
+  border-left: 3px solid var(--ui-accent);
+}
+.service-card .card-icon { flex: none; width: 44px; height: 44px; cursor: default; }
+.service-card .card-info { flex: 1; min-width: 0; }
+.service-card .service-item { margin: 0; font-size: var(--fs-body); font-weight: 700; overflow-wrap: anywhere; }
+.service-card .card-meta { font-size: max(var(--fs-min), var(--fs-label)); color: #9a8f80; }
+.card-chips { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+.card-chips .chip { padding: 0 var(--space-2); line-height: 1.4; }
+.card-aspect { margin-top: var(--space-1); font-size: max(var(--fs-min), var(--fs-label)); color: #ff9a3a; }
+
+/* ---- Blacksmith: accordion (P088) ------------------------------------------------------------------------------------ */
+.service-section { border: 1px solid #2e2823; margin: var(--space-1) 0; }
+.service-section.open { border-color: #4a3d2e; }
+.service-section-head {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  text-align: left;
+  color: var(--ui-text);
+  background: #1a1612;
+  border: none;
+  cursor: pointer;
+}
+.service-section-head .section-title { font-size: var(--fs-small); letter-spacing: 0.1em; text-transform: uppercase; color: #c8b89a; }
+.service-section-head .section-summary { font-size: max(var(--fs-min), var(--fs-label)); color: #9a8f80; }
+.service-section-head .section-caret { color: var(--ui-accent); }
+.service-section-body { padding: var(--space-1) var(--space-2) var(--space-2); }
+.service-panel .service-salvage { margin-top: var(--space-3); text-align: center; }
+.codex-locked-head { border: 1px solid #2e2823; margin-top: var(--space-2); }
+.codex-progress { height: 4px; margin-bottom: var(--space-1); background: linear-gradient(to right, var(--ui-accent) var(--fill, 0%), #2a2420 var(--fill, 0%)); }
+
+/* Tempering rows (P089) and masterwork (P090). */
+.service-panel .recipe-row { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) 0; }
+.recipe-head { display: flex; align-items: center; gap: var(--space-2); }
+.service-panel .recipe-name { flex: 1; font-size: var(--fs-body); }
+.recipe-ranges { display: flex; flex-direction: column; gap: 2px; font-size: max(var(--fs-min), var(--fs-small)); color: #cfc4b0; }
+.recipe-replaces { font-size: max(var(--fs-min), var(--fs-label)); color: #c78bff; }
+.recipe-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.recipe-foot .service-btn { width: auto; flex: 1; text-align: center; margin: 0; }
+.service-panel .temper-slots { flex-direction: column; }
+.service-panel .temper-slots .service-btn { text-align: left; }
+.service-panel .temper-slots .service-btn.active::before { content: '● '; }
+.service-panel .temper-slots .service-btn:not(.active)::before { content: '○ '; }
+.masterwork-preview { margin: var(--space-1) 0; padding: var(--space-2); font-size: max(var(--fs-min), var(--fs-small)); color: #e8c872; background: #17130f; }
+
+/* ---- Technician (P092, P093) ---------------------------------------------------------------------------------------- */
+.service-panel .aspect-row { padding: var(--space-2) 0; }
+.aspect-change { clear: both; margin: var(--space-1) 0; font-size: max(var(--fs-min), var(--fs-label)); color: #e8c872; overflow-wrap: anywhere; }
+.aspect-replaces { color: #ff8a7a; }
+.service-panel .aspect-row.codex-row.locked { padding: var(--space-1) 0; }
+.service-panel .aspect-row .service-btn { clear: both; }
+
+/* ---- Salvage-all confirmation (P091) ---------------------------------------------------------------------------------- */
+.confirm-body .salvage-summary { margin-bottom: var(--space-2); }
+.confirm-body .salvage-item { display: flex; align-items: center; gap: var(--space-2); min-height: var(--tap-min); border-bottom: 1px solid #2a2420; }
+.confirm-body .salvage-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.confirm-body .salvage-keep { font-size: var(--fs-small); color: var(--ui-muted); }
+.confirm-body .salvage-item input {
+  appearance: none;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  background: #1e1a17;
+  border: 2px solid #4a423a;
+  display: grid;
+  place-items: center;
+}
+.confirm-body .salvage-item input:checked { background: var(--ui-accent); border-color: var(--ui-accent); }
+.confirm-body .salvage-item input:checked::after { content: '✓'; color: #14110f; font-weight: 700; }
+.confirm-body .salvage-more { padding: var(--space-2) 0; font-size: var(--fs-small); color: var(--ui-muted); }
+
+/* ---- Tier Beacon (P096, P097) ----------------------------------------------------------------------------------------- */
+.tier-panel .tier-note { margin: var(--space-1) 0 var(--space-2); }
+.tier-banner { margin: var(--space-1) 0; padding: var(--space-2) var(--space-3); font-size: var(--fs-small); color: #ffb36a; background: #2a1d12; border-left: 3px solid #ff8a3a; }
+.tier-panel .tier-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px var(--space-2);
+  width: auto;
+  margin: var(--space-2) 0;
+  padding: var(--space-1) var(--space-3);
+  cursor: default;
+}
+.tier-panel .tier-row.locked { opacity: 0.75; }
+.tier-panel .tier-name { font-size: var(--fs-body); }
+.tier-pick { min-width: 6.5em; padding: 0 var(--space-3); font: inherit; font-size: var(--fs-small); color: var(--ui-text); background: #1e1a17; border: 1px solid var(--ui-border); cursor: pointer; }
+.tier-pick:hover:not(:disabled) { border-color: var(--ui-accent); color: #fff; }
+.tier-pick:disabled { opacity: 0.5; cursor: default; }
+.tier-pick.armed { color: #14110f; background: var(--ui-accent); border-color: var(--ui-accent); font-weight: 700; opacity: 1; }
+.tier-row.current .tier-pick { color: #ffd27a; border-color: #7a4a1e; opacity: 1; }
+.tier-detail { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.tier-chip { padding: 0 var(--space-2); font-size: max(var(--fs-min), var(--fs-label)); line-height: 1.5; color: #cfc4b0; background: #17130f; border: 1px solid #3a322a; border-radius: 10px; }
+.tier-chip.harder { color: #ff9a7a; border-color: #7a3a22; }
+.tier-chip.easier, .tier-chip.better { color: #9fdc9f; border-color: #2f5a2f; }
+.tier-chip.worse { color: #d0a060; border-color: #6a4a22; }
+.tier-panel .tier-lock { flex: 1 1 100%; margin: 0; }
+.tier-progress { flex: 1 1 100%; font-size: max(var(--fs-min), var(--fs-label)); color: #cfc4b0; }
+.tier-progress-bar { display: block; height: 4px; margin-top: var(--space-1); background: linear-gradient(to right, var(--ui-accent) var(--fill, 0%), #2a2420 var(--fill, 0%)); }
+
+/* ---- Sound rows in the settings Sound tab (P095) ---------------------------------------------------------------------- */
+#ui .settings-page .sound-row {
+  display: grid;
+  grid-template-columns: var(--tap-min) 1fr var(--tap-min);
+  grid-template-areas: 'name name value' 'dec slider inc';
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  font-size: var(--fs-body);
+}
+.sound-row.muted { opacity: 0.5; }
+.sound-row .sound-name { grid-area: name; }
+.sound-row .sound-value { grid-area: value; text-align: right; font-variant-numeric: tabular-nums; color: #ffd27a; }
+.sound-row > input[type='range'] { grid-area: slider; }
+.sound-row > .sound-step:nth-child(3) { grid-area: dec; }
+.sound-row > .sound-step:nth-child(5) { grid-area: inc; }
+.sound-step {
+  width: var(--tap-min);
+  min-height: var(--tap-min);
+  padding: 0;
+  font: inherit;
+  font-size: 1.4em;
+  line-height: 1;
+  color: var(--ui-text);
+  background: #1e1a17;
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+}
+.sound-step:hover { border-color: var(--ui-accent); }
+
+/* Short phones: the half-screen service sheet cannot afford a pinned card, so it scrolls with the content. */
+@media (max-height: 720px) {
+  #ui.touch-ui.portrait .service-card { position: static; }
+}

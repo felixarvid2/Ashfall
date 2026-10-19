@@ -2,8 +2,14 @@
  * Neural Matrix view (docs/endgame.md): the boards as an SVG you can zoom (wheel, pinch, buttons) and pan
  * (drag), node tooltips, allocation by click or tap, board attaching at gates and glyph socketing.
  * It lives inside the skill panel (K) once the character is at the level cap.
+ *
+ * Touch (useSheet()): the board fits on open with nodes at least 40 px apart (P067), a tap selects a node and the
+ * detail card shows a full-width Allocate button (P068; a second tap still allocates), the header is a back
+ * chevron, a points pill and an XP bar (P069), an allocated socket opens a glyph picker sheet (P070), and an open
+ * gate form draws a ghost of the board at the chosen rotation (P071). Radii and hit areas are larger on touch.
  */
-import { t } from '../data/i18n';
+import { t, touchText } from '../data/i18n';
+import { confirmSheet } from './confirmSheet';
 import {
   BOARDS,
   BOARD_SIZE,
@@ -37,6 +43,8 @@ import {
   type Layout,
 } from '../systems/endgame/matrix';
 import { placeTooltipForPortrait } from './itemTooltip';
+import { tooltipSheet, useSheet } from './tooltipSheet';
+import { haptic } from './haptics';
 
 export interface MatrixView {
   endgame: EndgameState;
@@ -54,12 +62,17 @@ export interface MatrixActions {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Size of one grid cell in SVG units. */
-const CELL = 44;
+export const CELL = 44;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 3;
+/** The automatic fit never packs nodes closer than this many CSS px (a fingertip). */
+export const MIN_NODE_GAP_PX = 40;
 /** Pixels a pointer may travel before a press counts as a drag. */
 const DRAG_SLOP = 6;
 const RADIUS: Record<MatrixNodeDef['kind'], number> = { start: 15, normal: 10, magic: 12, rare: 15, legendary: 19, socket: 17, gate: 14 };
+/** Touch draws nodes 20 % larger (never past the 44-unit grid) and gives each a half-cell hit circle. */
+const TOUCH_RADIUS = 1.2;
+const TOUCH_HIT = CELL / 2;
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}, cls?: string): SVGElementTagNameMap[K] {
   const el = document.createElementNS(SVG_NS, tag);
@@ -109,6 +122,23 @@ export function effectText(fx: Effect, mult = 1): string {
   }
 }
 
+/**
+ * Camera that shows `bounds` (matrix pixels) in a w x h view with a 12 px margin. Unless `all`, the scale never drops
+ * below the one that keeps nodes MIN_NODE_GAP_PX apart; a graph too big for that is centred on the start board.
+ */
+export function fitView(bounds: { x0: number; y0: number; x1: number; y1: number }, w: number, h: number, all = false): { scale: number; tx: number; ty: number } {
+  const pad = 12;
+  const bw = Math.max(1, bounds.x1 - bounds.x0);
+  const bh = Math.max(1, bounds.y1 - bounds.y0);
+  const fitScale = Math.min((w - pad * 2) / bw, (h - pad * 2) / bh);
+  const floor = all ? MIN_ZOOM : MIN_NODE_GAP_PX / CELL;
+  const scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fitScale, floor));
+  const tooBig = bw * scale > w || bh * scale > h;
+  const cx = tooBig && !all ? 0 : (bounds.x0 + bounds.x1) / 2;
+  const cy = tooBig && !all ? 0 : (bounds.y0 + bounds.y1) / 2;
+  return { scale, tx: w / 2 - cx * scale, ty: h / 2 - cy * scale };
+}
+
 export class MatrixPanel {
   readonly element: HTMLDivElement;
   /** Set by the skill panel: go back to the skill tree. */
@@ -130,10 +160,14 @@ export class MatrixPanel {
   private ty = 0;
   private scale = 1;
   private fitted = false;
+  /** Gate and board of the last ghost the camera was fitted to (so a rotation does not move the view). */
+  private ghostFitKey = '';
   private bounds = { x0: -200, y0: -200, x1: 200, y1: 200 };
   private readonly pointers = new Map<number, { x: number; y: number }>();
   private press: { id: number; x: number; y: number; node: string | null; moved: boolean; mouse: boolean } | null = null;
   private pinch: { dist: number } | null = null;
+  /** A socket whose glyph sheet opens on the next click of the viewport (touch). */
+  private sheetOnClick: MatrixNodeDef | null = null;
 
   constructor(
     parent: HTMLElement,
@@ -183,22 +217,40 @@ export class MatrixPanel {
   private drawHead(v: MatrixView): void {
     const e = v.endgame;
     const earned = pointsEarned(e);
-    const left = div('matrix-points');
+    const touch = useSheet();
     const pts = div(e.matrixPoints > 0 ? 'matrix-count has' : 'matrix-count', t('matrix.points', { points: e.matrixPoints }));
-    const xp = div('matrix-xp muted');
-    xp.textContent =
-      earned >= MATRIX_MAX_POINTS
-        ? t('matrix.maxed', { max: MATRIX_MAX_POINTS })
-        : `${t('matrix.xp', { xp: Math.floor(e.matrixXp).toLocaleString('en'), next: matrixPointCost(earned).toLocaleString('en') })} · ${t('matrix.earned', { earned, max: MATRIX_MAX_POINTS })}`;
-    left.append(pts, xp);
+    pts.dataset.testid = 'matrix-points';
+    const maxed = earned >= MATRIX_MAX_POINTS;
     const cost = respecCost(e);
-    const reset = button(t('matrix.reset', { gold: cost }), () => {
-      if (confirm(t('matrix.resetConfirm', { gold: cost }))) this.actions.respec();
-    });
+    const reset = button(touch ? t('matrix.resetButton') : t('matrix.reset', { gold: cost }), () => {
+      void confirmSheet({
+        title: t('matrix.resetTitle'),
+        body: t('matrix.resetConfirm', { gold: cost }),
+        confirmLabel: t('matrix.resetButton'),
+        danger: true,
+      }).then((ok) => {
+        if (ok) this.actions.respec();
+      });
+    }, 'matrix-reset');
+    reset.title = t('matrix.reset', { gold: cost });
     reset.disabled = e.nodes.length === 0 || v.gold < cost;
-    const tools = div('matrix-tools');
-    tools.append(button(t('matrix.back'), () => this.onBack(), 'matrix-tab'), reset);
-    this.head.replaceChildren(left, tools);
+    // Back goes to the skill tree (the panel's X closes everything): a chevron, not a tab.
+    const back = button(`‹ ${t('matrix.back')}`, () => this.onBack(), 'matrix-tab matrix-back');
+    back.dataset.testid = 'matrix-back';
+    const row = div('matrix-head-row');
+    row.append(back, pts, reset);
+    // XP toward the next point: a bar with the numbers under it.
+    const progress = div('matrix-progress');
+    const bar = div('matrix-xpbar');
+    const fill = document.createElement('i');
+    fill.style.width = `${maxed ? 100 : Math.min(100, Math.round((e.matrixXp / matrixPointCost(earned)) * 100))}%`;
+    bar.appendChild(fill);
+    const xp = div('matrix-xp muted');
+    xp.textContent = maxed
+      ? t('matrix.maxed', { max: MATRIX_MAX_POINTS })
+      : `${t('matrix.xp', { xp: Math.floor(e.matrixXp).toLocaleString('en'), next: matrixPointCost(earned).toLocaleString('en') })} · ${t('matrix.earned', { earned, max: MATRIX_MAX_POINTS })}`;
+    progress.append(bar, xp);
+    this.head.replaceChildren(row, progress);
   }
 
   // ---- Boards ----------------------------------------------------------------------------------------
@@ -211,6 +263,7 @@ export class MatrixPanel {
   private drawBoards(e: EndgameState): void {
     const layout = layoutBoards(e.boards);
     const reports = glyphReports(e);
+    const touch = useSheet();
     const root = svg('svg', { class: 'matrix-svg', width: '100%', height: '100%' });
     const world = svg('g', {}, 'matrix-world');
     root.appendChild(world);
@@ -239,6 +292,18 @@ export class MatrixPanel {
       y1 = Math.max(y1, by + BOARD_SIZE * CELL);
     }
     this.bounds = { x0, y0, x1, y1 };
+
+    // Attach preview: the board chosen at a gate, drawn translucent at the chosen rotation (P071).
+    const ghostRect = this.drawGhost(world, e);
+    if (ghostRect) {
+      // The view includes the ghost; it re-fits once when a gate or board is picked, not on each rotation.
+      const b = this.bounds;
+      this.bounds = { x0: Math.min(b.x0, ghostRect.x0), y0: Math.min(b.y0, ghostRect.y0), x1: Math.max(b.x1, ghostRect.x1), y1: Math.max(b.y1, ghostRect.y1) };
+      if (ghostRect.key !== this.ghostFitKey) {
+        this.ghostFitKey = ghostRect.key;
+        this.fit(true);
+      }
+    } else this.ghostFitKey = '';
 
     // Glyph reach rings for socketed glyphs.
     for (const r of reports) {
@@ -273,6 +338,7 @@ export class MatrixPanel {
         const sock = n.kind === 'socket' ? e.glyphs.find((g) => g.socket === n.id) : undefined;
         const cls = [
           'matrix-node',
+          focusSocket === n.id ? 'focus' : '',
           `k-${n.kind}`,
           owned ? 'owned' : can ? 'can' : 'locked',
           this.selected === n.id ? 'selected' : '',
@@ -282,9 +348,9 @@ export class MatrixPanel {
           .filter(Boolean)
           .join(' ');
         const g = svg('g', { transform: `translate(${c.x} ${c.y})`, 'data-node': n.id }, cls);
-        const r = RADIUS[n.kind];
-        // Hit area larger than the glyph so small nodes stay tappable.
-        g.appendChild(svg('circle', { r: Math.max(r + 6, 16) }, 'matrix-hit'));
+        const r = touch ? Math.min(RADIUS[n.kind] * TOUCH_RADIUS, CELL / 2 - 1) : RADIUS[n.kind];
+        // Hit area larger than the glyph so small nodes stay tappable (half a cell on touch: no gaps between nodes).
+        g.appendChild(svg('circle', { r: touch ? TOUCH_HIT : Math.max(r + 6, 16) }, 'matrix-hit'));
         if (n.kind === 'gate') g.appendChild(svg('rect', { x: -r, y: -r, width: r * 2, height: r * 2, transform: 'rotate(45)' }, 'matrix-shape'));
         else if (n.kind === 'socket') g.appendChild(svg('rect', { x: -r, y: -r, width: r * 2, height: r * 2, rx: 4 }, 'matrix-shape'));
         else if (n.kind === 'legendary') g.appendChild(svg('polygon', { points: starPoints(r) }, 'matrix-shape'));
@@ -309,7 +375,7 @@ export class MatrixPanel {
       button('+', () => this.zoomBy(1.3)),
       button('−', () => this.zoomBy(1 / 1.3)),
       button('⌖', () => {
-        this.fit();
+        this.fit(true);
         this.applyTransform();
       }),
     );
@@ -321,16 +387,18 @@ export class MatrixPanel {
 
   // ---- Camera ----------------------------------------------------------------------------------------
 
-  /** Fits all attached boards in view (first draw, recenter button). */
-  private fit(): void {
+  /**
+   * Fits the attached boards in view with a 12 px margin (first draw, recenter button). The automatic fit keeps nodes
+   * at least 40 px apart: when many boards are attached it then centres on the start board instead of shrinking
+   * everything; the recenter button (`all`) shows every board whatever the node size.
+   */
+  private fit(all = false): void {
     const w = this.viewport.clientWidth || 360;
     const h = this.viewport.clientHeight || 360;
-    const b = this.bounds;
-    const bw = b.x1 - b.x0 + 20;
-    const bh = b.y1 - b.y0 + 20;
-    this.scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.min(w / bw, h / bh)));
-    this.tx = w / 2 - ((b.x0 + b.x1) / 2) * this.scale;
-    this.ty = h / 2 - ((b.y0 + b.y1) / 2) * this.scale;
+    const view = fitView(this.bounds, w, h, all);
+    this.scale = view.scale;
+    this.tx = view.tx;
+    this.ty = view.ty;
     this.fitted = this.viewport.clientWidth > 0;
   }
 
@@ -366,6 +434,7 @@ export class MatrixPanel {
       { passive: false },
     );
     vp.addEventListener('contextmenu', (e) => e.preventDefault());
+    vp.addEventListener('click', () => this.openPendingSheet());
     vp.addEventListener('pointerdown', (e) => {
       if ((e.target as Element).closest('.matrix-zoom')) return;
       const p = local(e);
@@ -467,7 +536,15 @@ export class MatrixPanel {
       this.actions.allocate(id);
       return;
     }
+    if (!mouse) haptic('select');
     this.refresh();
+    // Touch: a socket you own opens the glyph picker at once.
+    const node = MATRIX_NODES.get(id);
+    if (!mouse && node?.kind === 'socket' && isAllocated(e, id)) {
+      // Opened on the click that follows this tap: a sheet (and its scrim) opened now would take that click and close.
+      this.sheetOnClick = node;
+      setTimeout(() => this.openPendingSheet(), 400);
+    }
   }
 
   private focusSocket(e: EndgameState): string | null {
@@ -506,7 +583,7 @@ export class MatrixPanel {
     if (owned) tip.appendChild(div('item-tip-equipped', t('matrix.state.owned')));
     else {
       const r = canAllocate(e, node.id);
-      tip.appendChild(div(r.ok ? 'item-tip-stats' : 'item-tip-req', r.ok ? t('matrix.state.available') : t(`matrix.cannot.${(r as Extract<AllocateResult, { ok: false }>).reason}`)));
+      if (!r.ok || !useSheet()) tip.appendChild(div(r.ok ? 'item-tip-stats' : 'item-tip-req', r.ok ? touchText('matrix.state.available') : t(`matrix.cannot.${(r as Extract<AllocateResult, { ok: false }>).reason}`)));
     }
     return tip;
   }
@@ -517,9 +594,15 @@ export class MatrixPanel {
     if (!sel) {
       const glyph = this.selectedGlyph ? GLYPH_DEFS.get(this.selectedGlyph) : undefined;
       if (glyph) rows.push(this.glyphCard(e, glyph));
-      else rows.push(div('muted', t('matrix.hint')));
+      else rows.push(div('muted', touchText('matrix.hint')));
     } else {
       rows.push(this.describe(sel));
+      // A full-width button on touch, where "click" means nothing (a second tap on the node still works).
+      if (!isAllocated(e, sel.id) && canAllocate(e, sel.id).ok) {
+        const go = button(t('matrix.allocateButton', { points: 1 }), () => this.actions.allocate(sel.id), 'matrix-primary matrix-allocate');
+        go.dataset.testid = 'matrix-allocate';
+        rows.push(go);
+      }
       if (sel.kind === 'gate') rows.push(...this.gateControls(e, sel));
       if (sel.kind === 'socket' && isAllocated(e, sel.id)) rows.push(...this.socketControls(e, sel));
     }
@@ -543,6 +626,14 @@ export class MatrixPanel {
   private socketControls(e: EndgameState, sock: MatrixNodeDef): HTMLElement[] {
     const out: HTMLElement[] = [];
     const current = e.glyphs.find((g) => g.socket === sock.id);
+    if (useSheet()) {
+      // Touch: the glyph list is a bottom sheet (P070), not a button grid squeezed into this card.
+      if (current) out.push(this.glyphCard(e, GLYPH_DEFS.get(current.id)!));
+      const pick = button(t(current ? 'matrix.changeGlyph' : 'matrix.chooseGlyph'), () => this.openGlyphSheet(sock), 'matrix-primary');
+      pick.dataset.testid = 'matrix-choose-glyph';
+      out.push(pick);
+      return out;
+    }
     if (current) {
       out.push(this.glyphCard(e, GLYPH_DEFS.get(current.id)!));
       out.push(button(t('matrix.unsocket'), () => this.actions.socket(current.id, null)));
@@ -557,6 +648,47 @@ export class MatrixPanel {
     if (!list.childElementCount) list.appendChild(div('muted', t('matrix.noGlyphs')));
     out.push(list);
     return out;
+  }
+
+  private openPendingSheet(): void {
+    const node = this.sheetOnClick;
+    this.sheetOnClick = null;
+    if (node && this.selected === node.id) this.openGlyphSheet(node);
+  }
+
+  /** Touch: the glyphs as 56 px rows in a bottom sheet; one tap sockets (P070). */
+  private openGlyphSheet(sock: MatrixNodeDef): void {
+    const e = this.view().endgame;
+    if (!isAllocated(e, sock.id)) return;
+    const current = e.glyphs.find((g) => g.socket === sock.id);
+    const list = div('glyph-sheet');
+    const pick = (glyphId: string | null) => {
+      tooltipSheet.hide();
+      if (glyphId) this.actions.socket(glyphId, sock.id);
+      else if (current) this.actions.socket(current.id, null);
+      haptic('success');
+    };
+    for (const g of e.glyphs) {
+      const def = GLYPH_DEFS.get(g.id);
+      if (!def) continue;
+      const row = button('', () => pick(g.id), `glyph-row${g.id === current?.id ? ' current' : ''}${g.socket && g.id !== current?.id ? ' in-use' : ''}`);
+      row.dataset.testid = `glyph-row-${g.id}`;
+      const lvl = div('glyph-row-level', String(g.level));
+      const text = div('glyph-row-text');
+      text.append(
+        div('glyph-row-name', `${t(`matrix.glyphs.${g.id}.name`)} · ${t('matrix.glyphLevel', { level: g.level })}`),
+        div('glyph-row-sub muted', `${def.family.map((s) => t(`stats.${s}`)).join(', ')} · ${t('matrix.glyphReach', { radius: GLYPH_RADIUS, pct: Math.round(GLYPH_LEVEL_SCALE * 100 * g.level) })}${g.id === current?.id ? ` · ${t('matrix.glyphHere')}` : g.socket ? ` · ${t('matrix.glyphSocketed')}` : ''}`),
+      );
+      row.append(lvl, text);
+      list.appendChild(row);
+    }
+    if (current) {
+      const off = button(t('matrix.unsocket'), () => pick(null), 'glyph-row glyph-remove');
+      off.dataset.testid = 'glyph-remove';
+      list.appendChild(off);
+    }
+    if (e.glyphs.length === 0) list.appendChild(div('muted', t('matrix.noGlyphs')));
+    tooltipSheet.show({ title: t('matrix.pickGlyph'), content: list });
   }
 
   private gateControls(e: EndgameState, gate: MatrixNodeDef): HTMLElement[] {
@@ -588,8 +720,9 @@ export class MatrixPanel {
     }
     if (!this.attachBoard || !boards.includes(this.attachBoard)) this.attachBoard = boards[0]!;
     const form = div('gate-form');
+    form.dataset.testid = 'gate-form';
     form.append(div('muted', t('matrix.attachHint')));
-    const list = div('glyph-pick');
+    const list = div('glyph-pick gate-boards');
     for (const b of boards) {
       list.appendChild(
         button(t(`matrix.boards.${b}`), () => {
@@ -598,18 +731,69 @@ export class MatrixPanel {
         }, this.attachBoard === b ? 'on' : ''),
       );
     }
+    // Rotation: a segmented control plus a 90 degree step; the ghost on the board follows it.
     const rot = div('gate-rot');
     for (const deg of [0, 90, 180, 270]) {
-      rot.appendChild(
-        button(`${deg}°`, () => {
-          this.attachRotation = deg;
-          this.refresh();
-        }, this.attachRotation === deg ? 'on' : ''),
-      );
+      const b = button(`${deg}°`, () => {
+        this.attachRotation = deg;
+        this.refresh();
+      }, this.attachRotation === deg ? 'on' : '');
+      b.dataset.testid = `gate-rot-${deg}`;
+      rot.appendChild(b);
     }
-    form.append(list, rot, button(t('matrix.attach', { board: t(`matrix.boards.${this.attachBoard}`) }), () => this.actions.attach(gate.id, this.attachBoard!, this.attachRotation)));
+    const step = button('⟳', () => {
+      this.attachRotation = (this.attachRotation + 90) % 360;
+      this.refresh();
+    }, 'gate-rot-step');
+    step.setAttribute('aria-label', t('matrix.rotate90'));
+    rot.appendChild(step);
+    const fits = this.ghostLayout(e) !== null;
+    const attach = button(t('matrix.attach', { board: t(`matrix.boards.${this.attachBoard}`) }), () => this.actions.attach(gate.id, this.attachBoard!, this.attachRotation), 'matrix-primary matrix-attach');
+    attach.dataset.testid = 'matrix-attach';
+    attach.disabled = !fits;
+    form.append(list, rot);
+    if (!fits) form.append(div('item-tip-req', t('matrix.cannot.space')));
+    form.append(attach);
     out.push(form);
     return out;
+  }
+
+  /** The layout with the board picked in the open gate form attached, or null when there is no form or no room. */
+  private ghostLayout(e: EndgameState): { layout: Layout; board: string } | null {
+    const gate = this.selected ? MATRIX_NODES.get(this.selected) : undefined;
+    if (!gate || gate.kind !== 'gate' || !isAllocated(e, gate.id) || !openGate(e, gate.id)) return null;
+    const current = layoutBoards(e.boards);
+    if ([...current.values()].some((p) => p.gate === gate.id)) return null;
+    const boards = availableBoards(e);
+    if (boards.length === 0) return null;
+    if (!this.attachBoard || !boards.includes(this.attachBoard)) this.attachBoard = boards[0]!;
+    const board = this.attachBoard;
+    const layout = layoutBoards([...e.boards, { id: board, rotation: this.attachRotation, gate: gate.id }] as EndgameState['boards']);
+    return layout.has(board) ? { layout, board } : null;
+  }
+
+  /** Draws the board of the open gate form as a translucent ghost at its rotation (P071). */
+  private drawGhost(world: SVGGElement, e: EndgameState): { x0: number; y0: number; x1: number; y1: number; key: string } | null {
+    const g = this.ghostLayout(e);
+    if (!g) return null;
+    const p = g.layout.get(g.board)!;
+    const half = (BOARD_SIZE / 2) * CELL;
+    const ghost = svg('g', {}, 'matrix-ghost');
+    ghost.dataset.testid = 'matrix-ghost';
+    ghost.dataset.board = g.board;
+    ghost.dataset.cx = String(p.cx);
+    ghost.dataset.cy = String(p.cy);
+    ghost.dataset.turns = String(p.turns);
+    ghost.appendChild(svg('rect', { x: p.cx * CELL - half, y: p.cy * CELL - half, width: BOARD_SIZE * CELL, height: BOARD_SIZE * CELL, rx: 14 }, 'matrix-ghost-board'));
+    for (const n of BOARDS.get(g.board)!.nodes) {
+      const c = nodePosition(g.layout, n);
+      if (c) ghost.appendChild(svg('circle', { cx: c.x * CELL, cy: c.y * CELL, r: n.kind === 'gate' ? 8 : 6 }, `matrix-ghost-node${n.kind === 'gate' ? ' gate' : ''}`));
+    }
+    const label = svg('text', { x: p.cx * CELL, y: p.cy * CELL, 'text-anchor': 'middle' }, 'matrix-ghost-label');
+    label.textContent = t(`matrix.boards.${g.board}`);
+    ghost.appendChild(label);
+    world.appendChild(ghost);
+    return { x0: p.cx * CELL - half, y0: p.cy * CELL - half, x1: p.cx * CELL + half, y1: p.cy * CELL + half, key: `${this.selected}|${g.board}` };
   }
 
   private drawGlyphBar(e: EndgameState): void {

@@ -1,11 +1,14 @@
 /**
  * Sound controls: a speaker button (mute) and a volume button on the HUD (bottom right on desktop;
- * the touch layouts get the same two buttons in their menu row), and a small panel with a slider
- * for master, music, effects and interface. Settings live in `Settings.audio`; the owner applies and saves.
+ * the touch layouts get the same two buttons in their menu row), and the volume rows (master, music, effects,
+ * interface) that the settings panel shows in its Sound tab; the volume button opens that tab. Each row has a
+ * slider, a percent readout and -/+ 10 steppers, and plays a short interface tick when a change is final (P095).
+ * Settings live in `Settings.audio`; the owner applies and saves.
  */
 import { cssUrl } from './art';
 import { t } from '../data/i18n';
 import type { AudioSettings } from '../data/settings';
+import { audio } from '../audio/engine';
 
 const iconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/menu/${id}.svg`;
 
@@ -30,9 +33,12 @@ export interface TouchMenuEntry {
 }
 
 export class SoundUi {
-  readonly panel: HTMLDivElement;
+  /** The volume rows (master, music, effects, interface): the settings panel shows them in its Sound tab. */
+  readonly rows: HTMLDivElement;
+  /** What the volume button opens: the settings panel on its Sound tab (set by the game). */
+  openSettings: (() => void) | null = null;
   private readonly muteButtons: HTMLButtonElement[] = [];
-  private readonly sliders = new Map<(typeof SLIDERS)[number], HTMLInputElement>();
+  private readonly sliders = new Map<(typeof SLIDERS)[number], { input: HTMLInputElement; value: HTMLElement; row: HTMLElement }>();
 
   constructor(
     root: HTMLElement,
@@ -49,41 +55,58 @@ export class SoundUi {
     this.muteButtons.push(mute);
     hud.append(mute, open);
 
-    this.panel = document.createElement('div');
-    this.panel.className = 'sound-panel panel';
-    this.panel.dataset.testid = 'sound-panel';
-    this.panel.hidden = true;
-    const title = document.createElement('h2');
-    title.textContent = t('sound.title');
-    this.panel.append(title);
-    for (const key of SLIDERS) {
-      const row = document.createElement('label');
-      row.className = 'sound-row';
-      const name = document.createElement('span');
-      name.textContent = t(`sound.${key}`);
-      const input = document.createElement('input');
-      input.type = 'range';
-      input.min = '0';
-      input.max = '100';
-      input.step = '1';
-      input.dataset.testid = `sound-${key}`;
-      input.addEventListener('input', () => {
-        this.settings()[key] = Number(input.value) / 100;
-        hooks.apply();
-      });
-      input.addEventListener('change', () => hooks.save());
-      this.sliders.set(key, input);
-      row.append(name, input);
-      this.panel.append(row);
-    }
-    const close = document.createElement('button');
-    close.className = 'sound-close';
-    close.textContent = t('sound.close');
-    close.addEventListener('click', () => this.toggle(false));
-    this.panel.append(close);
-
-    root.append(hud, this.panel);
+    this.rows = document.createElement('div');
+    this.rows.className = 'sound-rows';
+    for (const key of SLIDERS) this.rows.append(this.buildRow(key));
+    root.append(hud);
     this.refresh();
+  }
+
+  private buildRow(key: (typeof SLIDERS)[number]): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'sound-row';
+    row.dataset.testid = `sound-row-${key}`;
+    const name = Object.assign(document.createElement('span'), { className: 'sound-name', textContent: t(`sound.${key}`) });
+    const value = Object.assign(document.createElement('output'), { className: 'sound-value' });
+    value.dataset.testid = `sound-value-${key}`;
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = '0';
+    input.max = '100';
+    input.step = '1';
+    input.dataset.testid = `sound-${key}`;
+    input.setAttribute('aria-label', t(`sound.${key}`));
+    const set = (percent: number, final: boolean) => {
+      const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+      input.value = String(clamped);
+      value.textContent = `${clamped}%`;
+      this.settings()[key] = clamped / 100;
+      this.hooks.apply();
+      if (final) this.commit();
+    };
+    input.addEventListener('input', () => set(Number(input.value), false));
+    // A change is final when the thumb is released: save and play a tick so the level can be judged.
+    input.addEventListener('change', () => this.commit());
+    const step = (dir: -1 | 1) => {
+      const b = Object.assign(document.createElement('button'), {
+        type: 'button',
+        className: 'sound-step',
+        textContent: dir < 0 ? '−' : '+',
+      });
+      b.dataset.testid = `sound-${key}-${dir < 0 ? 'dec' : 'inc'}`;
+      b.setAttribute('aria-label', t(dir < 0 ? 'sound.lower' : 'sound.raise', { name: t(`sound.${key}`) }));
+      b.addEventListener('click', () => set(Number(input.value) + dir * 10, true));
+      return b;
+    };
+    row.append(name, value, step(-1), input, step(1));
+    this.sliders.set(key, { input, value, row });
+    return row;
+  }
+
+  /** The value is final: save the settings and play the interface tick. */
+  private commit(): void {
+    this.hooks.save();
+    audio.play('ui.equip');
   }
 
   private button(testid: string, onClick: () => void): HTMLButtonElement {
@@ -100,7 +123,7 @@ export class SoundUi {
     icon?.style.setProperty('--icon', cssUrl(iconUrl(id)));
   }
 
-  /** The two buttons for the touch menu row (speaker, volume panel). */
+  /** The two buttons for the touch menu row (speaker, volume settings). */
   touchEntries(): TouchMenuEntry[] {
     return [
       { id: 'sound', label: t('touch.menu.sound'), onClick: () => this.hooks.toggleMute(), onBuilt: (b) => this.muteButtons.push(b) },
@@ -108,13 +131,9 @@ export class SoundUi {
     ];
   }
 
-  get open(): boolean {
-    return !this.panel.hidden;
-  }
-
-  toggle(open = this.panel.hidden): void {
-    this.panel.hidden = !open;
-    if (open) this.refresh();
+  /** Open the settings panel on its Sound tab. */
+  toggle(): void {
+    this.openSettings?.();
   }
 
   /** Show the current mute state and slider positions. */
@@ -128,7 +147,11 @@ export class SoundUi {
       b.classList.toggle('muted', a.muted);
       this.setIcon(b, a.muted ? 'sound-off' : 'sound');
     }
-    for (const [key, input] of this.sliders) input.value = String(Math.round(a[key] * 100));
-    this.panel.classList.toggle('muted', a.muted);
+    for (const [key, { input, value, row }] of this.sliders) {
+      const percent = Math.round(a[key] * 100);
+      input.value = String(percent);
+      value.textContent = `${percent}%`;
+      row.classList.toggle('muted', a.muted);
+    }
   }
 }

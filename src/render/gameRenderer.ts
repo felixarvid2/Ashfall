@@ -1519,7 +1519,7 @@ export class GameRenderer {
     const h = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(w, h, false);
     this.postfx?.setSize(w, h);
-    this.rig.setAspect(w / h);
+    this.rig.setAspect(w / h, h);
   }
 }
 

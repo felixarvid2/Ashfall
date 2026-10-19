@@ -1,0 +1,413 @@
+/* Portrait touch layout overrides: controls. Loaded after style.css (src/main.ts), so equal-specificity rules here win. */
+
+/* ---- Thumb cluster geometry ------------------------------------------------------------------------------------
+   Everything derives from two sizes (button, attack) that grow with the screen width, times the player's button
+   scale (`--btn-scale`, Settings.buttonScale). Attack sits in the bottom corner; dodge directly beside it (the thumb
+   sweeps sideways), the potion above it; the five skills on a wider arc around them, from straight left to straight
+   up. The joystick zone ends where the arc begins, so the two never overlap (checked at 390, 360 and 320 wide). */
+#ui.touch-ui.portrait {
+  /* The player's button scale (Settings.buttonScale) is capped so the arc never reaches the stick zone on narrow phones. */
+  --scale-cap: 1.2;
+  --scale: min(var(--btn-scale, 1), var(--scale-cap));
+  --btn: max(44px, calc(clamp(46px, 13vw, 58px) * var(--scale)));
+  --atk: calc(clamp(76px, 21vw, 92px) * var(--scale));
+  --dw: calc(var(--btn) * 1.13);
+  --pw: calc(var(--btn) * 1.04);
+  --cx: calc(var(--atk) / 2 + 6px);
+  --r-d: calc(var(--atk) / 2 + var(--dw) / 2 + 6px);
+  --r-p: calc(var(--atk) / 2 + var(--pw) / 2 + 6px);
+  --r-s: calc(var(--atk) / 2 + var(--dw) + var(--btn) / 2 + 12px);
+  --arc: calc(var(--cx) + var(--r-s) + var(--btn) / 2 + 4px);
+  --stick-w: max(120px, calc(100vw - var(--arc) - var(--sar) - 14px));
+  /* Top edge of the cluster above the screen bottom: other HUD parts stay above this. */
+  --cluster-h: calc(var(--sab) + 4px + var(--arc));
+}
+
+@media (max-width: 379px) { #ui.touch-ui.portrait { --scale-cap: 1.1; } }
+@media (max-width: 349px) { #ui.touch-ui.portrait { --scale-cap: 1; } }
+
+#ui.touch-ui.portrait .slots {
+  right: calc(var(--sar) + 4px);
+  bottom: calc(var(--sab) + 4px);
+  width: var(--arc);
+  height: var(--arc);
+}
+#ui.touch-ui.portrait .slots .slot {
+  --s: var(--btn);
+  --r: 0px;
+  --a: 0deg;
+  z-index: 5;
+  width: var(--s);
+  height: var(--s);
+  right: calc(var(--cx) + var(--r) * cos(var(--a)) - var(--s) / 2);
+  bottom: calc(var(--cx) + var(--r) * sin(var(--a)) - var(--s) / 2);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+}
+#ui.touch-ui.portrait .slots .slot:nth-child(1) { --s: var(--atk); }
+#ui.touch-ui.portrait .slots .slot:nth-child(2) { --r: var(--r-s); --a: 0deg; }
+#ui.touch-ui.portrait .slots .slot:nth-child(3) { --r: var(--r-s); --a: 22.5deg; }
+#ui.touch-ui.portrait .slots .slot:nth-child(4) { --r: var(--r-s); --a: 45deg; }
+#ui.touch-ui.portrait .slots .slot:nth-child(5) { --r: var(--r-s); --a: 67.5deg; }
+#ui.touch-ui.portrait .slots .slot:nth-child(6) { --r: var(--r-s); --a: 90deg; }
+#ui.touch-ui.portrait .slots .slot:nth-child(7) { --s: var(--dw); --r: var(--r-d); --a: 0deg; }
+#ui.touch-ui.portrait .slots .slot:nth-child(8) { --s: var(--pw); --r: var(--r-p); --a: 90deg; }
+/* The attack button is held for minutes: an invisible ring (10 px) around it keeps a drifting thumb on it. */
+#ui.touch-ui .slot-halo { display: none; }
+#ui.touch-ui.portrait .slots .slot-halo {
+  display: block;
+  position: absolute;
+  z-index: 4;
+  right: calc(var(--cx) - var(--atk) / 2 - 10px);
+  bottom: calc(var(--cx) - var(--atk) / 2 - 10px);
+  width: calc(var(--atk) + 20px);
+  height: calc(var(--atk) + 20px);
+  border-radius: 50%;
+  touch-action: none;
+}
+
+/* Left-handed play: the stick on the right, the cluster mirrored on the left (`#ui.lefty`, Settings.touchLayout). */
+#ui.touch-ui.portrait.lefty .slots { right: auto; left: calc(var(--sal) + 4px); }
+#ui.touch-ui.portrait.lefty .slots .slot {
+  right: auto;
+  left: calc(var(--cx) + var(--r) * cos(var(--a)) - var(--s) / 2);
+}
+#ui.touch-ui.portrait.lefty .slots .slot-halo { right: auto; left: calc(var(--cx) - var(--atk) / 2 - 10px); }
+#ui.touch-ui.portrait.lefty .touch-stick-zone:not([hidden]) { left: auto; right: 0; }
+#ui.touch-ui.portrait.lefty { --stick-w: max(120px, calc(100vw - var(--arc) - var(--sal) - 14px)); }
+
+/* Joystick zone: ends before the arc, 46 % of the visible height (dvh: the browser toolbar can collapse). */
+#ui.touch-ui.portrait .touch-stick-zone:not([hidden]) {
+  width: var(--stick-w);
+  height: 46vh;
+  height: 46dvh;
+}
+.touch-stick-base { transition: opacity 0.12s; }
+#ui.touch-ui.portrait .touch-stick-base {
+  left: calc(var(--stick-w) / 2);
+  top: calc(100% - 92px - var(--sab));
+  --d: min(124px, calc(var(--stick-w) - 8px));
+  width: var(--d);
+  height: var(--d);
+  margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+}
+/* A dark outer ring and a brighter rim keep the stick readable on bright ground (Core Gardens, grates). */
+#ui.touch-ui .touch-stick-base {
+  border-color: rgba(232, 200, 160, 0.45);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55);
+  opacity: 0.75;
+}
+#ui.touch-ui .touch-stick-base.active { opacity: 1; }
+
+/* ---- Button looks ----------------------------------------------------------------------------------------------- */
+/* Dodge and potion are icons (the text label is hidden); the potion shows its charges as a badge and its recharge as a sweep. */
+#ui.touch-ui.portrait .slot[data-category='dodge'] .slot-name,
+#ui.touch-ui.portrait .slot[data-category='potion'] .slot-name {
+  inset: 0;
+  font-size: 0;
+}
+#ui.touch-ui.portrait .slot[data-category='dodge'] .slot-name::before,
+#ui.touch-ui.portrait .slot[data-category='potion'] .slot-name::before {
+  content: '';
+  width: 54%;
+  height: 54%;
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+#ui.touch-ui.portrait .slot[data-category='potion'] .slot-name { color: #7dff9a; }
+#ui.touch-ui.portrait .slot[data-category='potion']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(rgba(0, 0, 0, 0.72) calc(var(--recharge, 0) * 360deg), transparent 0);
+  pointer-events: none;
+  z-index: 1;
+}
+#ui.touch-ui.portrait .slot[data-badge]::after {
+  content: attr(data-badge);
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 2;
+}
+/* Skill buttons: the resource cost at the bottom edge. */
+#ui.touch-ui.portrait .slot[data-cost]:not([data-category='potion'])::before {
+  content: attr(data-cost);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 14px;
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+  z-index: 2;
+}
+/* Cooldown keeps the dark sweep and number; a missing resource is red and desaturated instead. */
+#ui.touch-ui.portrait .slots .slot.no-resource { border-color: #d9443a; }
+#ui.touch-ui.portrait .slot.no-resource .slot-icon,
+#ui.touch-ui.portrait .slot.no-resource .slot-name { filter: grayscale(0.8) sepia(1) hue-rotate(-30deg) saturate(2); }
+/* Pressed: accent outline and inner glow; a blocked press shakes. */
+#ui.touch-ui.portrait .slots .slot.pressed {
+  filter: brightness(1.35);
+  transform: scale(0.94);
+  box-shadow: 0 0 0 3px var(--ui-accent), inset 0 0 14px rgba(255, 170, 90, 0.55);
+}
+#ui.touch-ui.portrait .slots .slot.denied { animation: slot-denied 0.12s linear 1; border-color: #d9443a; }
+@keyframes slot-denied {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+/* The cooldown just ended: the ring flares and the button settles. */
+#ui.touch-ui.portrait .slots .slot.ready { animation: slot-ready 0.35s ease-out 1; }
+@keyframes slot-ready {
+  0% { transform: scale(1.08); box-shadow: 0 0 0 3px var(--ui-accent), 0 0 14px var(--ui-accent); }
+  100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 0, 0, 0.7); }
+}
+/* Locked auto-attack (double tap on attack): a solid ring and a padlock; tap again or dodge to release. */
+#ui.touch-ui.portrait .slots .slot.locked { box-shadow: 0 0 0 4px #ffb75a, 0 0 14px rgba(255, 183, 90, 0.7); }
+#ui.touch-ui.portrait .slots .slot.locked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 14px;
+  height: 11px;
+  margin-left: -7px;
+  border-radius: 2px;
+  background: #ffb75a;
+  box-shadow: 0 -5px 0 -3px #ffb75a, 0 -6px 0 -2px #ffb75a;
+  z-index: 2;
+}
+/* Empty slots: a dashed ring with a "+" at the arc position (tap opens Skills); gone while enemies are near.
+   The button keeps its full 46 px target; only the ring is smaller. */
+#ui.touch-ui.portrait .slots .slot[data-category='empty'] {
+  display: block;
+  opacity: 0.6;
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+#ui.touch-ui.portrait .slots .slot[data-category='empty']::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 2px dashed rgba(232, 200, 160, 0.7);
+}
+#ui.touch-ui.portrait .slots .slot[data-category='empty']::after {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  line-height: 1;
+  color: rgba(232, 200, 160, 0.85);
+}
+#ui.touch-ui.portrait.in-combat .slots .slot[data-category='empty'] { display: none; }
+/* Long-press tooltip above the cluster instead of at the (thumb-covered) button. */
+#ui.touch-ui.portrait .tooltip {
+  left: auto !important;
+  top: auto !important;
+  right: 8px;
+  bottom: calc(var(--cluster-h) + 8px);
+  transform: none;
+  max-width: min(260px, calc(100vw - 16px));
+  z-index: 46;
+}
+
+/* While a panel is open the stick sleeps and the skills fade; dodge and potion stay live. */
+#ui.touch-ui.portrait.touch-panel-open .touch-stick-zone,
+#ui.touch-ui.portrait.has-panel .touch-stick-zone { pointer-events: none; }
+#ui.touch-ui.portrait.touch-panel-open .slots .slot:nth-child(-n + 6),
+#ui.touch-ui.portrait.has-panel .slots .slot:nth-child(-n + 6) { opacity: 0.35; pointer-events: none; }
+#ui.touch-ui.portrait.touch-panel-open .slots .slot:nth-child(n + 7),
+#ui.touch-ui.portrait.has-panel .slots .slot:nth-child(n + 7) { opacity: 0.6; }
+#ui.touch-ui.portrait.touch-panel-open .slot-halo,
+#ui.touch-ui.portrait.has-panel .slot-halo { pointer-events: none; }
+
+/* ---- Menu row ---------------------------------------------------------------------------------------------------- */
+.touch-menu-btn[hidden] { display: none; }
+/* Three columns, two rows (44 px each): five panels and "more". A single row cannot fit beside the minimap at 320 wide.
+   hud.css chains the left column off --menu-h, so the doubled class makes this value win over its 44px default. */
+#ui.touch-ui.portrait.touch-ui { --menu-h: 92px; }
+#ui.touch-ui.portrait .touch-menu:not([hidden]) {
+  grid-template-columns: repeat(3, 44px);
+  gap: 4px;
+}
+#ui.touch-ui .touch-menu-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  transition: transform 0.08s ease-out, background 0.08s;
+}
+#ui.touch-ui.portrait .touch-menu-btn { width: 44px; height: 44px; }
+#ui.touch-ui .touch-menu-btn:active,
+#ui.touch-ui .touch-menu-btn.pressed {
+  transform: scale(0.92);
+  background: rgba(60, 50, 40, 0.9);
+  border-color: var(--ui-accent);
+  color: #fff;
+}
+/* Attention dot (unspent skill points, new quest step, new items). */
+.touch-menu-dot {
+  display: none;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffb75a;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7);
+}
+.touch-menu-btn.has-dot .touch-menu-dot { display: block; }
+/* The "more" button: three dots drawn in CSS. */
+.touch-menu-btn[data-testid='touch-menu-more'] .touch-menu-icon {
+  width: 22px;
+  height: 8px;
+  -webkit-mask: none;
+  mask: none;
+  background: radial-gradient(circle, currentColor 2.4px, transparent 2.9px) 0 50% / 33.34% 100% repeat-x;
+}
+.touch-menu-more:not([hidden]) {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 25;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(14, 12, 11, 0.94);
+  border: 1px solid var(--ui-border);
+}
+.touch-menu-more[hidden] { display: none; }
+
+/* ---- Death ----------------------------------------------------------------------------------------------------------
+   The overlay sits above the thumb buttons and swallows their taps; respawning is a deliberate button on touch. */
+.death-screen { z-index: 45; }
+#ui.touch-ui .death-screen h2 {
+  text-align: center;
+  font-size: clamp(26px, 8.5vw, 40px);
+  letter-spacing: 0.18em;
+  padding: 0 16px;
+}
+.death-respawn { display: none; }
+#ui.touch-ui .death-screen p { display: none; }
+#ui.touch-ui .death-respawn {
+  display: block;
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  height: 56px;
+  padding: 0 28px;
+  font: inherit;
+  font-size: 1.15em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ui-text);
+  background: rgba(20, 17, 15, 0.9);
+  border: 2px solid var(--ui-accent);
+  pointer-events: auto;
+}
+#ui.touch-ui .death-respawn:disabled { opacity: 0.45; border-color: var(--ui-border); }
+#ui.touch-ui .death-respawn:not(:disabled):active { transform: translateX(-50%) scale(0.96); background: rgba(60, 50, 40, 0.95); }
+#ui.touch-ui.dead .slots,
+#ui.touch-ui.dead .slots *,
+#ui.touch-ui.dead .touch-stick-zone { pointer-events: none; }
+#ui.touch-ui.dead .slots,
+#ui.touch-ui.dead .touch-stick-zone { opacity: 0.25; }
+#ui.touch-ui .slots, #ui.touch-ui .touch-stick-zone { transition: opacity 0.6s; }
+#ui.touch-ui.dead .orb,
+#ui.touch-ui.dead .touch-menu,
+#ui.touch-ui.dead .minimap,
+#ui.touch-ui.dead .quest-tracker { opacity: 0.35; transition: opacity 0.6s; }
+
+/* ---- Combat: the secondary HUD steps back while enemies are near, and returns 1.5 s after the last one ------------------ */
+#ui.touch-ui.portrait .touch-menu,
+#ui.touch-ui.portrait .quest-tracker,
+#ui.touch-ui.portrait .wave-tracker,
+#ui.touch-ui.portrait .endgame-stack { transition: opacity 0.3s ease 1.5s; }
+#ui.touch-ui.portrait.in-combat .touch-menu,
+#ui.touch-ui.portrait.in-combat .quest-tracker,
+#ui.touch-ui.portrait.in-combat .wave-tracker,
+#ui.touch-ui.portrait.in-combat .endgame-stack { opacity: 0.45; transition: opacity 0.3s ease 0s; }
+
+/* ---- Sliders: a 44 px touch row with a 28 px thumb ------------------------------------------------------------------ */
+#ui.touch-ui .sound-row input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+}
+#ui.touch-ui .sound-row input[type='range']::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: #3a322a; }
+#ui.touch-ui .sound-row input[type='range']::-moz-range-track { height: 6px; border-radius: 3px; background: #3a322a; }
+#ui.touch-ui .sound-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: var(--ui-accent);
+  border: 2px solid #14110f;
+}
+#ui.touch-ui .sound-row input[type='range']::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--ui-accent); border: 2px solid #14110f; }
+#ui.touch-ui .sound-row { gap: 14px; margin-bottom: 14px; }
+
+/* ---- Thumb-reach menu button (portrait): above the stick zone, opens the five panels as a vertical sheet ---------------- */
+.touch-fab { display: none; }
+@media (min-height: 700px) {
+#ui.touch-ui.portrait .touch-fab:not([hidden]) {
+  display: block;
+  position: absolute;
+  left: calc(var(--sal) + 8px);
+  /* Just above the stick zone (bottom 40dvh), as low as it can go so the left HUD column keeps the room above;
+     toasts and the interact prompt sit in the column to its right (hud.css, world.css). */
+  bottom: calc(var(--sab) + 40vh + 8px);
+  bottom: calc(var(--sab) + 40dvh + 8px);
+  z-index: 24;
+}
+}
+#ui.touch-ui.portrait.lefty .touch-fab:not([hidden]) { left: auto; right: calc(var(--sar) + 8px); }
+#ui.touch-ui .touch-fab * { pointer-events: auto; }
+#ui.touch-ui.portrait .touch-fab-btn { width: 52px; height: 52px; border-radius: 50%; }
+/* Three bars instead of an icon file. */
+#ui.touch-ui.portrait .touch-fab-btn .touch-menu-icon {
+  width: 22px;
+  height: 16px;
+  -webkit-mask: none;
+  mask: none;
+  background: linear-gradient(currentColor 0 0) 0 0 / 100% 3px no-repeat, linear-gradient(currentColor 0 0) 0 50% / 100% 3px no-repeat, linear-gradient(currentColor 0 0) 0 100% / 100% 3px no-repeat;
+}
+.touch-fab-sheet:not([hidden]) {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(14, 12, 11, 0.94);
+  border: 1px solid var(--ui-border);
+}
+.touch-fab-sheet[hidden] { display: none; }
+#ui.touch-ui.portrait.touch-panel-open .touch-fab,
+#ui.touch-ui.portrait.has-panel .touch-fab,
+#ui.touch-ui.dead .touch-fab { visibility: hidden; }

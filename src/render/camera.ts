@@ -27,6 +27,9 @@ const DEFAULTS: CameraRigOptions = {
 
 /** How far (as a fraction of the screen height) the picture is pushed up in portrait. */
 const PORTRAIT_SHIFT = 0.25;
+/** Short phone screens (under 700 px tall) keep the player lower: the HUD leaves little room above (H092). */
+const PORTRAIT_SHIFT_SHORT = 0.08;
+const SHORT_SCREEN_PX = 700;
 
 export interface AspectView {
   /** Vertical FOV of what is on screen, degrees. */
@@ -42,12 +45,13 @@ export interface AspectView {
 /**
  * Landscape keeps the base FOV. A portrait screen widens the vertical FOV (the horizontal view would
  * otherwise be a quarter of landscape), pulls the camera back a little, and slides the picture up so
- * the player sits about 38% from the top, clear of the thumbs on the lower third.
+ * the player sits about 38% from the top, clear of the thumbs on the lower third. Under 700 px of screen
+ * height the slide is smaller (about 46% from the top), so the HUD chrome does not sit on the player.
  */
-export function viewForAspect(aspect: number, baseFovDeg: number = DEFAULTS.fovDeg): AspectView {
+export function viewForAspect(aspect: number, baseFovDeg: number = DEFAULTS.fovDeg, screenHeightPx?: number): AspectView {
   if (!(aspect < 1)) return { fovDeg: baseFovDeg, fullFovDeg: baseFovDeg, distanceScale: 1, shift: 0 };
   const fovDeg = baseFovDeg + (1 - aspect) * 34;
-  const s = PORTRAIT_SHIFT;
+  const s = screenHeightPx !== undefined && screenHeightPx < SHORT_SCREEN_PX ? PORTRAIT_SHIFT_SHORT : PORTRAIT_SHIFT;
   const fullFovDeg = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(fovDeg) / 2) * (1 + s)));
   return { fovDeg, fullFovDeg, distanceScale: 1.15, shift: s };
 }
@@ -109,8 +113,8 @@ export class CameraRig {
   }
 
   /** Fit the projection to a screen aspect (width / height); portrait gets its own FOV, distance and framing. */
-  setAspect(aspect: number): void {
-    const view = viewForAspect(aspect, this.opts.fovDeg);
+  setAspect(aspect: number, screenHeightPx?: number): void {
+    const view = viewForAspect(aspect, this.opts.fovDeg, screenHeightPx);
     const ratio = view.distanceScale / this.distanceScale;
     this.distanceScale = view.distanceScale;
     this.distance *= ratio;

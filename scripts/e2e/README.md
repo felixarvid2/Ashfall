@@ -29,10 +29,11 @@ scenario that needs `import('/src/...')` (a module `window.ashfall` does not exp
 | Scenario | Viewport | What it does |
 |---|---|---|
 | `boot` | 1100x760 | Class select screenshot, then the in-game HUD. |
-| `portrait` | 390x844 touch | HUD, then opens and closes inventory, skills, map and quests through the touch menu (`touch-menu-<id>`, `.touch-close`), one screenshot each. Notes: action-bar slot rectangles and which panels stay open after closing. |
+| `portrait` | 390x844 touch | HUD, then opens and closes inventory, skills, map and quests through the touch menu (`touch-menu-<id>`, the panel header's `panel-close`), one screenshot each. Notes: action-bar slot rectangles and which panels stay open after closing. |
 | `tooltip` | 390x844 touch | Taps an equipped item and a skill-tree node; notes the visible `.item-tooltip` class and rect. |
 | `instance` | 1100x760 | `--poi` (default `dungeon.drainage`): `enterInstance`, screenshot, `exitInstance`. Fails on an unknown poi and lists the valid ones. |
 | `zone` | 1100x760 | `--zone <id>` (for example `zone.deep_mines` or `zone.the_core`, required; `--at x,z` picks where to stand, default 0,0): `enterZone(id, x, z)`, kills enemies, zooms in, hides the HUD, screenshot. |
+| `panels` | 390x844 touch | The shared panel framework: inventory, Back (`history`), the bottom tab bar, the header close button (`panel-close`, size), the settings panel and Escape. Notes: root classes, open panels and close button sizes after each step. |
 | `landscape` | 844x390 touch | HUD screenshot in landscape. |
 | `audio` | 1280x720 | Chromium with `--autoplay-policy=no-user-gesture-required`; fight, sound panel, `enterZone('zone.deep_mines')`, mute, reload. Notes: `audioDebug` snapshots, `/assets/audio/` 4xx responses, stored settings. Add `--mobile --viewport 390x844` for the touch menu. |
 

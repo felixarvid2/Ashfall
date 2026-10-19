@@ -197,6 +197,11 @@ export class DevTools {
     this.moveSelect.value = mode;
   }
 
+  /** Shows or hides the FPS meter (the settings panel's Display tab). */
+  setShowFps(on: boolean): void {
+    this.fpsEl.hidden = !on;
+  }
+
   /** Call once per rendered frame with real elapsed seconds. */
   frame(frameDt: number, info: () => DebugInfo): void {
     this.frames++;

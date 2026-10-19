@@ -918,18 +918,6 @@ html.touch-device .hint-mouse { display: none; }
 #ui.touch-ui.portrait .map-canvas { width: calc(100vw - 24px); }
 #ui.touch-ui.portrait .dialogue-panel { top: auto; bottom: calc(var(--sab) + 6px); max-height: 60vh; }
 
-/* Close button over a panel (portrait only: the landscape menu stays visible beside the panels). */
-.touch-close { display: none; }
-#ui.touch-ui.portrait.touch-panel-open .touch-close:not([hidden]) {
-  display: grid;
-  position: absolute;
-  top: calc(var(--sat) + 8px);
-  right: calc(var(--sar) + 10px);
-  z-index: 40;
-  pointer-events: auto;
-}
-#ui.touch-ui.portrait .touch-close * { pointer-events: none; }
-
 /* Character select in portrait: cards stacked, the screen scrolls. */
 @media (orientation: portrait) {
   .char-select { padding-top: max(3vh, env(safe-area-inset-top)); padding-bottom: 48px; }
@@ -1071,12 +1059,8 @@ html.touch-device .hint-mouse { display: none; }
   -webkit-mask: var(--icon) center / contain no-repeat;
   mask: var(--icon) center / contain no-repeat;
 }
-.sound-panel { top: auto; bottom: 56px; right: 14px; width: 228px; max-height: none; z-index: 60; }
-.sound-panel.muted .sound-row { opacity: 0.5; }
 .sound-row { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 10px; margin: 0 0 10px; font-size: 0.9em; }
 .sound-row input[type='range'] { width: 100%; accent-color: var(--ui-accent); cursor: pointer; }
-.sound-close { font: inherit; padding: 4px 14px; cursor: pointer; border: 1px solid var(--ui-border); background: #24201c; color: var(--ui-text); letter-spacing: 0.1em; }
-#ui.touch-ui .sound-panel { top: 54px; bottom: auto; right: 8px; width: 260px; }
 
 /* The ending: epilogue card and credits */
 .epilogue { position: absolute; inset: 0; z-index: 60; pointer-events: auto; display: flex; align-items: center; justify-content: center; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #2a2340 0%, #0c0a14 70%, #050409 100%); color: var(--ui-text); }
