@@ -29,21 +29,22 @@
   border-radius: 50%;
 }
 #ui.touch-ui .interact-key.interact-tap::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #ffd27a; }
-/* Upright phone: docked above the thumbs, clear of the stick zone (bottom 40dvh), the skill arc and the
-   toast band that sits right on the stick zone (hud.css), so a toast never covers the prompt. */
+/* Upright phone: docked above the thumbs, in the column right of the menu button (controls.css), clear of the skill
+   arc. Toasts normally sit at the same height; while the prompt is up they stack above it (hud.css). */
+#ui.touch-ui.portrait { --prompt-bottom: calc(var(--sab) + max(40dvh + 8px, 254px)); }
 #ui.touch-ui.portrait .interact-prompt.docked {
   left: calc(var(--sal) + 68px); /* right of the menu button */
   right: auto;
   top: auto;
-  bottom: calc(var(--sab) + max(40dvh + 10px, 254px));
+  bottom: var(--prompt-bottom);
   max-width: calc(100% - var(--sal) - var(--sar) - 76px);
   white-space: normal;
   line-height: 1.2;
   transform: none;
   z-index: 6;
 }
-/* Tall phones have room to lift it above the toast band; short ones keep it just under the hero. */
-@media (min-height: 760px) { #ui.touch-ui.portrait .interact-prompt.docked { bottom: calc(var(--sab) + 40dvh + 62px); } }
+/* Left-handed: the menu button is on the right, so the prompt starts at the left edge. */
+#ui.touch-ui.portrait.lefty .interact-prompt.docked { left: calc(var(--sal) + 8px); }
 /* Name plates over NPCs are buttons on touch (walk to the NPC and talk). */
 #ui.touch-ui .npc-plate.tappable { pointer-events: auto; min-height: 44px; min-width: 64px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
 #ui.touch-ui .npc-plate.tappable .npc-name { font-size: 13px; }
@@ -67,7 +68,8 @@
 
 /* ---- Loot labels (H037-H042) ----------------------------------------------------- */
 /* Labels stay between the top chrome and the thumb controls. */
-#ui.touch-ui.portrait .loot-labels { clip-path: inset(calc(var(--sat) + 190px) 0 calc(var(--sab) + 270px) 0); }
+/* The band starts below the top chrome and below the left HUD column (--left-bottom, hud.ts), up to 42dvh. */
+#ui.touch-ui.portrait .loot-labels { clip-path: inset(max(calc(var(--sat) + 190px), min(var(--left-bottom, 0px), 42dvh)) 0 calc(var(--sab) + 270px) 0); }
 #ui.touch-ui .loot-label {
   display: block;
   box-sizing: border-box;

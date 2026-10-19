@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DOT_MIN_SHARE, TOUCH_MAX, dotWorthShowing } from '../src/ui/damageNumbers';
-import { TOUCH_MAX_LABELS, chooseLabels, clampLabelX, labelSlots, stackLabels } from '../src/ui/lootLabels';
-import { MAP_MAX_ZOOM, PICK_RADIUS_PX, centerOn, clampZoom, pickNearest, zoomAround } from '../src/ui/minimap';
+import { TOUCH_MAX_LABELS, chooseLabels, clampLabelX, fitBand, labelSlots, stackLabels } from '../src/ui/lootLabels';
+import { MAP_MAX_ZOOM, PICK_RADIUS_PX, centerOn, clampZoom, focusZoom, pickNearest, zoomAround } from '../src/ui/minimap';
 
 describe('loot labels on a phone', () => {
   const pile = (n: number) => Array.from({ length: n }, (_, i) => ({ key: i, dist: i + 1, always: false }));
@@ -50,6 +50,19 @@ describe('loot labels on a phone', () => {
     expect(stacked[0]! - stacked[1]!).toBeGreaterThanOrEqual(44);
     expect(stacked[1]! - stacked[2]!).toBeGreaterThanOrEqual(44);
   });
+
+  it('brings a pile that grew past the top of the band back inside it', () => {
+    // Band 330-510, label height 44: three labels bottomed at 360, 316, 272 would reach above it.
+    const ys = fitBand([360, 316, 272], 44, 330, 510);
+    expect(Math.min(...ys) - 44).toBeGreaterThanOrEqual(330);
+    expect(Math.max(...ys)).toBeLessThanOrEqual(510);
+    // The order on screen is kept: the label that was highest is still highest.
+    expect(ys[2]!).toBeLessThan(ys[1]!);
+    expect(ys[1]!).toBeLessThan(ys[0]!);
+    // A pile that fits is left alone, and an empty one is fine.
+    expect(fitBand([420, 376], 44, 330, 510)).toEqual([420, 376]);
+    expect(fitBand([], 44, 330, 510)).toEqual([]);
+  });
 });
 
 describe('damage numbers on a phone', () => {
@@ -95,6 +108,18 @@ describe('full map picking and zoom', () => {
     expect(s.tx).toBe(0);
     expect(s.ty).toBe(size - size * MAP_MAX_ZOOM);
     expect(clampZoom({ z: 0.3, tx: -40, ty: -40 }, size)).toEqual({ z: 1, tx: 0, ty: 0 });
+  });
+
+  it('opening on a spot (quest log, world boss row) zooms in and centres it, clamped at the canvas edge', () => {
+    const size = 400;
+    const mid = focusZoom(220, 180, size);
+    expect(mid.z).toBeGreaterThan(1);
+    expect(mid.tx + 220 * mid.z).toBeCloseTo(200);
+    expect(mid.ty + 180 * mid.z).toBeCloseTo(200);
+    // A spot in the corner cannot be centred: the canvas stays covering the viewport.
+    const corner = focusZoom(5, 395, size);
+    expect(corner.tx).toBe(0);
+    expect(corner.ty).toBe(size - size * corner.z);
   });
 
   it('locate centres a point', () => {

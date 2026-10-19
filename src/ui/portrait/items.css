@@ -25,7 +25,7 @@
 
 /* ---- Inventory: summary in the header, toolbar, chips, banners, selection bar (P048-P051) -------------------- */
 .inv-gold { display: flex; align-items: baseline; justify-content: flex-end; gap: var(--space-2); }
-.panel-header-extra .inv-gold { margin: 0; white-space: nowrap; font-size: var(--fs-small); }
+.panel-header-extra .inv-gold { margin: 0; white-space: nowrap; font-size: max(var(--fs-min, 12px), var(--fs-small)); }
 .inv-count { color: var(--ui-muted); font-variant-numeric: tabular-nums; }
 .inv-count.full { color: #ff6a5a; font-weight: 700; }
 
@@ -43,7 +43,8 @@
 .inv-tool[hidden] { display: none; }
 .inv-chips { display: flex; gap: var(--space-1); min-width: 0; flex: 1 1 100%; overflow-x: auto; scrollbar-width: thin; }
 .inv-chip { flex: none; padding: 2px var(--space-2); font-size: var(--fs-label); border-radius: 999px; }
-#ui.touch-ui .inv-tool, #ui.touch-ui .inv-chip { padding: 4px var(--space-3); font-size: var(--fs-small); }
+#ui.touch-ui .inv-tool, #ui.touch-ui .inv-chip { padding: 4px var(--space-3); font-size: var(--fs-small); min-width: var(--tap-min); }
+#ui.touch-ui .char-row { min-height: var(--tap-min); }
 .inv-sort-menu {
   position: absolute;
   top: 100%;
@@ -302,3 +303,22 @@
 @media (orientation: landscape) and (max-width: 900px) {
   #ui.touch-ui .inv-tool, #ui.touch-ui .inv-chip { min-height: var(--tap-min); }
 }
+
+/* ---- Long press shows itself (P045): the cell settles and a ring fills above the finger ---------------------------- */
+@property --hold-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes hold-fill { 0% { --hold-a: 0deg; opacity: 0; } 25% { opacity: 1; } 100% { --hold-a: 360deg; opacity: 1; } }
+.hold-ring {
+  position: fixed;
+  z-index: 70;
+  width: 28px;
+  height: 28px;
+  margin: -52px 0 0 -14px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(var(--ui-accent) var(--hold-a), rgba(0, 0, 0, 0.55) 0);
+  -webkit-mask: radial-gradient(circle, transparent 8px, #000 9px);
+  mask: radial-gradient(circle, transparent 8px, #000 9px);
+  animation: hold-fill var(--hold-ms, 450ms) linear forwards;
+}
+#ui.touch-ui .inv-cell.pressing, #ui.touch-ui .tree-slot.pressing { transform: scale(0.94); }
+@media (prefers-reduced-motion: reduce) { .hold-ring { animation: none; --hold-a: 360deg; } }

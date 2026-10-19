@@ -462,6 +462,14 @@ export class Hud {
     this.leftColumn.className = 'hud-left';
     this.leftColumn.append(this.target, this.buffBar, this.flares, this.eventBox, wave);
     root.append(title, bar, this.leftColumn, this.levelChip, this.bossCard, this.banner, this.death, this.tooltip, this.exposure);
+    // Portrait: where the left column ends goes to the CSS (--left-bottom), so loot labels pile up below it.
+    if (typeof ResizeObserver !== 'undefined') {
+      const col = this.leftColumn;
+      new ResizeObserver(() => {
+        if (root.classList.contains('portrait') && col.offsetHeight > 0) root.style.setProperty('--left-bottom', `${col.offsetTop + col.offsetHeight}px`);
+        else root.style.removeProperty('--left-bottom');
+      }).observe(col);
+    }
     // A tap on the minimap brings the region label back (H067).
     root.addEventListener('pointerdown', (e) => {
       if ((e.target as Element | null)?.closest?.('.minimap')) this.revealLabel();

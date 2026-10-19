@@ -68,6 +68,23 @@ export function stackLabels(items: { x: number; y: number; w: number }[], h: num
   return out;
 }
 
+/**
+ * A pile that grew past the top of the band (the left HUD column can leave little room) goes back inside it:
+ * labels keep their order and hang from the band's top edge, one step apart, no lower than `bottom`.
+ * `ys` are label bottoms (the labels are drawn upward from them), as `stackLabels` returns.
+ */
+export function fitBand(ys: number[], h: number, top: number, bottom: number): number[] {
+  const order = ys.map((_, i) => i).sort((a, b) => ys[a]! - ys[b]!);
+  if (order.length === 0 || ys[order[0]!]! - h >= top) return ys;
+  const out = [...ys];
+  let y = top + h;
+  for (const i of order) {
+    out[i] = Math.min(bottom, y);
+    y += h + GAP;
+  }
+  return out;
+}
+
 /** Touch label height (world.css) and the room a label band needs per label. */
 const TOUCH_LABEL_H = 44;
 
@@ -102,9 +119,11 @@ export class LootLabels {
   /** The strip of the screen the labels may use: the layer minus the insets of its clip-path (world.css). */
   private labelBand(): { top: number; bottom: number } {
     const height = this.layer.clientHeight || window.innerHeight;
-    if (this.band.key !== String(height)) {
+    // The top of the band follows the left HUD column (hud.ts sets --left-bottom as it grows and shrinks).
+    const key = `${height}|${this.root.style.getPropertyValue('--left-bottom')}`;
+    if (this.band.key !== key) {
       const m = /inset\(([\d.]+)px\s+[\d.]+px\s+([\d.]+)px/.exec(getComputedStyle(this.layer).clipPath);
-      this.band = { top: m ? Number(m[1]) : 0, bottom: height - (m ? Number(m[2]) : 0), key: String(height) };
+      this.band = { top: m ? Number(m[1]) : 0, bottom: height - (m ? Number(m[2]) : 0), key };
     }
     return this.band;
   }
@@ -191,7 +210,8 @@ export class LootLabels {
     const height = touch ? TOUCH_LABEL_H : 19;
     // On touch the pile stays inside the band (the layer is clipped to it), growing upward from its lowest label.
     if (band) for (const p of pending) p.y = Math.min(band.bottom, Math.max(band.top + height, p.y));
-    const ys = stackLabels(pending, height);
+    const stacked = stackLabels(pending, height);
+    const ys = band ? fitBand(stacked, height, band.top, band.bottom) : stacked;
     const width = this.layer.clientWidth || window.innerWidth;
     pending.forEach((p, i) => {
       const x = clampLabelX(p.x, p.w, width);

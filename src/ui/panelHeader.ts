@@ -93,7 +93,7 @@ function installSwipe(header: HTMLElement, panel: HTMLElement, onClose: () => vo
 /** Gives a registered panel its header: its own `<h2>` becomes the title, old close buttons go. */
 export function adoptHeader(spec: PanelSpec, dismiss: () => void): void {
   const { el } = spec;
-  for (const old of el.querySelectorAll('.service-close, .sound-close')) old.remove();
+  for (const old of el.querySelectorAll('.service-close')) old.remove();
   const own = [...el.children].find((c) => c.tagName === 'H2') as HTMLElement | undefined;
   const header = panelHeader(own ?? spec.title ?? spec.id, dismiss, { panel: el });
   el.prepend(header);

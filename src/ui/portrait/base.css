@@ -96,7 +96,7 @@ html, body { overscroll-behavior: none; }
 #ui .panel > .panel-top-wrap { display: block; flex: none; min-height: 0; }
 #ui .panel > .panel-tip { display: flex; flex-direction: row; flex: none; min-height: 0; }
 /* The old per-panel close controls are replaced by the header's. */
-.panel.has-header .service-close, .panel.has-header .sound-close { display: none; }
+.panel.has-header .service-close { display: none; }
 #ui.touch-ui.portrait .map-panel .panel-header { margin: -5px -5px var(--space-2); padding: 5px; }
 
 #ui.touch-ui .panel-header { touch-action: none; padding-top: 14px; }
@@ -433,6 +433,8 @@ button.armed { background: #3a2410 !important; border-color: var(--ui-accent) !i
 #ui.touch-ui:not(.portrait) .quest-tracker { top: calc(var(--sat) + 8px); right: calc(var(--sar) + 128px); width: 180px; }
 #ui.touch-ui:not(.portrait) .wave-tracker { top: calc(var(--sat) + 56px); left: calc(var(--sal) + 8px); right: auto; text-align: left; }
 #ui.touch-ui:not(.portrait) .target-frame { top: calc(var(--sat) + 56px); }
+/* The endgame rows start under the region label (two lines, 56-96) instead of on top of it. */
+#ui.touch-ui:not(.portrait) .endgame-stack { top: calc(var(--sat) + 100px); }
 #ui.touch-ui:not(.portrait) .toast-stack { top: calc(var(--sat) + 56px); }
 #ui.touch-ui:not(.portrait) .event-box { top: calc(var(--sat) + 100px); }
 #ui.touch-ui:not(.portrait) .buff-bar { bottom: calc(var(--sab) + 90px); }
@@ -449,7 +451,6 @@ button.armed { background: #3a2410 !important; border-color: var(--ui-accent) !i
   .char-select { padding-bottom: max(48px, calc(var(--sab) + 32px)); padding-left: var(--sal); padding-right: var(--sar); }
 }
 .lore-panel { padding-bottom: max(12px, var(--sab)); }
-#ui.touch-ui .sound-panel { top: calc(var(--sat) + 54px); }
 .death-screen { padding-top: var(--sat); padding-bottom: var(--sab); }
 
 /* ---- Paused by an open menu (settings: pause in menus) --------------------------------------------------- */

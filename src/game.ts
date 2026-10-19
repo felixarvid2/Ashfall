@@ -167,7 +167,7 @@ import { CoachMarks } from './ui/onboarding';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
-import { worldBossMarker, worldBossRuntime, worldBossSystem } from './world/worldBoss';
+import { activeWorldBoss, worldBossMarker, worldBossRuntime, worldBossSystem } from './world/worldBoss';
 import { WorldBossHud } from './ui/worldBossHud';
 import { EndgameStack } from './ui/endgameStack';
 import { EdgeArrow, placeEdgeArrow } from './ui/edgeArrows';
@@ -428,9 +428,11 @@ export class Game {
         if (this.ctx.quests) this.ctx.quests.tracked = id;
       },
       {
-        // The map shows the quest markers; it opens only if it is closed (the key toggles it).
-        showOnMap: () => {
-          if (!this.mapUi.open) this.input.pressAction('map');
+        // The map opens centred on the quest's marker (or plain, when the step has none).
+        showOnMap: (id) => {
+          const m = questMarkers(this.world, this.ctx).find((q) => q.quest === id);
+          if (m && !this.ctx.instance) this.mapUi.openAt(m.x, m.z);
+          else if (!this.mapUi.open) this.input.pressAction('map');
         },
         openMap: () => {
           if (!this.mapUi.open) this.input.pressAction('map');
@@ -594,7 +596,12 @@ export class Game {
     this.endgameChip = new EndgameStack(
       endgameStack,
       { rift: this.riftHudUi.element, worldBoss: this.worldBossHud.element, harvest: this.harvestHud.element },
-      () => this.input.pressAction('map'),
+      () => {
+        // The world boss row: the map, on the boss's spot (in whichever region it is).
+        const st = activeWorldBoss(this.ctx);
+        if (st && !this.ctx.instance) this.mapUi.openAt(st.event.spot.x, st.event.spot.z, st.event.spot.zone);
+        else if (!this.mapUi.open) this.input.pressAction('map');
+      },
     );
     this.servicePanel.onToggle = (open) => {
       if (open) {

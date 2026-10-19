@@ -263,6 +263,14 @@
   line-clamp: 2;
   overflow: hidden;
 }
+/* Beside the menu button (controls.css shows it from 700 px tall), in the same column as the interact prompt. */
+@media (min-height: 700px) {
+  #ui.touch-ui.portrait:not(.has-panel):not(.has-sheet) .toast-stack { left: calc(var(--sal) + 68px); }
+  #ui.touch-ui.portrait.lefty:not(.has-panel):not(.has-sheet) .toast-stack { left: calc(var(--sal) + 8px); right: calc(var(--sar) + 68px); }
+}
+/* While the interact prompt is up the toasts stack above it (world.css sets --prompt-bottom), two at most. */
+#ui.touch-ui.portrait:not(.has-panel):not(.has-sheet):has(.interact-prompt.docked:not([hidden])) .toast-stack { bottom: calc(var(--prompt-bottom) + var(--prompt-h, 52px) + 6px); }
+#ui.touch-ui.portrait:not(.has-panel):not(.has-sheet):has(.interact-prompt.docked:not([hidden])) .toast-stack > .toast:not(:nth-last-child(-n + 2)) { display: none; }
 /* The centre banner sits just under the hero, on a scrim, above toasts and loot labels. */
 #ui.touch-ui.portrait .center-banner {
   top: 48%;

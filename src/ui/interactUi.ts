@@ -26,6 +26,12 @@ export class InteractPrompt {
     // Touch controls make the prompt a button (clickable only in the touch layout, see style.css).
     this.el.addEventListener('click', onTap);
     root.appendChild(this.el);
+    // The prompt can wrap to two lines; the toasts that stack above it need its real height (--prompt-h, hud.css).
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(() => {
+        if (this.el.offsetHeight > 0) root.style.setProperty('--prompt-h', `${this.el.offsetHeight}px`);
+      }).observe(this.el);
+    }
   }
 
   /** Show the prompt for an object at (x, z), or hide it with `null`. */

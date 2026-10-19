@@ -31,6 +31,9 @@ const POI_STYLE: Partial<Record<PoiKind, { color: string; r: number; shape: 'dot
 /** A tap on the full map snaps to a discovered teleporter within this many CSS px (P077). */
 export const PICK_RADIUS_PX = 28;
 export const MAP_MAX_ZOOM = 4;
+/** `openAt`: how far the map zooms in on the spot, and how long its ring pulses. */
+const FOCUS_ZOOM = 2.5;
+const FOCUS_MS = 4000;
 
 /** The id of the point nearest to (x, y) within `radius`, or null. Units are whatever the caller uses (canvas px). */
 export function pickNearest(points: { id: string; x: number; y: number }[], x: number, y: number, radius: number): string | null {
@@ -71,6 +74,11 @@ export function zoomAround(s: MapZoom, z: number, cx: number, cy: number, size: 
 /** Pans/zooms so the canvas point (px, py) (unzoomed CSS px) sits in the middle of the viewport. */
 export function centerOn(s: MapZoom, px: number, py: number, size: number): MapZoom {
   return clampZoom({ z: s.z, tx: size / 2 - px * s.z, ty: size / 2 - py * s.z }, size);
+}
+
+/** The zoom `MapUi.openAt` starts from: FOCUS_ZOOM, with the canvas point (px, py) (unzoomed CSS px) in the middle. */
+export function focusZoom(px: number, py: number, size: number): MapZoom {
+  return centerOn({ z: FOCUS_ZOOM, tx: 0, ty: 0 }, px, py, size);
 }
 
 export interface MapMarker {
@@ -132,6 +140,8 @@ export class MapUi {
   private miniK = 1;
   private fullK = 1;
   private footerKey = '';
+  /** A spot the map was opened on (quest log, world boss row): zoomed to and ringed until `until`. */
+  private focus: { x: number; z: number; zone: string; until: number } | null = null;
   /** Tapping the minimap (touch) opens the full map. */
   onMiniTap: () => void = () => {
     if (!this.instance()) this.toggle();
@@ -229,6 +239,7 @@ export class MapUi {
   toggle(): void {
     this.full.hidden = !this.full.hidden;
     this.selected = null;
+    this.focus = null;
     this.resetZoom();
     const current = this.zone()?.def.id ?? '';
     const last = MapUi.remembered;
@@ -239,6 +250,56 @@ export class MapUi {
       this.drawFull();
       this.tabFades();
     }
+  }
+
+  /**
+   * Opens the full map (or re-aims it when open) on a world point: zoomed in, centred, with a ring that pulses for a
+   * few seconds. `zone` is the region the point is in (default: the current one). Does nothing inside a dungeon.
+   */
+  openAt(x: number, z: number, zone?: string): void {
+    if (this.instance()) return;
+    const current = this.zone()?.def.id ?? '';
+    const target = zone ?? current;
+    if (!this.open) this.toggle();
+    this.viewing = target === current ? null : target;
+    MapUi.remembered = { viewing: target, current };
+    this.selected = null;
+    this.focus = { x, z, zone: target, until: performance.now() + FOCUS_MS };
+    this.buildTabs();
+    this.focusNow();
+    // The panel stack may still be re-flowing the screen (closing the panel this one replaces): centre again once it has.
+    requestAnimationFrame(() => this.focusNow());
+  }
+
+  private focusNow(): void {
+    const f = this.focus;
+    const zone = this.shown();
+    if (!f || !this.open || !zone || zone.def.id !== f.zone) return;
+    const [sx, sy] = project(this.fullView(zone), f.x, f.z);
+    const size = this.viewSize();
+    const k = size / MAP_SIZE;
+    this.zoom = focusZoom(sx * k, sy * k, size);
+    this.applyZoom();
+    this.drawFull();
+  }
+
+  /** The ring around the spot the map was opened on. */
+  private drawFocus(c: CanvasRenderingContext2D, zone: ZoneRuntime, v: View): void {
+    const f = this.focus;
+    if (!f) return;
+    if (performance.now() > f.until) {
+      this.focus = null;
+      return;
+    }
+    if (f.zone !== zone.def.id) return;
+    const k = this.fullK;
+    const [sx, sy] = project(v, f.x, f.z);
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 160);
+    c.strokeStyle = '#fff';
+    c.lineWidth = 2.5 * k;
+    c.beginPath();
+    c.arc(sx, sy, (15 + 5 * pulse) * k, 0, Math.PI * 2);
+    c.stroke();
   }
 
   /** The zone the full map shows. */
@@ -394,6 +455,7 @@ export class MapUi {
       this.arrow(c, sx, sy, p.facing, 9 * k);
     }
     this.drawSelected(c, zone, v);
+    this.drawFocus(c, zone, v);
     const chips = [t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) }), this.extraInfo(zone), this.harvest?.active.zoneId === zone.def.id ? t('harvest.mapRegion') : ''].filter(Boolean);
     this.updateFooter(chips, touchText('map.travel'));
   }

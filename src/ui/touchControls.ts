@@ -58,7 +58,7 @@ const TOGGLE_PANELS: { selector: string; action: Action }[] = [
   { selector: '.quest-log', action: 'quests' },
 ];
 /** Panels that also count as "a panel is open" (they cover the HUD) and close through their own button. */
-const OTHER_PANELS = ['.sound-panel', '.service-panel', '.tier-panel', '.rift-panel', '.dialogue-panel', '.lore-panel'];
+const OTHER_PANELS = ['.service-panel', '.tier-panel', '.rift-panel', '.dialogue-panel', '.lore-panel'];
 
 /** Joystick travel in CSS pixels at full deflection. */
 export const STICK_RADIUS = 56;
@@ -586,9 +586,19 @@ export class TouchControls {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let start = { x: 0, y: 0 };
     let fired = false;
+    // The hold shows itself (P045): the cell shrinks a little and a ring fills above the finger over LONG_PRESS.
+    let held: Element | null = null;
+    let ring: HTMLElement | null = null;
+    const clearHold = () => {
+      held?.classList.remove('pressing');
+      held = null;
+      ring?.remove();
+      ring = null;
+    };
     const cancel = () => {
       if (timer) clearTimeout(timer);
       timer = null;
+      clearHold();
     };
     const onDown = (e: PointerEvent) => {
       if (!this.active || e.pointerType !== 'touch') return;
@@ -597,8 +607,18 @@ export class TouchControls {
       fired = false;
       start = { x: e.clientX, y: e.clientY };
       cancel();
+      held = target.closest('.inv-cell, .tree-slot');
+      if (held) {
+        held.classList.add('pressing');
+        ring = Object.assign(document.createElement('div'), { className: 'hold-ring' });
+        ring.style.left = `${e.clientX}px`;
+        ring.style.top = `${e.clientY}px`;
+        ring.style.setProperty('--hold-ms', `${LONG_PRESS}ms`);
+        this.root.append(ring);
+      }
       timer = setTimeout(() => {
         timer = null;
+        clearHold();
         fired = true;
         target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: start.x, clientY: start.y }));
         haptic('longPress');

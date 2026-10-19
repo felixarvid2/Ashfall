@@ -378,8 +378,10 @@
   display: block;
   position: absolute;
   left: calc(var(--sal) + 8px);
-  bottom: calc(var(--sab) + 46vh + 10px);
-  bottom: calc(var(--sab) + 46dvh + 10px);
+  /* Just above the stick zone (bottom 40dvh), as low as it can go so the left HUD column keeps the room above;
+     toasts and the interact prompt sit in the column to its right (hud.css, world.css). */
+  bottom: calc(var(--sab) + 40vh + 8px);
+  bottom: calc(var(--sab) + 40dvh + 8px);
   z-index: 24;
 }
 }
