@@ -62,3 +62,10 @@ the reading, running and writing and return short reports.
 - Paid generation (Meshy API stages, `npm run art:generate` / `vfx:generate`) is never delegated:
   the main session states the cost, gets the user's go-ahead, and runs it.
 - `shipper` merges a pull request only when told that the user approved that merge.
+
+## Skills
+
+Project skills live in `.claude/skills/` (copies of the general ones are in felixarvid2/claude-skills):
+`ashfall-region-pipeline` (how a region or phase is built), `parallel-subagent-builds`,
+`claude-artifact-game-publish`, `headless-browser-game-checks`, `mobile-portrait-game-ui`,
+`free-game-asset-pipeline` and `cloud-session-github-ops`.
