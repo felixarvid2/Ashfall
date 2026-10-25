@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 /** The Neural Matrix view against a real DOM, wired to the real matrix rules like the game does (C06). */
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { GLYPHS } from '../src/data/endgame/matrix';
 import type { GameContext } from '../src/core/context';
 import * as matrix from '../src/systems/endgame/matrix';
 import { MatrixPanel } from '../src/ui/matrixPanel';
@@ -23,7 +24,7 @@ beforeEach(() => {
   ctx = makeCtx();
   matrix.ensureMatrixStarted(ctx);
   matrix.grantMatrixXp(ctx, 400000);
-  matrix.grantGlyph(ctx, matrix.glyphReports(matrix.ensureEndgame(ctx))[0]?.id ?? 'glyph.ember', false);
+  for (const g of GLYPHS.slice(0, 2)) matrix.grantGlyph(ctx, g.id, false);
   panel = new MatrixPanel(
     stackRoot,
     () => ({ endgame: matrix.ensureEndgame(ctx), gold: 1_000_000 }),
