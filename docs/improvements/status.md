@@ -6,26 +6,26 @@ Totals: done 84, partial 16, skipped 0.
 
 Not verifiable headless: zone change took 8.7 s on the first load of Hydroponic Vaults, and respawn took about 12 s under software rendering (about 1 fps). Check both on real hardware. Also unchecked: audio feel, telegraph visibility and slow-mo (not triggered in the test).
 
-Partial, or changed from the spec:
+Partial, or changed from the spec (updated after the polish pass; 14 of the 16 are now done):
 
 | ID | Status | Note |
 |---|---|---|
-| G007 | partial | Heal casts per minute target met. Devotion at L30 is 76 against a 60 target. |
-| G009 | partial | Lightbearer flat passives are not converted to % stats. |
-| G013 | partial | Furnace Cleave meets 10:30 on one seed only. |
-| G014 | partial | Heat Vent build reaches 744 against an 800 goal. |
-| C004 | partial | One new unique per class on gloves, ring and amulet, not two. |
-| T005 | partial | Entry chunk split into 7; panels still load eagerly. |
-| T015 | partial | Sync reuse only; no skipping of static props. |
-| T017 | partial | Most per-frame allocations removed; enemy bar info objects remain. |
-| T022 | partial | 7 new test files; no coverage run. |
-| T024 | partial | `noUnusedLocals` and `noUnusedParameters` on; `exactOptionalPropertyTypes` and dead exports left. |
-| T025 | partial | `localPrefs` and an rng for minions; module-level AI state and silent catches left. |
-| F004 | partial | No recommended-node ring. |
-| F018 | partial | No silhouette for occluded enemies. |
-| F019 | partial | No minimap pip colours. |
-| F020 | partial | No loot magnet. |
-| F025 | partial | First-quest toast is generic. |
+| G007 | done (polish) | L30 healer Devotion 78 → 59 (Devout and Piety gain). |
+| G009 | done (polish) | Vigil, Consecrated Mail and Sacred Oath are percentage stats. |
+| G013 | done (polish) | Furnace Cleave reach 3.9 m; L10 8:26–9:37 on four seeds. |
+| G014 | done (polish) | Heat Vent 0.15 per Heat; vent build 744 → 816. |
+| C004 | done (polish) | Four more uniques (gloves/rings), two per class in total. |
+| T005 | partial | Entry chunk split into 7; services, Neural Matrix and epilogue load lazily (−12 kB gzip); skill tree, map, settings and character still eager. |
+| T015 | done (polish) | Static props placed once and culled on focus moves (1.4 → 0.4 ms/frame at 3,749 entities). |
+| T017 | done (polish) | Enemy bar infos, blips and affix lists come from a frame pool. |
+| T022 | done (polish) | `npm run coverage`: 54 % statements. |
+| T024 | partial | Flags on, 7 dead exports removed, `CaveSource` type; `exactOptionalPropertyTypes` left (56 errors). |
+| T025 | done (polish) | AI state per context; silent catches 43 → 32, the rest commented. |
+| F004 | done (polish) | Recommended first node ring. |
+| F018 | done (polish, simpler cue) | A ring under enemies hidden by tall props; no silhouette pass. |
+| F019 | done (polish) | Minimap pips per interactable kind. |
+| F020 | done (polish) | Gold and crystals within 2.5 m fly to the player. |
+| F025 | done (polish) | First quest shows the reward summary. |
 
 Behaviour changes to note:
 
