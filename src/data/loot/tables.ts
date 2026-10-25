@@ -58,6 +58,8 @@ export const CRYSTALS: z.input<typeof CrystalDefSchema>[] = [
 export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   { id: 'dt.infected_colonist', itemChance: 0.12, goldChance: 0.35, gold: [1, 3], crystalChance: 0.015, xp: 12 },
   { id: 'dt.security_drone', itemChance: 0.16, goldChance: 0.4, gold: [1, 4], crystalChance: 0.02, xp: 14 },
+  { id: 'dt.ash_thrower', itemChance: 0.13, goldChance: 0.35, gold: [1, 3], crystalChance: 0.015, xp: 13 },
+  { id: 'dt.rust_drone', itemChance: 0.14, goldChance: 0.38, gold: [1, 3], crystalChance: 0.018, xp: 12 },
   { id: 'dt.spore_carrier', itemChance: 0.4, goldChance: 0.6, gold: [3, 6], crystalChance: 0.05, rarityBias: { rare: 2 }, xp: 26 },
   { id: 'dt.bloater', itemChance: 0.14, goldChance: 0.4, gold: [1, 3], crystalChance: 0.02, xp: 14 },
   { id: 'dt.spore_hound', itemChance: 0.1, goldChance: 0.3, gold: [1, 2], crystalChance: 0.01, xp: 9 },

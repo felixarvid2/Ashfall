@@ -4,6 +4,7 @@
  * player is dead and briefly under stings (level up, quest complete). Without audio it does nothing.
  */
 import { MENU_SCENE, THREAT_HOLD, isThreatened, pickAmbience, pickMusic, type AudioScene } from '../data/audio';
+import { SOUND_CATALOG } from './catalog.gen';
 import { createCombatLayer, type CombatLayer } from './combatLayer';
 import type { AudioEngine, LoopHandle } from './engine';
 import type { SoundId } from './soundIds';
@@ -18,6 +19,8 @@ const STING_DUCK = 0.35;
 const STING_SECONDS = 2.8;
 /** The combat layer fades in over this long, and out over the same. */
 export const LAYER_FADE = 1.5;
+/** Decoded music tracks kept in memory: the current one, the one it replaced and the boss or hub track (T008). */
+export const MUSIC_RESIDENT = 3;
 
 /** Holds the combat layer on for THREAT_HOLD seconds after the danger has passed (F023). */
 export class ThreatMeter {
@@ -44,6 +47,8 @@ export class MusicController {
   private wind: Wind | null = null;
   private windOn = false;
   private ambienceKey: string | null = null;
+  /** Files of the music tracks that are decoded, least recently used first. */
+  private readonly residentMusic: string[] = [];
   private stingLeft = 0;
   private lastDuck = 1;
   private lastStorm = -1;
@@ -110,12 +115,35 @@ export class MusicController {
       this.music = this.engine.startLoop(want, fade);
       this.music?.setLevel(1, fade);
       this.engine.nowPlaying.music = this.music ? want : null;
+      this.trimMusic(SOUND_CATALOG[want].file, scene.phase === 'play');
     }
     this.setAmbience(pickAmbience(scene));
   }
 
+  /** Keep the newest few tracks decoded and release the rest; the menu track goes as soon as play starts. */
+  private trimMusic(file: string, playing: boolean): void {
+    const at = this.residentMusic.indexOf(file);
+    if (at >= 0) this.residentMusic.splice(at, 1);
+    this.residentMusic.push(file);
+    const menu = SOUND_CATALOG['music.menu'].file;
+    if (playing && file !== menu) {
+      const i = this.residentMusic.indexOf(menu);
+      if (i >= 0) this.residentMusic.splice(i, 1);
+      this.engine.release(menu);
+    }
+    while (this.residentMusic.length > MUSIC_RESIDENT) this.engine.release(this.residentMusic.shift()!);
+  }
+
   private setAmbience(want: ReturnType<typeof pickAmbience>): void {
     if (this.ambienceKey === want) return;
+    // The ambience being faded out is released once the crossfade has ended (unless it came back).
+    const old = this.ambienceKey && this.ambienceKey !== 'wind' ? SOUND_CATALOG[this.ambienceKey as SoundId]?.file : undefined;
+    if (old) {
+      setTimeout(() => {
+        const now = this.ambienceKey && this.ambienceKey !== 'wind' ? SOUND_CATALOG[this.ambienceKey as SoundId]?.file : undefined;
+        if (now !== old) this.engine.release(old);
+      }, CROSSFADE * 1000 + 250);
+    }
     this.ambienceKey = want;
     this.ambience?.stop(CROSSFADE);
     this.ambience = null;

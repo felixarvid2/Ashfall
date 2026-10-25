@@ -25,6 +25,8 @@ import { SpriteFx } from './spriteFx';
 interface TimedFx {
   group: THREE.Group;
   materials: THREE.MeshBasicMaterial[];
+  /** Geometry only this entry uses (freed when a trimmed entry is dropped); shared geometry is not listed. */
+  geometries?: THREE.BufferGeometry[];
   age: number;
   life: number;
   active: boolean;
@@ -90,6 +92,9 @@ export const LEVEL_BURST_LIFE = 0.8;
 /** Where a shimmer sits and its colour, by interactable kind (F019). Kinds not listed do not shimmer. */
 export const SHIMMER: Record<string, { color: string; size: number }> = {
   chest: { color: '#ffd27a', size: 0.9 },
+  lockedChest: { color: '#ffb04a', size: 0.9 },
+  keycard: { color: '#6affc8', size: 0.7 },
+  pylon: { color: '#9a8aff', size: 1.1 },
   teleporter: { color: '#6ac8ff', size: 1.4 },
   lore: { color: '#b8b8c0', size: 0.7 },
   relic: { color: '#ff9ae8', size: 0.9 },
@@ -140,6 +145,9 @@ function hatch(): THREE.Texture | null {
 export class VfxSystem {
   readonly root = new THREE.Group();
   private readonly pools = new Map<string, TimedFx[]>();
+  /** Unit cylinders shared by every pillar and beam, whatever their colour. */
+  private pillarGeo: THREE.BufferGeometry | null = null;
+  private beamGeo: THREE.BufferGeometry | null = null;
   private readonly arcGeometries = new Map<number, THREE.BufferGeometry>();
   private readonly coneGeometries = new Map<number, THREE.BufferGeometry>();
   private readonly ringGeo = flat(new THREE.RingGeometry(0.86, 1, 64));
@@ -274,6 +282,26 @@ export class VfxSystem {
     return fx;
   }
 
+  /**
+   * Drop idle pool entries beyond `cap` per key and free their materials and own geometry. Keys carry colours
+   * and bands, so without this the pools only ever grow; call it when the zone changes.
+   */
+  trimPools(cap = 8): void {
+    for (const [key, pool] of this.pools) {
+      let idle = 0;
+      for (let i = pool.length - 1; i >= 0; i--) {
+        const fx = pool[i]!;
+        if (fx.active) continue;
+        if (++idle <= cap) continue;
+        pool.splice(i, 1);
+        this.root.remove(fx.group);
+        for (const m of fx.materials) m.dispose();
+        for (const g of fx.geometries ?? []) g.dispose();
+      }
+      if (pool.length === 0) this.pools.delete(key);
+    }
+  }
+
   private ring(color: string): Omit<TimedFx, 'age' | 'life' | 'active' | 'update'> {
     const mat = additive(color);
     const group = new THREE.Group();
@@ -361,7 +389,7 @@ export class VfxSystem {
     const fx = this.acquire(`pillar:${color}`, () => {
       const mat = additive(color, 0.6);
       const group = new THREE.Group();
-      group.add(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 16, 1, true).translate(0, 0.5, 0), mat));
+      group.add(new THREE.Mesh((this.pillarGeo ??= new THREE.CylinderGeometry(1, 1, 1, 16, 1, true).translate(0, 0.5, 0)), mat));
       return { group, materials: [mat] };
     });
     fx.life = 0.6;
@@ -379,7 +407,7 @@ export class VfxSystem {
     const fx = this.acquire('beam', () => {
       const mat = additive('#cfefff', 0.9);
       const group = new THREE.Group();
-      group.add(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 20, 1, true).translate(0, 0.5, 0), mat));
+      group.add(new THREE.Mesh((this.beamGeo ??= new THREE.CylinderGeometry(1, 1, 1, 20, 1, true).translate(0, 0.5, 0)), mat));
       return { group, materials: [mat] };
     });
     fx.life = 0.5;
@@ -820,7 +848,7 @@ export class VfxSystem {
           const edge = band !== null ? flat(new THREE.RingGeometry(band, band + 0.02, 64)) : this.ringGeo;
           group.add(new THREE.Mesh(fill, mat), new THREE.Mesh(edge, ringMat));
           group.children.forEach((c) => (c.renderOrder = 3));
-          return { group, materials: [mat, ringMat] };
+          return { group, materials: [mat, ringMat], geometries: band !== null ? [fill, edge] : undefined };
         });
         fx.life = Infinity;
         fx.update = () => {};

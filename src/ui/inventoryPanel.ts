@@ -42,6 +42,7 @@ import {
 import { armConfirm, confirmSheet } from './confirmSheet';
 import { haptic } from './haptics';
 import { tooltipSheet, useSheet } from './tooltipSheet';
+import { getPref, setPref } from '../core/localPrefs';
 
 export interface InventoryActions {
   /** Equip the backpack item at `index`; `slot` picks one of two ring slots. */
@@ -70,20 +71,13 @@ export interface InventoryActions {
 const SORT_KEY = 'ashfall.invSort';
 
 function storedSort(): SortMode | null {
-  try {
-    const v = localStorage.getItem(SORT_KEY);
-    return SORT_MODES.find((m) => m === v) ?? null;
-  } catch {
-    return null;
-  }
+  const v = getPref(SORT_KEY);
+  return SORT_MODES.find((m) => m === v) ?? null;
 }
 
 function storeSort(mode: SortMode): void {
-  try {
-    localStorage.setItem(SORT_KEY, mode);
-  } catch {
-    // Private mode: the choice just is not remembered.
-  }
+  // Private mode: the choice just is not remembered.
+  setPref(SORT_KEY, mode);
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -351,7 +345,6 @@ export class InventoryPanel {
     this.lastFill = fillNow;
     if (!this.open) return;
     const inv = bag;
-    const classId = this.getClassId();
     const used = bagUsed;
     this.goldText.textContent = t('ui.gold', { gold: inv.gold.toLocaleString('en-US') });
     this.countText.textContent = t('items.bag.count', { used, max: inv.grid.length });

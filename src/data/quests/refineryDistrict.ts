@@ -156,7 +156,7 @@ export const REFINERY_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'tobin' },
     ],
-    rewards: { xp: 900, gold: 140, restoration: 1 },
+    rewards: { xp: 900, gold: 140, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.spare_parts',
@@ -199,7 +199,7 @@ export const REFINERY_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'mara' },
     ],
-    rewards: { xp: 1200, gold: 200, restoration: 1 },
+    rewards: { xp: 1200, gold: 200, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.shift_change',
@@ -239,7 +239,7 @@ export const REFINERY_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'coolant.canister', ...p(214, -62), asset: 'prop.fuel_tank', scale: 0.4 }] },
       { kind: 'talk', npc: 'osei' },
     ],
-    rewards: { xp: 1100, gold: 160, restoration: 1 },
+    rewards: { xp: 1100, gold: 160, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.crane_operator',
@@ -276,7 +276,7 @@ export const REFINERY_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'red.collar', x: DEN.x + 2, z: DEN.z - 3, asset: 'prop.echo_relic', scale: 0.3 }] },
       { kind: 'talk', npc: 'ines' },
     ],
-    rewards: { xp: 1000, gold: 150, restoration: 1 },
+    rewards: { xp: 1000, gold: 150, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.choir',

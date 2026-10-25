@@ -59,8 +59,8 @@ describe('schedule', () => {
     expect(worldBossStatus(3000)).toEqual(worldBossStatus(3000));
   });
 
-  it('brings one boss per interval, never the same twice running, and all three over time', () => {
-    const events = Array.from({ length: 24 }, (_, i) => worldBossEvent(i + 1));
+  it('brings one boss per interval, never the same twice running, and every boss over time', () => {
+    const events = Array.from({ length: 40 }, (_, i) => worldBossEvent(i + 1));
     events.forEach((e, i) => {
       expect(e.index).toBe(i + 1);
       expect(e.appearsAt).toBe((i + 1) * interval);
@@ -98,18 +98,18 @@ describe('schedule', () => {
 });
 
 describe('data', () => {
-  it('three bosses with three phases each, spread over all five regions', () => {
-    expect(WORLD_BOSSES).toHaveLength(3);
+  it('five bosses with three phases each, spread over all five regions', () => {
+    expect(WORLD_BOSSES).toHaveLength(5);
     for (const def of WORLD_BOSSES) {
       expect(ENEMY_DEFS.has(def.enemy)).toBe(true);
       expect(BOSS_SCRIPTS[def.script]).toHaveLength(3);
       expect(def.spots.length).toBeGreaterThanOrEqual(2);
-      expect(def.spots.length).toBeLessThanOrEqual(3);
+      expect(def.spots.length).toBeLessThanOrEqual(4);
       expect(t(`worldBoss.${def.id}.name`)).not.toContain('worldBoss.');
       expect(t(`worldBoss.${def.id}.intro`)).not.toContain('worldBoss.');
       for (const phase of BOSS_SCRIPTS[def.script]!.slice(1)) expect(t(phase.banner!)).not.toBe(phase.banner);
     }
-    expect(WORLD_BOSS_ENEMIES).toHaveLength(3);
+    expect(WORLD_BOSS_ENEMIES).toHaveLength(5);
     const zones = new Set(WORLD_BOSSES.flatMap((b) => b.spots.map((s) => s.zone)));
     expect(zones).toEqual(new Set(ZONES.map((z) => z.id)));
   });
@@ -285,9 +285,9 @@ describe('maps and HUD', () => {
     expect(worldBossLine(ctx)).not.toBe('');
     // The phone form is short: the name and the clock, with the region only when the player is elsewhere.
     const name = t(`worldBoss.${event.def.id}.name`);
-    expect(worldBossShortLine(ctx)).toBe(`${name}  13:20 · ${region}`);
+    expect(worldBossShortLine(ctx)).toBe(`${name} · 13:20 · ${region}`);
     ctx.zone = createZoneRuntime(ZONES.find((z) => z.id === event.spot.zone)!);
-    expect(worldBossShortLine(ctx)).toBe(`${name}  13:20`);
+    expect(worldBossShortLine(ctx)).toBe(`${name} · 13:20`);
     ctx.account!.endgame.playtime = 10;
     expect(worldBossLine(ctx)).toBe('');
     expect(worldBossShortLine(ctx)).toBe('');

@@ -57,7 +57,7 @@
   },
   "moveMode": {
     "wasd": "WASD",
-    "click": "Click to move (Diablo)",
+    "click": "Click to move (classic)",
     "clickHint": "Left-click"
   },
   "save": {
@@ -245,7 +245,7 @@
         "desc": "Latch onto the enemy {aimNearest} for 3 seconds, draining its life and healing you for 25% of the damage."
       },
       "chitin_armor": {
-        "name": "Chitin Armor",
+        "name": "Chitin Armour",
         "desc": "Harden your skin for 6 seconds: take 30% less damage, and melee attackers are hurt."
       },
       "spore_cocoon": {
@@ -456,7 +456,11 @@
     "shade_warden": "Shade of the Warden",
     "shade_kade": "Shade of Kade",
     "conduit": "Power Conduit",
-    "shieldGenerator": "Shield Generator"
+    "shieldGenerator": "Shield Generator",
+    "world_choir_of_stone": "Choir of Stone",
+    "world_echo_engine": "Echo Engine",
+    "ash_thrower": "Ash Thrower",
+    "rust_drone": "Rust Drone"
   },
   "resources": {
     "heat": "Heat",
@@ -527,7 +531,7 @@
       "combat_helm": "Combat Helm",
       "plated_vest": "Plated Vest",
       "servo_gauntlets": "Servo Gauntlets",
-      "armored_greaves": "Armored Greaves",
+      "armored_greaves": "Armoured Greaves",
       "mag_boots": "Mag Boots",
       "signal_pendant": "Signal Pendant",
       "conduit_ring": "Conduit Ring",
@@ -545,7 +549,7 @@
     },
     "types": {
       "helm": "Helm",
-      "chest": "Chest Armor",
+      "chest": "Chest Armour",
       "gloves": "Gloves",
       "pants": "Pants",
       "boots": "Boots",
@@ -589,7 +593,7 @@
     ],
     "crystalWhere": {
       "weapon": "Weapon / Off-Hand",
-      "armor": "Armor",
+      "armor": "Armour",
       "jewelry": "Jewelry"
     },
     "itemPower": "{power} Item Power",
@@ -615,7 +619,7 @@
     "otherRingHint": "Shift+right-click: equip as the other ring",
     "lockedLine": "Locked: salvage and sell skip it",
     "junkLine": "Marked as junk",
-    "crystalWhereShort": { "weapon": "Weapon", "armor": "Armor", "jewelry": "Jewelry" },
+    "crystalWhereShort": { "weapon": "Weapon", "armor": "Armour", "jewelry": "Jewelry" },
     "hint": "Right-click: equip · Shift+click: salvage · Click a crystal, then an item: socket",
     "damageEstimate": "Damage",
     "hintTouch": "Tap an item for its details and actions · Tap a crystal, then the item to socket · Hold an item: quick equip",
@@ -648,7 +652,7 @@
       "bestTitle": "Equip the best gear from your bag: {n} upgrades",
       "bestTitleOne": "Equip the best gear from your bag: 1 upgrade",
       "bestNone": "Nothing in your bag beats what you wear",
-      "filters": { "all": "All", "weapons": "Weapons", "armor": "Armor", "jewelry": "Jewelry", "crystals": "Crystals", "better": "Better" },
+      "filters": { "all": "All", "weapons": "Weapons", "armor": "Armour", "jewelry": "Jewelry", "crystals": "Crystals", "better": "Better" },
       "filterLabel": "Filter items",
       "count": "{used} / {max}",
       "nearFull": "Bag almost full",
@@ -710,9 +714,9 @@
     "willpower": "Willpower",
     "allAttributes": "All Attributes",
     "maxLife": "Maximum Life",
-    "armor": "Armor",
+    "armor": "Armour",
     "maxLifePct": "Maximum Life",
-    "armorPct": "Armor",
+    "armorPct": "Armour",
     "resistAll": "All Resistances",
     "resistHeat": "Heat Resistance",
     "resistCold": "Cold Resistance",
@@ -767,7 +771,7 @@
     "sections": {
       "attributes": "Attributes",
       "offense": "Offense",
-      "defense": "Defense",
+      "defense": "Defence",
       "utility": "Utility"
     },
     "armorReduction": "Physical damage reduction",
@@ -782,7 +786,7 @@
       "value": "Current value"
     },
     "statInfo": {
-      "strength": "If Strength is your class's main attribute, each point adds 0.1% damage. Otherwise each point adds 0.5 Armor.",
+      "strength": "If Strength is your class's main attribute, each point adds 0.1% damage. Otherwise each point adds 0.5 Armour.",
       "dexterity": "Each point adds 0.02% critical strike chance. If it is your class's main attribute, each point also adds 0.1% damage.",
       "intelligence": "Each point adds 0.05% to all resistances. If it is your class's main attribute, each point also adds 0.1% damage.",
       "willpower": "Each point adds 0.1% resource generation. If it is your class's main attribute, each point also adds 0.1% damage.",
@@ -793,8 +797,8 @@
       "attackSpeed": "How much faster you attack and cast basic skills. Raised by gear and passives.",
       "bonus": "A damage bonus that adds to your other damage bonuses. Comes from gear, passives and temporary effects.",
       "maxLife": "How much damage you can take before you die. Raised by level, gear and passives.",
-      "armor": "Reduces physical damage you take. Stronger attackers get through the same Armor more easily.",
-      "armorReduction": "The share of physical damage your Armor stops from an enemy of your level.",
+      "armor": "Reduces physical damage you take. Stronger attackers get through the same Armour more easily.",
+      "armorReduction": "The share of physical damage your Armour stops from an enemy of your level.",
       "resist": "Reduces damage of this type that you take. Raised by Intelligence, gear and passives. Capped at 70%.",
       "damageReduction": "A share of all damage you take that is ignored. Capped at 50%.",
       "cooldownReduction": "Makes your skill cooldowns shorter. Capped at 50%.",
@@ -1102,7 +1106,7 @@
       },
       "chitin_armor": {
         "name": "Enhanced Chitin",
-        "desc": "Chitin Armor cooldown −20%."
+        "desc": "Chitin Armour cooldown −20%."
       },
       "spore_cocoon": {
         "name": "Enhanced Cocoon",
@@ -1409,11 +1413,11 @@
       "chitin_armor": {
         "carapace": {
           "name": "Carapace",
-          "desc": "Chitin Armor also grants a barrier of 15% of your life."
+          "desc": "Chitin Armour also grants a barrier of 15% of your life."
         },
         "regenerative": {
           "name": "Regenerative Chitin",
-          "desc": "Chitin Armor heals 15% of your life."
+          "desc": "Chitin Armour heals 15% of your life."
         }
       },
       "spore_cocoon": {
@@ -1586,7 +1590,7 @@
       },
       "reinforced_plating": {
         "name": "Reinforced Plating",
-        "desc": "+4% armor per rank."
+        "desc": "+4% armour per rank."
       },
       "vital_systems": {
         "name": "Vital Systems",
@@ -1629,8 +1633,8 @@
         "desc": "+6% damage to Vulnerable enemies per rank."
       },
       "kevlar_weave": {
-        "name": "Kevlar Weave",
-        "desc": "+4% armor per rank."
+        "name": "Aramid Weave",
+        "desc": "+4% armour per rank."
       },
       "survival_instinct": {
         "name": "Survival Instinct",
@@ -1674,7 +1678,7 @@
       },
       "thick_hide": {
         "name": "Thick Hide",
-        "desc": "+4% armor per rank."
+        "desc": "+4% armour per rank."
       },
       "vital_spores": {
         "name": "Vital Spores",
@@ -1701,7 +1705,7 @@
         "desc": "+4% damage per rank."
       },
       "fervor": {
-        "name": "Fervor",
+        "name": "Fervour",
         "desc": "+4% damage per rank."
       },
       "vigil": {
@@ -1722,7 +1726,7 @@
       },
       "consecrated_mail": {
         "name": "Consecrated Mail",
-        "desc": "+15 armor per rank."
+        "desc": "+15 armour per rank."
       },
       "hymnal": {
         "name": "Hymnal",
@@ -1931,7 +1935,7 @@
     },
     "carapace": {
       "name": "Carapaced",
-      "desc": "Chitin Armor cooldown is {value} shorter."
+      "desc": "Chitin Armour cooldown is {value} shorter."
     },
     "hive": {
       "name": "Hivemother's",
@@ -2376,7 +2380,7 @@
   "relics": {
     "maxLife": "+8 maximum life",
     "damage": "+2% damage",
-    "armor": "+12 armor",
+    "armor": "+12 armour",
     "moveSpeed": "+2% movement speed",
     "resourceGen": "+3% resource generation"
   },
@@ -4161,7 +4165,7 @@
   "crafting": {
     "groups": {
       "offense": "Offense",
-      "defense": "Defense",
+      "defense": "Defence",
       "utility": "Utility",
       "mobility": "Mobility"
     },
@@ -4183,6 +4187,10 @@
           "bane": {
             "name": "Bane",
             "desc": "Hurts elites and weakened foes."
+          },
+          "havoc": {
+            "name": "Havoc",
+            "desc": "Damage and critical chance."
           }
         },
         "defense": {
@@ -4197,6 +4205,10 @@
           "bulwark": {
             "name": "Bulwark",
             "desc": "Damage reduction and barrier."
+          },
+          "aegis": {
+            "name": "Aegis",
+            "desc": "Life, armour and resistance."
           }
         },
         "utility": {
@@ -4211,6 +4223,10 @@
           "mind": {
             "name": "Attunement",
             "desc": "Core attributes."
+          },
+          "focus": {
+            "name": "Focus",
+            "desc": "Resource and cooldowns."
           }
         },
         "mobility": {
@@ -4225,6 +4241,10 @@
           "flow": {
             "name": "Flow",
             "desc": "Movement, agility and speed."
+          },
+          "surge": {
+            "name": "Surge",
+            "desc": "Movement and cooldowns."
           }
         }
       }
@@ -4271,7 +4291,7 @@
       "progress": "{done} of {total} aspects unlocked",
       "imprint": "Imprint ({gold} gold)",
       "fits": "Fits this item",
-      "cat": { "weapon": "Weapon", "armor": "Armor", "jewelry": "Jewelry" },
+      "cat": { "weapon": "Weapon", "armor": "Armour", "jewelry": "Jewelry" },
       "noMatch": "No unlocked aspect matches the filters.",
       "unlocked": "Codex of Power: {aspect} unlocked by clearing {dungeon}."
     },
@@ -4834,7 +4854,7 @@
     "use": "Use",
     "fullscreen": {
       "needsTab": "Open the game in its own tab for full screen.",
-      "needsHomeScreen": "On iPhone: Share, then Add to Home Screen, to play full screen."
+      "needsHomeScreen": "On a phone: Share, then Add to Home Screen, to play full screen."
     },
     "menu": {
       "inventory": "Bag",
@@ -4992,8 +5012,8 @@
   },
   "worldBoss": {
     "hudWarning": "World boss: {boss} in {time} \u2014 {region}",
-    "hudShort": "{boss}  {time}",
-    "hudShortRegion": "{boss}  {time} \u00b7 {region}",
+    "hudShort": "{boss} · {time}",
+    "hudShortRegion": "{boss} · {time} · {region}",
     "hudAlive": "World boss: {boss} \u2014 {region} \u2014 {time} left",
     "warning": "World boss in {minutes} min: {boss}",
     "appeared": "World boss: {boss} has appeared in {region}.",
@@ -5020,6 +5040,18 @@
       "intro": "The Hollow Engine wakes",
       "phase2": "The Hollow Engine spins up its drill",
       "phase3": "The Hollow Engine tears itself loose from the floor"
+    },
+    "choir_of_stone": {
+      "name": "The Choir of Stone",
+      "intro": "The Choir of Stone begins to sing",
+      "phase2": "The Choir of Stone calls the crystals to answer",
+      "phase3": "The Choir of Stone rises to a single note"
+    },
+    "echo_engine": {
+      "name": "The Echo Engine",
+      "intro": "The Echo Engine grinds awake",
+      "phase2": "The Echo Engine fires its lamps",
+      "phase3": "The Echo Engine tears loose and sweeps the floor"
     }
   },
   "underground": {
@@ -5126,6 +5158,36 @@
     "move": "Drag on the left half of the screen to move.",
     "attack": "Tap the big button to attack. It aims for you.",
     "menu": "The icons at the top open your bag, skills and map.",
-    "interact": "Tap the prompt to use or talk."
+    "interact": "Tap the prompt to use or talk.",
+    "click": "Left-click the ground to move. Hold the button to keep walking.",
+    "strike": "Click an enemy to attack it. Right-click uses your second skill.",
+    "skill": "New skill point. Press K to spend it.",
+    "potion": "Low on life. Press Q to drink a stim.",
+    "dodge": "A red area means an attack is coming. Press Space to roll out of it.",
+    "loot": "Loot dropped. Click it, or walk over it and press E, to pick it up.",
+    "bag": "You picked something up. Press I to open your bag and right-click an item to equip it.",
+    "quest": "First quest done. Press J for the quest log and pick your next one."
+  },
+  "feel": {
+    "guideBanner": "Follow the golden trail to your objective",
+    "loading": "Entering {name}",
+    "tips": [
+      "Dodge with Space: the roll is invulnerable for a moment.",
+      "A red hatched area on the ground is an attack that has not landed yet.",
+      "Safe hubs refill your stim packs.",
+      "Hold Alt to show every item label on the ground.",
+      "Press M for the map. Teleporters you have found are free fast travel.",
+      "Elite enemies drop better loot. Look for the coloured name plate.",
+      "Right-click a bag item to equip it. Locked items are never salvaged.",
+      "Spend skill points with K. New skills fill the first empty slot.",
+      "Low on life? Q drinks a stim. Kills charge the next one.",
+      "Shift-click attacks in place without walking toward the target.",
+      "Press J for the quest log and to choose which quest is tracked.",
+      "Lore terminals tell you what happened before the ash.",
+      "Salvage junk gives gold and dust; locked items are skipped.",
+      "Bosses reset if you die: use the time to read their telegraphs.",
+      "Fire, poison and cold fields on the ground keep hurting. Step out of them."
+    ],
+    "rose": "You rise again"
   }
 }

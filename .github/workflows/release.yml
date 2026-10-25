@@ -63,7 +63,7 @@ jobs:
           Q drinks a stim pack, I/K/M/J open inventory, skills, map and quests. On a phone the
           game shows touch controls.
           TXT
-          (cd dist && zip -qr "../ashfall-${TAG}-web.zip" .)
+          (cd dist && zip -qr "../ashfall-${TAG}-web.zip" . -x '*.map')
       - name: Release notes
         run: |
           {

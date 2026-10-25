@@ -6,7 +6,7 @@ import { SaveDataSchema } from '../src/core/save';
 import { CODEX_ASPECTS, MASTERWORK, RECIPES, RECIPE_DEFS, RECIPE_IDS, SALVAGE_DUST, TEMPERING } from '../src/data/endgame/crafting';
 import { INSTANCES } from '../src/data/instances';
 import { TIER_TABLE } from '../src/data/endgame/tiers';
-import { ASPECT_DEFS, BASE_ITEMS } from '../src/data/loot/db';
+import { ASPECT_DEFS } from '../src/data/loot/db';
 import { STAT_KEYS } from '../src/data/loot/schemas';
 import {
   canTemper,
@@ -57,11 +57,11 @@ function ctxAt(tier = 2) {
 }
 
 describe('recipes', () => {
-  it('there are twelve, three per group, with valid stats and ranges', () => {
-    expect(RECIPES).toHaveLength(12);
+  it('there are sixteen, four per group, with valid stats and ranges', () => {
+    expect(RECIPES).toHaveLength(16);
     expect(RECIPE_IDS).toEqual(RECIPES.map((r) => r.id));
-    expect(new Set(RECIPE_IDS).size).toBe(12);
-    for (const g of ['offense', 'defense', 'utility', 'mobility']) expect(RECIPES.filter((r) => r.group === g)).toHaveLength(3);
+    expect(new Set(RECIPE_IDS).size).toBe(16);
+    for (const g of ['offense', 'defense', 'utility', 'mobility']) expect(RECIPES.filter((r) => r.group === g)).toHaveLength(4);
     for (const r of RECIPES) {
       expect(r.id.startsWith(`temper.${r.group}.`)).toBe(true);
       expect(r.options.length).toBeGreaterThan(0);

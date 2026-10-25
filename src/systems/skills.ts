@@ -54,9 +54,11 @@ export function skillOf(user: SkillUser | undefined, id: string): CompiledSkill 
 export function effectiveCooldown(def: { cooldown: number; minCooldown?: number }, cooldownReduction: number): number {
   return Math.max(def.minCooldown ?? 0, def.cooldown * (1 - cooldownReduction));
 }
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const castersBuf: Entity[] = [];
 
 export function skillSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(SkillUser, Transform)) {
+  for (const e of world.queryInto(castersBuf, SkillUser, Transform)) {
     const user = world.req(e, SkillUser);
     if (world.has(e, Dead)) {
       user.cast = null;
@@ -195,9 +197,11 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
   }
 }
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const forcedMoversBuf: Entity[] = [];
 /** Advances leaps and dodges; fires landing impacts. Runs after normal movement. */
 export function forcedMoveSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(ForcedMove, Transform)) {
+  for (const e of world.queryInto(forcedMoversBuf, ForcedMove, Transform)) {
     const fm = world.req(e, ForcedMove);
     const tr = world.req(e, Transform);
     fm.elapsed += dt;

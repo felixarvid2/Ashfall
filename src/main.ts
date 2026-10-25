@@ -9,12 +9,12 @@ import './ui/portrait/skills.css';
 import './ui/portrait/services.css';
 import './ui/desktop/hud.css';
 import './ui/desktop/feedback.css';
+import './ui/desktop/feel.css';
 import './ui/desktop/world.css';
 import './ui/desktop/combat.css';
 import './ui/desktop/inventory.css';
 import './ui/desktop/services.css';
 import './ui/desktop/menus.css';
-import { validateGameData } from './data/validate';
 import { Game } from './game';
 import { t } from './data/i18n';
 import { CharacterSelect } from './ui/characterSelect';
@@ -27,6 +27,8 @@ registerFonts();
 audio.install();
 
 if (import.meta.env.DEV) {
+  // Dev-only (it also reads the full Meshy manifest), so it stays out of the production bundle.
+  const { validateGameData } = await import('./data/validate');
   const errors = validateGameData();
   if (errors.length > 0) {
     console.error(`[ashfall] ${errors.length} data error(s):\n` + errors.join('\n'));

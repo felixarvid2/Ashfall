@@ -6,7 +6,7 @@ describe('GameLoop', () => {
     let ticks = 0;
     const loop = new GameLoop({ update: () => ticks++, render: () => {} }, 60);
     // Exactly 1 second delivered as uneven frames.
-    const frames = [5, 33, 16, 50, 7, 100, 16, 40, 3, 22];
+    const frames = [5, 33, 16, 50, 7, 80, 16, 40, 3, 22]; // no frame longer than 5 ticks (a longer one drops time)
     let total = frames.reduce((a, b) => a + b, 0);
     while (total + 16 <= 1000) {
       frames.push(16);
@@ -22,7 +22,53 @@ describe('GameLoop', () => {
     let ticks = 0;
     const loop = new GameLoop({ update: () => ticks++, render: () => {} }, 60);
     loop.step(10);
-    expect(ticks).toBe(15); // 0.25 s cap
+    expect(ticks).toBe(5); // 0.25 s frame cap, then at most 5 ticks per frame
+  });
+
+  it('caps catch-up at 5 ticks per frame and drops the backlog', () => {
+    let ticks = 0;
+    const alphas: number[] = [];
+    const loop = new GameLoop({ update: () => ticks++, render: (a) => alphas.push(a) }, 60);
+    loop.step(0.25);
+    expect(ticks).toBe(5);
+    expect(alphas[0]).toBeGreaterThanOrEqual(0);
+    expect(alphas[0]).toBeLessThan(1);
+    expect(loop.slowFrames).toBe(1);
+    expect(loop.droppedTicks).toBe(10);
+    // The next normal frame is a normal frame, not a payback of the dropped time.
+    loop.step(1 / 60);
+    expect(ticks).toBe(6);
+    expect(loop.slowFrames).toBe(1);
+  });
+
+  it('stops catching up once the ticks of a frame use their wall-time budget', () => {
+    let clock = 0;
+    let ticks = 0;
+    const loop = new GameLoop(
+      {
+        update: () => {
+          ticks++;
+          clock += 20; // a 20 ms tick: a phone in a busy zone
+        },
+        render: () => {},
+      },
+      60,
+      () => clock,
+    );
+    loop.step(0.25);
+    expect(ticks).toBe(1);
+    // Nothing is carried over, so the next frame is not even further behind.
+    loop.step(2 / 60);
+    expect(ticks).toBe(2);
+  });
+
+  it('keeps every tick of a normal frame when updates are cheap', () => {
+    let clock = 0;
+    let ticks = 0;
+    const loop = new GameLoop({ update: () => { ticks++; clock += 0.5; }, render: () => {} }, 60, () => clock);
+    loop.step(4 / 60 + 1e-9);
+    expect(ticks).toBe(4);
+    expect(loop.slowFrames).toBe(0);
   });
 
   it('passes interpolation alpha in [0, 1) and pauses with timeScale 0', () => {

@@ -44,10 +44,19 @@ export class GameLoop {
   private errorStamps: number[] = [];
   /** Cap per frame so a long stall (tab switch, breakpoint) can't spiral. */
   private readonly maxFrameTime = 0.25;
+  /** At most this many ticks per frame; whatever time is left over is dropped (the game slows down instead of freezing). */
+  readonly maxTicksPerFrame = 5;
+  /** Stop catching up once the ticks of one frame have used this much wall time (ms), whatever the tick count. */
+  readonly tickBudgetMs = 12;
+  /** Frames that dropped time because the device could not keep up, and the ticks dropped (for the debug panel). */
+  slowFrames = 0;
+  droppedTicks = 0;
 
   constructor(
     private readonly callbacks: LoopCallbacks,
     tickRate = 60,
+    /** Wall clock in ms; tests pass a fake. */
+    private readonly now: () => number = () => performance.now(),
   ) {
     this.tickRate = tickRate;
     this.dt = 1 / tickRate;
@@ -73,6 +82,8 @@ export class GameLoop {
   step(frameTime: number): void {
     const clamped = Math.min(frameTime, this.maxFrameTime);
     this.accumulator += clamped * this.timeScale;
+    const started = this.now();
+    let ticks = 0;
     while (this.accumulator >= this.dt) {
       if (!this.run(() => this.callbacks.update(this.dt))) {
         // A failed tick still consumes its time, so a throwing update cannot spin this loop forever.
@@ -80,6 +91,14 @@ export class GameLoop {
         return;
       }
       this.accumulator -= this.dt;
+      ticks++;
+      if (ticks >= this.maxTicksPerFrame || this.now() - started >= this.tickBudgetMs) break;
+    }
+    if (this.accumulator >= this.dt) {
+      // Still behind: forget the backlog rather than chase it next frame (the spiral of death).
+      this.droppedTicks += Math.floor(this.accumulator / this.dt);
+      this.slowFrames++;
+      this.accumulator = 0;
     }
     this.run(() => this.callbacks.render(this.accumulator / this.dt, clamped));
   }

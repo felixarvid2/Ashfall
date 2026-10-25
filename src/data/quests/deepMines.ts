@@ -150,7 +150,7 @@ export const MINES_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'brask' },
     ],
-    rewards: { xp: 2200, gold: 520, restoration: 1 },
+    rewards: { xp: 2200, gold: 520, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.shortcuts',
@@ -171,7 +171,7 @@ export const MINES_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'nils' },
     ],
-    rewards: { xp: 2350, gold: 560, restoration: 1 },
+    rewards: { xp: 2350, gold: 560, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.rosetta',
@@ -220,7 +220,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'dynamite.cache', x: WORKINGS.x + 4, z: WORKINGS.z + 3, asset: 'prop.supply_chest' }] },
       { kind: 'talk', npc: 'oona' },
     ],
-    rewards: { xp: 2400, gold: 620 },
+    rewards: { xp: 2400, gold: 620, item: 'rare' },
   },
   {
     id: 'sq.crystal_song',
@@ -241,7 +241,7 @@ export const MINES_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'nils' },
     ],
-    rewards: { xp: 2600, gold: 600, restoration: 1 },
+    rewards: { xp: 2600, gold: 600, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.the_drowned',
@@ -281,7 +281,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'canary.cage', x: SHAFTS.x + 6, z: SHAFTS.z + 5, asset: 'prop.prisoner_cage', scale: 0.3 }] },
       { kind: 'talk', npc: 'oona' },
     ],
-    rewards: { xp: 2000, gold: 460, restoration: 1 },
+    rewards: { xp: 2000, gold: 460, item: 'rare', restoration: 1 },
   },
   // The follower's own quest (only one of the two is ever offered).
   {

@@ -240,3 +240,87 @@ export class NavDebugOverlay {
     this.legend.remove();
   }
 }
+
+// ---- Guide line to the first objective (F007) ---------------------------------------------------------------
+
+/** The line fades out inside this distance (m) and is fully visible beyond `GUIDE_FULL`. */
+export const GUIDE_NEAR = 15;
+export const GUIDE_FULL = 25;
+/** Metres between dots, how many dots at most, and how fast they march toward the goal (m/s). */
+const GUIDE_SPACING = 2.2;
+const GUIDE_DOTS = 28;
+const GUIDE_SPEED = 2.5;
+
+/** Opacity of the guide line at `dist` metres from the objective: 0 within 15 m, 1 from 25 m. */
+export function guideOpacity(dist: number): number {
+  return Math.min(1, Math.max(0, (dist - GUIDE_NEAR) / (GUIDE_FULL - GUIDE_NEAR)));
+}
+
+/**
+ * Dot positions on the straight line from (px, pz) toward (tx, tz): up to `GUIDE_DOTS` of them, `GUIDE_SPACING` apart,
+ * sliding toward the goal with `time`. No dot lies past the goal.
+ */
+export function guideDots(px: number, pz: number, tx: number, tz: number, time: number): { x: number; z: number }[] {
+  const dist = Math.hypot(tx - px, tz - pz);
+  if (dist < 1e-3) return [];
+  const dx = (tx - px) / dist;
+  const dz = (tz - pz) / dist;
+  const shift = (time * GUIDE_SPEED) % GUIDE_SPACING;
+  const out: { x: number; z: number }[] = [];
+  for (let i = 0; i < GUIDE_DOTS; i++) {
+    const d = 2 + i * GUIDE_SPACING + shift;
+    if (d >= dist) break;
+    out.push({ x: px + dx * d, z: pz + dz * d });
+  }
+  return out;
+}
+
+/**
+ * A golden dotted line on the ground from the hero toward the first objective. It is a straight line, not a route:
+ * it shows the direction, and the minimap and quest tracker still carry the details.
+ */
+export class GuideLine {
+  private readonly points: THREE.Points;
+  private readonly position: THREE.BufferAttribute;
+
+  constructor(private readonly scene: THREE.Object3D) {
+    const geometry = new THREE.BufferGeometry();
+    this.position = new THREE.BufferAttribute(new Float32Array(GUIDE_DOTS * 3), 3);
+    geometry.setAttribute('position', this.position);
+    this.points = new THREE.Points(
+      geometry,
+      new THREE.PointsMaterial({ color: '#ffd23a', size: 0.55, sizeAttenuation: true, transparent: true, opacity: 0, depthWrite: false, fog: false }),
+    );
+    this.points.name = 'guideLine';
+    this.points.renderOrder = 8;
+    this.points.frustumCulled = false;
+    this.points.visible = false;
+    scene.add(this.points);
+  }
+
+  /** The number of dots currently drawn (tests, debug). */
+  get count(): number {
+    return this.points.visible ? this.points.geometry.drawRange.count : 0;
+  }
+
+  /** `goal` null hides the line. */
+  update(px: number, pz: number, goal: { x: number; z: number } | null, time: number): void {
+    const opacity = goal ? guideOpacity(Math.hypot(goal.x - px, goal.z - pz)) : 0;
+    if (!goal || opacity <= 0) {
+      this.points.visible = false;
+      return;
+    }
+    const dots = guideDots(px, pz, goal.x, goal.z, time);
+    dots.forEach((d, i) => this.position.setXYZ(i, d.x, 0.14, d.z));
+    this.position.needsUpdate = true;
+    this.points.geometry.setDrawRange(0, dots.length);
+    (this.points.material as THREE.PointsMaterial).opacity = opacity * (0.75 + 0.25 * Math.sin(time * 4));
+    this.points.visible = dots.length > 0;
+  }
+
+  dispose(): void {
+    this.scene.remove(this.points);
+    this.points.geometry.dispose();
+    (this.points.material as THREE.Material).dispose();
+  }
+}

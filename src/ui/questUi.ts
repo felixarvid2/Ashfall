@@ -7,6 +7,7 @@ import { haptic } from './haptics';
 
 // The conversation panel lives in its own module (P081-P083); re-exported so existing imports keep working.
 import { DialoguePanel, type DialogueButton, type DialoguePage } from './dialoguePanel';
+import { getPref, prefsBlocked, setPref } from '../core/localPrefs';
 export { DialoguePanel, type DialogueButton, type DialoguePage };
 
 type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
@@ -460,19 +461,12 @@ export class QuestLog {
   }
 
   private hintSeen(): boolean {
-    try {
-      return localStorage.getItem(HINT_KEY) === '1';
-    } catch {
-      return true;
-    }
+    // Blocked storage counts as seen, so the hint shows only once per page load.
+    return getPref(HINT_KEY) === '1' || prefsBlocked();
   }
 
   private markHintSeen(): void {
-    try {
-      localStorage.setItem(HINT_KEY, '1');
-    } catch {
-      // Storage may be blocked; the hint then shows only once per page load.
-    }
+    setPref(HINT_KEY, '1');
   }
 
   /** The id of the tracked quest as of the last refresh (for tests and the HUD). */

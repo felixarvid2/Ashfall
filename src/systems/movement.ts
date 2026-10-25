@@ -1,6 +1,6 @@
 /** Integrates movement on the ground plane and turns entities toward their heading. */
 import type { GameContext } from '../core/context';
-import type { World } from '../core/ecs';
+import type { Entity, World } from '../core/ecs';
 import { Dead, ForcedMove, Knockback, MoveTarget, Mover, Transform } from '../core/components';
 
 const ARRIVE_DISTANCE = 0.08;
@@ -12,9 +12,11 @@ export function angleDelta(a: number, b: number): number {
   if (d <= -Math.PI) d += Math.PI * 2;
   return d;
 }
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const moversBuf: Entity[] = [];
 
 export function movementSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(Transform, Mover)) {
+  for (const e of world.queryInto(moversBuf, Transform, Mover)) {
     const tr = world.req(e, Transform);
     const mover = world.req(e, Mover);
     tr.prevX = tr.x;

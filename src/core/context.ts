@@ -41,7 +41,7 @@ export interface GameContext {
   /** Ground point under the cursor, provided by the render layer. */
   pickGround(): { x: number; z: number } | null;
   events: EventQueue;
-  /** Moving colliders, rebuilt each tick by the spatial system. */
+  /** Colliders: static ones (props) indexed once and patched, moving ones rebuilt each tick by the spatial system. */
   spatial: SpatialHash;
   debug: { godMode: boolean };
   stats: { kills: number };

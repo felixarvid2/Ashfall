@@ -34,7 +34,6 @@ const JUNGLE = p(172, 74);
 const DARK = p(130, -40);
 const EMBER = p(258, 128);
 const SHAFT_MOUTH = p(-134, -196);
-const WEST_MACHINERY = p(-130, -195);
 const EAST_MACHINERY = p(128, -184);
 const BORDERLAND = p(0, -232);
 

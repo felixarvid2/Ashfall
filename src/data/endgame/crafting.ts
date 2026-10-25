@@ -23,7 +23,7 @@ export interface Recipe {
 
 const o = (stat: StatKey, min: number, max: number, scaling: RecipeOption['scaling']): RecipeOption => ({ stat, min, max, scaling });
 
-/** The twelve tempering recipes. Tempered values are a step above normal affixes, to make them worth the charges. */
+/** The sixteen tempering recipes (twelve at first, four more with the Choir of Stone and the Echo Engine). Tempered values are a step above normal affixes, to make them worth the charges. */
 export const RECIPES: readonly Recipe[] = [
   { id: 'temper.offense.crit', group: 'offense', options: [o('critChance', 0.03, 0.05, 'none'), o('critDamage', 0.12, 0.2, 'sqrt')] },
   { id: 'temper.offense.fury', group: 'offense', options: [o('damage', 0.09, 0.14, 'sqrt'), o('attackSpeed', 0.05, 0.09, 'none'), o('weaponDamage', 6, 10, 'linear'), o('rangedDamage', 0.09, 0.14, 'sqrt')] },
@@ -37,6 +37,11 @@ export const RECIPES: readonly Recipe[] = [
   { id: 'temper.mobility.stride', group: 'mobility', options: [o('moveSpeed', 0.06, 0.11, 'none')] },
   { id: 'temper.mobility.dash', group: 'mobility', options: [o('moveSpeed', 0.05, 0.09, 'none'), o('cooldownReduction', 0.035, 0.06, 'none')] },
   { id: 'temper.mobility.flow', group: 'mobility', options: [o('moveSpeed', 0.05, 0.09, 'none'), o('dexterity', 9, 14, 'linear'), o('attackSpeed', 0.04, 0.07, 'none')] },
+  // Four more (C012), found from the Choir of Stone and the Echo Engine as well as the older bosses.
+  { id: 'temper.offense.havoc', group: 'offense', options: [o('damage', 0.1, 0.15, 'sqrt'), o('critChance', 0.025, 0.045, 'none')] },
+  { id: 'temper.defense.aegis', group: 'defense', options: [o('maxLife', 22, 36, 'linear'), o('armor', 22, 36, 'linear'), o('resistAll', 0.03, 0.05, 'sqrt')] },
+  { id: 'temper.utility.focus', group: 'utility', options: [o('resourceGen', 0.06, 0.1, 'none'), o('cooldownReduction', 0.04, 0.07, 'none')] },
+  { id: 'temper.mobility.surge', group: 'mobility', options: [o('moveSpeed', 0.07, 0.12, 'none'), o('cooldownReduction', 0.03, 0.05, 'none')] },
 ];
 
 export const RECIPE_IDS: readonly string[] = RECIPES.map((r) => r.id);

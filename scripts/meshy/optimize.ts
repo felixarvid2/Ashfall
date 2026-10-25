@@ -188,7 +188,7 @@ function restorePbr(doc: Document, from: Document, id: string, log: (m: string) 
   log(`${id}: restored PBR maps from the rigged model`);
 }
 
-export async function optimizeAssets(manifest: AssetManifest, entries: AssetEntry[], log: (m: string) => void): Promise<void> {
+export async function optimizeAssets(_manifest: AssetManifest, entries: AssetEntry[], log: (m: string) => void): Promise<void> {
   const nodeIO = await io();
   for (const entry of entries) {
     const animated = sourcePath(entry, 'animated.glb');

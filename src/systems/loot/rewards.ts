@@ -80,7 +80,7 @@ export function grantXp(world: World, ctx: GameContext, player: Entity, amount: 
   return gained;
 }
 
-function spawnGround(world: World, ctx: GameContext, x: number, z: number, i: number, n: number): { x: number; z: number } {
+function spawnGround(ctx: GameContext, x: number, z: number, i: number, n: number): { x: number; z: number } {
   // Spread drops in a small ring so they don't stack.
   const angle = (i / Math.max(1, n)) * Math.PI * 2 + ctx.loot.rng.range(0, 0.6);
   const r = n > 1 ? 0.9 + ctx.loot.rng.range(0, 0.5) : ctx.loot.rng.range(0, 0.4);
@@ -121,7 +121,7 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
     if (unique) drop.items.push(generateUnique(ctx.loot.rng, unique, itemPowerFor(req.level, ctx.loot.rng) + tier.itemPower, nextItemUid(ctx)));
     const total = drop.items.length + (drop.gold > 0 ? 1 : 0);
     drop.items.forEach((item, i) => {
-      const p = spawnGround(world, ctx, req.x, req.z, i, total);
+      const p = spawnGround(ctx, req.x, req.z, i, total);
       const e = world.create();
       world.add(e, Transform, makeTransform(p.x, 0, p.z, ctx.loot.rng.range(0, Math.PI * 2)));
       world.add(e, GroundItem, { item, age: 0 });
@@ -130,7 +130,7 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
     // Restoration tier 3: more gold.
     if (drop.gold > 0 && player !== undefined) drop.gold = Math.round(drop.gold * (1 + (world.get(player, AccountBonuses)?.goldFind ?? 0)) * tier.gold);
     if (drop.gold > 0) {
-      const p = spawnGround(world, ctx, req.x, req.z, drop.items.length, total);
+      const p = spawnGround(ctx, req.x, req.z, drop.items.length, total);
       const e = world.create();
       world.add(e, Transform, makeTransform(p.x, 0, p.z));
       world.add(e, GroundGold, { amount: drop.gold, age: 0 });

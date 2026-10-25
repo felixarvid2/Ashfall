@@ -115,7 +115,8 @@ describe('The Last Camp', () => {
     const ctx = makeCtx({ zone, quests: createQuestRuntime(), account: emptyAccount(), worldHalfSize: zone.def.halfSize });
     spawnQuestWorld(world, ctx);
     const here = world.query(Npc);
-    expect(here).toHaveLength(camp.length);
+    // Followers that depend on a choice (C015) are not there before it is made.
+    expect(here).toHaveLength(camp.filter((n) => !n.choice).length);
     for (const e of here) {
       const t = world.req(e, Transform);
       expect(hubAt(zone, t.x, t.z)?.id, world.req(e, Npc).id).toBe('hub.camp');

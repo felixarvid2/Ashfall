@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CombatStats, EnemyAI, GroundGold, Health, Progression, Resource, Transform } from '../src/core/components';
+import { CombatStats, EnemyAI, GroundGold, Health, Progression, Resource } from '../src/core/components';
 import { emptyAccount } from '../src/core/account';
 import { Rng } from '../src/core/rng';
 import { World } from '../src/core/ecs';

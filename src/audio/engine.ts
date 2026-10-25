@@ -393,6 +393,25 @@ export class AudioEngine {
     return job;
   }
 
+  /** Files whose decoded audio is held right now (the sprite, music and ambience loops). */
+  loadedBuffers(): string[] {
+    return [...this.buffers.keys()];
+  }
+
+  /**
+   * Let go of a decoded file that is no longer needed (T008): a loop already playing it keeps its own
+   * reference until it ends, and asking for the file again fetches and decodes it afresh.
+   */
+  release(file: string): void {
+    const inFlight = this.loading.get(file);
+    if (inFlight && !this.buffers.has(file)) {
+      void inFlight.then(() => this.release(file));
+      return;
+    }
+    this.buffers.delete(file);
+    this.loading.delete(file);
+  }
+
   private bufferFor(entry: SoundEntry): AudioBuffer | null {
     const buf = this.buffers.get(entry.file);
     if (buf) return buf;

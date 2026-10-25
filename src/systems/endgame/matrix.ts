@@ -40,7 +40,6 @@ import { xpToNext } from '../loot/generate';
 
 export type EndgameState = NonNullable<GameContext['endgame']>;
 type BoardState = EndgameState['boards'][number];
-type GlyphState = EndgameState['glyphs'][number];
 
 /** The character's endgame state, created on first use (new characters start without one). */
 export function ensureEndgame(ctx: GameContext): EndgameState {

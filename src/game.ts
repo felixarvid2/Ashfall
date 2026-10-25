@@ -55,12 +55,13 @@ import {
   type SaveWriteResult,
 } from './core/save';
 import { SpatialHash } from './core/spatial';
-import { STATUS_DEFS, classDef, skill } from './data/db';
+import { classDef, skill } from './data/db';
 import { setTouchWording, t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
 import { START_ZONE, ZONES, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
+import { classAssetIds, zoneAssetIds, zoneInstanceAssetIds } from './data/assetSets';
 import type { ZoneDef } from './data/zones/zoneTypes';
-import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
+import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
 import { navigationSystem } from './systems/navigation';
@@ -120,7 +121,7 @@ import { runSaveApply, sanitizeSave } from './core/saveRefs';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { deathCauseLine } from './ui/deathCause';
 import { bossPhaseTicks, keyLabel } from './ui/hud';
-import { LORE_XP_PER_LEVEL, PYLONS } from './data/interactables';
+import { LORE_XP_PER_LEVEL } from './data/interactables';
 import {
   choose,
   completeTalk,
@@ -175,6 +176,9 @@ import { meanItemPower } from './ui/characterSelect';
 import { PauseMenu } from './ui/pauseMenu';
 import { SettingsPanel } from './ui/settingsPanel';
 import { CoachMarks } from './ui/onboarding';
+import { CROWD_RANGE, lookAheadOffset } from './render/camera';
+import { FeelUi, blackHoldMs, guideGoal } from './ui/feelUi';
+import { FEEL, frameFeel } from './systems/impact';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
@@ -257,6 +261,11 @@ export class Game {
   private readonly enemyBars: EnemyBars;
   /** Enemy infos reused every frame (bars, plates, minimap blips). */
   private readonly enemyInfos: EnemyBarInfo[] = [];
+  private readonly blipBuf: MapBlip[] = [];
+  /** Quest markers, computed once per frame and shared by the minimap and the tracker arrow. */
+  private frameQuestMarkers: ReturnType<typeof questMarkers> = [];
+  /** The floodlights and flares behind the renderer's dynamic lights (dark zones), to skip rebuilding an unchanged set. */
+  private dynamicLightKey = '';
   private readonly questTracker: QuestTracker;
   private readonly questLog: QuestLog;
   /** NPC the open conversation is with. */
@@ -276,6 +285,11 @@ export class Game {
   private vendorRestockAt = -Infinity;
   private player!: Entity;
   private hitstop = 0;
+  /** Slow-motion beat after a big kill or the hero's death (real seconds left, and the speed). */
+  private slowmoLeft = 0;
+  private slowmoScale = 1;
+  private coach!: CoachMarks;
+  private feelUi!: FeelUi;
   private lastTarget: { entity: Entity; until: number } | null = null;
   private cursor = '';
   private sporeKey = '';
@@ -864,7 +878,8 @@ export class Game {
       closeDialogue: () => this.closeDialogue(),
     });
     uiRoot.style.setProperty('--paused-label', JSON.stringify(t('panels.paused')));
-    new CoachMarks(uiRoot);
+    this.coach = new CoachMarks(uiRoot, { toast: (m) => this.toasts.show(m) });
+    this.feelUi = new FeelUi(uiRoot, this.fade);
 
     this.player = spawnPlayer(this.world, DEFAULT_CLASS, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
     this.populateZone();
@@ -879,15 +894,47 @@ export class Game {
     });
   }
 
-  /** Load 3D models (falls back to placeholders) and build the static environment. */
+  /**
+   * Boot loading. Models and ground textures now load per zone (`prepareZone`, `settleAssets`), so the character
+   * select appears at once; `?preload=all` keeps the old everything-up-front behaviour (debugging, offline play).
+   */
   async loadAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
+    if (new URLSearchParams(location.search).get('preload') !== 'all') return;
     await Promise.all([
       this.renderer.assets.preload(import.meta.env.BASE_URL, onProgress),
       this.renderer.preloadGround(ZONES.map((z) => z.ground)),
     ]);
-    this.renderer.buildArena(this.zoneDef);
-    this.sporeKey = '';
-    this.builtZone = this.zoneDef.id;
+  }
+
+  /** Class and zone a saved character starts in, so main.ts can fetch their models before the game starts. */
+  slotStart(slot: number): { classId: string; zoneId: string } | null {
+    try {
+      const data = this.saves.read(slotKey(slot));
+      return data ? { classId: data.character.classId, zoneId: hasZone(data.world.zone) ? data.world.zone : START_ZONE.id } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Fetch what a zone (and the class playing in it) shows from the start: models and ground textures.
+   * Never rejects; whatever is missing falls back to placeholders that swap in when they load.
+   */
+  async prepareZone(zoneId: string, classId?: string, onProgress?: (done: number, total: number) => void): Promise<void> {
+    const def = hasZone(zoneId) ? zoneDef(zoneId) : START_ZONE;
+    const ids = [...(classId ? classAssetIds(classId) : []), ...zoneAssetIds(def)];
+    await Promise.all([this.renderer.assets.ensure(ids, onProgress), this.renderer.preloadGround([def.ground])]).catch(() => undefined);
+  }
+
+  /**
+   * Load models for what really spawned (set pieces, quest NPCs, bosses: everything the data sets don't
+   * name), then quietly prefetch the zone's dungeons so entering one doesn't show placeholders.
+   */
+  async settleAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
+    const ids = new Set<string>();
+    for (const e of this.world.query(Renderable)) ids.add(this.world.req(e, Renderable).assetId);
+    await this.renderer.assets.ensure(ids, onProgress).catch(() => undefined);
+    void this.renderer.assets.ensure(zoneInstanceAssetIds(this.zoneDef));
   }
 
   start(): void {
@@ -1017,7 +1064,7 @@ export class Game {
     this.ctx.zone = zone;
     this.ctx.worldHalfSize = def.halfSize;
     this.ctx.zoneLevels = def.levels;
-    if (this.builtZone !== null && this.builtZone !== id) {
+    if (this.builtZone !== id) {
       this.renderer.buildArena(def);
       this.sporeKey = '';
       this.builtZone = id;
@@ -1029,7 +1076,7 @@ export class Game {
     // Raised minions follow you across.
     for (const m of this.world.query(MinionAI, Transform)) {
       if (this.world.req(m, MinionAI).owner !== this.player) continue;
-      const a = Math.random() * Math.PI * 2;
+      const a = this.ctx.rng.range(0, Math.PI * 2);
       const tr = this.world.req(m, Transform);
       // (A hovering guardian light keeps its height.)
       Object.assign(tr, makeTransform(x + Math.sin(a) * 2, tr.y, z + Math.cos(a) * 2, 0));
@@ -1082,22 +1129,37 @@ export class Game {
       this.enterZone(gate.to.zone, target.arrive.x, target.arrive.z);
       this.hud.showBanner(t(`zones.${this.zoneDef.key}.name`), 2.6);
       this.autosave();
-    });
+    }, { name: t(`zones.${zoneDef(gate.to.zone).key}.name`), tip: true, prepare: this.prepareZone(gate.to.zone) });
   }
 
   private fading = false;
 
-  /** Black fade around a zone change (the swap happens while the screen is dark). */
-  private fadeTo(swap: () => void): void {
+  /**
+   * Black fade around a zone change (the swap happens while the screen is dark). The screen stays black until two
+   * frames of the new place have been drawn and for at least `minBlack` seconds, so the card (where, and a tip) can be
+   * read and a slow swap never shows a half-built frame (F013).
+   */
+  private fadeTo(swap: () => void, opts: { name?: string; tip?: boolean; minBlack?: number; prepare?: Promise<unknown> } = {}): void {
     if (this.fading) return;
     this.fading = true;
+    const started = performance.now();
+    this.feelUi.setCard(opts.name ?? '', opts.tip ?? false);
     this.fade.classList.add('on');
     setTimeout(() => {
       try {
         swap();
       } finally {
-        this.fade.classList.remove('on');
-        this.fading = false;
+        let released = false;
+        const release = () => {
+          if (released) return;
+          released = true;
+          this.fade.classList.remove('on');
+          this.fading = false;
+        };
+        const hold = blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000);
+        // Two frames of the new place, then whatever is left of the minimum; a timer stands in if frames are not coming.
+        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(release, blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000))));
+        setTimeout(release, hold + 1500);
       }
     }, ZONE_FADE * 1000);
   }
@@ -1182,6 +1244,11 @@ export class Game {
       this.hitstop -= frameDt;
       this.loop.timeScale = this.hitstop > 0 ? 0 : 1;
     }
+    // A short slow-motion beat (big kills, the hero's death); a freeze takes precedence and the beat resumes after it.
+    if (this.slowmoLeft > 0) {
+      this.slowmoLeft -= frameDt;
+      if (this.loop.timeScale !== 0) this.loop.timeScale = this.slowmoLeft > 0 ? this.slowmoScale : 1;
+    }
     this.renderer.animationTimeScale = this.loop.timeScale;
 
     const zoom = this.input.consumeWheel();
@@ -1196,11 +1263,16 @@ export class Game {
       this.renderer.updateCore(this.ctx.time);
       if (zone.def.dark) {
         // Floodlights switched on and burning flares light the dark.
+        // Only rebuilt when a floodlight is found or a flare lands or burns out (expired flares are dropped each tick).
         const st = undergroundState(zone);
-        this.renderer.setDynamicLights([
-          ...litFloodlights(zone).map((f) => ({ x: f.x, z: f.z, color: '#ffe2b0', intensity: 140, distance: f.radius * 1.5, height: 6 })),
-          ...st.flares.filter((f) => f.until > this.ctx.time).map((f) => ({ x: f.x, z: f.z, color: '#ff6a4a', intensity: 90, distance: UNDERGROUND.flare.radius * 1.6, height: 1.2 })),
-        ]);
+        const lightKey = `${zone.def.id}:${zone.found.size}:${st.flares.length}:${st.flares[st.flares.length - 1]?.until ?? 0}`;
+        if (lightKey !== this.dynamicLightKey) {
+          this.dynamicLightKey = lightKey;
+          this.renderer.setDynamicLights([
+            ...litFloodlights(zone).map((f) => ({ x: f.x, z: f.z, color: '#ffe2b0', intensity: 140, distance: f.radius * 1.5, height: 6 })),
+            ...st.flares.filter((f) => f.until > this.ctx.time).map((f) => ({ x: f.x, z: f.z, color: '#ff6a4a', intensity: 90, distance: UNDERGROUND.flare.radius * 1.6, height: 1.2 })),
+          ]);
+        }
       }
       // Spore fields only change when something new is found (a filter, a reclaimed dome).
       const sporeKey = `${zone.def.id}:${zone.found.size}`;
@@ -1243,9 +1315,10 @@ export class Game {
     this.endgameChip.update(frameDt);
     this.updateBossArrow();
     this.questTracker.tick(frameDt, hudState.combat ?? false);
+    this.frameQuestMarkers = questMarkers(this.world, this.ctx);
     this.mapUi.markers = this.ctx.instance
       ? this.instanceMarkers()
-      : questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
+      : this.frameQuestMarkers.map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
     const worldBoss = worldBossMarker(this.ctx);
     if (worldBoss) this.mapUi.markers.push({ ...worldBoss, shape: 'diamond' });
     const harvest = harvestView(this.ctx);
@@ -1254,6 +1327,7 @@ export class Game {
     this.mapUi.update(frameDt);
     this.updateInteractPrompt(px, pz);
     this.updateQuestUi(px, pz);
+    this.updateFeelFrame(px, pz, frameDt, hudState);
 
     this.devtools.frame(frameDt, () => ({
       entities: this.world.entityCount,
@@ -1267,6 +1341,31 @@ export class Game {
     }));
   }
 
+  /**
+   * Extra freeze and shake on top of what skills ask for (F001, F009): a hit taken, a crit, a kill, an elite or boss
+   * kill with a slow-motion beat, and the slow fall of the hero's death (F014). Shake and slow motion follow the
+   * screen-shake setting (they are camera motion); the freeze is a few milliseconds and always plays.
+   */
+  private applyFeel(events: GameEvent[]): void {
+    const w = this.world;
+    const max = w.get(this.player, Health)?.max ?? 0;
+    const feel = frameFeel(events, max, (e) => (w.has(e, Boss) ? 'boss' : w.has(e, Elite) ? 'elite' : null));
+    if (feel.hitstopMs > 0) {
+      this.hitstop = Math.max(this.hitstop, feel.hitstopMs / 1000);
+      this.loop.timeScale = 0;
+    }
+    if (!this.renderer.screenShake) return;
+    if (feel.trauma > 0) this.renderer.rig.addTrauma(feel.trauma);
+    if (feel.slowmoS > 0) {
+      this.slowmoLeft = Math.max(this.slowmoLeft, feel.slowmoS);
+      this.slowmoScale = FEEL.slowmoScale;
+    }
+    if (events.some((e) => e.type === 'death' && e.isPlayer)) {
+      this.slowmoLeft = 0.9;
+      this.slowmoScale = 0.3;
+    }
+  }
+
   /** Tactile cues for the big moments (src/ui/haptics.ts): a heavy hit taken, death, a legendary drop. */
   private hapticFor(event: GameEvent): void {
     if (event.type === 'damage' && event.toPlayer && !event.dot) {
@@ -1278,12 +1377,14 @@ export class Game {
 
   private handleEvents(events: GameEvent[]): void {
     this.renderer.handleEvents(events);
+    this.applyFeel(events);
     // Sounds are chosen for the whole frame at once (a kill plays its death sound only; Lightbearer's blows ring).
     for (const cue of soundsForEvents(events)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
     for (const event of events) {
       this.damageNumbers.handle(event);
       this.enemyBars.handle(event);
       this.hapticFor(event);
+      this.coach.signalEvent(event);
       switch (event.type) {
         case 'hitstop':
           this.hitstop = Math.max(this.hitstop, event.ms / 1000);
@@ -1437,7 +1538,8 @@ export class Game {
   private updateEnemyBars(dt: number, px: number, pz: number): void {
     const infos = this.enemyInfos;
     infos.length = 0;
-    const blips: MapBlip[] = [];
+    const blips = this.blipBuf;
+    blips.length = 0;
     const exposure = this.zone?.storm.exposure ?? 0;
     for (const e of this.world.query(EnemyAI, Health, Transform)) {
       if (this.world.has(e, Dead)) continue;
@@ -1476,6 +1578,37 @@ export class Game {
     this.enemyBars.update(dt, infos, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
   }
 
+  private inCombat = false;
+  private crowdAt = 0;
+
+  /**
+   * Per-frame feel: camera look-ahead toward the cursor in a fight and a pull-back in a crowd (F018), the colour drain
+   * of death (F014), the tips watching the HUD (F006) and the golden guide to the first objective (F007).
+   */
+  private updateFeelFrame(px: number, pz: number, _dt: number, hud: HudState): void {
+    this.inCombat = hud.combat ?? false;
+    this.coach.observe(hud);
+    this.renderer.setDeathLook(hud.dead);
+    const rig = this.renderer.rig;
+    const aim = this.inCombat && !hud.dead && !this.touchControls.shown ? this.ctx.pickGround() : null;
+    const ahead = aim ? lookAheadOffset(aim.x - px, aim.z - pz) : { x: 0, z: 0 };
+    rig.setLookAhead(ahead.x, ahead.z);
+    if (this.realTime >= this.crowdAt) {
+      this.crowdAt = this.realTime + 0.3;
+      let near = 0;
+      for (const e of this.world.query(EnemyAI, Transform)) {
+        if (this.world.has(e, Dead)) continue;
+        const tr = this.world.req(e, Transform);
+        if (Math.abs(tr.x - px) < CROWD_RANGE && Math.abs(tr.z - pz) < CROWD_RANGE && Math.hypot(tr.x - px, tr.z - pz) < CROWD_RANGE) near++;
+      }
+      rig.setCrowd(near);
+    }
+    // The golden trail: only for the first main quest, and only once the tip banner has been shown.
+    const goal = hud.dead ? null : guideGoal(this.ctx.quests?.tracked ?? null, this.frameQuestMarkers, px, pz);
+    if (goal && this.feelUi.takeGuideBanner()) this.hud.showBanner(t('feel.guideBanner'), 3);
+    this.renderer.setGuide(goal, px, pz);
+  }
+
   private updateQuestUi(px: number, pz: number): void {
     const rt = this.ctx.quests;
     if (!rt) return;
@@ -1484,7 +1617,7 @@ export class Game {
     if (rt.tracked) {
       let best: { x: number; z: number } | null = null;
       let bestD = Infinity;
-      for (const m of questMarkers(this.world, this.ctx)) {
+      for (const m of this.frameQuestMarkers) {
         if (m.quest !== rt.tracked) continue;
         const d = Math.hypot(m.x - px, m.z - pz);
         if (d < bestD) {
@@ -2085,7 +2218,19 @@ export class Game {
 
   // ---- Player lifecycle -----------------------------------------------------
 
+  /** Rise after dying: a short fade out and in around the move, a rising cue, then 2 s of golden grace (F014). */
   respawn(): void {
+    if (!this.world.has(this.player, Dead) || this.fading) return;
+    this.fadeTo(
+      () => {
+        this.doRespawn();
+        audio.play('heal');
+      },
+      { name: t('feel.rose'), minBlack: 0.6 },
+    );
+  }
+
+  private doRespawn(): void {
     const w = this.world;
     const p = this.player;
     if (!w.has(p, Dead)) return;
@@ -2249,7 +2394,7 @@ export class Game {
       this.enterZone(def.id, x, z);
       this.hud.showBanner(t(`zones.${def.key}.name`), 2.4);
       this.autosave();
-    });
+    }, { name: t(`zones.${def.key}.name`), tip: true });
     return true;
   }
 
@@ -2325,6 +2470,11 @@ export class Game {
     for (const e of this.world.query(Boss, EnemyAI)) {
       if (this.announced.has(e) || !this.world.req(e, Boss).engaged || this.world.has(e, Dead)) continue;
       this.announced.add(e);
+      // A soft push-in and cinema bars for 1.2 s; input stays live. Camera motion, so it follows the screen-shake setting (F021).
+      if (this.renderer.screenShake) {
+        this.renderer.rig.pulseZoom(1.2, 0.82);
+        this.feelUi.bossBeat(1.4);
+      }
       const ai = this.world.req(e, EnemyAI);
       const portrait = artUrl(`bosses/${worldBossPortrait(ai.defId) ?? ai.defId}`);
       if (!portrait) continue;

@@ -15,7 +15,7 @@ import { SpatialHash } from '../src/core/spatial';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
 import { deathSystem } from '../src/systems/death';
 import { encounterSystem } from '../src/systems/encounter';
-import { TELEGRAPH_LEAD, enemyAISystem } from '../src/systems/enemyAI';
+import { enemyAISystem } from '../src/systems/enemyAI';
 import { ENEMY_DEFS, enemyDef } from '../src/data/db';
 import { MIN_WINDUP } from '../src/data/schemas';
 import { movementSystem } from '../src/systems/movement';

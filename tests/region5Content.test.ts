@@ -18,7 +18,7 @@ import { createQuestRuntime } from '../src/systems/quests';
 import { choirAura } from '../src/systems/coreAI';
 import { ringPillar, bestShaftFloor, PILLAR, descend } from '../src/world/coreInstances';
 import { BASE_TUNING, CAUSEWAY_GATE } from '../src/world/elevatorBase';
-import { buildInstance, hasInstance, instanceInteract, instanceSystem, objectiveText, roomCenter, type InstanceRuntime } from '../src/world/instance';
+import { buildInstance, hasInstance, instanceInteract, instanceSystem, objectiveText, roomCenter } from '../src/world/instance';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from '../src/world/setPieces';
 import { spawnPlayer } from '../src/world/spawn';
 import { createZoneRuntime } from '../src/world/zone';

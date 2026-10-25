@@ -12,9 +12,11 @@ import { hitDestructibles } from '../world/interactables';
 import { onEliteHit } from './elites';
 
 const HAZARD_TICK = 1;
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const projectilesBuf: Entity[] = [];
 
 export function projectileSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(Projectile, Transform)) {
+  for (const e of world.queryInto(projectilesBuf, Projectile, Transform)) {
     const p = world.req(e, Projectile);
     const tr = world.req(e, Transform);
     tr.prevX = tr.x;
@@ -28,7 +30,7 @@ export function projectileSystem(world: World, dt: number, ctx: GameContext): vo
     p.remaining -= dt;
 
     if (p.skill) {
-      if (skillProjectile(world, ctx, e, p, tr)) {
+      if (skillProjectile(world, ctx, p, tr)) {
         world.destroyDeferred(e);
         continue;
       }
@@ -123,7 +125,7 @@ export function reflectsBolts(world: World, target: Entity): boolean {
 const angleTo = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 /** Player skill projectile step. Returns true when it is spent. */
-function skillProjectile(world: World, ctx: GameContext, e: Entity, p: Projectile, tr: Transform): boolean {
+function skillProjectile(world: World, ctx: GameContext, p: Projectile, tr: Transform): boolean {
   const spec = p.skill!;
   if (!world.isAlive(p.owner)) return true;
   // A guardian light's bolts carry its owner's skill modifiers; every other summon's shots use the skill's base data.
@@ -158,9 +160,11 @@ function skillProjectile(world: World, ctx: GameContext, e: Entity, p: Projectil
   return false;
 }
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const trapsBuf: Entity[] = [];
 /** Mines arm, then blow up when an opposing entity steps within the trigger radius. */
 export function trapSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(Trap, Transform)) {
+  for (const e of world.queryInto(trapsBuf, Trap, Transform)) {
     const trap = world.req(e, Trap);
     trap.arming -= dt;
     trap.remaining -= dt;
@@ -182,9 +186,11 @@ export function trapSystem(world: World, dt: number, ctx: GameContext): void {
   }
 }
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const summonsBuf: Entity[] = [];
 /** Decoys and other summons: expire after their duration, with an optional burst. */
 export function summonSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(Summon, Transform)) {
+  for (const e of world.queryInto(summonsBuf, Summon, Transform)) {
     const summon = world.req(e, Summon);
     summon.remaining -= dt;
     const dead = world.has(e, Dead);
@@ -205,9 +211,11 @@ export function summonSystem(world: World, dt: number, ctx: GameContext): void {
     if (!dead && isAlive(world, e)) kill(world, ctx, e, 0);
   }
 }
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const hazardsBuf: Entity[] = [];
 
 export function hazardSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(Hazard, Transform)) {
+  for (const e of world.queryInto(hazardsBuf, Hazard, Transform)) {
     const hz = world.req(e, Hazard);
     hz.remaining -= dt;
     if (hz.remaining <= 0) {

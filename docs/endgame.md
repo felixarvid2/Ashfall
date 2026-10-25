@@ -61,7 +61,7 @@ level 50 earn **Neural Matrix** points instead of nothing.
 - One every 45 minutes of play time (the brief says three hours; shortened for a browser game, data value).
   Announced five minutes ahead with a toast, a map marker and a HUD countdown; despawns 15 minutes after it
   appears.
-- Three bosses at fixed spots spread over the five regions, each with several phases and a large health
+- Five bosses (the Choir of Stone and the Echo Engine were added in C012, both with a 30 % unique chance) at fixed spots spread over the five regions, each with several phases and a large health
   pool scaled by the World Tier: the Ashen Colossus, the Mother of Spores, the Hollow Engine (existing
   large models in the Lumen look).
 - Reward: a chest with a guaranteed legendary, a chance at a unique, tempering recipes and materials.
@@ -76,7 +76,7 @@ level 50 earn **Neural Matrix** points instead of nothing.
 
 ## Crafting and the Codex
 
-- **Tempering** (blacksmith): recipes (12: offense, defense, utility, mobility) found from world bosses,
+- **Tempering** (blacksmith): recipes (16: four each of offense, defense, utility, mobility; Havoc, Aegis, Focus and Surge are the newest) found from world bosses,
   Harvest caches and Rift Guardians. Tempering adds one random affix from the recipe's list; at most two
   tempered affixes per item; each item has five tempering charges.
 - **Masterworking** (blacksmith): ranks 0–12 for gold and materials (Lumen Dust from salvaging legendaries,
@@ -198,3 +198,7 @@ Harvest line with the shard counter (`.endgame-stack`, built in `game.ts`, posit
 under the title. Touch landscape: left, under the menu row. Touch portrait: left, under the region name and the World
 Tier badge. The tier badge stays under the region name; the target frame and event box moved 12 px down to clear it,
 and the landscape quest tracker 22 px down.
+
+## Repeatable bounties (C013)
+
+Three per region (`src/data/quests/bounties.ts`, ids `bt.*`), offered by hub NPCs once the region's last main quest is done. A cull, a salvage-and-clear run and a named hunt each. They pay gold, XP (times the World Tier), a guaranteed rare and Lumen Dust and/or Rift Shards. A finished bounty returns when the player enters its region again (`resetBounties`, called from `rebuildQuestWorld`).

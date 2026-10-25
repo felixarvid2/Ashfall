@@ -52,10 +52,12 @@ interface Candidate {
   taunt: number;
 }
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const combatantsBuf: Entity[] = [];
 /** Living, visible player-team entities enemies may attack (player, decoys, minions). */
 function targetCandidates(world: World, ctx: GameContext, seeStealth = false): Candidate[] {
   const out: Candidate[] = [];
-  for (const e of world.query(Faction, Health, Transform)) {
+  for (const e of world.queryInto(combatantsBuf, Faction, Health, Transform)) {
     if (world.req(e, Faction).team !== 'player' || world.has(e, Dead)) continue;
     if (!seeStealth && hasStatus(world, e, 'stealth')) continue;
     // Nobody is attacked inside a safe hub.
@@ -80,8 +82,27 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
   }
   return best;
 }
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const enemyMoversBuf: Entity[] = [];
+
+/** True while enemyAISystem runs: `cur` and the other module-level state below are not reentrant. */
+let aiRunning = false;
 
 export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): void {
+  if (aiRunning) {
+    // A nested call (a boss script inside a hit callback, say) would clobber `cur` mid-enemy.
+    if (import.meta.env.DEV) throw new Error('enemyAISystem is not reentrant');
+    return;
+  }
+  aiRunning = true;
+  try {
+    runEnemyAI(world, frameDt, ctx);
+  } finally {
+    aiRunning = false;
+  }
+}
+
+function runEnemyAI(world: World, frameDt: number, ctx: GameContext): void {
   nav = ctx.nav;
   cur.world = world;
   cur.ctx = ctx;
@@ -92,7 +113,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
   regrowFallen(world, ctx);
   choirAura(world, ctx, frameDt);
 
-  for (const e of world.query(EnemyAI, Transform, Mover)) {
+  for (const e of world.queryInto(enemyMoversBuf, EnemyAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
     const ai = world.req(e, EnemyAI);
     // Enraged bosses run their wind-ups and cooldowns faster.
@@ -447,6 +468,8 @@ function watchStuck(ai: EnemyAIData, tr: Transform, speed: number, dx: number, d
   st.want = 0;
 }
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const enemiesBuf: Entity[] = [];
 /**
  * Melee attackers spread round their target instead of queueing on one side: each keeps roughly its
  * bearing, neighbours are pushed apart until they fit, and whoever doesn't fit the inner ring waits
@@ -456,7 +479,7 @@ function assignSlots(world: World, ctx: GameContext): Map<Entity, { x: number; z
   const out = new Map<Entity, { x: number; z: number }>();
   type Member = { e: Entity; a: number; ring: number; w: number; d: number; pinned: boolean };
   const groups = new Map<Entity, Member[]>();
-  for (const e of world.query(EnemyAI, Transform)) {
+  for (const e of world.queryInto(enemiesBuf, EnemyAI, Transform)) {
     const ai = world.req(e, EnemyAI);
     if (!ai.aggro || ai.chasing === undefined || ai.burrowed || world.has(e, Dead)) continue;
     const def = enemyDef(ai.defId);

@@ -1,7 +1,7 @@
 /**
  * World bosses (docs/endgame.md): one every `interval` seconds of play time at a fixed spot, announced
- * `warning` seconds ahead and gone `lifetime` seconds after it appears. Three bosses in the Lumen look,
- * each with three phases built from the boss script primitives (src/data/bosses.ts). Names, banners and
+ * `warning` seconds ahead and gone `lifetime` seconds after it appears. Five bosses (three from the start,
+ * the Choir of Stone and the Echo Engine added in C012), each with three phases built from the boss script primitives (src/data/bosses.ts). Names, banners and
  * HUD text: lang/en.json → worldBoss.*, enemies.<id>.
  */
 import type { z } from 'zod';
@@ -83,6 +83,8 @@ export const WORLD_BOSSES: readonly WorldBossDef[] = [
       { zone: CF, x: -440, z: -480, radius: 26 },
       { zone: RD, x: 60, z: -280, radius: 26 },
       { zone: RD, x: 360, z: 580, radius: 26 },
+      // A second Cinder Flats spot, on the open eastern flats.
+      { zone: CF, x: 352, z: 312, radius: 26 },
     ],
   },
   {
@@ -115,6 +117,37 @@ export const WORLD_BOSSES: readonly WorldBossDef[] = [
       { zone: DM, x: -60, z: 510, radius: 22 },
       { zone: CORE, x: 220, z: 100, radius: 26 },
       { zone: CORE, x: -140, z: 280, radius: 26 },
+    ],
+  },
+  {
+    // A singer grown huge in the crystal: ranged bursts, motes and a blink. Reuses the Choir Mother portrait (C012).
+    id: 'choir_of_stone',
+    enemy: 'world_choir_of_stone',
+    script: 'world_choir_of_stone',
+    lifeMul: 4,
+    damageMul: 1,
+    affixes: [],
+    portrait: 'choir_mother',
+    rewards: { uniqueChance: 0.3, recipes: [1, 2], dust: [10, 16] },
+    spots: [
+      { zone: DM, x: 452, z: 212, radius: 26 },
+      { zone: DM, x: 472, z: 52, radius: 26 },
+      { zone: CORE, x: -168, z: 532, radius: 26 },
+    ],
+  },
+  {
+    // The Brood Engine's echo: a second machine grown over the Core's floor, with plates, light and a sweep.
+    id: 'echo_engine',
+    enemy: 'world_echo_engine',
+    script: 'world_echo_engine',
+    lifeMul: 5,
+    damageMul: 1,
+    affixes: [],
+    portrait: 'brood_engine',
+    rewards: { uniqueChance: 0.3, recipes: [1, 2], dust: [12, 18] },
+    spots: [
+      { zone: CORE, x: 372, z: 252, radius: 26 },
+      { zone: CORE, x: -208, z: 12, radius: 26 },
     ],
   },
 ];
@@ -178,6 +211,48 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
     aggroRange: 30,
     scale: 1.06,
     collider: { radius: 3, mass: 400 },
+    dropTable: WORLD_BOSS.bodyTable,
+    attack: { kind: 'melee', range: 6, arcDeg: 220, windup: 1.3, recovery: 1.0, cooldown: 2.0, damageType: 'physical', knockback: 4 },
+    shieldAlly: { every: 8, radius: 14, duration: 4, count: 3 },
+  },
+  {
+    // enemy.choir_singer × 2.4, Lumen look: walks, keeps its distance and fires three-shot bursts.
+    id: 'world_choir_of_stone',
+    assetId: 'enemy.choir_singer',
+    family: 'light',
+    behavior: 'ranged',
+    look: 'lumen',
+    life: 4600,
+    armor: 220,
+    resist: { energy: 0.4, toxic: 0.4 },
+    damage: 40,
+    moveSpeed: 1.7,
+    turnRate: 2.6,
+    aggroRange: 30,
+    preferredRange: [8, 16],
+    scale: 2.4,
+    glow: '#8ad8ff',
+    collider: { radius: 1.6, mass: 250 },
+    dropTable: WORLD_BOSS.bodyTable,
+    attack: { kind: 'projectile', windup: 1.0, cooldown: 2.4, speed: 10, radius: 0.45, maxRange: 22, damageType: 'energy', burst: 3, burstInterval: 0.25, spreadDeg: 14 },
+  },
+  {
+    // enemy.core_guardian × 1.1, Lumen look: the Hollow Engine's cousin, heavier and bluer.
+    id: 'world_echo_engine',
+    assetId: 'enemy.core_guardian',
+    family: 'machine',
+    behavior: 'tank',
+    look: 'lumen',
+    life: 5600,
+    armor: 420,
+    resist: { energy: 0.4, physical: 0.15 },
+    damage: 72,
+    moveSpeed: 1.9,
+    turnRate: 2.2,
+    aggroRange: 30,
+    scale: 1.12,
+    glow: '#8ad8ff',
+    collider: { radius: 3.1, mass: 420 },
     dropTable: WORLD_BOSS.bodyTable,
     attack: { kind: 'melee', range: 6, arcDeg: 220, windup: 1.3, recovery: 1.0, cooldown: 2.0, damageType: 'physical', knockback: 4 },
     shieldAlly: { every: 8, radius: 14, duration: 4, count: 3 },
@@ -255,6 +330,56 @@ export const WORLD_BOSS_SCRIPTS: Record<string, BossPhase[]> = {
       beams: { every: 6, length: 30, width: 2.6, warning: 1.1, damageOfWeapon: 1.4, color: '#fff0c8' },
       sweep: { length: 20, width: 2.6, speed: 0.65, dpsOfWeapon: 1.0, color: '#ffb23a' },
       teleport: { every: 10, radius: 3.2, warning: 1.2, damageOfWeapon: 1.4, color: '#fff0c8' },
+    },
+  ],
+  world_choir_of_stone: [
+    {
+      below: 1,
+      adds: { enemy: 'light_mote', count: 5, every: 14 },
+      beams: { every: 8, length: 26, width: 2.2, warning: 1.3, damageOfWeapon: 1.3, color: '#8ad8ff' },
+    },
+    {
+      below: 0.65,
+      banner: 'worldBoss.choir_of_stone.phase2',
+      tempo: 1.2,
+      adds: { enemy: 'crystal_sentinel', count: 2, every: 20 },
+      beams: { every: 7, length: 26, width: 2.2, warning: 1.2, damageOfWeapon: 1.3, color: '#8ad8ff' },
+      fireballs: { every: 7, count: 3, radius: 3, warning: 1.3, damageOfWeapon: 1.2, color: '#8ad8ff', vfx: 'explosion' },
+    },
+    {
+      below: 0.3,
+      banner: 'worldBoss.choir_of_stone.phase3',
+      speedMul: 1.3,
+      tempo: 1.3,
+      transform: { scale: 1.2, glow: '#e8f8ff' },
+      adds: { enemy: 'light_being', count: 2, every: 14 },
+      beams: { every: 5, length: 26, width: 2.2, warning: 1.1, damageOfWeapon: 1.4, color: '#e8f8ff' },
+      teleport: { every: 11, radius: 3.2, warning: 1.2, damageOfWeapon: 1.4, color: '#8ad8ff' },
+    },
+  ],
+  world_echo_engine: [
+    {
+      below: 1,
+      adds: { enemy: 'shade_drone', count: 2, every: 16 },
+      plates: { every: 9, radius: 3, warning: 1.3, damageOfWeapon: 1.4 },
+    },
+    {
+      below: 0.65,
+      banner: 'worldBoss.echo_engine.phase2',
+      tempo: 1.2,
+      adds: { enemy: 'guardian_lancer', count: 1, every: 22 },
+      beams: { every: 8, length: 30, width: 2.6, warning: 1.2, damageOfWeapon: 1.3, color: '#8ad8ff' },
+      fireballs: { every: 7, count: 3, radius: 3, warning: 1.3, damageOfWeapon: 1.3, color: '#8ad8ff', vfx: 'explosion' },
+    },
+    {
+      below: 0.3,
+      banner: 'worldBoss.echo_engine.phase3',
+      speedMul: 1.3,
+      tempo: 1.3,
+      adds: { enemy: 'shade_walker', count: 3, every: 14 },
+      sweep: { length: 20, width: 2.6, speed: 0.6, dpsOfWeapon: 1.0, color: '#8ad8ff' },
+      beams: { every: 6, length: 30, width: 2.6, warning: 1.1, damageOfWeapon: 1.4, color: '#8ad8ff' },
+      teleport: { every: 10, radius: 3.2, warning: 1.2, damageOfWeapon: 1.4, color: '#8ad8ff' },
     },
   ],
 };

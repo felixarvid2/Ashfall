@@ -487,7 +487,7 @@ describe('Deep Rifts: a clear', () => {
   });
 
   it('a recipe drops now and then, from the crafting recipes, never one the character already knows while others remain', () => {
-    expect(RIFT_RECIPE_POOL.length).toBe(12);
+    expect(RIFT_RECIPE_POOL.length).toBe(16);
     const g = inRift(10);
     clearRift(g);
     let learned = 0;

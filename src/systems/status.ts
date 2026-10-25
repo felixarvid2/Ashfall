@@ -3,21 +3,25 @@ import { CHOIR } from '../data/core';
 import { PYLON_EFFECTS } from '../data/interactables';
 import { Dead, Invulnerable, Mounted, Mover, StatusEffects } from '../core/components';
 import type { GameContext } from '../core/context';
-import type { World } from '../core/ecs';
+import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS } from '../data/db';
 import { applyDamage, dotTaken } from './combat';
 
 /** DoT damage is grouped into ticks so damage numbers stay readable. */
 export const DOT_TICK = 0.5;
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const invulnerablesBuf: Entity[] = [];
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const statusHoldersBuf: Entity[] = [];
 
 export function statusSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(Invulnerable)) {
+  for (const e of world.queryInto(invulnerablesBuf, Invulnerable)) {
     const inv = world.req(e, Invulnerable);
     inv.remaining -= dt;
     if (inv.remaining <= 0) world.remove(e, Invulnerable);
   }
 
-  for (const e of world.query(StatusEffects)) {
+  for (const e of world.queryInto(statusHoldersBuf, StatusEffects)) {
     const effects = world.req(e, StatusEffects);
     if (world.has(e, Dead)) {
       effects.list.length = 0;

@@ -29,7 +29,7 @@ import { EventQueue } from '../../src/core/events';
 import { Rng } from '../../src/core/rng';
 import { SpatialHash } from '../../src/core/spatial';
 import { classDef, enemyDef } from '../../src/data/db';
-import { PROGRESSION, baseItem } from '../../src/data/loot/db';
+import { baseItem } from '../../src/data/loot/db';
 import { defaultSettings } from '../../src/data/settings';
 import { TEST_ARENA } from '../../src/data/zones/testArena';
 import { collisionSystem, spatialSystem } from '../../src/systems/collision';

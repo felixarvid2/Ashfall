@@ -135,16 +135,27 @@ export class World {
       for (const e of this.alive) out.push(e);
       return out;
     }
+    // Resolve the other stores once; up to three types need no per-entity store lookup at all.
     const n = types.length;
-    for (const e of smallest.keys()) {
-      let all = true;
-      for (let i = 0; i < n; i++) {
-        if (!this.stores.get(types[i]!)!.has(e)) {
-          all = false;
-          break;
+    if (n === 1) {
+      for (const e of smallest.keys()) out.push(e);
+    } else if (n === 2) {
+      const [s0, s1] = [this.stores.get(types[0]!)!, this.stores.get(types[1]!)!];
+      for (const e of smallest.keys()) if (s0.has(e) && s1.has(e)) out.push(e);
+    } else if (n === 3) {
+      const [s0, s1, s2] = [this.stores.get(types[0]!)!, this.stores.get(types[1]!)!, this.stores.get(types[2]!)!];
+      for (const e of smallest.keys()) if (s0.has(e) && s1.has(e) && s2.has(e)) out.push(e);
+    } else {
+      for (const e of smallest.keys()) {
+        let all = true;
+        for (let i = 0; i < n; i++) {
+          if (!this.stores.get(types[i]!)!.has(e)) {
+            all = false;
+            break;
+          }
         }
+        if (all) out.push(e);
       }
-      if (all) out.push(e);
     }
     return out;
   }
@@ -162,9 +173,17 @@ export class World {
       return;
     }
     const n = types.length;
-    outer: for (const e of smallest.keys()) {
-      for (let i = 0; i < n; i++) if (!this.stores.get(types[i]!)!.has(e)) continue outer;
-      fn(e);
+    if (n === 1) {
+      for (const e of smallest.keys()) fn(e);
+    } else if (n === 2) {
+      const s0 = this.stores.get(types[0]!)!;
+      const s1 = this.stores.get(types[1]!)!;
+      for (const e of smallest.keys()) if (s0.has(e) && s1.has(e)) fn(e);
+    } else {
+      outer: for (const e of smallest.keys()) {
+        for (let i = 0; i < n; i++) if (!this.stores.get(types[i]!)!.has(e)) continue outer;
+        fn(e);
+      }
     }
   }
 

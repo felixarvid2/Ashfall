@@ -156,7 +156,7 @@ export const VAULTS_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'okafor' },
     ],
-    rewards: { xp: 1600, gold: 180, restoration: 1 },
+    rewards: { xp: 1600, gold: 180, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.infected_researcher',
@@ -213,7 +213,7 @@ export const VAULTS_QUESTS: QuestInput[] = [
       { kind: 'kill', count: 8, near: { x: DAM.x, z: DAM.z, radius: 60 } },
       { kind: 'talk', npc: 'dace' },
     ],
-    rewards: { xp: 1900, gold: 240, restoration: 1 },
+    rewards: { xp: 1900, gold: 240, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.swarm_queen',
@@ -248,7 +248,7 @@ export const VAULTS_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'quill' },
     ],
-    rewards: { xp: 1400, gold: 240 },
+    rewards: { xp: 1400, gold: 240, item: 'rare' },
   },
   {
     id: 'sq.crystal_light',
@@ -262,7 +262,7 @@ export const VAULTS_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 10, poiKind: 'blinded', marker: false },
       { kind: 'talk', npc: 'dace' },
     ],
-    rewards: { xp: 1700, gold: 200, restoration: 1 },
+    rewards: { xp: 1700, gold: 200, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.seed_courier',
@@ -283,7 +283,7 @@ export const VAULTS_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'okafor' },
     ],
-    rewards: { xp: 2200, gold: 280, restoration: 1 },
+    rewards: { xp: 2200, gold: 280, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.overgrown_patrol',
@@ -327,7 +327,7 @@ export const VAULTS_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, ids: ['hv.lore.9'] },
       { kind: 'talk', npc: 'brann' },
     ],
-    rewards: { xp: 2100, gold: 260, restoration: 1 },
+    rewards: { xp: 2100, gold: 260, item: 'rare', restoration: 1 },
   },
 
   // ---- Mystery -----------------------------------------------------------------------

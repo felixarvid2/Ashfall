@@ -10,6 +10,7 @@ import { confirmSheet } from './confirmSheet';
 import { panelStack } from './panelStack';
 import { tooltipSheet } from './tooltipSheet';
 import { artUrl, cssUrl } from './art';
+import { getPref, setPref } from '../core/localPrefs';
 
 export interface SlotSummary {
   index: number;
@@ -50,20 +51,13 @@ export const NAME_MAX = 24;
 const LAST_SLOT_KEY = 'ashfall.lastSlot';
 
 function readLastSlot(): number | null {
-  try {
-    const n = Number.parseInt(localStorage.getItem(LAST_SLOT_KEY) ?? '', 10);
-    return Number.isFinite(n) ? n : null;
-  } catch {
-    return null;
-  }
+  const n = Number.parseInt(getPref(LAST_SLOT_KEY) ?? '', 10);
+  return Number.isFinite(n) ? n : null;
 }
 
 function writeLastSlot(slot: number): void {
-  try {
-    localStorage.setItem(LAST_SLOT_KEY, String(slot));
-  } catch {
-    // Storage may be blocked; Continue then simply is not offered next time.
-  }
+  // Storage may be blocked; Continue then simply is not offered next time.
+  setPref(LAST_SLOT_KEY, String(slot));
 }
 
 /** "just now", "5 min ago", "2 h ago", "3 days ago", else the date. Pure, for the slot rows (P041). */

@@ -149,6 +149,44 @@ export const ENEMIES: EnemyInput[] = [
     },
   },
   // ---- Region 2: The Refinery District (docs/regions/refinery-district.md) ----
+  // Cinder Flats variants (C018): new roles on existing models.
+  {
+    // Ranged: an infected colonist with a pipe of burning ash that it flings from a distance.
+    id: 'ash_thrower',
+    assetId: 'enemy.infected_colonist',
+    family: 'infected',
+    behavior: 'ranged',
+    life: 40,
+    armor: 16,
+    resist: { heat: 0.2, toxic: 0.1 },
+    damage: 11,
+    moveSpeed: 2.9,
+    turnRate: 7,
+    aggroRange: 18,
+    preferredRange: [7, 11],
+    glow: '#d6b98a',
+    collider: { radius: 0.42, mass: 1 },
+    attack: { kind: 'projectile', windup: 0.7, cooldown: 2.4, speed: 9, radius: 0.32, maxRange: 15, damageType: 'heat' },
+  },
+  {
+    // Ranged: a rusted drone that zips about faster than a security drone and fires more often, for less.
+    id: 'rust_drone',
+    assetId: 'enemy.security_drone',
+    family: 'machine',
+    behavior: 'ranged',
+    life: 24,
+    armor: 40,
+    resist: { energy: 0.2 },
+    damage: 8,
+    moveSpeed: 4.6,
+    turnRate: 8,
+    aggroRange: 18,
+    preferredRange: [5, 9],
+    hover: 1.1,
+    glow: '#c0602a',
+    collider: { radius: 0.42, mass: 0.5 },
+    attack: { kind: 'projectile', windup: 0.5, cooldown: 1.6, speed: 12, radius: 0.28, maxRange: 14, damageType: 'energy' },
+  },
   // Returning enemies as fire variants of region 1 models.
   {
     // Charger: a burned colonist with embers in its wounds; its body burns on where it falls.
