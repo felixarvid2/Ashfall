@@ -5,6 +5,7 @@
 import { cssUrl } from './art';
 import { BannerQueue, type BannerItem } from './bannerQueue';
 import { haptic, setLowLife } from './haptics';
+import { setAffixChips } from './enemyBars';
 import { capStatuses, isExpiring, statusSlots } from './statusTiles';
 import { classDef, skill } from '../data/db';
 import { t } from '../data/i18n';
@@ -19,14 +20,50 @@ export function keyLabel(code: string): string {
   if (code === 'Backquote') return '§';
   if (code === 'Space') return 'Space';
   if (code.startsWith('Shift')) return 'Shift';
-  return code;
+  if (code.startsWith('Alt')) return 'Alt';
+  if (code.startsWith('Control')) return 'Ctrl';
+  if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
+  return KEY_NAMES[code] ?? code;
 }
+
+/** Readable names for keys whose code is not what the key cap shows (rebinding, B042). */
+const KEY_NAMES: Record<string, string> = {
+  ArrowUp: '↑',
+  ArrowDown: '↓',
+  ArrowLeft: '←',
+  ArrowRight: '→',
+  Minus: '-',
+  Equal: '=',
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Semicolon: ';',
+  Quote: "'",
+  BracketLeft: '[',
+  BracketRight: ']',
+  Backslash: '\\',
+  IntlBackslash: '<',
+  Backspace: 'Bksp',
+  CapsLock: 'Caps',
+  PageUp: 'PgUp',
+  PageDown: 'PgDn',
+  Escape: 'Esc',
+};
 
 /** Life fractions where the boss script changes phase (tick marks on its bar); `{}` for a script with one phase. */
 export function bossPhaseTicks(script: string | undefined): { phases?: number[] } {
   if (!script) return {};
   const phases = (BOSS_SCRIPTS[script] ?? []).map((p) => p.below).filter((b) => b < 1);
   return phases.length > 0 ? { phases } : {};
+}
+
+/**
+ * The number on a cooling-down slot: whole seconds (rounded up) from 2 s, one decimal below it so a short cooldown
+ * doesn't sit on "1" for a second. Skills with a cooldown under 0.75 s show nothing (A002).
+ */
+export function cooldownLabel(cooldown: number, max: number): string {
+  if (cooldown <= 0.05 || max < 0.75) return '';
+  return cooldown < 2 ? cooldown.toFixed(1) : String(Math.ceil(cooldown));
 }
 
 export interface SlotState {
@@ -64,7 +101,7 @@ export interface HudState {
   location?: { title: string; sub: string };
   /** World Tier badge text ('WT II Veteran'), shown under the region name once a tier above I is unlocked. */
   tier?: string;
-  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; portrait?: string; /** Life fractions where a boss changes phase (tick marks on its bar). */ phases?: number[] } | null;
+  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; /** Affix ids, parallel to `affixes` (names): the chips pick their icons from them. */ affixIds?: string[]; /** Elite kind: the frame's border colour (A022). */ tier?: 'champion' | 'rare' | 'named'; portrait?: string; /** Life fractions where a boss changes phase (tick marks on its bar). */ phases?: number[] } | null;
   /** World event in progress near the player. */
   event?: { title: string; text: string };
   /** Statuses on the player: pylon buffs, wards, and harm like burning or poison. */
@@ -74,11 +111,31 @@ export interface HudState {
   /** Flares left (Deep Mines). */
   flares?: { charges: number; max: number; key: string };
   dead: boolean;
+  /** "Slain by Champion Ash Walker - Molten" while dead (A046); empty when nothing named hit the hero. */
+  deathCause?: string;
   xp: { level: number; current: number; next: number; skillPoints: number };
+  /** Learned active skills that are not on the action bar (B036): an accent dot on the Skills entry while above 0. */
+  unassignedSkills?: number;
 }
 
 /** Seconds after dying before the touch respawn button can be tapped. */
 const DEATH_LOCK = 1.2;
+
+const HINTS_KEY = 'ashfall.hintsSeen';
+function readHintsSeen(): boolean {
+  try {
+    return localStorage.getItem(HINTS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeHintsSeen(): void {
+  try {
+    localStorage.setItem(HINTS_KEY, '1');
+  } catch {
+    /* storage blocked: the hint simply shows again next session */
+  }
+}
 
 const SLOT_LABELS = ['LMB', 'RMB', '1', '2', '3', '4'];
 
@@ -154,6 +211,12 @@ class Orb {
     this.wasWarn = warn;
   }
 
+  /** A refused skill press: the orb border flashes red for 200 ms (A004). */
+  denied(): void {
+    this.el.classList.add('denied');
+    setTimeout(() => this.el.classList.remove('denied'), 200);
+  }
+
   private flash(): void {
     this.el.classList.add('hit');
     setTimeout(() => this.el.classList.remove('hit'), 120);
@@ -183,9 +246,11 @@ class Slot {
   private readonly cdText: HTMLDivElement;
   private last = '';
 
-  constructor(label: string, private readonly onHover: (slot: Slot | null) => void) {
+  constructor(label: string, private readonly onHover: (slot: Slot | null) => void, onEmptyClick?: () => void) {
     this.el = document.createElement('div');
     this.el.className = 'slot';
+    // An empty slot opens the Skills panel on desktop (touch has its own handler in touchControls) (A005).
+    if (onEmptyClick) this.el.addEventListener('click', () => this.el.dataset.category === 'empty' && onEmptyClick());
     const key = document.createElement('div');
     key.className = 'slot-key';
     key.textContent = label;
@@ -204,7 +269,8 @@ class Slot {
 
   set(name: string, category: string, cooldown: number, max: number, usable: boolean, icon: string | null = null, extra: SlotExtra = {}): void {
     const frac = max > 0 ? Math.min(1, cooldown / max) : 0;
-    const key = `${name}|${category}|${frac.toFixed(2)}|${usable}|${cooldown > 0 ? Math.ceil(cooldown) : 0}|${icon}|${extra.badge ?? ''}|${extra.affordable ?? ''}|${extra.cost ?? ''}`;
+    const cdLabel = cooldownLabel(cooldown, max);
+    const key = `${name}|${category}|${frac.toFixed(2)}|${usable}|${cdLabel}|${icon}|${extra.badge ?? ''}|${extra.affordable ?? ''}|${extra.cost ?? ''}`;
     if (key === this.last) return;
     this.last = key;
     // Touch buttons: a flash when the cooldown ends, a red tint when only the resource is missing, a charge/cost badge.
@@ -228,8 +294,17 @@ class Slot {
     this.el.dataset.category = category;
     this.cd.style.background =
       frac > 0 ? `conic-gradient(rgba(0,0,0,0.72) ${frac * 360}deg, transparent 0deg)` : 'transparent';
-    this.cdText.textContent = cooldown > 0.05 && max >= 1 ? String(Math.ceil(cooldown)) : '';
+    this.cdText.textContent = cdLabel;
+    this.cdText.classList.toggle('fine', cdLabel.includes('.'));
     this.el.classList.toggle('unusable', !usable);
+  }
+
+  /** A denied press: the button shakes once (A004). */
+  deny(): void {
+    this.el.classList.remove('denied');
+    void this.el.offsetWidth;
+    this.el.classList.add('denied');
+    setTimeout(() => this.el.classList.remove('denied'), 160);
   }
 
   private lastRecharge = '';
@@ -279,6 +354,8 @@ export class Hud {
   private readonly root: HTMLElement;
   private readonly buffBar: HTMLDivElement;
   private lastBuffs = '';
+  private buffData = new Map<string, HudStatus>();
+  private hoveredBuff: string | null = null;
   private readonly exposure: HTMLDivElement;
   private readonly exposureFill: HTMLDivElement;
   private readonly exposureText: HTMLDivElement;
@@ -294,16 +371,31 @@ export class Hud {
   private bossCardTimer = 0;
   private readonly death: HTMLDivElement;
   private readonly deathHint: HTMLDivElement;
+  private readonly deathCause: HTMLParagraphElement;
   private readonly riseButton: HTMLButtonElement;
   /** Seconds left before the touch respawn button works (counts down while dead). */
   private deathLock = 0;
   private deathAt = 0;
+  /** Pale strip behind the target's life: it lags the fill so a big hit shows (A023). */
+  private readonly targetGhost: HTMLDivElement;
+  private lastTargetName = '';
+  /** Control hints fade after 20 s of play or the first skill use; the title after 8 s; F1 / ? bring the hints back (A019). */
+  private readonly titleEl: HTMLDivElement;
+  private playTime = 0;
+  private hintsSeen = false;
+  private hintShow = 0;
+  /** Life at the last update, for the hit flash on the vignette (A033). */
+  private lastLife = -1;
+  private hitTimer = 0;
   private lastRiseSecs = -1;
   private wasDead = false;
   private readonly tooltip: HTMLDivElement;
   private readonly xpFill: HTMLDivElement;
   private readonly xpText: HTMLDivElement;
   private lastXp = '';
+  /** Desktop: the dot at the end of the XP bar for learned skills off the bar (B036); `skillsDotKey` is the last value written. */
+  private readonly skillsDot: HTMLSpanElement;
+  private skillsDotKey = '';
   private lastWave = '';
   private lastTarget = '';
   private respawnKey = 'R';
@@ -327,12 +419,21 @@ export class Hud {
     this.hint = document.createElement('p');
     this.hint.className = 'hud-hint';
     title.append(h1, sub, this.hint);
+    this.titleEl = title;
+    this.hintsSeen = readHintsSeen();
+    this.hint.classList.toggle('faded', this.hintsSeen);
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'F1' || e.key === '?') && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+        if (e.key === 'F1') e.preventDefault();
+        this.hintShow = 12;
+      }
+    });
 
     const bar = document.createElement('div');
     bar.className = 'action-bar';
     const slotRow = document.createElement('div');
     slotRow.className = 'slots';
-    this.slots = SLOT_LABELS.map((label) => new Slot(label, (s) => this.showTooltip(s)));
+    this.slots = SLOT_LABELS.map((label) => new Slot(label, (s) => this.showTooltip(s), () => !this.touch && this.onOpenSkills?.()));
     this.dodgeSlot = new Slot('Space', () => {});
     this.potionSlot = new Slot('Q', () => {});
     this.dodgeSlot.el.classList.add('slot-small');
@@ -347,7 +448,9 @@ export class Hud {
     this.xpFill.className = 'xp-fill';
     this.xpText = document.createElement('div');
     this.xpText.className = 'xp-text';
-    xp.append(this.xpFill, this.xpText);
+    this.skillsDot = Object.assign(document.createElement('span'), { className: 'skills-dot', hidden: true });
+    this.skillsDot.setAttribute('role', 'img');
+    xp.append(this.xpFill, this.xpText, this.skillsDot);
     middle.append(slotRow, xp);
     bar.append(this.lifeOrb.el, middle, this.heatOrb.el);
 
@@ -370,7 +473,9 @@ export class Hud {
     track.className = 'target-track';
     this.targetFill = document.createElement('div');
     this.targetFill.className = 'target-fill';
-    track.appendChild(this.targetFill);
+    this.targetGhost = document.createElement('div');
+    this.targetGhost.className = 'target-ghost';
+    track.append(this.targetGhost, this.targetFill);
     this.targetTrack = track;
     this.targetStatus = document.createElement('div');
     this.targetStatus.className = 'target-status';
@@ -405,16 +510,18 @@ export class Hud {
     // Touch: a deliberate button after a short lock, so a thumb still mashing attack/dodge cannot respawn by accident.
     this.riseButton = document.createElement('button');
     this.riseButton.className = 'death-respawn';
+    this.riseButton.style.setProperty('--lock-time', `${DEATH_LOCK}s`);
     this.riseButton.dataset.testid = 'respawn';
     this.riseButton.addEventListener('click', (e) => {
       e.stopPropagation();
       if (this.deathLock <= 0) onRespawn();
     });
-    this.death.append(dt, this.deathHint, this.riseButton);
+    this.deathCause = document.createElement('p');
+    this.deathCause.className = 'death-cause';
+    this.deathCause.dataset.testid = 'death-cause';
+    this.death.append(dt, this.deathCause, this.deathHint, this.riseButton);
     this.death.hidden = true;
-    this.death.addEventListener('click', () => {
-      if (!this.touch) onRespawn();
-    });
+    // A click elsewhere does nothing (A045): a thumb mashing LMB must not skip the screen; the button and R respawn.
 
     this.tooltip = document.createElement('div');
     this.tooltip.className = 'tooltip';
@@ -427,6 +534,17 @@ export class Hud {
     this.buffBar = document.createElement('div');
     this.buffBar.className = 'buff-bar';
     this.buffBar.dataset.testid = 'buff-bar';
+    this.buffBar.addEventListener('mouseover', (e) => {
+      if (this.touch) return;
+      const tile = (e.target as Element | null)?.closest<HTMLElement>('.buff[data-status]');
+      if (tile) this.showBuffTooltip(tile.dataset.status ?? null);
+    });
+    this.buffBar.addEventListener('mouseleave', () => {
+      if (this.hoveredBuff) {
+        this.hoveredBuff = null;
+        this.tooltip.hidden = true;
+      }
+    });
 
     // Spore exposure meter: fills while you breathe spores, drains in clean air.
     this.exposure = document.createElement('div');
@@ -500,6 +618,8 @@ export class Hud {
   }
 
   private touch = false;
+  /** Desktop: a click on an empty action-bar slot opens the Skills panel (A005); set by the game. */
+  onOpenSkills?: () => void;
 
   /** Touch controls on: the action bar becomes on-screen buttons (styled by `.touch-ui`). */
   setTouch(on: boolean): void {
@@ -588,7 +708,49 @@ export class Hud {
     this.bossCardTimer = seconds;
   }
 
+  /** Accessibility: `reduce-flashing` on the root stops the low-life pulse and the hit flash (settings.reduceFlashing). */
+  setReduceFlashing(on: boolean): void {
+    this.root.classList.toggle('reduce-flashing', on);
+  }
+
+  /** True during the short lock after dying: neither the button nor R respawns yet (A045). */
+  get respawnLocked(): boolean {
+    return !this.wasDead || this.deathLock > 0;
+  }
+
+  /** Hints fade after 20 s of play or the first skill use, the title after 8 s; F1 or ? show the hints for 12 s (A019). */
+  private updateHints(state: HudState, dt: number): void {
+    if (!state.dead) this.playTime += dt;
+    if (!this.hintsSeen && (this.playTime > 20 || state.slots.some((s) => s.cooldown > 0))) {
+      this.hintsSeen = true;
+      writeHintsSeen();
+    }
+    this.hintShow = Math.max(0, this.hintShow - dt);
+    const hintFaded = this.hintsSeen && this.hintShow <= 0;
+    if (this.hint.classList.contains('faded') !== hintFaded) this.hint.classList.toggle('faded', hintFaded);
+    const titleFaded = this.playTime > 8;
+    if (this.titleEl.classList.contains('faded') !== titleFaded) this.titleEl.classList.toggle('faded', titleFaded);
+  }
+
+  /** Red edge flash when a hit takes 5 % of max life or more (A033). */
+  private updateHit(life: number, max: number): void {
+    if (this.lastLife >= 0 && max > 0 && !this.root.classList.contains('reduce-flashing')) {
+      const share = (this.lastLife - life) / max;
+      if (share >= 0.05) {
+        this.vignette.style.setProperty('--hit-op', String(Math.min(0.5, 0.15 + 0.5 * share).toFixed(2)));
+        this.vignette.classList.add('hit');
+        clearTimeout(this.hitTimer);
+        this.hitTimer = window.setTimeout(() => this.vignette.classList.remove('hit'), 140);
+      }
+    }
+    this.lastLife = life;
+  }
+
   update(state: HudState, dt: number): void {
+    this.updateHints(state, dt);
+    this.root.classList.toggle('has-target', !!state.target);
+    this.root.classList.toggle('hud-dead', state.dead);
+    this.updateHit(state.life.current, state.life.max);
     if (this.bossCardTimer > 0) {
       this.bossCardTimer -= dt;
       if (this.bossCardTimer <= 0) this.bossCard.hidden = true;
@@ -610,13 +772,18 @@ export class Hud {
     const buffKey = buffs.map((b) => `${b.id}:${b.timed ? Math.ceil(b.remaining) : ''}:${b.stacks ?? 1}`).join('|') + `+${more}`;
     if (buffKey !== this.lastBuffs) {
       this.lastBuffs = buffKey;
+      this.buffData = new Map(buffs.map((b) => [b.id, b]));
       this.buffBar.replaceChildren(
-        ...buffs.map((b) => {
+        ...buffs.map((b, i) => {
           const el = document.createElement('div');
-          el.className = `${b.harmful ? 'buff harmful' : 'buff'}${isExpiring(b) ? ' expiring' : ''}`;
+          // The first harmful tile after a boon starts the second group: a gap and a divider (A013).
+          const groupStart = b.harmful && i > 0 && !buffs[i - 1]!.harmful;
+          el.className = `${b.harmful ? 'buff harmful' : 'buff'}${isExpiring(b) ? ' expiring' : ''}${groupStart ? ' group-start' : ''}`;
           el.dataset.status = b.id;
           el.style.setProperty('--status-color', b.color);
-          el.title = t(`statuses.${b.id}`);
+          el.setAttribute('aria-label', t(`statuses.${b.id}`));
+          // Desktop shows the HUD tooltip on hover (A014); the native title is for touch only.
+          if (this.touch) el.title = t(`statuses.${b.id}`);
           // The icon is a white game-icons.net glyph used as a mask, so it takes the status colour.
           const icon = document.createElement('div');
           icon.className = 'buff-icon';
@@ -628,6 +795,8 @@ export class Hud {
         }),
         ...(more > 0 ? [Object.assign(document.createElement('div'), { className: 'buff buff-more', textContent: `+${more}` })] : []),
       );
+      // The tiles were rebuilt under the pointer: keep the tooltip on the same status with its new time.
+      if (this.hoveredBuff) this.showBuffTooltip(this.hoveredBuff);
     }
     const exposure = Math.round((state.exposure ?? 0) * 100);
     if (exposure !== this.lastExposure) {
@@ -673,7 +842,7 @@ export class Hud {
     this.dodgeSlot.set(t('hud.dodge'), 'dodge', state.dodge.cooldown, state.dodge.max, state.dodge.cooldown <= 0);
     // The potion recharge shows as the dark sweep on the button while a charge is on its way.
     const recharging = state.potion.charges < state.potion.max && (state.potion.rechargeMax ?? 0) > 0;
-    this.potionSlot.set(`${t('hud.potion')} ×${state.potion.charges}`, 'potion', 0, 0, state.potion.charges > 0, null, { badge: String(state.potion.charges) });
+    this.potionSlot.set(this.touch ? `${t('hud.potion')} ×${state.potion.charges}` : t('hud.potion'), 'potion', 0, 0, state.potion.charges > 0, null, { badge: String(state.potion.charges) });
     this.potionSlot.setRecharge(recharging ? (state.potion.recharge ?? 0) / state.potion.rechargeMax! : 0);
 
     let waveKey = '';
@@ -705,7 +874,7 @@ export class Hud {
     }
 
     const targetKey = state.target
-      ? `${state.target.name}|${Math.ceil(state.target.current)}|${state.target.max}|${state.target.statuses.join(',')}|${state.target.phases?.join(',') ?? ''}`
+      ? `${state.target.name}|${Math.ceil(state.target.current)}|${state.target.max}|${state.target.statuses.join(',')}|${state.target.phases?.join(',') ?? ''}|${state.target.affixIds?.join(',') ?? ''}`
       : '';
     if (targetKey !== this.lastTarget) {
       this.lastTarget = targetKey;
@@ -718,6 +887,18 @@ export class Hud {
         this.targetName.style.color = state.target.color ?? '';
         const frac = Math.max(0, state.target.current / state.target.max);
         this.targetFill.style.width = `${frac * 100}%`;
+        // The ghost jumps to a new target's life and lags behind the fill on the same one (A023).
+        if (state.target.name !== this.lastTargetName) {
+          this.lastTargetName = state.target.name;
+          this.targetGhost.classList.add('snap');
+          this.targetGhost.style.width = `${frac * 100}%`;
+          void this.targetGhost.offsetWidth;
+          this.targetGhost.classList.remove('snap');
+        } else {
+          this.targetGhost.style.width = `${frac * 100}%`;
+        }
+        if (state.target.tier) this.target.dataset.tier = state.target.tier;
+        else delete this.target.dataset.tier;
         // A boss (portrait or phases) gets the wide frame with a percentage and a tick at every phase change (H069).
         const boss = !!state.target.portrait || !!state.target.phases?.length;
         this.target.classList.toggle('boss', boss);
@@ -728,9 +909,16 @@ export class Hud {
           (this.targetTrack.lastElementChild as HTMLElement).style.left = `${below * 100}%`;
         }
         // Elite affixes first (in the elite's colour), then statuses; portrait puts them on their own lines.
-        const affixes = state.target.affixes?.join(' · ') ?? '';
+        const ids = state.target.affixIds;
+        const names = state.target.affixes ?? [];
+        // Chips (icon or two letters, the full name on hover) when the ids are known, else the names as text (A025).
+        const affixes = ids?.length ? ids.join(',') : names.join(' · ');
+        if (ids?.length) setAffixChips(this.targetAffix, ids.map((id, i) => ({ id, name: names[i] ?? id })), state.target.color ?? '#ffd23a');
+        else {
+          this.targetAffix.dataset.key = '';
+          this.targetAffix.textContent = affixes;
+        }
         const statuses = state.target.statuses.map((s) => t(`statuses.${s}`)).join(' · ');
-        this.targetAffix.textContent = affixes;
         this.targetAffix.style.color = state.target.color ?? '';
         this.targetSep.hidden = !(affixes && statuses);
         this.targetStatusText.textContent = statuses;
@@ -738,11 +926,21 @@ export class Hud {
     }
 
     this.death.hidden = !state.dead;
+    const cause = state.dead ? (state.deathCause ?? '') : '';
+    if (this.deathCause.textContent !== cause) {
+      this.deathCause.textContent = cause;
+      this.deathCause.hidden = cause === '';
+    }
     if (state.dead !== this.wasDead) {
       this.wasDead = state.dead;
       this.deathAt = performance.now();
       this.lastRiseSecs = -1;
       this.deathLock = state.dead ? DEATH_LOCK : 0;
+      // Dying clears the banner queue: "Quest complete" must not hang above "You have fallen" (A043).
+      if (state.dead) {
+        this.banners.clear();
+        this.renderBanner(null);
+      }
     }
     if (state.dead) {
       // Wall-clock, not the (clamped) frame time: the lock must feel the same at 60 and at 10 FPS.
@@ -751,7 +949,12 @@ export class Hud {
       if (secs !== this.lastRiseSecs) {
         this.lastRiseSecs = secs;
         this.riseButton.disabled = secs > 0;
-        this.riseButton.textContent = secs > 0 ? `${t('hud.riseAgain')} (${secs})` : t('hud.riseAgain');
+        // Desktop: a fixed "Rise (R)" whose fill shows the lock; touch counts the seconds (A045).
+        this.riseButton.textContent = !this.touch
+          ? t('hud.riseKey', { key: this.respawnKey })
+          : secs > 0
+            ? `${t('hud.riseAgain')} (${secs})`
+            : t('hud.riseAgain');
       }
     }
 
@@ -769,10 +972,25 @@ export class Hud {
       this.levelDot.hidden = state.xp.skillPoints <= 0;
       this.levelChip.title = `${t('ui.level', { level: state.xp.level })}${state.xp.skillPoints > 0 ? ` · ${state.xp.skillPoints} SP` : ''}`;
       const points = state.xp.skillPoints > 0 ? ` · ${state.xp.skillPoints} SP` : '';
-      this.xpText.textContent = `${t('ui.level', { level: state.xp.level })} · ${t('ui.xp', {
-        xp: Math.floor(state.xp.current),
-        next: state.xp.next,
-      })}${points}`;
+      // Unspent points are their own span so the CSS can colour them and add a dot (A012).
+      this.xpText.replaceChildren(
+        `${t('ui.level', { level: state.xp.level })} · ${t('ui.xp', {
+          xp: Math.floor(state.xp.current),
+          next: state.xp.next,
+        })}`,
+        ...(points ? [' · ', Object.assign(document.createElement('span'), { className: 'xp-sp', textContent: `${state.xp.skillPoints} SP` })] : []),
+      );
+    }
+
+    // Learned skills that are not on the bar (B036); written only when the count changes. Touch has its own dot on the menu button.
+    const off = this.touch ? 0 : (state.unassignedSkills ?? 0);
+    if (String(off) !== this.skillsDotKey) {
+      this.skillsDotKey = String(off);
+      this.skillsDot.hidden = off <= 0;
+      const label = off > 0 ? t('hud.unassignedSkills', { n: off }) : '';
+      if (label) this.skillsDot.setAttribute('aria-label', label);
+      else this.skillsDot.removeAttribute('aria-label');
+      this.skillsDot.title = label;
     }
 
     if (this.xpFlash > 0) {
@@ -781,6 +999,33 @@ export class Hud {
     }
 
     if (this.banners.tick(dt)) this.renderBanner(this.banners.current);
+  }
+
+  /** Hover tooltip for a status tile: name, effect and time left (A014). Desktop only. */
+  private showBuffTooltip(id: string | null): void {
+    const b = id ? this.buffData.get(id) : undefined;
+    const el = id ? this.buffBar.querySelector<HTMLElement>(`.buff[data-status="${id}"]`) : null;
+    this.hoveredBuff = b && el ? id : null;
+    if (!b || !el) {
+      this.tooltip.hidden = true;
+      return;
+    }
+    const lines = [`<strong>${t(`statuses.${b.id}`)}</strong>`, t(`statusDesc.${b.id}`)];
+    if ((b.stacks ?? 1) > 1) lines.push(t('hud.statusStacks', { count: b.stacks! }));
+    if (b.timed) lines.push(t('hud.statusLeft', { seconds: Math.ceil(b.remaining) }));
+    this.tooltip.innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
+    const rect = el.getBoundingClientRect();
+    this.tooltip.hidden = false;
+    this.tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    this.tooltip.style.top = `${rect.top - 8}px`;
+  }
+
+  /** A skill press was refused for lack of resource: the unaffordable slots shake and the orb flashes (A004). */
+  denyResource(): boolean {
+    if (this.touch) return false;
+    for (const s of this.slots) if (s.el.classList.contains('no-resource')) s.deny();
+    this.heatOrb.denied();
+    return true;
   }
 
   private showTooltip(slot: Slot | null): void {

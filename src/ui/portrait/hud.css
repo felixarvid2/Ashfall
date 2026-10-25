@@ -13,8 +13,8 @@
 /* Statuses about to run out blink on every layout. */
 @keyframes buff-blink { 50% { opacity: 0.45; } }
 .buff.expiring { animation: buff-blink 0.5s steps(2, jump-none) infinite; }
-/* Low life: the vignette is available on every touch layout. */
-#ui.touch-ui .low-life-vignette {
+/* Low life: the vignette is available on every layout (A032). */
+#ui .low-life-vignette {
   display: block;
   position: absolute;
   inset: 0;
@@ -23,13 +23,13 @@
   transition: opacity 0.3s;
   background: radial-gradient(ellipse at center, transparent 55%, rgba(160, 10, 10, 0.45));
 }
-#ui.touch-ui .low-life-vignette.on { opacity: 1; animation: vignette-pulse 1.1s ease-in-out infinite alternate; }
+#ui .low-life-vignette.on { opacity: 1; animation: vignette-pulse 1.1s ease-in-out infinite alternate; }
 @keyframes vignette-pulse { from { opacity: 0.4; } to { opacity: 0.9; } }
 /* The potion button asks for a press while life is low. */
 @keyframes potion-urgent { to { box-shadow: 0 0 14px 3px rgba(120, 255, 140, 0.85); border-color: #9affa8; } }
 #ui.touch-ui .slot.urgent { animation: potion-urgent 0.5s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) {
-  #ui.touch-ui .low-life-vignette.on { animation: none; opacity: 0.8; }
+  #ui .low-life-vignette.on { animation: none; opacity: 0.8; }
   #ui.touch-ui .slot.urgent, .buff.expiring { animation: none; }
 }
 

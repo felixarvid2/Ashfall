@@ -77,6 +77,10 @@ class PanelStack {
   /** Scroll position per main panel id, kept for the next time it opens. */
   private readonly scrollMemory = new Map<string, number>();
   private readonly listeners = new Set<(open: string[]) => void>();
+  /** Asked first for every keydown (key rebinding listens here); true = consumed. */
+  private keyCapture: ((e: KeyboardEvent) => boolean) | null = null;
+  /** Escape with no panel open: true when it did something (the pause menu opens). */
+  private escapeFallback: (() => boolean) | null = null;
 
   /** Call once with the UI root. */
   init(root: HTMLElement): void {
@@ -102,13 +106,31 @@ class PanelStack {
     window.addEventListener(
       'keydown',
       (e) => {
-        if (e.key === 'Escape' && !e.defaultPrevented && this.closeTop()) {
+        if (this.keyCapture?.(e)) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return;
+        }
+        if (e.key === 'Escape' && !e.defaultPrevented && !(e.target instanceof Element && e.target.closest('[data-esc-local]')) && (this.closeTop() || this.escapeFallback?.())) {
           e.preventDefault();
           e.stopPropagation();
         }
       },
       true,
     );
+  }
+
+  /** Routes every keydown to `fn` until the returned function is called (Escape included). `fn` returns true when it used the key. */
+  captureKeys(fn: (e: KeyboardEvent) => boolean): () => void {
+    this.keyCapture = fn;
+    return () => {
+      if (this.keyCapture === fn) this.keyCapture = null;
+    };
+  }
+
+  /** What Escape does when no panel is open (the pause menu). */
+  setEscapeFallback(fn: (() => boolean) | null): void {
+    this.escapeFallback = fn;
   }
 
   register(spec: PanelSpec): void {

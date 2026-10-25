@@ -8,10 +8,14 @@ import { itemDisplayName } from './itemTooltip';
 type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
 
 const MAX_DISTANCE = 24;
+/** The "Loot labels" setting values (settings.lootLabelMin): labels from this rarity up, lower ones keep only their beam. */
+export type LootLabelMin = 'all' | 'magic' | 'rare' | 'legendary';
 /** Touch: labels shown at once; the rest collapse into one "+N items" chip. */
 export const TOUCH_MAX_LABELS = 6;
 /** Touch: common and magic items this close to the hero are picked up without a tap. */
 export const AUTO_PICKUP_RADIUS = 2.5;
+/** Desktop: labels shown at once; beyond it commons, magic and rares fold into the "+N items" chip until Alt is held. */
+export const DESKTOP_MAX_LABELS = 14;
 /** Rarity tiers from legendary up always keep their own label. */
 const ALWAYS_SHOWN = new Set(['legendary', 'unique', 'mythic']);
 /** Gap kept between stacked labels and to the screen edge, in px. */
@@ -23,13 +27,37 @@ export interface LabelCandidate {
   dist: number;
   /** Legendary and better: never collapsed into the chip. */
   always: boolean;
+  /** Priority among the rest (higher keeps its label first); ties go to the nearest. Unset = by distance only. */
+  rank?: number;
 }
 
-/** Which candidates keep a label: every `always` one, then the nearest until `max` labels are used. */
+const RARITY_RANK: Record<string, number> = { common: 0, magic: 1, rare: 2, legendary: 3, unique: 4, mythic: 5 };
+/** Lowest rarity rank each `lootLabelMin` setting keeps a label for (B046). */
+const MIN_RANK: Record<LootLabelMin, number> = { all: 0, magic: 1, rare: 2, legendary: 3 };
+
+export function rarityRank(rarity: string): number {
+  return RARITY_RANK[rarity] ?? 0;
+}
+
+/** Commons keep a label only this close to the hero unless the setting is "all" (the behaviour before the setting existed). */
+export const NEAR_COMMON = 5;
+
+/**
+ * Whether the "Loot labels" setting keeps a label for this drop: "all" shows every drop (commons at any distance),
+ * "magic" is the classic rule (commons only within NEAR_COMMON metres), "rare" and "legendary" drop everything
+ * below. Crystals always keep theirs, and Alt (`showAll`) shows everything.
+ */
+export function passesLootFilter(rarity: string, crystal: boolean, min: LootLabelMin, showAll = false, dist = 0): boolean {
+  if (showAll || crystal || min === 'all') return true;
+  if (min === 'magic' && rarity === 'common') return dist < NEAR_COMMON;
+  return rarityRank(rarity) >= (MIN_RANK[min] ?? 0);
+}
+
+/** Which candidates keep a label: every `always` one, then the highest rank (ties: the nearest) until `max` labels are used. */
 export function chooseLabels(cands: LabelCandidate[], max: number): { shown: Set<number>; hidden: LabelCandidate[] } {
   const shown = new Set<number>();
   for (const c of cands) if (c.always) shown.add(c.key);
-  const rest = cands.filter((c) => !c.always).sort((a, b) => a.dist - b.dist);
+  const rest = cands.filter((c) => !c.always).sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0) || a.dist - b.dist);
   const hidden: LabelCandidate[] = [];
   for (const c of rest) {
     if (shown.size < max) shown.add(c.key);
@@ -85,6 +113,19 @@ export function fitBand(ys: number[], h: number, top: number, bottom: number): n
   return out;
 }
 
+/**
+ * Desktop: moves labels that would sit on the action bar and orbs (`rect`, in layer pixels) to just above it, so the
+ * HUD stays readable (A035). Labels are drawn upward from `y`, `h` tall. Returns the y of each label in input order.
+ */
+export function avoidRect(items: { x: number; y: number; w: number }[], rect: { left: number; top: number; right: number; bottom: number } | null, h: number, gap = 6): number[] {
+  return items.map((p) => {
+    if (!rect) return p.y;
+    const overlapsX = p.x + p.w / 2 > rect.left && p.x - p.w / 2 < rect.right;
+    const overlapsY = p.y > rect.top && p.y - h < rect.bottom;
+    return overlapsX && overlapsY ? rect.top - gap : p.y;
+  });
+}
+
 /** Touch label height (world.css) and the room a label band needs per label. */
 const TOUCH_LABEL_H = 44;
 
@@ -104,12 +145,19 @@ export class LootLabels {
   private taken = 0;
   private takenAt = 0;
   private band = { top: 0, bottom: 0, key: '' };
+  /** Desktop: the action bar and orbs, in layer pixels, re-measured twice a second. */
+  private bar: { left: number; top: number; right: number; bottom: number } | null = null;
+  private barAt = -1e9;
+  /** DOM order of the labels last written (lower labels last, so they sit on top). */
+  private domOrder: HTMLElement[] = [];
 
   constructor(
     private readonly root: HTMLElement,
     private readonly onPick: (e: Entity) => void,
     /** Grouped "Picked up N items" message after an auto-pickup burst. */
     private readonly onAutoPicked: (message: string) => void = () => {},
+    /** The "Loot labels" setting: labels from this rarity up (crystals always), see settings.lootLabelMin (B046). */
+    private readonly minRarity: () => LootLabelMin = () => 'all',
   ) {
     this.layer = document.createElement('div');
     this.layer.className = 'loot-labels';
@@ -128,6 +176,17 @@ export class LootLabels {
     return this.band;
   }
 
+  /** The action bar's rectangle in layer pixels (null when it is not on screen). */
+  private barRect(now: number): { left: number; top: number; right: number; bottom: number } | null {
+    if (now - this.barAt < 500) return this.bar;
+    this.barAt = now;
+    const el = this.root.querySelector('.action-bar');
+    const r = el?.getBoundingClientRect();
+    if (!r || r.width === 0 || r.height === 0) return (this.bar = null);
+    const o = this.layer.getBoundingClientRect();
+    return (this.bar = { left: r.left - o.left, top: r.top - o.top, right: r.right - o.left, bottom: r.bottom - o.top });
+  }
+
   private makeLabel(cls: string, text: string): HTMLDivElement {
     const label = document.createElement('div');
     label.className = cls;
@@ -138,6 +197,7 @@ export class LootLabels {
   update(world: World, playerX: number, playerZ: number, showAll: boolean, project: Project): void {
     const touch = this.root.classList.contains('touch-ui');
     const now = performance.now();
+    const min = this.minRarity();
     const seen = new Set<Entity>();
     const cands: (LabelCandidate & { e: Entity; g: GroundItem; sx: number; sy: number })[] = [];
     const autoPick: Entity[] = [];
@@ -146,16 +206,21 @@ export class LootLabels {
       const tr = world.req(e, Transform);
       const dist = Math.hypot(tr.x - playerX, tr.z - playerZ);
       if (touch && g.age > 0.35 && dist <= AUTO_PICKUP_RADIUS && !g.item.crystal && (g.item.rarity === 'common' || g.item.rarity === 'magic')) autoPick.push(e);
-      const visible = g.age > 0.35 && dist < MAX_DISTANCE && (showAll || g.item.rarity !== 'common' || g.item.crystal || dist < 5);
+      // Below the "Loot labels" threshold a drop keeps only its beam (B046); Alt shows everything.
+      const visible = passesLootFilter(g.item.rarity, !!g.item.crystal, min, showAll, dist) && g.age > 0.35 && dist < MAX_DISTANCE;
       if (!visible || !project(tr.x, 0.4, tr.z, this.screen)) continue;
-      cands.push({ key: e, e, g, dist, always: ALWAYS_SHOWN.has(g.item.rarity), sx: this.screen.x, sy: this.screen.y - 18 });
+      cands.push({ key: e, e, g, dist, always: ALWAYS_SHOWN.has(g.item.rarity), rank: touch ? undefined : rarityRank(g.item.rarity), sx: this.screen.x, sy: this.screen.y - 18 });
     }
-    // Touch: a few labels near the hero, the rest folded into "+N items".
+    // Touch: a few labels near the hero, the rest folded into "+N items". Desktop: the best 14 (A037), everything on Alt.
     let shownSet: Set<number> | null = null;
     let hidden: LabelCandidate[] = [];
     const band = touch ? this.labelBand() : null;
     if (touch && band) {
       const pick = chooseLabels(cands, labelSlots(band.bottom - band.top));
+      shownSet = pick.shown;
+      hidden = pick.hidden;
+    } else if (!touch && !showAll) {
+      const pick = chooseLabels(cands, DESKTOP_MAX_LABELS);
       shownSet = pick.shown;
       hidden = pick.hidden;
     }
@@ -178,12 +243,18 @@ export class LootLabels {
         this.labels.set(e, label);
         label.dataset.w = String(label.offsetWidth || 120);
         label.dataset.h = String(label.offsetHeight || 19);
+        // A legendary drop pulses its border three times when it lands (A039; opacity only, off with reduced flashing).
+        if (c.always && g.age < 3) {
+          const fresh = label;
+          fresh.classList.add('loot-fresh');
+          setTimeout(() => fresh.classList.remove('loot-fresh'), 1400);
+        }
       }
       pending.push({ label, x: c.sx, y: c.sy, w: Number(label.dataset.w) });
     }
     // The chip sits where the nearest folded item is and joins the stack like a label.
     if (hidden.length > 0) {
-      const nearest = hidden[0]!;
+      const nearest = hidden.reduce((a, b) => (b.dist < a.dist ? b : a));
       const at = cands.find((c) => c.key === nearest.key)!;
       if (!this.chip) {
         this.chip = this.makeLabel('loot-label loot-more', '');
@@ -210,6 +281,11 @@ export class LootLabels {
     const height = touch ? TOUCH_LABEL_H : 19;
     // On touch the pile stays inside the band (the layer is clipped to it), growing upward from its lowest label.
     if (band) for (const p of pending) p.y = Math.min(band.bottom, Math.max(band.top + height, p.y));
+    // Desktop: labels never sit on the action bar and orbs (A035).
+    if (!touch) {
+      const moved = avoidRect(pending, this.barRect(now), height);
+      pending.forEach((p, i) => (p.y = moved[i]!));
+    }
     const stacked = stackLabels(pending, height);
     const ys = band ? fitBand(stacked, height, band.top, band.bottom) : stacked;
     const width = this.layer.clientWidth || window.innerWidth;
@@ -217,6 +293,7 @@ export class LootLabels {
       const x = clampLabelX(p.x, p.w, width);
       p.label.style.transform = `translate(${x}px, ${ys[i]}px) translate(-50%, -100%)`;
     });
+    this.raiseLower(pending, ys);
     if (showAll) {
       for (const e of world.query(GroundGold, Transform)) {
         const tr = world.req(e, Transform);
@@ -237,6 +314,14 @@ export class LootLabels {
       this.labels.delete(e);
     }
     this.autoPickup(world, autoPick, now);
+  }
+
+  /** DOM order follows screen height: the lower a label is on screen, the later it is drawn, so it sits on top (A040). */
+  private raiseLower(pending: { label: HTMLDivElement }[], ys: number[]): void {
+    const order = pending.map((p, i) => ({ el: p.label as HTMLElement, y: ys[i]! })).sort((a, b) => a.y - b.y).map((o) => o.el);
+    if (order.length === this.domOrder.length && order.every((el, i) => el === this.domOrder[i])) return;
+    this.domOrder = order;
+    for (const el of order) this.layer.appendChild(el);
   }
 
   /** Touch: take near common and magic items without a tap, and say so once ("Picked up 4 items"). */

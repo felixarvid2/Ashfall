@@ -14,6 +14,8 @@ export interface GamePanels {
   map: { open: boolean; toggle(): void };
   quests: { open: boolean; toggle(): void };
   settings: { element: HTMLElement; open: boolean; show(): void; close(): void };
+  /** The Escape pause menu (B041). */
+  pause: { element: HTMLElement; open: boolean; show(): void; close(): void; canOpen(): boolean };
   service: { open: boolean; close(): void };
   tier: { open: boolean; close(): void };
   rift: { open: boolean; close(): void };
@@ -64,6 +66,16 @@ export function registerGamePanels(root: HTMLElement, p: GamePanels): void {
   panelStack.register({
     id: 'settings', el: p.settings.element, kind: 'main',
     open: () => p.settings.show(), close: () => p.settings.close(),
+  });
+  panelStack.register({
+    id: 'pause', el: p.pause.element, kind: 'main',
+    open: () => p.pause.show(), close: () => p.pause.close(),
+  });
+  // Escape with nothing open pauses (desktop; touch screens have no Escape key).
+  panelStack.setEscapeFallback(() => {
+    if (!p.pause.canOpen()) return false;
+    panelStack.open('pause');
+    return true;
   });
   // Hub services show their own backpack beside them.
   panelStack.register({

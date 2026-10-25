@@ -159,7 +159,8 @@ export class QuestTracker {
       this.last = key;
       // A new quest or a new step: the row flashes, the tracker unfolds and the phone ticks (H055).
       const changed = new Set<string>();
-      for (const q of shown) if (this.steps.get(q.id) !== q.step) changed.add(q.id);
+      const before = this.steps;
+      for (const q of shown) if (before.get(q.id) !== q.step) changed.add(q.id);
       this.steps = new Map(shown.map((q) => [q.id, q.step]));
       this.distText = '';
       this.angle = -1;
@@ -167,9 +168,16 @@ export class QuestTracker {
         ...shown.map((q) => {
           const row = document.createElement('div');
           row.className = `quest-row q-${q.kind}${q.tracked ? ' tracked' : ''}${!first && changed.has(q.id) ? ' updated' : ''}`;
+          const step = Object.assign(document.createElement('div'), { className: 'quest-step', textContent: q.step });
+          // A finished step stays on top for a moment, struck through with a check, and fades out over the new one (A018).
+          // It is absolutely positioned, so the row never changes height.
+          const oldStep = before.get(q.id);
+          if (!first && changed.has(q.id) && oldStep) {
+            step.append(Object.assign(document.createElement('span'), { className: 'quest-step-old', textContent: `\u2713 ${oldStep}` }));
+          }
           row.append(
             Object.assign(document.createElement('div'), { className: 'quest-title', textContent: q.title }),
-            Object.assign(document.createElement('div'), { className: 'quest-step', textContent: q.step }),
+            step,
             Object.assign(document.createElement('div'), { className: 'quest-dist' }),
           );
           if (q.tracked) row.addEventListener('click', () => this.toggleFold());
@@ -240,6 +248,20 @@ export function initialExpanded(active: readonly { id: string; tracked: boolean 
   return new Set(pick ? [pick.id] : []);
 }
 
+/** Quests this many levels (or more) below the player count as trivial (B040). */
+export const TRIVIAL_LEVELS = 20;
+
+export function isTrivialQuest(questLevel: number, playerLevel: number): boolean {
+  return playerLevel - questLevel >= TRIVIAL_LEVELS;
+}
+
+/** The log's two groups, main quests first; mystery quests sit with the side quests. Empty groups are left out (B040). */
+export function groupQuests<T extends { kind: 'main' | 'side' | 'mystery' }>(active: readonly T[]): { group: 'main' | 'side'; items: T[] }[] {
+  const main = active.filter((q) => q.kind === 'main');
+  const side = active.filter((q) => q.kind !== 'main');
+  return [...(main.length ? [{ group: 'main' as const, items: main }] : []), ...(side.length ? [{ group: 'side' as const, items: side }] : [])];
+}
+
 const HINT_KEY = 'ashfall.hint.questTrack';
 
 export class QuestLog {
@@ -256,7 +278,7 @@ export class QuestLog {
     private readonly entries: () => { active: QuestLogEntry[]; done: QuestLogDone[] },
     /** Sets the tracked quest; `null` stops tracking. */
     private readonly track: (id: string | null) => void,
-    private readonly actions: { showOnMap?: (id: string) => void; openMap?: () => void } = {},
+    private readonly actions: { showOnMap?: (id: string) => void; openMap?: () => void; /** The hero's level, for dimming trivial quests. */ playerLevel?: () => number } = {},
   ) {
     this.panel = document.createElement('div');
     this.panel.className = 'panel quest-log';
@@ -328,10 +350,14 @@ export class QuestLog {
       rows.push(Object.assign(document.createElement('p'), { className: 'log-hint', textContent: t('questUi.trackHint') }));
       this.markHintSeen();
     }
-    for (const q of active) {
+    const playerLevel = this.actions.playerLevel?.() ?? 0;
+    const ordered = groupQuests(active).flatMap((g) => g.items.map((q, i) => ({ q, heading: i === 0 ? g.group : null })));
+    for (const { q, heading } of ordered) {
+      if (heading) rows.push(Object.assign(document.createElement('h3'), { className: 'log-group', textContent: t(heading === 'main' ? 'questUi.groupMain' : 'questUi.groupSide') }));
       const open = this.expanded.has(q.id);
+      const trivial = playerLevel > 0 && isTrivialQuest(q.level, playerLevel);
       const row = document.createElement('div');
-      row.className = `log-entry q-${q.kind}${q.tracked ? ' tracked' : ''}${open ? ' open' : ''}`;
+      row.className = `log-entry q-${q.kind}${q.tracked ? ' tracked' : ''}${open ? ' open' : ''}${trivial ? ' trivial' : ''}`;
       row.dataset.quest = q.id;
       const head = document.createElement('div');
       head.className = 'log-head';
@@ -341,7 +367,7 @@ export class QuestLog {
       toggle.setAttribute('aria-expanded', String(open));
       toggle.append(
         Object.assign(document.createElement('span'), { className: 'quest-title', textContent: q.title }),
-        Object.assign(document.createElement('span'), { className: 'log-kind', textContent: `${t(`questUi.kinds.${q.kind}`)} · ${t('questUi.level', { level: q.level })}` }),
+        Object.assign(document.createElement('span'), { className: 'log-kind', textContent: `${t(`questUi.kinds.${q.kind}`)} · ${t('questUi.level', { level: q.level })}${trivial ? ` · ${t('questUi.trivial')}` : ''}` }),
         Object.assign(document.createElement('span'), { className: 'log-now', textContent: q.step }),
       );
       toggle.addEventListener('click', () => {

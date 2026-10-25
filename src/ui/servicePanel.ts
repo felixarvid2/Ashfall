@@ -35,8 +35,19 @@ import {
 import { effectiveAffixes } from '../systems/endgame/itemMods';
 import { powerScale, roundStat, salvageValue } from '../systems/loot/generate';
 import { renderItemCell } from './inventoryPanel';
+import { FILTER_CHIPS, SORT_MODES, filterMatches, isJunk, upgradeSign, type FilterChip, type SortMode } from './inventoryLogic';
+import {
+  ASPECT_CATEGORIES,
+  STASH_PAGE_SIZE,
+  clampPage,
+  codexVisible,
+  pageIndexes,
+  stashPageCount,
+  type AspectCategory,
+} from './serviceLogic';
+import type { BuybackEntry } from '../systems/hub/services';
 import { artUrl } from './art';
-import { aspectText, formatStat, itemDisplayName, placeTooltipForPortrait, renderItemTooltip } from './itemTooltip';
+import { aspectText, formatStat, itemDisplayName, placeTooltipForPortrait, renderItemTooltip, type Comparison } from './itemTooltip';
 import { BASE_ITEMS, rarityDef } from '../data/loot/db';
 import { armConfirm, confirmSheet } from './confirmSheet';
 import { panelStack } from './panelStack';
@@ -50,6 +61,13 @@ export interface ServiceActions {
   iconUrl(iconId: string): string | null;
   stock(): (Item | null)[];
   stash(): (Item | null)[];
+  /** Does the item beat what is worn? Drives the upgrade arrows and the "Better" chip (B020, B022). */
+  compare(item: Item): Comparison | null;
+  /** Items sold to the trader since the last restock, newest first (B023). */
+  buyback(): readonly BuybackEntry[];
+  buyBack(index: number): void;
+  /** Reorder the stash itself with the same rules as the backpack sort (B020). */
+  sortStash(mode: SortMode): void;
   buy(index: number): void;
   sell(gridIndex: number): void;
   reroll(gridIndex: number, affixIndex: number): void;
@@ -77,11 +95,11 @@ export function needsConfirm(item: Item, gold: number): boolean {
   return VALUABLE.has(item.rarity) || gold >= CONFIRM_GOLD;
 }
 
-/** The common and magic items of a backpack grid ("junk") with their grid index and total salvage gold. */
+/** The junk items of a backpack grid (common, magic and player-marked; never locked) with their grid index and total salvage gold. */
 export function junkSummary(grid: readonly (Item | null)[]): { items: { index: number; item: Item }[]; gold: number } {
   const items: { index: number; item: Item }[] = [];
   grid.forEach((item, index) => {
-    if (item && !item.crystal && (item.rarity === 'common' || item.rarity === 'magic')) items.push({ index, item });
+    if (item && isJunk(item)) items.push({ index, item });
   });
   return { items, gold: items.reduce((sum, e) => sum + salvageValue(e.item), 0) };
 }
@@ -120,6 +138,14 @@ export class ServicePanel {
   private section: Section = 'reroll';
   /** The Codex's locked group is folded away until asked for. */
   private codexLockedOpen = false;
+  /** Codex filters (B026): only aspects that fit the selected item, and one slot group. */
+  private codexFits = true;
+  private codexCategory: AspectCategory | null = null;
+  /** Stash view state (B020, B021): page, filter chip, sort menu. */
+  private stashPage = 0;
+  private stashFilter: FilterChip = 'all';
+  private stashSortMode: SortMode | null = null;
+  private stashMenuOpen = false;
   /** Keeps the selected backpack cell highlighted when the backpack redraws. */
   private bagWatch: MutationObserver | null = null;
 
@@ -137,6 +163,13 @@ export class ServicePanel {
     this.tooltip.className = 'item-tooltip';
     this.tooltip.hidden = true;
     parent.append(this.root, this.tooltip);
+    // The stash sort menu closes on a click anywhere else.
+    document.addEventListener('click', (e) => {
+      if (this.stashMenuOpen && !(e.target as HTMLElement | null)?.closest('.stash-tools .inv-tools')) {
+        this.stashMenuOpen = false;
+        this.refresh();
+      }
+    });
   }
 
   /** Called when the panel opens or closes, so the game can wire the inventory to it. */
@@ -157,6 +190,11 @@ export class ServicePanel {
     this.temperSlot = 0;
     this.section = 'reroll';
     this.codexLockedOpen = false;
+    this.codexFits = true;
+    this.codexCategory = null;
+    this.stashPage = 0;
+    this.stashFilter = 'all';
+    this.stashMenuOpen = false;
     this.root.hidden = false;
     this.root.scrollTop = 0;
     this.title.textContent = t(`services.${kind}.title`);
@@ -265,6 +303,7 @@ export class ServicePanel {
       const cell = renderItemCell(item, (id) => this.actions.iconUrl(id));
       slot.append(cell);
       if (item) {
+        this.badge(cell, item);
         const price = buyPrice(item);
         const pill = div('price-pill', price.toLocaleString('en-US'));
         pill.dataset.testid = `price-${i}`;
@@ -281,7 +320,53 @@ export class ServicePanel {
       }
       grid.appendChild(slot);
     });
-    return [div('inv-hint', touchText('services.vendor.hint')), grid];
+    return [div('inv-hint', touchText('services.vendor.hint')), grid, ...this.buybackRow(inv)];
+  }
+
+  /** B023: the last items sold, one line of cells at the stock cell size; a click buys one back at the sale price. */
+  private buybackRow(inv: Inventory): HTMLElement[] {
+    const sold = this.actions.buyback();
+    if (sold.length === 0) return [];
+    const row = div('buyback-row', '');
+    row.dataset.testid = 'buyback-row';
+    sold.forEach((entry, i) => {
+      const slot = div('stock-slot buyback-slot', '');
+      slot.dataset.testid = `buyback-${i}`;
+      const cell = renderItemCell(entry.item, (id) => this.actions.iconUrl(id));
+      this.badge(cell, entry.item);
+      const pill = div('price-pill', entry.price.toLocaleString('en-US'));
+      slot.classList.toggle('unaffordable', entry.price > inv.gold);
+      slot.append(cell, pill);
+      slot.addEventListener('click', () => {
+        if (this.actions.buyback()[i] === entry) this.actions.buyBack(i);
+        this.refresh();
+      });
+      this.hover(slot, entry.item, t('services.vendor.buybackPrice', { gold: entry.price }));
+      row.append(slot);
+    });
+    const label = div('service-sub', t('services.vendor.buyback', { n: sold.length }));
+    label.dataset.testid = 'buyback-title';
+    return [label, row];
+  }
+
+  /** Item power and the upgrade arrow in a cell's corners, like the backpack (B022). No size change. */
+  private badge(cell: HTMLElement, item: Item): void {
+    if (item.crystal) return;
+    const power = document.createElement('span');
+    power.className = 'cell-power';
+    power.textContent = String(item.itemPower);
+    cell.appendChild(power);
+    const cmp = this.actions.compare(item);
+    const sign = cmp ? upgradeSign(cmp) : 0;
+    if (!sign) return;
+    const up = sign > 0;
+    const arrow = document.createElement('span');
+    arrow.className = `cell-arrow ${up ? 'up' : 'down'}`;
+    arrow.textContent = up ? '▲' : '▼';
+    arrow.setAttribute('role', 'img');
+    arrow.setAttribute('aria-label', t(up ? 'items.bag.better' : 'items.bag.worse'));
+    cell.dataset.sign = String(sign);
+    cell.appendChild(arrow);
   }
 
   /**
@@ -371,18 +456,25 @@ export class ServicePanel {
       empty.dataset.testid = 'stash-empty';
       out.push(empty);
     }
+    out.push(this.stashTools(slots));
+    this.stashPage = clampPage(this.stashPage, slots.length);
     const grid = div('inv-grid service-grid stash-grid', '');
-    slots.forEach((item, i) => {
+    grid.dataset.testid = 'stash-grid';
+    for (const i of pageIndexes(this.stashPage, slots.length)) {
+      const item = slots[i] ?? null;
       const cell = renderItemCell(item, (id) => this.actions.iconUrl(id));
+      cell.dataset.stash = String(i);
       if (item) {
+        this.badge(cell, item);
         cell.addEventListener('click', () => {
           this.actions.fromStash(i);
           this.refresh();
         });
         this.hover(cell, item);
       }
+      if (!filterMatches(item, this.stashFilter, cell.dataset.sign === '1')) cell.classList.add('filtered-out');
       grid.appendChild(cell);
-    });
+    }
     out.push(grid);
     const junk = junkSummary(this.actions.inventory().grid);
     const free = slots.length - used;
@@ -395,6 +487,77 @@ export class ServicePanel {
     store.disabled = junk.items.length === 0 || free === 0;
     out.push(store, div('inv-hint', touchText('services.stash.hint')));
     return out;
+  }
+
+  /** Sort, pages and filter chips of the stash (B020, B021), in the backpack's own styles. */
+  private stashTools(slots: (Item | null)[]): HTMLElement {
+    const tools = div('stash-tools', '');
+    const top = div('stash-tools-row', '');
+    const group = div('inv-tools', '');
+    const sortBtn = button(t('items.bag.sort'), () => {
+      this.stashMenuOpen = !this.stashMenuOpen;
+      this.refresh();
+    });
+    sortBtn.className = 'inv-tool inv-sort-btn';
+    sortBtn.dataset.testid = 'stash-sort';
+    sortBtn.setAttribute('aria-haspopup', 'true');
+    sortBtn.setAttribute('aria-expanded', String(this.stashMenuOpen));
+    group.append(sortBtn);
+    if (this.stashMenuOpen) {
+      const menu = div('inv-sort-menu', '');
+      menu.setAttribute('role', 'menu');
+      for (const mode of SORT_MODES) {
+        const b = button(t(`items.bag.sortBy.${mode}`), () => {
+          this.stashMenuOpen = false;
+          this.stashSortMode = mode;
+          this.actions.sortStash(mode);
+          this.refresh();
+        });
+        b.className = 'inv-sort-option';
+        b.dataset.mode = mode;
+        b.setAttribute('role', 'menuitem');
+        b.classList.toggle('on', mode === this.stashSortMode);
+        menu.append(b);
+      }
+      group.append(menu);
+    }
+    top.append(group);
+    const pages = stashPageCount(slots.length);
+    if (pages > 1) {
+      const nav = div('stash-pages', '');
+      nav.setAttribute('role', 'group');
+      nav.setAttribute('aria-label', t('services.stash.pages'));
+      for (let p = 0; p < pages; p++) {
+        const b = button(String(p + 1), () => {
+          this.stashPage = p;
+          this.refresh();
+        });
+        b.className = 'inv-chip stash-page';
+        b.dataset.testid = `stash-page-${p + 1}`;
+        b.classList.toggle('on', p === this.stashPage);
+        b.setAttribute('aria-pressed', String(p === this.stashPage));
+        b.setAttribute('aria-label', t('services.stash.page', { n: p + 1 }));
+        b.title = `${p * STASH_PAGE_SIZE + 1}-${Math.min(slots.length, (p + 1) * STASH_PAGE_SIZE)}`;
+        nav.append(b);
+      }
+      top.append(nav);
+    }
+    const chips = div('inv-chips stash-chips', '');
+    chips.setAttribute('role', 'group');
+    chips.setAttribute('aria-label', t('items.bag.filterLabel'));
+    for (const chip of FILTER_CHIPS) {
+      const b = button(t(`items.bag.filters.${chip}`), () => {
+        this.stashFilter = chip;
+        this.refresh();
+      });
+      b.className = 'inv-chip';
+      b.dataset.testid = `stash-chip-${chip}`;
+      b.classList.toggle('on', chip === this.stashFilter);
+      b.setAttribute('aria-pressed', String(chip === this.stashFilter));
+      chips.append(b);
+    }
+    tools.append(top, chips);
+    return tools;
   }
 
   // ---- shared pieces -----------------------------------------------------------------------------------
@@ -612,6 +775,9 @@ export class ServicePanel {
       const icon = artUrl(`aspects/${a.id}`);
       if (icon) row.append(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
       row.append(div('aspect-name', t(`aspects.${a.id}.name`)), div('aspect-desc', aspectText(a.id, a.value)));
+      // The desktop shows one 44 px row; the full text is on hover (B025).
+      row.classList.add('aspect-compact');
+      row.title = `${t(`aspects.${a.id}.name`)}: ${aspectText(a.id, a.value)}`;
       if (item && canImprint(item, a.id)) {
         row.append(this.beforeAfter(item, a.id, a.value));
         const cost = imprintCost(item);
@@ -766,15 +932,22 @@ export class ServicePanel {
     const entries = Object.entries(CODEX_ASPECTS);
     const open = entries.filter(([, aspect]) => eg.codex.includes(aspect));
     const locked = entries.filter(([, aspect]) => !eg.codex.includes(aspect));
-    const out: HTMLElement[] = [div('service-sep', ''), div('service-sub', t('crafting.codex.title', { n: open.length, total: entries.length })), div('service-note', t('crafting.codex.hint'))];
-    for (const [, aspect] of open) {
-      const row = div('aspect-row codex-row', '');
+    const out: HTMLElement[] = [div('service-sep', ''), div('service-sub', t('crafting.codex.title', { n: open.length, total: entries.length })), div('service-note', t('crafting.codex.hint')), this.codexFilters(item)];
+    const shown = open.filter(([, aspect]) => codexVisible(aspect, item, this.codexFits, this.codexCategory));
+    if (open.length > 0 && shown.length === 0) {
+      const none = div('service-note', t('crafting.codex.noMatch'));
+      none.dataset.testid = 'codex-none';
+      out.push(none);
+    }
+    for (const [, aspect] of shown) {
+      const row = div('aspect-row codex-row aspect-compact', '');
       row.dataset.testid = `codex-${aspect}`;
       const icon = artUrl(`aspects/${aspect}`);
       if (icon) row.append(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
       row.append(div('aspect-name', t(`aspects.${aspect}.name`)));
       const preview = this.actions.codexValue(aspect, item?.itemPower ?? 100);
       row.append(div('aspect-desc', aspectText(aspect, preview)));
+      row.title = `${t(`aspects.${aspect}.name`)}: ${aspectText(aspect, preview)}`;
       if (item && canImprint(item, aspect)) {
         row.append(this.beforeAfter(item, aspect, this.actions.codexValue(aspect, item.itemPower)));
         const cost = codexImprintCost(item);
@@ -807,8 +980,8 @@ export class ServicePanel {
     });
     out.push(head, bar);
     if (this.codexLockedOpen) {
-      for (const [dungeon, aspect] of locked) {
-        const row = div('aspect-row codex-row locked', '');
+      for (const [dungeon, aspect] of locked.filter(([, a]) => codexVisible(a, null, false, this.codexCategory))) {
+        const row = div('aspect-row codex-row aspect-compact locked', '');
         row.dataset.testid = `codex-${aspect}`;
         const icon = artUrl(`aspects/${aspect}`);
         if (icon) row.append(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
@@ -817,6 +990,35 @@ export class ServicePanel {
       }
     }
     return out;
+  }
+
+  /** B026: "Fits this item" (on by default, needs a selected item) and one slot group, in one row of chips. */
+  private codexFilters(item: Item | null): HTMLElement {
+    const bar = div('codex-filters inv-chips', '');
+    bar.dataset.testid = 'codex-filters';
+    bar.setAttribute('role', 'group');
+    const fits = button(t('crafting.codex.fits'), () => {
+      this.codexFits = !this.codexFits;
+      this.refresh();
+    });
+    fits.className = 'inv-chip';
+    fits.dataset.testid = 'codex-fits';
+    fits.disabled = !item;
+    fits.classList.toggle('on', this.codexFits && !!item);
+    fits.setAttribute('aria-pressed', String(this.codexFits && !!item));
+    bar.append(fits);
+    for (const cat of ASPECT_CATEGORIES) {
+      const b = button(t(`crafting.codex.cat.${cat}`), () => {
+        this.codexCategory = this.codexCategory === cat ? null : cat;
+        this.refresh();
+      });
+      b.className = 'inv-chip';
+      b.dataset.testid = `codex-cat-${cat}`;
+      b.classList.toggle('on', this.codexCategory === cat);
+      b.setAttribute('aria-pressed', String(this.codexCategory === cat));
+      bar.append(b);
+    }
+    return bar;
   }
 
   /** Desktop hover tooltip; touch screens use the item sheet instead (a tap also fires mouseenter). */

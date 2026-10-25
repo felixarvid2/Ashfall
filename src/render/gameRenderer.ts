@@ -57,6 +57,8 @@ export class GameRenderer {
   private readonly tint = new THREE.Color();
   private time = 0;
   screenShake = true;
+  /** Accessibility (B044): no white hit flash on enemies. */
+  reduceFlashing = false;
   /** Ash Storm exposure (0..1): infected enemies glow through the ash. */
   stormGlow = 0;
   private readonly raycaster = new THREE.Raycaster();
@@ -983,7 +985,7 @@ export class GameRenderer {
   handleEvents(events: readonly GameEvent[]): void {
     for (const event of events) {
       this.vfx.handle(event);
-      if (event.type === 'damage' && !event.dot) this.flashes.set(event.target, 0.1);
+      if (event.type === 'damage' && !event.dot && !this.reduceFlashing) this.flashes.set(event.target, 0.1);
       if (event.type === 'shake' && this.screenShake) this.rig.addTrauma(event.trauma);
     }
   }
@@ -1500,6 +1502,11 @@ export class GameRenderer {
   }
 
   /** Apply a graphics preset: post-processing, shadow resolution and pixel ratio. */
+  /** Scene brightness (B045): the tone-mapping exposure, which the post-processing output pass and the plain render both use. */
+  setBrightness(brightness: number): void {
+    this.renderer.toneMappingExposure = brightness;
+  }
+
   setQuality(quality: GraphicsQuality): void {
     this.postfx.setQuality(quality);
     this.vfx.sprites.setQuality(quality);

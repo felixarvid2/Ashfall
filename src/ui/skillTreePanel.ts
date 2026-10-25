@@ -20,7 +20,8 @@ import { classDef, skill } from '../data/db';
 import type { SkillTree, TreeNode } from '../data/skillTree/schema';
 import { BRANCHES } from '../data/skillTree/schema';
 import type { CompiledSkill } from '../systems/skillCompile';
-import { branchUnlocked, canLearn, maxRank, pointsInTree, type TreeState } from '../systems/skillTree';
+import { branchUnlocked, canLearn, canRefund, maxRank, pointsInTree, type TreeState } from '../systems/skillTree';
+import { nextRankPercent, slotForKey } from './serviceLogic';
 
 export interface SkillTreeView {
   tree: SkillTree;
@@ -32,16 +33,23 @@ export interface SkillTreeView {
   gold: number;
   /** The Neural Matrix tab shows from the level cap on. */
   matrixUnlocked: boolean;
+  /** Unspent Neural Matrix points, shown as a badge on the Matrix button (B031). */
+  matrixPoints?: number;
+  /** Gold for taking one rank back (B032). */
+  refundCost?: number;
 }
 
 export interface SkillTreeActions {
   learn(nodeId: string): void;
   reset(): void;
+  /** Take one rank of a learned node back for gold (B032, desktop right-click). */
+  refund?(nodeId: string): void;
   assign(slot: number, skillId: string | null): void;
   iconUrl(iconId: string): string | null;
 }
 
 const SLOT_LABELS = ['LMB', 'RMB', '1', '2', '3', '4'];
+const DRAG_TYPE = 'application/x-ashfall-skill';
 
 /** Display name of a tree node. */
 export function nodeName(n: TreeNode): string {
@@ -90,6 +98,10 @@ export class SkillTreePanel {
   /** The Neural Matrix view (endgame) shown in place of the skill branches. */
   private matrix: MatrixPanel | null = null;
   private matrixMode = false;
+  /** The learned skill node under the pointer: number keys assign it (B029). Mouse only. */
+  private hoverNode: string | null = null;
+  /** The action bar slot that just took a skill flashes once (B029). */
+  private flashSlot: number | null = null;
 
   constructor(
     parent: HTMLElement,
@@ -109,6 +121,30 @@ export class SkillTreePanel {
     this.tooltip.hidden = true;
     parent.append(this.root, this.tooltip);
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Capture phase: a number key over a learned skill assigns it instead of firing the slot underneath.
+    window.addEventListener('keydown', (e) => this.onKey(e), true);
+  }
+
+  /** B029: with the pointer over a learned active skill, keys 1-4 put it on that action bar slot. */
+  private onKey(e: KeyboardEvent): void {
+    if (!this.open || this.matrixMode || !this.hoverNode || useSheet() || e.ctrlKey || e.metaKey || e.altKey) return;
+    const target = e.target as HTMLElement | null;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+    const slot = slotForKey(e.key);
+    if (slot === null) return;
+    const v = this.view();
+    const n = v.tree.nodes.find((x) => x.id === this.hoverNode);
+    if (!n || n.type !== 'skill' || (v.state.ranks[n.id] ?? 0) <= 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    this.assignTo(slot, n.skill);
+  }
+
+  /** Assign and flash the slot; the game refreshes the panel, so the flash is drawn by that refresh. */
+  private assignTo(slot: number, skillId: string): void {
+    this.flashSlot = slot;
+    this.actions.assign(slot, skillId);
+    if (this.flashSlot !== null) this.refresh();
   }
 
   get open(): boolean {
@@ -128,6 +164,7 @@ export class SkillTreePanel {
   toggle(): void {
     this.root.hidden = !this.root.hidden;
     this.selectedSlot = null;
+    this.hoverNode = null;
     this.tooltip.hidden = true;
     this.menuOpen = false;
     tooltipSheet.hide();
@@ -198,6 +235,14 @@ export class SkillTreePanel {
       tab.type = 'button';
       tab.className = 'matrix-tab';
       tab.textContent = t('matrix.tab');
+      if ((v.matrixPoints ?? 0) > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'matrix-badge';
+        badge.dataset.testid = 'matrix-badge';
+        badge.textContent = String(v.matrixPoints);
+        badge.setAttribute('aria-label', t('matrix.points', { points: v.matrixPoints ?? 0 }));
+        tab.append(badge);
+      }
       tab.addEventListener('click', () => this.showMatrix(true));
       tools.append(tab);
     }
@@ -221,7 +266,7 @@ export class SkillTreePanel {
     bar.className = 'tree-bar';
     v.slots.forEach((id, i) => {
       const slot = document.createElement('div');
-      slot.className = `tree-slot${this.selectedSlot === i ? ' selected' : ''}`;
+      slot.className = `tree-slot${this.selectedSlot === i ? ' selected' : ''}${this.flashSlot === i ? ' flash' : ''}`;
       slot.dataset.testid = `tree-slot-${i}`;
       const key = document.createElement('span');
       key.className = 'slot-key';
@@ -235,8 +280,24 @@ export class SkillTreePanel {
         this.refresh();
       });
       slot.addEventListener('contextmenu', () => this.actions.assign(i, null));
+      // Drag a learned skill from the tree onto a slot (B029, mouse).
+      slot.addEventListener('dragover', (e) => {
+        if (e.dataTransfer?.types.includes(DRAG_TYPE)) {
+          e.preventDefault();
+          slot.classList.add('drop');
+        }
+      });
+      slot.addEventListener('dragleave', () => slot.classList.remove('drop'));
+      slot.addEventListener('drop', (e) => {
+        slot.classList.remove('drop');
+        const skillId = e.dataTransfer?.getData(DRAG_TYPE);
+        if (!skillId) return;
+        e.preventDefault();
+        this.assignTo(i, skillId);
+      });
       bar.appendChild(slot);
     });
+    this.flashSlot = null;
     const barHint = document.createElement('div');
     barHint.className = 'inv-hint';
     // The touch layout swaps in the phone wording (style.css shows one of the two).
@@ -305,7 +366,10 @@ export class SkillTreePanel {
       chip.dataset.testid = `tree-jump-${branch}`;
       chip.textContent = t(`tree.branches.${branch}`);
       chip.addEventListener('click', () => {
-        scroll.scrollTop = row.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop;
+        const top = row.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop;
+        const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (typeof scroll.scrollTo === 'function' && !calm) scroll.scrollTo({ top, behavior: 'smooth' });
+        else scroll.scrollTop = top;
       });
       jump.appendChild(chip);
     }
@@ -342,7 +406,13 @@ export class SkillTreePanel {
         card.appendChild(Object.assign(document.createElement('span'), { className: 'tree-lock', title: t(`tree.cannot.${blocked.reason}`) }));
       }
     }
-    card.setAttribute('aria-label', `${nodeName(n)}${max > 1 ? `, ${rank}/${max}` : ''}${reason && rank === 0 ? `, ${t(`tree.cannot.${reason}`)}` : ''}`);
+    // A learned active skill that no action bar slot holds gets a dot (B036).
+    const offBar = n.type === 'skill' && rank > 0 && !v.slots.includes(n.skill);
+    if (offBar) {
+      card.classList.add('off-bar');
+      card.appendChild(Object.assign(document.createElement('span'), { className: 'tree-dot', title: t('tree.notOnBar') }));
+    }
+    card.setAttribute('aria-label', `${nodeName(n)}${max > 1 ? `, ${rank}/${max}` : ''}${reason && rank === 0 ? `, ${t(`tree.cannot.${reason}`)}` : ''}${offBar ? `, ${t('tree.notOnBar')}` : ''}`);
     if (n.type === 'skill') card.appendChild(this.icon(n.skill, skillIconId(n.skill)));
     else if (n.type === 'passive') {
       // Passives show an emblem for the stat they raise.
@@ -380,11 +450,42 @@ export class SkillTreePanel {
       }
       this.actions.learn(n.id);
     });
+    if (!useSheet() && n.type === 'skill' && rank > 0) {
+      card.draggable = true;
+      card.addEventListener('dragstart', (e) => {
+        e.dataTransfer?.setData(DRAG_TYPE, n.skill);
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
+        this.tooltip.hidden = true;
+      });
+    }
     card.addEventListener('mouseenter', () => {
       if (useSheet()) return; // touch emulates mouseenter on tap and never sends mouseleave
+      this.hoverNode = n.id;
       this.showTip(card, n, v, rank, reason);
     });
-    card.addEventListener('mouseleave', () => (this.tooltip.hidden = true));
+    card.addEventListener('mouseleave', () => {
+      if (this.hoverNode === n.id) this.hoverNode = null;
+      this.tooltip.hidden = true;
+    });
+    // Right-click a learned node: take one rank back for gold, after a confirmation (B032).
+    card.addEventListener('contextmenu', () => {
+      if (useSheet() || rank <= 0 || !this.actions.refund) return;
+      const refund = this.actions.refund;
+      const gold = v.refundCost ?? 0;
+      const check = canRefund(v.tree, v.state, n.id);
+      if (!check.ok) {
+        refund(n.id); // the game says why it cannot be done
+        return;
+      }
+      void confirmSheet({
+        title: t('tree.refundTitle', { name: nodeName(n) }),
+        body: t('tree.refundConfirm', { gold }),
+        confirmLabel: t('tree.refundButton', { gold }),
+        danger: true,
+      }).then((ok) => {
+        if (ok) refund(n.id);
+      });
+    });
     return card;
   }
 
@@ -466,11 +567,17 @@ export class SkillTreePanel {
       if (def.resourceCost > 0) add('muted', t('hud.cost', { amount: Math.round(def.resourceCost), resource: t(`resources.${classDef(def.classId).resource.id}`) }));
       if (def.cooldown > 0) add('muted', t('hud.cooldown', { seconds: def.cooldown.toFixed(1) }));
       if (rank < (n.maxRank ?? 5)) add('muted', t('tree.perRank'));
+      // B030: what the next rank gives, or that this is the last one.
+      const max = n.maxRank ?? 5;
+      const next = coef === undefined ? null : nextRankPercent(coef, rank, max);
+      if (rank >= max) add('tip-next max', t('tree.maxRankLine'));
+      else if (next !== null) add('tip-next', t('tree.nextRank', { pct: next, n: 1 }));
     }
     if (n.type === 'modifier') add('muted', t('tree.chooseOne'));
     if (n.type === 'keyPassive') add('muted', t('tree.onlyOneKey'));
     if (blocked && blocked !== 'maxed') add('item-tip-req', t(`tree.cannot.${blocked}`));
     if (n.type === 'skill' && rank > 0 && !useSheet()) add('muted', t('tree.assignHint'));
+    if (rank > 0 && !useSheet() && v.refundCost !== undefined) add('muted', t('tree.refundHint', { gold: v.refundCost }));
     return tip;
   }
 

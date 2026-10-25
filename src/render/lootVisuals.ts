@@ -3,11 +3,35 @@
  * (taller for rarer items) and a pop-out arc when it drops; gold piles glint.
  */
 import * as THREE from 'three';
-import { GroundGold, GroundItem, Transform } from '../core/components';
+import { GroundGold, GroundItem, PlayerControlled, Resource, Transform } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import { CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
 
 const POP_TIME = 0.45;
+
+/** Beams are quiet by default: dim for magic and rare, shorter, and fainter near the hero and in a fight (A038). */
+export const BEAM = {
+  /** Opacity for magic and rare, and for legendary and better. */
+  alpha: 0.5,
+  alphaHigh: 0.9,
+  /** Magic and rare beams are this share of their data height; width never changes. */
+  shortHeight: 0.4,
+  /** Within `nearRadius` metres of the hero (fully) or in combat, opacity is multiplied by `nearFactor`; it ramps back by `nearRadius + nearRamp`. */
+  nearRadius: 3,
+  nearRamp: 2,
+  nearFactor: 0.3,
+  /** Seconds since the hero last fought that still count as in combat. */
+  combatWindow: 4,
+};
+
+/** Height and target opacity of a beam for its rarity, the distance to the hero and the combat state. */
+export function beamLook(rarity: string, dataHeight: number, dist: number, inCombat: boolean): { height: number; opacity: number } {
+  const high = rarity === 'legendary' || rarity === 'unique' || rarity === 'mythic';
+  const height = high ? dataHeight : dataHeight * BEAM.shortHeight;
+  const ramp = Math.min(1, Math.max(0, (dist - BEAM.nearRadius) / BEAM.nearRamp));
+  const near = inCombat ? BEAM.nearFactor : BEAM.nearFactor + (1 - BEAM.nearFactor) * ramp;
+  return { height, opacity: (high ? BEAM.alphaHigh : BEAM.alpha) * near };
+}
 
 export class LootVisuals {
   readonly root = new THREE.Group();
@@ -23,6 +47,9 @@ export class LootVisuals {
   update(world: World, dt: number): void {
     this.time += dt;
     const seen = new Set<Entity>();
+    const hero = world.first(PlayerControlled, Transform);
+    const heroPos = hero === undefined ? null : world.req(hero, Transform);
+    const inCombat = hero !== undefined && (world.get(hero, Resource)?.sinceCombat ?? Infinity) < BEAM.combatWindow;
     for (const e of world.query(GroundItem, Transform)) {
       seen.add(e);
       const g = world.req(e, GroundItem);
@@ -39,7 +66,13 @@ export class LootVisuals {
       body.rotation.y = tr.facing + (t < 1 ? t * 8 : 0);
       obj.position.set(tr.x, 0, tr.z);
       const beam = obj.children[1];
-      if (beam) beam.scale.y = (beam.userData.height as number) * Math.min(1, t * 1.5) * (0.92 + Math.sin(this.time * 3 + e) * 0.08);
+      if (beam) {
+        const look = beamLook(g.item.rarity, beam.userData.height as number, heroPos ? Math.hypot(tr.x - heroPos.x, tr.z - heroPos.z) : Infinity, inCombat);
+        // Ease the opacity so a fight starting or the hero walking by fades the beam instead of popping it.
+        const mat = (beam as THREE.Mesh).material as THREE.MeshBasicMaterial;
+        mat.opacity += (look.opacity - mat.opacity) * Math.min(1, dt * 5);
+        beam.scale.y = look.height * Math.min(1, t * 1.5) * (0.92 + Math.sin(this.time * 3 + e) * 0.08);
+      }
     }
     for (const [e, obj] of this.items) {
       if (seen.has(e)) continue;
@@ -84,7 +117,7 @@ export class LootVisuals {
         new THREE.MeshBasicMaterial({
           color,
           transparent: true,
-          opacity: 0.35,
+          opacity: 0,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
           side: THREE.DoubleSide,

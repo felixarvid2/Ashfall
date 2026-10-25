@@ -169,8 +169,10 @@ html, body {
   left: 3px;
   bottom: 2px;
   font-family: var(--ui-mono);
-  font-size: 0.65em;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--ui-accent);
+  text-shadow: 0 0 2px #000, 0 0 2px #000;
 }
 .slot-cd { position: absolute; inset: 0; pointer-events: none; }
 .slot-cd-text {
@@ -613,7 +615,7 @@ html, body {
 .lore-panel { left: 50%; top: 22%; transform: translateX(-50%); width: min(520px, calc(100vw - 40px)); }
 .lore-panel button { font: inherit; font-size: 0.85em; color: var(--ui-text); background: #24201c; border: 1px solid var(--ui-border); padding: 4px 14px; cursor: pointer; margin-top: 10px; }
 .lore-body { line-height: 1.55; color: #d8cdb8; font-style: italic; white-space: pre-wrap; }
-.buff-bar { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
+.buff-bar { position: absolute; left: 50%; bottom: 136px; transform: translateX(-50%); display: flex; gap: 6px; pointer-events: none; }
 .buff {
   position: relative; width: 34px; height: 34px; border: 1px solid var(--status-color); border-radius: 3px;
   background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--status-color) 22%, transparent), rgba(10, 9, 8, 0.85) 70%);

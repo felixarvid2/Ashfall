@@ -5,7 +5,7 @@
  */
 import { t } from '../data/i18n';
 import { RIFT, RIFT_REWARDS } from '../data/endgame/rifts';
-import { riftItemPower, riftScale, type RiftPhase, type RiftResult } from '../systems/endgame/rifts';
+import { riftCacheYield, riftItemPower, riftScale, type RiftPhase, type RiftResult } from '../systems/endgame/rifts';
 import { buzz, haptic } from './haptics';
 import { GLYPH_MAX_LEVEL } from '../data/endgame/matrix';
 import { glyphUpgradeChance } from '../systems/endgame/matrix';
@@ -108,7 +108,7 @@ export class RiftPanel {
     this.level = Math.max(1, Math.min(open, this.level));
     const rows: HTMLElement[] = [];
     rows.push(el('p', 'rift-note', t('rifts.intro', { minutes: RIFT.time / 60 })));
-    rows.push(el('div', 'rift-best', best > 0 ? t('rifts.best', { level: best, time: time > 0 ? clock(time) : '–' }) : t('rifts.noBest')));
+    rows.push(el('div', 'rift-best', best > 0 ? (time > 0 ? t('rifts.best', { level: best, time: clock(time) }) : t('rifts.bestNoTime', { level: best })) : t('rifts.noBest')));
     rows.push(el('div', 'rift-open', t('rifts.open', { max: open })));
 
     const stepper = el('div', 'rift-stepper');
@@ -147,7 +147,14 @@ export class RiftPanel {
     // What the level changes, as chips (the long sentence stays as the tooltip).
     const effects = el('div', 'rift-effects');
     effects.title = t('rifts.effects', { mul: riftScale(this.level).toFixed(2), power: riftItemPower(this.level) });
-    effects.append(el('span', 'rift-chip', t('rifts.chipLife', { mul: riftScale(this.level).toFixed(2) })), el('span', 'rift-chip', t('rifts.chipPower', { power: riftItemPower(this.level) })));
+    // The cache's shard and legendary yield change with the level, like life and item power (B050).
+    const yieldNow = riftCacheYield(this.level);
+    effects.append(
+      el('span', 'rift-chip', t('rifts.chipLife', { mul: riftScale(this.level).toFixed(2) })),
+      el('span', 'rift-chip', t('rifts.chipPower', { power: riftItemPower(this.level) })),
+      Object.assign(el('span', 'rift-chip', t('rifts.chipShards', { n: yieldNow.shards })), { title: t('rifts.cacheHint') }),
+      el('span', 'rift-chip', t('rifts.chipLegendaries', { n: yieldNow.legendaries })),
+    );
     rows.push(effects);
     const go = el('button', 'service-btn rift-enter', t('rifts.enterTimed', { level: this.level, time: clock(RIFT.time) }));
     go.dataset.testid = 'rift-enter';

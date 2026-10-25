@@ -15,6 +15,14 @@ export interface EdgeInsets {
   bottom: number;
 }
 
+/**
+ * Where the arrow may sit. Touch: the free band under the hero and above the thumb controls (0.42 h margins).
+ * Desktop: the playfield clear of the minimap column, the target frame (top 160) and the action bar (bottom 180).
+ */
+export function edgeInsets(viewportH: number, touch: boolean): EdgeInsets {
+  return touch ? { left: 24, right: 24, top: Math.round(viewportH * 0.42), bottom: Math.round(viewportH * 0.42) } : { left: 24, right: 24, top: 160, bottom: 180 };
+}
+
 export interface EdgePlacement {
   /** False while the target is on screen. */
   visible: boolean;

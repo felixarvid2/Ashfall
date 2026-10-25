@@ -112,7 +112,7 @@ export const SettingsSchema = z.object({
   /** Scene brightness multiplier (B045). */
   brightness: z.number().min(0.6).max(1.5).default(1),
   /** Ground loot labels shown from this rarity up; lower ones keep only their beam (B046). */
-  lootLabelMin: z.enum(['all', 'magic', 'rare', 'legendary']).default('all'),
+  lootLabelMin: z.enum(['all', 'magic', 'rare', 'legendary']).default('magic'),
   /** Settings saved before the sound system have none: the defaults apply. */
   audio: AudioSettingsSchema.default({ master: 0.8, music: 0.5, sfx: 0.8, ui: 0.6, muted: false }),
 });
@@ -136,6 +136,112 @@ export function migrateSettings(settings: Settings): Settings {
 export function resolveKeybindings(settings: Settings): Record<Action, string[]> {
   return { ...DEFAULT_KEYBINDINGS, ...settings.keybindings } as Record<Action, string[]>;
 }
+
+// ---- Key rebinding (docs/ui/diablo-audit-panels.md B042) ---------------------------------------------
+
+/** Keys that cannot be bound: Escape closes menus and opens the pause menu; Meta/OS keys belong to the browser. */
+export function isBindableKey(code: string): boolean {
+  return code !== 'Escape' && !code.startsWith('Meta') && !code.startsWith('OS') && code !== 'ContextMenu' && code !== '';
+}
+
+/** Actions other than `action` that already use `code`. */
+export function bindingConflicts(bindings: Record<Action, string[]>, action: Action, code: string): Action[] {
+  return ACTIONS.filter((a) => a !== action && bindings[a].includes(code));
+}
+
+/** Most keys one action can hold (primary and secondary). */
+export const MAX_KEYS_PER_ACTION = 2;
+
+export interface RebindResult {
+  /** The new overrides to store (only actions that differ from the defaults); null when the key is taken and `force` is off. */
+  keybindings: Settings['keybindings'] | null;
+  /** The actions that hold the key now. */
+  conflicts: Action[];
+}
+
+/**
+ * Bind `code` to slot `slot` (0 primary, 1 secondary) of `action`. A key another action holds is a conflict: without
+ * `force` nothing changes (the panel warns); with `force` the other action takes over the key this slot had (a swap),
+ * or just loses the key when the slot was empty. An action never ends up with no key through a swap.
+ */
+export function rebindKey(settings: Settings, action: Action, slot: number, code: string, force = false): RebindResult {
+  const current = resolveKeybindings(settings);
+  const conflicts = bindingConflicts(current, action, code);
+  if (conflicts.length > 0 && !force) return { keybindings: null, conflicts };
+  const next: Record<Action, string[]> = {} as Record<Action, string[]>;
+  for (const a of ACTIONS) next[a] = [...current[a]];
+  const old = next[action][slot];
+  for (const other of conflicts) {
+    next[other] = next[other].filter((k) => k !== code);
+    if (old !== undefined && !next[other].includes(old)) next[other].push(old);
+  }
+  const keys = next[action];
+  if (slot >= keys.length) keys.push(code);
+  else keys[slot] = code;
+  next[action] = keys.filter((k, i) => keys.indexOf(k) === i).slice(0, MAX_KEYS_PER_ACTION);
+  return { keybindings: overridesOf(next), conflicts };
+}
+
+/** Back to the default keys of one action. A key another action took in the meantime goes back too (a swap). */
+export function resetBinding(settings: Settings, action: Action): Settings['keybindings'] {
+  const current = resolveKeybindings(settings);
+  const next: Record<Action, string[]> = {} as Record<Action, string[]>;
+  for (const a of ACTIONS) next[a] = [...current[a]];
+  const wanted = DEFAULT_KEYBINDINGS[action];
+  for (const other of ACTIONS) {
+    if (other !== action) next[other] = next[other].filter((k) => !wanted.includes(k));
+  }
+  next[action] = [...wanted];
+  // An action that lost its only key gets its default back, so nothing is left unbound.
+  for (const a of ACTIONS) if (next[a].length === 0) next[a] = [...DEFAULT_KEYBINDINGS[a]];
+  return overridesOf(next);
+}
+
+/** Only the actions whose keys differ from the defaults are stored. */
+export function overridesOf(bindings: Record<Action, string[]>): Settings['keybindings'] {
+  const out: Settings['keybindings'] = {};
+  for (const a of ACTIONS) {
+    const keys = bindings[a];
+    const def = DEFAULT_KEYBINDINGS[a];
+    if (keys.length !== def.length || keys.some((k, i) => k !== def[i])) out[a] = [...keys];
+  }
+  return out;
+}
+
+// ---- Reset to defaults (B047) -------------------------------------------------------------------
+
+export type SettingsTabId = 'sound' | 'display' | 'controls';
+
+/**
+ * The defaults of one Settings tab (the Sound tab has its own sliders and is not reset here). Phones keep their own
+ * defaults for graphics and the FPS meter (see the first-run rule in game.ts).
+ */
+export function tabDefaults(tab: SettingsTabId, touch = false): Partial<Settings> {
+  const d = defaultSettings();
+  if (tab === 'display') {
+    return {
+      textScale: d.textScale,
+      graphics: touch ? 'medium' : d.graphics,
+      screenShake: d.screenShake,
+      showFps: touch ? false : d.showFps,
+      haptics: d.haptics,
+      pauseInMenus: d.pauseInMenus,
+      reduceFlashing: d.reduceFlashing,
+      colorblind: d.colorblind,
+      brightness: d.brightness,
+      lootLabelMin: d.lootLabelMin,
+    };
+  }
+  if (tab === 'controls') {
+    return { moveMode: d.moveMode, touchControls: d.touchControls, touchLayout: d.touchLayout, buttonScale: d.buttonScale, keybindings: {} };
+  }
+  return {};
+}
+
+// ---- Accessibility (B044) -----------------------------------------------------------------------
+
+/** Brightness slider range (B045): the setting allows a little more, the slider stays in a useful span. */
+export const BRIGHTNESS_RANGE = { min: 0.8, max: 1.4, step: 0.05 } as const;
 
 const SETTINGS_KEY = 'ashfall.settings';
 

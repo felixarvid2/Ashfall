@@ -118,6 +118,16 @@ describe('hub services', () => {
     expect(extractAspect(i, 1)).toEqual({ ok: false, reason: 'noAspect' });
   });
 
+  it('the Technician refuses to extract from a locked item', () => {
+    const i = inv();
+    let legendary = item('legendary');
+    while (!legendary.aspect) legendary = item('legendary');
+    legendary.locked = true;
+    i.grid[0] = legendary;
+    expect(extractAspect(i, 0)).toEqual({ ok: false, reason: 'itemLocked' });
+    expect(i.grid[0]).toBe(legendary);
+  });
+
   it('the stash is shared and survives the account round trip', () => {
     const account = emptyAccount();
     const stash = stashSlots(account.stash, 0);

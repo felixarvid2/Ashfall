@@ -78,6 +78,14 @@ export function riftItemPower(level: number): number {
   return Math.min(cap, base + perLevel * level);
 }
 
+/** What the cache of a rift of this level holds: guaranteed legendaries and Rift Shards (shown on the obelisk panel, paid by `openRiftCache`). */
+export function riftCacheYield(level: number): { legendaries: number; shards: number } {
+  return {
+    legendaries: RIFT_REWARDS.legendaries.base + Math.floor(level / RIFT_REWARDS.legendaries.perLevels),
+    shards: Math.round(RIFT_REWARDS.shards.base + RIFT_REWARDS.shards.perLevel * level),
+  };
+}
+
 /** Does the account have the tier that opens the Rift Obelisk? */
 export function riftsUnlocked(ctx: GameContext): boolean {
   return (ctx.account?.endgame.tierUnlocked ?? 1) >= RIFT.tierRequired;
@@ -316,8 +324,7 @@ export function riftGlyphAttempt(ctx: GameContext, r: RiftState, glyphId: string
 /** Opening the cache: legendaries at the rift's item power, Rift Shards, and a chance at a recipe. */
 export function openRiftCache(world: World, ctx: GameContext, r: RiftState, at: { x: number; z: number }, rng: Rng): { legendaries: number; shards: number; recipe: string | null } {
   r.cacheOpened = true;
-  const legendaries = RIFT_REWARDS.legendaries.base + Math.floor(r.level / RIFT_REWARDS.legendaries.perLevels);
-  const shards = Math.round(RIFT_REWARDS.shards.base + RIFT_REWARDS.shards.perLevel * r.level);
+  const { legendaries, shards } = riftCacheYield(r.level);
   ctx.rewards.push({ table: 'dt.dungeon_cache', level: RIFT.monsterLevel, x: at.x, z: at.z, xp: false, rarity: 'legendary', count: legendaries, itemPower: riftItemPower(r.level) });
   grantMaterial(ctx, 'rift_shard', shards);
   let recipe: string | null = null;

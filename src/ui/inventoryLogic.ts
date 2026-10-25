@@ -2,8 +2,13 @@
  * Pure rules for the backpack on touch screens: sorting (P048), filter chips (P049) and which item to compare
  * against in a dual slot (P053). No DOM here, so tests can import it.
  */
-import { BASE_ITEMS } from '../data/loot/db';
+import { AFFIX_DEFS, BASE_ITEMS, UNIQUE_DEFS } from '../data/loot/db';
 import { RARITIES, slotsFor, type Item, type Slot } from '../data/loot/schemas';
+import { masterworkMultiplier } from '../systems/endgame/itemMods';
+import { GREATER_MULTIPLIER, powerScale, roundStat } from '../systems/loot/generate';
+import { isJunk } from '../systems/loot/inventory';
+
+export { isJunk };
 
 export const SORT_MODES = ['rarity', 'slot', 'power', 'newest'] as const;
 export type SortMode = (typeof SORT_MODES)[number];
@@ -34,8 +39,14 @@ export function itemCategory(item: Item): ItemCategory {
   }
 }
 
-/** Does a cell stay at full strength under a filter chip? `better` says it beats what is worn (compare > 0). */
-export function filterMatches(item: Item | null, chip: FilterChip, better: boolean): boolean {
+/**
+ * Does a cell stay at full strength under a filter chip? `better` says it beats what is worn (compare > 0).
+ * `search` is the optional text predicate of the `/` search (B015): an item must pass it as well as the chip.
+ */
+export function filterMatches(item: Item | null, chip: FilterChip, better: boolean, search?: (item: Item) => boolean): boolean {
+  if (search) {
+    if (!item || !search(item)) return false;
+  }
   if (chip === 'all') return true;
   if (!item) return false;
   switch (chip) {
@@ -109,4 +120,105 @@ export function upgradeSign(c: { damagePct: number; life: number; stats: { stat:
   if (deltas.every((d) => d > 0)) return 1;
   if (deltas.every((d) => d < 0)) return -1;
   return 0;
+}
+
+
+// ---- UI audit B001-B019 helpers (pure) -------------------------------------------------------------------
+
+/** Protect an item (B002): a locked item is skipped by salvage, sell and junk actions. Locking clears a junk mark. */
+export function setLocked(item: Item, locked: boolean): void {
+  if (locked) {
+    item.locked = true;
+    item.junk = false;
+  } else item.locked = false;
+}
+
+/** Mark an item as junk (B003): it joins common and magic gear in "salvage / store / sell junk". Marking clears a lock. */
+export function setJunk(item: Item, junk: boolean): void {
+  if (junk) {
+    item.junk = true;
+    item.locked = false;
+  } else item.junk = false;
+}
+
+/** The backpack items that can be salvaged or sold in bulk: everything not locked. */
+export function unlockedIndices(grid: readonly (Item | null)[], indices: Iterable<number>): number[] {
+  return [...indices].filter((i) => !!grid[i] && !grid[i]!.locked);
+}
+
+/** Junk in a backpack grid for the bulk buttons: grid index, item. Locked items never appear. */
+export function junkItems(grid: readonly (Item | null)[]): { index: number; item: Item }[] {
+  const out: { index: number; item: Item }[] = [];
+  grid.forEach((item, index) => {
+    if (item && isJunk(item)) out.push({ index, item });
+  });
+  return out;
+}
+
+/** The slot a ring-like item goes to with Shift+right-click (B011): the one `defaultTargetSlot` would not pick. */
+export function otherSlot(slots: readonly Slot[], equipped: Partial<Record<Slot, Item>>): Slot | undefined {
+  if (slots.length < 2) return undefined;
+  const first = defaultTargetSlot(slots, equipped);
+  return slots.find((s) => s !== first);
+}
+
+/** Item power gained (positive) or lost against what is worn in the target slot; an empty slot counts as 0. */
+export function powerDelta(item: Item, equipped: Item | null | undefined): number {
+  return item.itemPower - (equipped?.itemPower ?? 0);
+}
+
+/** "+51" / "-12" / "" (equal). */
+export function powerDeltaText(delta: number): string {
+  if (delta === 0) return '';
+  return delta > 0 ? `+${delta}` : `-${Math.abs(delta)}`;
+}
+
+/** Where an aspect stands (B017): already in the account's Codex, in this character's cache, or new. */
+export function aspectStatus(id: string, cache: readonly { id: string }[], codex: readonly string[]): 'codex' | 'cache' | 'new' {
+  if (codex.includes(id)) return 'codex';
+  if (cache.some((a) => a.id === id)) return 'cache';
+  return 'new';
+}
+
+/** Bag fill (B014): `near` from 90 % full, `full` when no cell is free. */
+export function bagFill(used: number, max: number): 'ok' | 'near' | 'full' {
+  if (max > 0 && used >= max) return 'full';
+  return max > 0 && used >= Math.ceil(max * 0.9) ? 'near' : 'ok';
+}
+
+/** Every whitespace-separated word of `query` appears in `haystack` (case-insensitive). Empty query matches all. */
+export function textMatches(haystack: string, query: string): boolean {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const text = haystack.toLowerCase();
+  return words.every((w) => text.includes(w));
+}
+
+/** Inclusive run of backpack indices between two cells (Shift+click range in select mode, B016). */
+export function indexRange(a: number, b: number): number[] {
+  const [lo, hi] = a <= b ? [a, b] : [b, a];
+  return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+}
+
+/**
+ * The range an affix could have rolled at this item's power (B009), printed next to the value. It mirrors the
+ * roll in loot/generate.ts (scale, round, greater x1.5, round) and the masterwork boost, so the shown value
+ * always lies inside it. `index` is the position in `item.affixes`; tempered affixes have no range (null).
+ */
+export function affixRollRange(item: Item, index: number): { min: number; max: number } | null {
+  const rolled = item.affixes[index];
+  if (!rolled?.affix) return null;
+  const def = rolled.affix.startsWith('unique:')
+    ? UNIQUE_DEFS.get(item.unique ?? '')?.affixes.find((a) => a.stat === rolled.stat)
+    : AFFIX_DEFS.get(rolled.affix);
+  if (!def) return null;
+  const scale = powerScale(def.scaling, item.itemPower);
+  const greater = rolled.greater ? GREATER_MULTIPLIER : 1;
+  const boost = masterworkMultiplier(item, index);
+  const edge = (v: number) => roundStat(roundStat(roundStat(v * scale) * greater) * boost);
+  return { min: edge(def.min), max: edge(def.max) };
+}
+
+/** Is a roll in the top fifth of its range (B009)? */
+export function isHighRoll(value: number, range: { min: number; max: number }): boolean {
+  return range.max > range.min && (value - range.min) / (range.max - range.min) >= 0.8;
 }

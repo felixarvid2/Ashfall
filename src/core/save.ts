@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { ItemSchema, SlotSchema } from '../data/loot/schemas';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** Number of character slots on the select screen. */
 export const CHARACTER_SLOTS = 3;
@@ -148,6 +148,24 @@ export const MIGRATIONS: Record<number, Migration> = {
   6: (d) => {
     const { zone, ...state } = d.world as { zone: string } & Record<string, unknown>;
     return { ...d, version: 7, world: { zone, zones: { [zone]: state } } };
+  },
+  // v8 (UI audit B002/B003): items can be locked or marked as junk. Every carried item starts unmarked.
+  7: (d) => {
+    const inv = d.inventory as { grid?: unknown[]; equipped?: Record<string, unknown> } | null | undefined;
+    if (!inv || typeof inv !== 'object') return { ...d, version: 8 };
+    const flag = (item: unknown): unknown =>
+      item && typeof item === 'object' ? { locked: false, junk: false, ...(item as Record<string, unknown>) } : item;
+    return {
+      ...d,
+      version: 8,
+      inventory: {
+        ...inv,
+        ...(Array.isArray(inv.grid) ? { grid: inv.grid.map(flag) } : {}),
+        ...(inv.equipped && typeof inv.equipped === 'object'
+          ? { equipped: Object.fromEntries(Object.entries(inv.equipped).map(([slot, item]) => [slot, flag(item)])) }
+          : {}),
+      },
+    };
   },
 };
 

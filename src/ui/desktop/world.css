@@ -1,1 +1,87 @@
 /* Diablo-comparison UI pass (world): see docs/ui/diablo-audit-*.md. Desktop-only rules use #ui:not(.touch-ui). */
+
+/* ---- Enemy life bars and elite plates (A020, A021, A025): small, only on hurt enemies and elites ---- */
+.enemy-bars { position: absolute; inset: 0; pointer-events: none; }
+.enemy-bar, .enemy-plate { position: absolute; left: 0; top: 0; }
+.enemy-bar[hidden], .enemy-plate[hidden], .enemy-chips[hidden] { display: none; }
+.enemy-bar { width: 28px; }
+.enemy-bar-track { height: 3px; background: #1a0d0b; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8); }
+.enemy-bar-track i { display: block; width: 100%; height: 100%; background: #c22a1f; transform-origin: 0 50%; }
+.enemy-plate { display: flex; flex-direction: column; align-items: center; gap: 2px; width: max-content; min-width: 56px; }
+.enemy-plate .enemy-bar-track { width: 100%; height: 4px; }
+.enemy-chips { display: flex; flex-wrap: nowrap; justify-content: center; gap: 2px; }
+.affix-chip {
+  --chip: #ffd23a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  font-size: 8px;
+  font-weight: bold;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--chip);
+  background: rgba(10, 9, 8, 0.85);
+  border: 1px solid var(--chip);
+  vertical-align: middle;
+}
+.affix-chip.has-icon::before { content: ''; width: 10px; height: 10px; background: var(--chip); -webkit-mask: var(--chip-icon) center / contain no-repeat; mask: var(--chip-icon) center / contain no-repeat; }
+.target-affix .affix-chip { margin-right: 3px; }
+#ui.touch-ui .enemy-bar { width: 22px; }
+#ui.touch-ui .enemy-bar-track { height: 2px; }
+#ui.touch-ui .enemy-plate .enemy-bar-track { height: 3px; }
+#ui.touch-ui .affix-chip { width: 12px; height: 12px; font-size: 7px; }
+#ui.touch-ui .affix-chip.has-icon::before { width: 8px; height: 8px; }
+#ui.touch-ui.portrait.has-panel .enemy-bars { visibility: hidden; }
+
+/* ---- Edge arrow towards an engaged off-screen boss on desktop (A017), in the boss frame's gold ---- */
+#ui:not(.touch-ui) .edge-arrow:not([hidden]) {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  color: #d8b030;
+  font-size: 24px;
+  line-height: 1;
+  text-shadow: 0 0 6px #000, 0 0 10px rgba(216, 176, 48, 0.7);
+  animation: edge-arrow-pulse 0.8s ease-in-out infinite alternate;
+}
+#ui:not(.touch-ui) .edge-arrow::before { content: '\25B2'; }
+#ui:not(.touch-ui).has-panel .edge-arrow { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { #ui:not(.touch-ui) .edge-arrow:not([hidden]) { animation: none; } }
+
+/* ---- Big map on desktop (B037): the map left, regions / legend / footer in a right column ---- */
+#ui:not(.touch-ui) .map-panel {
+  display: grid;
+  grid-template-columns: auto 232px;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 8px 14px;
+  align-content: start;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(960px, calc(100vw - 40px));
+  max-height: calc(100vh - 128px);
+  top: calc(50% - 56px);
+}
+#ui:not(.touch-ui) .map-panel[hidden] { display: none; }
+#ui:not(.touch-ui) .map-panel > .panel-header { grid-column: 2; grid-row: 1; margin: 0; }
+#ui:not(.touch-ui) .map-panel > .map-tabs { grid-column: 2; grid-row: 2; flex-direction: column; gap: 4px; margin: 0; max-height: 168px; overflow-x: hidden; overflow-y: auto; -webkit-mask-image: none; mask-image: none; }
+#ui:not(.touch-ui) .map-panel .map-tab { text-align: left; }
+#ui:not(.touch-ui) .map-panel > .map-viewport { grid-column: 1; grid-row: 1 / span 4; margin: 0; align-self: start; }
+#ui:not(.touch-ui) .map-panel > .map-legend { grid-column: 2; grid-row: 3; justify-content: flex-start; gap: 4px; margin: 0; align-content: flex-start; }
+#ui:not(.touch-ui) .map-panel .map-legend-chip { padding: 2px 6px; }
+#ui:not(.touch-ui) .map-panel > .map-info { grid-column: 2; grid-row: 4; margin: 0; overflow-y: auto; }
+#ui:not(.touch-ui) .map-canvas { width: min(720px, calc(100vh - 156px), calc(100vw - 40px - 28px - 232px - 14px)); }
+/* Hover label over a glyph (a short pause first); the legend stays one line on a phone so the map keeps its height. */
+.map-tip { position: absolute; left: 0; top: 0; z-index: 2; padding: 2px 8px; background: rgba(10, 9, 8, 0.92); border: 1px solid #8a6a44; color: #ffe0a8; font-size: 12px; white-space: nowrap; pointer-events: none; }
+.map-tip[hidden] { display: none; }
+#ui.touch-ui .map-legend { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+#ui.touch-ui .map-legend::-webkit-scrollbar { display: none; }
+#ui.touch-ui .map-legend-chip { flex: none; white-space: nowrap; }

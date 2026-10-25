@@ -10,6 +10,7 @@ import {
   Collider,
   CombatStats,
   Dead,
+  DisplayName,
   Elite,
   EnemyAI,
   Faction,
@@ -29,6 +30,7 @@ import {
   Summon,
   Transform,
   makeTransform,
+  type HitSource,
   type StatusInstance,
   type Team,
 } from '../core/components';
@@ -200,6 +202,7 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
     damageType: hit.damageType,
     dot: false,
     sourceTeam: team,
+    source: attacker,
   });
   if (dealt === null) return null;
   if (stealthed) removeStatuses(world, attacker, (st) => st.id === 'stealth');
@@ -266,6 +269,17 @@ export interface DamageOptions {
   damageType: DamageType;
   dot: boolean;
   sourceTeam: Team;
+  /** The attacker, when there is one: the player's death screen names the last one (A046). */
+  source?: Entity;
+}
+
+/** What the death screen needs to name an enemy that hit the player (undefined for anything that is not an enemy). */
+export function hitSourceOf(world: World, source: Entity, now: number): HitSource | undefined {
+  const ai = world.get(source, EnemyAI);
+  if (!ai) return undefined;
+  const dn = world.get(source, DisplayName);
+  const elite = world.get(source, Elite);
+  return { defId: ai.defId, ...(dn ? { displayKey: dn.key, literal: dn.literal } : {}), ...(elite ? { elite: elite.kind, affixes: [...elite.affixes] } : {}), at: now };
 }
 
 /**
@@ -324,6 +338,7 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
   // Benediction: a lethal blow leaves the holder on 1 life instead.
   if (remaining >= health.current && hasCheatDeath(world, target)) remaining = Math.max(0, health.current - 1);
   if (!(isPlayer && ctx.debug.godMode)) health.current -= remaining;
+  if (isPlayer && opts.source !== undefined && remaining > 0) health.lastHitSource = hitSourceOf(world, opts.source, ctx.time) ?? health.lastHitSource;
   markInCombat(world, target);
   const ai = world.get(target, EnemyAI);
   if (ai) ai.aggro = true;

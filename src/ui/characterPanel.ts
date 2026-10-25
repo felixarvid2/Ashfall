@@ -22,6 +22,8 @@ export interface CharacterSnapshot {
   resourceMax: number;
   resource?: { kind: string; current: number; max: number };
   gold?: number;
+  /** Mean item power of the worn gear (B034); the row is hidden when nothing is worn. */
+  gearPower?: number;
   bag?: { used: number; max: number };
   portraitUrl?: string | null;
 }
@@ -128,6 +130,7 @@ export class CharacterPanel {
   private readonly portrait = el('div', 'char-card-portrait');
   private readonly nameEl = el('div', 'char-card-name');
   private readonly subEl = el('div', 'char-card-sub');
+  private readonly gearEl = el('div', 'char-card-gear');
   private readonly xpFill = el('i');
   private readonly xpText = el('div', 'char-xp-text');
   private readonly goldEl = el('div', 'char-card-gold');
@@ -150,7 +153,8 @@ export class CharacterPanel {
     const text = el('div', 'char-card-text');
     const xpBar = el('div', 'char-xp');
     xpBar.append(this.xpFill);
-    text.append(this.nameEl, this.subEl, xpBar, this.xpText);
+    this.gearEl.dataset.testid = 'char-gear-power';
+    text.append(this.nameEl, this.subEl, this.gearEl, xpBar, this.xpText);
     this.card.append(this.portrait, text, this.goldEl);
     const resourceBar = el('span', 'char-resource-bar');
     resourceBar.append(this.resourceFill);
@@ -233,6 +237,7 @@ export class CharacterPanel {
     this.nameEl.textContent = s.name || s.className;
     // The class name is the name when the hero was not named: then the second line is just the level.
     this.subEl.textContent = s.name && s.name !== s.className ? `${s.className} · ${t('ui.level', { level })}` : t('ui.level', { level });
+    this.gearEl.textContent = s.gearPower ? t('ui.charPanel.gearPower', { n: s.gearPower }) : '';
     const ratio = next > 0 && Number.isFinite(next) ? Math.min(1, s.progression.xp / next) : 1;
     this.xpFill.style.width = `${(ratio * 100).toFixed(1)}%`;
     this.xpText.textContent = t('ui.xp', { xp: Math.floor(s.progression.xp), next });

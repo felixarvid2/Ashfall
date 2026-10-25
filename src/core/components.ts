@@ -70,9 +70,23 @@ export interface Faction {
 }
 export const Faction = defineComponent<Faction>('Faction');
 
+/** Who dealt the last hit to the player (language keys, not text), for "Slain by ..." on the death screen. */
+export interface HitSource {
+  defId: string;
+  /** Rare and named enemies: the name shown instead of the type's (a language key, or literal text). */
+  displayKey?: string;
+  literal?: boolean;
+  elite?: 'champion' | 'rare' | 'named';
+  affixes?: string[];
+  /** Game time of the hit (s). */
+  at: number;
+}
+
 export interface Health {
   current: number;
   max: number;
+  /** The player's last attacker (A046); unset until an enemy hits. */
+  lastHitSource?: HitSource;
 }
 export const Health = defineComponent<Health>('Health');
 

@@ -9,14 +9,14 @@ import type { Rng } from '../../core/rng';
 import { BLACKSMITH, STASH, TECHNICIAN, VENDOR } from '../../data/services';
 import { ASPECT_DEFS, BASE_ITEMS, rarityDef } from '../../data/loot/db';
 import type { Item } from '../../data/loot/schemas';
-import { addToGrid } from '../loot/inventory';
+import { addToGrid, isJunk } from '../loot/inventory';
 import { generateItem, itemPowerFor, rollAffixes, salvageValue } from '../loot/generate';
 import type { TierMods } from '../endgame/tiers';
 
 /** The part of the World Tier the shops use: bonus item power and greater-affix chance (neutral in the campaign). */
 export type ShopTier = Pick<TierMods, 'itemPower' | 'greaterChance'>;
 
-export type ServiceResult = { ok: true } | { ok: false; reason: 'gold' | 'full' | 'empty' | 'invalid' | 'noAspect' | 'cacheFull' | 'type' };
+export type ServiceResult = { ok: true } | { ok: false; reason: 'gold' | 'full' | 'empty' | 'invalid' | 'noAspect' | 'cacheFull' | 'type' | 'itemLocked' };
 
 const fail = (reason: Exclude<ServiceResult, { ok: true }>['reason']): ServiceResult => ({ ok: false, reason });
 
@@ -55,13 +55,36 @@ export function buy(inv: Inventory, stock: (Item | null)[], index: number): Serv
   return { ok: true };
 }
 
-export function sell(inv: Inventory, gridIndex: number): number {
+/** Sold items the trader still holds (B023): newest first, kept in memory only, cleared when the stock refreshes. */
+export const BUYBACK_MAX = 8;
+export interface BuybackEntry {
+  item: Item;
+  /** What the player was paid; buying back costs the same. */
+  price: number;
+}
+
+export function sell(inv: Inventory, gridIndex: number, buyback?: BuybackEntry[]): number {
   const item = inv.grid[gridIndex];
-  if (!item) return 0;
+  if (!item || item.locked) return 0;
   const gold = sellPrice(item);
   inv.grid[gridIndex] = null;
   inv.gold += gold;
+  if (buyback) {
+    buyback.unshift({ item, price: gold });
+    buyback.length = Math.min(buyback.length, BUYBACK_MAX);
+  }
   return gold;
+}
+
+/** Take a sold item back at the sale price. Needs the gold and a free backpack cell. */
+export function buyBack(inv: Inventory, buyback: BuybackEntry[], index: number): ServiceResult {
+  const entry = buyback[index];
+  if (!entry) return fail('empty');
+  if (inv.gold < entry.price) return fail('gold');
+  if (!addToGrid(inv, entry.item).ok) return fail('full');
+  inv.gold -= entry.price;
+  buyback.splice(index, 1);
+  return { ok: true };
 }
 
 // ---- Blacksmith -------------------------------------------------------------------------
@@ -91,11 +114,11 @@ export function rerollAffix(rng: Rng, inv: Inventory, item: Item, affixIndex: nu
   return { ok: true };
 }
 
-/** Salvage every common and magic item in the backpack, except the grid indexes in `keep`. Returns gold gained. */
+/** Salvage every junk item (common, magic, marked; never locked) in the backpack, except the grid indexes in `keep`. Returns gold gained. */
 export function salvageJunk(inv: Inventory, keep?: ReadonlySet<number>): number {
   let gold = 0;
   inv.grid.forEach((item, i) => {
-    if (!item || item.crystal || (item.rarity !== 'common' && item.rarity !== 'magic') || keep?.has(i)) return;
+    if (!item || !isJunk(item) || keep?.has(i)) return;
     gold += salvageValue(item);
     inv.grid[i] = null;
   });
@@ -118,6 +141,8 @@ export function extractAspect(inv: Inventory, gridIndex: number): ServiceResult 
   const item = inv.grid[gridIndex];
   if (!item) return fail('empty');
   if (!item.aspect || item.unique) return fail('noAspect');
+  // Extracting destroys the item, so a locked one is refused like salvage and sell.
+  if (item.locked) return fail('itemLocked');
   const cache = (inv.aspects ??= []);
   if (cache.length >= TECHNICIAN.cacheSize) return fail('cacheFull');
   const cost = extractCost(item);

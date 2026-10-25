@@ -136,6 +136,7 @@ export class TouchControls {
   private readonly fabButton: HTMLButtonElement;
   private readonly flareButton: HTMLButtonElement | null = null;
   private readonly dots = new Map<string, HTMLElement>();
+  private offBarDot: HTMLElement | null = null;
   private panelsWere = new Set<string>();
 
   constructor(
@@ -195,6 +196,11 @@ export class TouchControls {
       dot.className = 'touch-menu-dot';
       b.appendChild(dot);
       this.dots.set(m.id, dot);
+      if (m.id === 'skills') {
+        // B036: a second, smaller dot (bottom right, absolutely placed: no layout change) for learned skills off the bar.
+        this.offBarDot = Object.assign(document.createElement('span'), { className: 'touch-menu-pip' });
+        b.appendChild(this.offBarDot);
+      }
       menu.appendChild(b);
     }
 
@@ -329,6 +335,16 @@ export class TouchControls {
   sync(combat: boolean, skillPoints: number): void {
     if (this.root.classList.contains('in-combat') !== combat) this.root.classList.toggle('in-combat', combat);
     this.setDot('skills', skillPoints > 0);
+  }
+
+  /** Learned skills that are not on the action bar (B036): a small dot with an aria-label on the Skills button; written on change only. */
+  setUnassigned(count: number): void {
+    const dot = this.offBarDot;
+    if (!dot || dot.dataset.n === String(count)) return;
+    dot.dataset.n = String(count);
+    dot.parentElement?.classList.toggle('has-pip', count > 0);
+    if (count > 0) dot.setAttribute('aria-label', t('hud.unassignedSkills', { n: count }));
+    else dot.removeAttribute('aria-label');
   }
 
   /** A small dot on a menu button (new points, new items, a quest step); cleared when its panel opens. */
