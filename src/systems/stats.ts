@@ -134,14 +134,17 @@ export function computePlayerStats(
   add('damageVsStunned', 'stunned');
   add('damageVsBurning', 'burning');
   add('meleeDamage', 'melee');
+  add('rangedDamage', 'ranged');
   additive.push(...effectAdditive);
 
   const weaponDamage = get('weaponDamage') > 0 ? get('weaponDamage') : cls.weaponDamage;
   const critChance = Math.min(CAPS.critChance, cls.critChance + get('critChance') + attributes.dexterity * ATTRIBUTE_RULES.critPerDex);
   const critDamage = cls.critDamage + get('critDamage');
   const attackSpeed = get('attackSpeed');
+  // Percentage armor and life (skill-tree passives) scale with the whole build instead of vanishing at high levels.
   const armor =
-    cls.armor + get('armor') + (primary === 'strength' ? 0 : attributes.strength * ATTRIBUTE_RULES.armorPerStr);
+    (cls.armor + get('armor') + (primary === 'strength' ? 0 : attributes.strength * ATTRIBUTE_RULES.armorPerStr)) *
+    (1 + get('armorPct'));
 
   const combat: PlayerStats['combat'] = {
     weaponDamage,
@@ -174,7 +177,7 @@ export function computePlayerStats(
 
   return {
     combat,
-    maxLife: Math.round(cls.life + cls.lifePerLevel * lv + get('maxLife')),
+    maxLife: Math.round((cls.life + cls.lifePerLevel * lv + get('maxLife')) * (1 + get('maxLifePct'))),
     attributes,
     moveSpeedBonus: Math.min(CAPS.moveSpeed, get('moveSpeed')),
     damageEstimate,

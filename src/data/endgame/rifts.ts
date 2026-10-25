@@ -14,8 +14,10 @@ export const RIFT = {
   maxLevel: 100,
   /** Rift monsters are always this level; the rift level multiplies life and damage on top. */
   monsterLevel: 50,
-  /** Enemy life and damage × this per rift level. */
+  /** Enemy life × this per rift level. */
   perLevel: 1.06,
+  /** Enemy damage × this per rift level: slower than life (G024), so rift 40 hits about 4x, not 10x. */
+  damagePerLevel: 1.035,
   /** Seconds in which the exit must be used twice to abandon a running rift. */
   abandonWindow: 8,
   /** Seconds to fill the bar and kill the guardian. */
@@ -51,8 +53,12 @@ export const RIFT_REWARDS = {
   shards: { base: 2, perLevel: 0.25 },
   /** Chance of a tempering recipe in the cache (and it never repeats one the character knows while others are left). */
   recipeChance: 0.25,
-  /** Item power of the cache's items: the level-50 baseline (`10 + 8 × 50`) + this per rift level, up to the cap. */
-  itemPower: { base: 410, perLevel: 2, cap: 540 },
+  /** Item power of the cache's items: the level-50 baseline (`10 + 8 × 50`) + this per rift level, up to the cap (610 = rift 100, so it grows to the end: C011). */
+  itemPower: { base: 410, perLevel: 2, cap: 610 },
+  /** Chance of one extra unique in the cache: base + per rift level (C011). */
+  uniqueChance: { base: 0.05, perLevel: 0.004 },
+  /** Chance that extra item is a mythic instead: per rift level above `from`. */
+  mythicChance: { from: 60, perLevel: 0.001 },
 };
 
 /** Tempering recipes a rift can teach (data by the crafting system; every recipe may drop). */

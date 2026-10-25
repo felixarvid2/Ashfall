@@ -13,6 +13,7 @@ import { t } from '../data/i18n';
 import type { Action, MoveMode } from '../data/settings';
 import type { SkillDef } from '../data/schemas';
 import { BOSS_SCRIPTS } from '../data/bosses';
+import { getPref, setPref } from '../core/localPrefs';
 
 /** "KeyW" → "W", "Digit1" → "1", "F3" → "F3". */
 export function keyLabel(code: string): string {
@@ -124,18 +125,11 @@ const DEATH_LOCK = 1.2;
 
 const HINTS_KEY = 'ashfall.hintsSeen';
 function readHintsSeen(): boolean {
-  try {
-    return localStorage.getItem(HINTS_KEY) === '1';
-  } catch {
-    return false;
-  }
+  return getPref(HINTS_KEY) === '1';
 }
 function writeHintsSeen(): void {
-  try {
-    localStorage.setItem(HINTS_KEY, '1');
-  } catch {
-    /* storage blocked: the hint simply shows again next session */
-  }
+  // Storage blocked: the hint simply shows again next session.
+  setPref(HINTS_KEY, '1');
 }
 
 const SLOT_LABELS = ['LMB', 'RMB', '1', '2', '3', '4'];

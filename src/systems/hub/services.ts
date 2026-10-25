@@ -8,9 +8,9 @@ import type { Inventory } from '../../core/components';
 import type { Rng } from '../../core/rng';
 import { BLACKSMITH, STASH, TECHNICIAN, VENDOR } from '../../data/services';
 import { ASPECT_DEFS, BASE_ITEMS, rarityDef } from '../../data/loot/db';
-import type { Item } from '../../data/loot/schemas';
+import type { Item, Rarity } from '../../data/loot/schemas';
 import { addToGrid, isJunk } from '../loot/inventory';
-import { generateItem, itemPowerFor, rollAffixes, salvageValue } from '../loot/generate';
+import { canEquip, generateItem, itemPowerFor, rollAffixes, salvageValue } from '../loot/generate';
 import type { TierMods } from '../endgame/tiers';
 
 /** The part of the World Tier the shops use: bonus item power and greater-affix chance (neutral in the campaign). */
@@ -22,18 +22,68 @@ const fail = (reason: Exclude<ServiceResult, { ok: true }>['reason']): ServiceRe
 
 // ---- Trader --------------------------------------------------------------------------
 
-/** The trader's stock; at a higher World Tier it rolls with the tier's item power and greater-affix chance like drops do. */
-export function rollVendorStock(rng: Rng, level: number, classId: string, uid: () => string, nameOf?: (baseId: string) => string, tier?: ShopTier): Item[] {
-  return Array.from({ length: VENDOR.stockSize }, () =>
+/** The rarity table the trader rolls for a region (zone key): the plain one without a region, or with an unlisted one. */
+export function vendorRarities(region?: string): { item: Rarity; weight: number }[] {
+  const stock = region ? VENDOR.regionStock[region] : undefined;
+  if (!stock) return VENDOR.rarity;
+  const out = VENDOR.rarity.map((r) => (r.item === 'legendary' ? { ...r, weight: stock.legendary } : r));
+  return stock.unique > 0 ? [...out, { item: 'unique' as Rarity, weight: stock.unique }] : out;
+}
+
+/**
+ * A legendary the class can use: a base it can equip and, when the aspect is bound to classes, one that includes it.
+ * Rolls a few times and keeps the best it found (a legendary with a base for the class, then one with a fitting aspect).
+ */
+export function rollOwnClassLegendary(rng: Rng, level: number, classId: string, uid: string, nameOf?: (baseId: string) => string, tier?: ShopTier): Item {
+  const ip = itemPowerFor(level, rng) + (tier?.itemPower ?? 0);
+  const bases = [...BASE_ITEMS.values()].filter((b) => b.type !== 'crystal' && b.minItemPower <= ip && canEquip(b, classId));
+  let best: Item | null = null;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const base = bases.length > 0 ? rng.weighted(bases.map((b) => ({ item: b, weight: b.weight }))) : undefined;
+    const item = generateItem(rng, {
+      itemPower: ip,
+      classId,
+      uid,
+      rarity: 'legendary',
+      ...(base ? { baseId: base.id } : {}),
+      ...(tier ? { greaterBonus: tier.greaterChance } : {}),
+      ...(nameOf ? { nameOf } : {}),
+    });
+    if (item.rarity !== 'legendary') continue;
+    best ??= item;
+    const classes = item.aspect ? ASPECT_DEFS.get(item.aspect.id)?.classes : undefined;
+    if (!classes || classes.includes(classId)) return item;
+  }
+  return best ?? generateItem(rng, { itemPower: ip, classId, uid, rarity: 'rare' });
+}
+
+/**
+ * The trader's stock; at a higher World Tier it rolls with the tier's item power and greater-affix chance like drops do.
+ * `region` (a zone key) sets the legendary and unique weights; the last slot is reserved for a legendary of the player's class.
+ */
+export function rollVendorStock(
+  rng: Rng,
+  level: number,
+  classId: string,
+  uid: () => string,
+  nameOf?: (baseId: string) => string,
+  tier?: ShopTier,
+  region?: string,
+): Item[] {
+  const reserved = Math.min(VENDOR.ownClassLegendarySlots, VENDOR.stockSize);
+  const rarities = vendorRarities(region);
+  const stock = Array.from({ length: VENDOR.stockSize - reserved }, () =>
     generateItem(rng, {
       itemPower: itemPowerFor(level, rng) + (tier?.itemPower ?? 0),
       ...(tier ? { greaterBonus: tier.greaterChance } : {}),
       classId,
       uid: uid(),
-      rarity: rng.weighted(VENDOR.rarity),
+      rarity: rng.weighted(rarities),
       ...(nameOf ? { nameOf } : {}),
     }),
   );
+  for (let i = 0; i < reserved; i++) stock.push(rollOwnClassLegendary(rng, level, classId, uid(), nameOf, tier));
+  return stock;
 }
 
 export function buyPrice(item: Item): number {

@@ -24,6 +24,6 @@ export const STATUSES: Record<StatusId, z.input<typeof StatusDefSchema>> = {
   overclock: { kind: 'buff', color: '#5ad2ff' },
   empowered: { kind: 'buff', color: '#d6b0ff' },
   blessed: { kind: 'buff', damageMul: 1.2, hasteMul: 1.12, color: '#ffe08a' },
-  lexAeterna: { kind: 'mark', damageTakenMultiplier: 2, refund: 0, consumeOnHit: true, color: '#fff2c0' },
+  lexAeterna: { kind: 'mark', damageTakenMultiplier: 1.35, refund: 0, color: '#fff2c0' },
   benediction: { kind: 'buff', cheatDeath: true, damageTakenMul: 0.8, color: '#fff6d8' },
 };

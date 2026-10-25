@@ -84,8 +84,19 @@ for (const file of walk(out)) {
 for (const f of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) rmSync(join(out, f), { force: true });
 const built = readFileSync(join(out, 'index.html'), 'utf8');
 const js = /src="\.\/assets\/(index-[^"]+\.js)"/.exec(built)?.[1];
-const css = /href="\.\/assets\/(index-[^"]+\.css)"/.exec(built)?.[1];
+const css = /href="\.\/assets\/([^"]+\.css)"/.exec(built)?.[1];
 if (!js || !css) throw new Error('index bundle names not found in dist-artifact/index.html');
+// The app is split into a few chunks (vendor-three, vendor-zod, lang, game-data, game-ui): the entry imports them
+// by relative path, so they must be published beside it. Preload them in parallel, and fail the build if any chunk
+// an import points at is missing from the output.
+const chunks = [...built.matchAll(/<link rel="modulepreload"[^>]*href="\.\/assets\/([^"]+\.js)"/g)].map((m) => m[1]!);
+for (const chunk of [js, ...chunks]) {
+  const code = readFileSync(join(out, 'assets', chunk), 'utf8');
+  for (const m of code.matchAll(/(?:from|import\()\s*["']\.\/([^"']+\.js)["']/g)) {
+    if (!statSync(join(out, 'assets', m[1]!), { throwIfNoEntry: false })) throw new Error(`${chunk} imports ./${m[1]}, which is not in dist-artifact/assets`);
+  }
+}
+const preload = chunks.map((c) => `<link rel="modulepreload" href="./assets/${c}">`).join('\n');
 writeFileSync(
   join(out, 'artifact-page.html'),
   `<title>Ashfall</title>
@@ -96,6 +107,7 @@ writeFileSync(
   html, body { height: 100%; background: var(--bg); color: var(--fg); }
 </style>
 <link rel="stylesheet" href="./assets/${css}">
+${preload}
 <div id="app">
   <canvas id="game"></canvas>
   <div id="ui"></div>

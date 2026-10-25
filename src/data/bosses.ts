@@ -410,3 +410,11 @@ export const BOSS_SCRIPTS: Record<string, BossPhase[]> = {
     { below: 0.5, banner: 'bosses.shade_kade.phase2', speedMul: 1.2, tempo: 1.2, teleport: { every: 7, radius: 3.5, warning: 1, damageOfWeapon: 1.4, color: '#c8a4ff' }, adds: { enemy: 'shade_drone', count: 2, every: 12 } },
   ],
 };
+
+/**
+ * Life multiplier of a region's stronghold boss (Hale, Brother Ash, Gamma Bloom, Holm) by monster level (G022).
+ * Gentler than the old 0.12 per level: the mid-boss is 0.45-0.95x the zone boss in every region (docs/enemy-roster.md).
+ */
+export function strongholdLifeMul(level: number): number {
+  return 1 + 0.035 * (level - 1);
+}

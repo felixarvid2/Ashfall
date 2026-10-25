@@ -43,6 +43,7 @@ import { Rng, randomSeed } from './core/rng';
 import {
   CHARACTER_SLOTS,
   SAVE_VERSION,
+  NewerSaveError,
   SaveError,
   SaveStore,
   parseSave,
@@ -51,21 +52,23 @@ import {
   serializeSave,
   slotKey,
   type SaveData,
+  type SaveWriteResult,
 } from './core/save';
 import { SpatialHash } from './core/spatial';
-import { STATUS_DEFS, classDef, skill } from './data/db';
+import { classDef, skill } from './data/db';
 import { setTouchWording, t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
 import { START_ZONE, ZONES, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
+import { classAssetIds, zoneAssetIds, zoneInstanceAssetIds } from './data/assetSets';
 import type { ZoneDef } from './data/zones/zoneTypes';
-import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, revealedFraction, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
+import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
 import { navigationSystem } from './systems/navigation';
 import { UNDERGROUND, litFloodlights, rockSystem, undergroundState, undergroundSystem } from './world/underground';
 import { bridgeSystem, gravitySystem } from './world/theCore';
 import { isAlive, kill } from './systems/combat';
-import { deathSystem } from './systems/death';
+import { applyDeathPenalty, deathSystem } from './systems/death';
 import { encounterSystem, startNextWave } from './systems/encounter';
 import { enemyAISystem } from './systems/enemyAI';
 import { guardianSystem, sanctumSystem } from './systems/lightbearer';
@@ -88,13 +91,13 @@ import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
-import { playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
+import { dropHitstopMs, playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
-import { soundsForEvent } from './audio/eventSounds';
-import { FOOTSTEP_VOLUME, FootstepClock } from './audio/footsteps';
+import { soundsForEvents } from './audio/eventSounds';
+import { FootstepClock, footstepPlay } from './audio/footsteps';
 import { MusicController } from './audio/music';
 import { installUiSounds } from './audio/uiSounds';
-import { MENU_SCENE, type AudioScene } from './data/audio';
+import { MENU_SCENE, surfaceOf, type AudioScene } from './data/audio';
 import { SoundUi } from './ui/soundPanel';
 import { PROGRESSION, BASE_ITEMS } from './data/loot/db';
 import { slotsFor, type Item, type Slot } from './data/loot/schemas';
@@ -113,15 +116,17 @@ import { playerStatuses } from './ui/statusTiles';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
-import { loadAccount, relicEffects, saveAccount } from './core/account';
+import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount } from './core/account';
+import { runSaveApply, sanitizeSave } from './core/saveRefs';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { deathCauseLine } from './ui/deathCause';
 import { bossPhaseTicks, keyLabel } from './ui/hud';
-import { LORE_XP_PER_LEVEL, PYLONS } from './data/interactables';
+import { LORE_XP_PER_LEVEL } from './data/interactables';
 import {
   choose,
   completeTalk,
   createQuestRuntime,
+  greetingKey,
   offeredBy,
   questMarkers,
   questSystem,
@@ -172,6 +177,9 @@ import { meanItemPower } from './ui/characterSelect';
 import { PauseMenu } from './ui/pauseMenu';
 import { SettingsPanel } from './ui/settingsPanel';
 import { CoachMarks } from './ui/onboarding';
+import { CROWD_RANGE, lookAheadOffset } from './render/camera';
+import { FeelUi, blackHoldMs, guideGoal } from './ui/feelUi';
+import { FEEL, frameFeel } from './systems/impact';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
@@ -193,6 +201,8 @@ import { spawnEnemy, spawnPlayer } from './world/spawn';
 
 /** Placeholder class for the player entity before a character is chosen. */
 const DEFAULT_CLASS = 'bastion';
+/** Longest the black fade waits for models to load before showing the zone anyway (placeholders swap in later). */
+const ASSET_WAIT_MS = 8000;
 /** Seconds of the black fade when crossing into another zone or teleporting there. */
 const ZONE_FADE = 0.35;
 /** Seconds between automatic saves while playing. */
@@ -202,6 +212,8 @@ const TARGET_MEMORY = 4;
 /** Touch: the target frame lingers 8 s after the last hit, and as long as the enemy is within TARGET_NEAR metres. */
 const TARGET_MEMORY_TOUCH = 8;
 const TARGET_NEAR = 12;
+/** Enemies hunting the player this close (metres) count toward the combat music. */
+const THREAT_RANGE = 28;
 /** Menus do not pause the game while a live enemy is this close (metres). */
 const PAUSE_ENEMY_RANGE = 12;
 /** ?nav in the address bar starts with the wayfinding overlay on (it can also be ticked in the debug panel). */
@@ -217,6 +229,12 @@ export class Game {
   private readonly scheduler = new Scheduler<GameContext>();
   private readonly saves: SaveStore;
   private readonly storage = safeLocalStorage();
+  /** The shared account as read at start-up; `recovered` means a bad blob was backed up and rebuilt. */
+  private readonly loadedAccount = loadAccount(this.storage);
+  /** Set after a load that failed half-way: autosave stays off until a load succeeds or a new game starts. */
+  private autosaveSuppressed = false;
+  /** Consecutive autosaves that could not write (storage full or blocked). */
+  private autosaveFailures = 0;
   private readonly hud: Hud;
   /** Black overlay faded in while a zone loads. */
   private readonly fade: HTMLDivElement;
@@ -246,6 +264,11 @@ export class Game {
   private readonly enemyBars: EnemyBars;
   /** Enemy infos reused every frame (bars, plates, minimap blips). */
   private readonly enemyInfos: EnemyBarInfo[] = [];
+  private readonly blipBuf: MapBlip[] = [];
+  /** Quest markers, computed once per frame and shared by the minimap and the tracker arrow. */
+  private frameQuestMarkers: ReturnType<typeof questMarkers> = [];
+  /** The floodlights and flares behind the renderer's dynamic lights (dark zones), to skip rebuilding an unchanged set. */
+  private dynamicLightKey = '';
   private readonly questTracker: QuestTracker;
   private readonly questLog: QuestLog;
   /** NPC the open conversation is with. */
@@ -265,6 +288,11 @@ export class Game {
   private vendorRestockAt = -Infinity;
   private player!: Entity;
   private hitstop = 0;
+  /** Slow-motion beat after a big kill or the hero's death (real seconds left, and the speed). */
+  private slowmoLeft = 0;
+  private slowmoScale = 1;
+  private coach!: CoachMarks;
+  private feelUi!: FeelUi;
   private lastTarget: { entity: Entity; until: number } | null = null;
   private cursor = '';
   private sporeKey = '';
@@ -331,7 +359,7 @@ export class Game {
       zoneLevels: START_ZONE.levels,
       zone: createZoneRuntime(START_ZONE),
       zones: new Map(),
-      account: loadAccount(this.storage),
+      account: this.loadedAccount.account,
       quests: createQuestRuntime(),
     };
     setItemNamer((baseId) => t(`items.bases.${baseId}`));
@@ -389,6 +417,9 @@ export class Game {
     setHaptics(this.settings.haptics);
     this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0);
     this.toasts = new Toasts(uiRoot);
+    if (this.loadedAccount.recovered) {
+      this.toasts.show(t(this.loadedAccount.reason === 'newer' ? 'save.accountNewer' : 'save.accountRecovered'), 'error', 12000);
+    }
     // The endgame status rows (rift timer, world boss, Ash Harvest) share one column; style.css positions it.
     const endgameStack = document.createElement('div');
     endgameStack.className = 'endgame-stack';
@@ -850,7 +881,8 @@ export class Game {
       closeDialogue: () => this.closeDialogue(),
     });
     uiRoot.style.setProperty('--paused-label', JSON.stringify(t('panels.paused')));
-    new CoachMarks(uiRoot);
+    this.coach = new CoachMarks(uiRoot, { toast: (m) => this.toasts.show(m) });
+    this.feelUi = new FeelUi(uiRoot, this.fade);
 
     this.player = spawnPlayer(this.world, DEFAULT_CLASS, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
     this.populateZone();
@@ -865,19 +897,55 @@ export class Game {
     });
   }
 
-  /** Load 3D models (falls back to placeholders) and build the static environment. */
+  /**
+   * Boot loading. Models and ground textures now load per zone (`prepareZone`, `settleAssets`), so the character
+   * select appears at once; `?preload=all` keeps the old everything-up-front behaviour (debugging, offline play).
+   */
   async loadAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
+    if (new URLSearchParams(location.search).get('preload') !== 'all') return;
     await Promise.all([
       this.renderer.assets.preload(import.meta.env.BASE_URL, onProgress),
       this.renderer.preloadGround(ZONES.map((z) => z.ground)),
     ]);
-    this.renderer.buildArena(this.zoneDef);
-    this.sporeKey = '';
-    this.builtZone = this.zoneDef.id;
+  }
+
+  /** Class and zone a saved character starts in, so main.ts can fetch their models before the game starts. */
+  slotStart(slot: number): { classId: string; zoneId: string } | null {
+    try {
+      const data = this.saves.read(slotKey(slot));
+      return data ? { classId: data.character.classId, zoneId: hasZone(data.world.zone) ? data.world.zone : START_ZONE.id } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Fetch what a zone (and the class playing in it) shows from the start: models and ground textures.
+   * Never rejects; whatever is missing falls back to placeholders that swap in when they load.
+   */
+  async prepareZone(zoneId: string, classId?: string, onProgress?: (done: number, total: number) => void): Promise<void> {
+    const def = hasZone(zoneId) ? zoneDef(zoneId) : START_ZONE;
+    const ids = [...(classId ? classAssetIds(classId) : []), ...zoneAssetIds(def)];
+    await Promise.all([this.renderer.assets.ensure(ids, onProgress), this.renderer.preloadGround([def.ground])]).catch(() => undefined);
+    const own = classId ? classDef(classId).assetId : null;
+    if (own && !this.renderer.assets.hasModel(own)) this.toasts.show(t('game.modelFailed'), 'error', 12000);
+  }
+
+  /**
+   * Load models for what really spawned (set pieces, quest NPCs, bosses: everything the data sets don't
+   * name), then quietly prefetch the zone's dungeons so entering one doesn't show placeholders.
+   */
+  async settleAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
+    const ids = new Set<string>();
+    for (const e of this.world.query(Renderable)) ids.add(this.world.req(e, Renderable).assetId);
+    await this.renderer.assets.ensure(ids, onProgress).catch(() => undefined);
+    void this.renderer.assets.ensure(zoneInstanceAssetIds(this.zoneDef));
   }
 
   start(): void {
     this.playing = true;
+    // The player chose a character after the recovery notice: the rebuilt account may be saved now.
+    if (this.ctx.account) acknowledgeAccountRecovery(this.ctx.account);
     this.loop.start();
     window.addEventListener('beforeunload', () => this.autosave());
     document.addEventListener('visibilitychange', () => {
@@ -888,7 +956,7 @@ export class Game {
   // ---- Characters -------------------------------------------------------------
 
   /** What is in each character slot, for the select screen. */
-  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null; corrupt?: boolean }[] {
+  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null; corrupt?: boolean; newer?: boolean }[] {
     return Array.from({ length: CHARACTER_SLOTS }, (_, index) => {
       try {
         const data = this.saves.read(slotKey(index));
@@ -904,8 +972,8 @@ export class Game {
             gear: meanItemPower(Object.values(data.inventory?.equipped ?? {}).filter((i): i is NonNullable<typeof i> => !!i)),
           },
         };
-      } catch {
-        return { index, character: null, corrupt: true };
+      } catch (err) {
+        return { index, character: null, corrupt: true, ...(err instanceof NewerSaveError ? { newer: true } : {}) };
       }
     });
   }
@@ -918,6 +986,9 @@ export class Game {
     this.ctx.endgame = SaveDataSchema.shape.endgame.parse(undefined);
     setQuestState(this.ctx.quests!, { active: {}, done: {}, tracked: null });
     this.enterZone(START_ZONE.id, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
+    // A slot that failed to parse (damaged, or from a newer build) is copied aside before it is overwritten.
+    this.saves.quarantineIfUnreadable(slotKey(slot));
+    this.autosaveSuppressed = false;
     this.slot = slot;
     this.characterName = name;
     const inv = this.world.req(this.player, Inventory);
@@ -935,6 +1006,7 @@ export class Game {
   }
 
   deleteCharacter(slot: number): void {
+    this.saves.quarantineIfUnreadable(slotKey(slot));
     this.saves.remove(slotKey(slot));
   }
 
@@ -997,7 +1069,7 @@ export class Game {
     this.ctx.zone = zone;
     this.ctx.worldHalfSize = def.halfSize;
     this.ctx.zoneLevels = def.levels;
-    if (this.builtZone !== null && this.builtZone !== id) {
+    if (this.builtZone !== id) {
       this.renderer.buildArena(def);
       this.sporeKey = '';
       this.builtZone = id;
@@ -1009,7 +1081,7 @@ export class Game {
     // Raised minions follow you across.
     for (const m of this.world.query(MinionAI, Transform)) {
       if (this.world.req(m, MinionAI).owner !== this.player) continue;
-      const a = Math.random() * Math.PI * 2;
+      const a = this.ctx.rng.range(0, Math.PI * 2);
       const tr = this.world.req(m, Transform);
       // (A hovering guardian light keeps its height.)
       Object.assign(tr, makeTransform(x + Math.sin(a) * 2, tr.y, z + Math.cos(a) * 2, 0));
@@ -1057,39 +1129,77 @@ export class Game {
     const gate = this.zoneDef.gates.find((g) => g.id === gateId);
     if (!gate || !hasZone(gate.to.zone)) return;
     const target = zoneDef(gate.to.zone).gates.find((g) => g.id === gate.to.gate);
-    if (!target) return;
+    if (!target || this.fading) return;
     this.fadeTo(() => {
       this.enterZone(gate.to.zone, target.arrive.x, target.arrive.z);
       this.hud.showBanner(t(`zones.${this.zoneDef.key}.name`), 2.6);
       this.autosave();
-    });
+    }, { name: t(`zones.${zoneDef(gate.to.zone).key}.name`), tip: true, prepare: this.prepareZone(gate.to.zone) });
   }
 
   private fading = false;
 
-  /** Black fade around a zone change (the swap happens while the screen is dark). */
-  private fadeTo(swap: () => void): void {
+  /**
+   * Black fade around a zone change (the swap happens while the screen is dark). The screen stays black until two
+   * frames of the new place have been drawn and for at least `minBlack` seconds, so the card (where, and a tip) can be
+   * read and a slow swap never shows a half-built frame (F013).
+   */
+  private fadeTo(swap: () => void, opts: { name?: string; tip?: boolean; minBlack?: number; prepare?: Promise<unknown> } = {}): void {
     if (this.fading) return;
     this.fading = true;
+    const started = performance.now();
+    this.feelUi.setCard(opts.name ?? '', opts.tip ?? false);
     this.fade.classList.add('on');
-    setTimeout(() => {
+    const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+    const swapAndShow = () => {
       try {
         swap();
       } finally {
-        this.fade.classList.remove('on');
-        this.fading = false;
+        let released = false;
+        const release = () => {
+          if (released) return;
+          released = true;
+          this.fade.classList.remove('on');
+          this.fading = false;
+        };
+        const hold = blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000);
+        // Models the new place spawned that nobody prefetched load while the screen is still black (capped).
+        const settled = Promise.race([this.settleAssets().catch(() => undefined), wait(ASSET_WAIT_MS)]);
+        // Two frames of the new place, then whatever is left of the minimum; a timer stands in if frames are not coming.
+        void settled.then(() => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(release, blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000)))));
+        setTimeout(release, hold + 1500 + ASSET_WAIT_MS);
       }
+    };
+    setTimeout(() => {
+      // The other zone's models and ground load during the fade; the swap waits for them (capped).
+      if (opts.prepare) void Promise.race([opts.prepare.catch(() => undefined), wait(ASSET_WAIT_MS)]).then(swapAndShow);
+      else swapAndShow();
     }, ZONE_FADE * 1000);
   }
 
+  /** Last-chance save for the crash and context-loss handlers (src/bootGuard.ts). */
+  saveNow(): void {
+    this.autosave();
+  }
+
   private autosave(): void {
-    if (this.ctx.account) saveAccount(this.storage, this.ctx.account);
-    if (this.slot === null || this.world.has(this.player, Dead)) return;
+    const account = this.ctx.account ? saveAccount(this.storage, this.ctx.account) : ({ ok: true } as const);
+    if (this.slot === null || this.autosaveSuppressed || this.world.has(this.player, Dead)) return;
+    let result: SaveWriteResult;
     try {
-      this.saves.write(slotKey(this.slot), this.snapshot());
+      const written = this.saves.write(slotKey(this.slot), this.snapshot());
+      result = written.ok ? account : written;
     } catch {
-      // Storage full or blocked: the manual save shows the error.
+      result = { ok: false, reason: 'unknown' };
     }
+    if (result.ok) {
+      if (this.autosaveFailures > 0) this.toasts.show(t('save.autosaveRecovered'));
+      this.autosaveFailures = 0;
+      return;
+    }
+    // Autosave is the only save most players trigger: say so, once, then again every few failed tries.
+    if (this.autosaveFailures % 5 === 0) this.toasts.show(t(`save.autosaveFailed.${result.reason}`), 'error', 30000);
+    this.autosaveFailures += 1;
   }
 
   setGraphics(quality: Settings['graphics']): void {
@@ -1148,6 +1258,11 @@ export class Game {
       this.hitstop -= frameDt;
       this.loop.timeScale = this.hitstop > 0 ? 0 : 1;
     }
+    // A short slow-motion beat (big kills, the hero's death); a freeze takes precedence and the beat resumes after it.
+    if (this.slowmoLeft > 0) {
+      this.slowmoLeft -= frameDt;
+      if (this.loop.timeScale !== 0) this.loop.timeScale = this.slowmoLeft > 0 ? this.slowmoScale : 1;
+    }
     this.renderer.animationTimeScale = this.loop.timeScale;
 
     const zoom = this.input.consumeWheel();
@@ -1162,11 +1277,16 @@ export class Game {
       this.renderer.updateCore(this.ctx.time);
       if (zone.def.dark) {
         // Floodlights switched on and burning flares light the dark.
+        // Only rebuilt when a floodlight is found or a flare lands or burns out (expired flares are dropped each tick).
         const st = undergroundState(zone);
-        this.renderer.setDynamicLights([
-          ...litFloodlights(zone).map((f) => ({ x: f.x, z: f.z, color: '#ffe2b0', intensity: 140, distance: f.radius * 1.5, height: 6 })),
-          ...st.flares.filter((f) => f.until > this.ctx.time).map((f) => ({ x: f.x, z: f.z, color: '#ff6a4a', intensity: 90, distance: UNDERGROUND.flare.radius * 1.6, height: 1.2 })),
-        ]);
+        const lightKey = `${zone.def.id}:${zone.found.size}:${st.flares.length}:${st.flares[st.flares.length - 1]?.until ?? 0}`;
+        if (lightKey !== this.dynamicLightKey) {
+          this.dynamicLightKey = lightKey;
+          this.renderer.setDynamicLights([
+            ...litFloodlights(zone).map((f) => ({ x: f.x, z: f.z, color: '#ffe2b0', intensity: 140, distance: f.radius * 1.5, height: 6 })),
+            ...st.flares.filter((f) => f.until > this.ctx.time).map((f) => ({ x: f.x, z: f.z, color: '#ff6a4a', intensity: 90, distance: UNDERGROUND.flare.radius * 1.6, height: 1.2 })),
+          ]);
+        }
       }
       // Spore fields only change when something new is found (a filter, a reclaimed dome).
       const sporeKey = `${zone.def.id}:${zone.found.size}`;
@@ -1209,9 +1329,10 @@ export class Game {
     this.endgameChip.update(frameDt);
     this.updateBossArrow();
     this.questTracker.tick(frameDt, hudState.combat ?? false);
+    this.frameQuestMarkers = questMarkers(this.world, this.ctx);
     this.mapUi.markers = this.ctx.instance
       ? this.instanceMarkers()
-      : questMarkers(this.world, this.ctx).map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
+      : this.frameQuestMarkers.map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
     const worldBoss = worldBossMarker(this.ctx);
     if (worldBoss) this.mapUi.markers.push({ ...worldBoss, shape: 'diamond' });
     const harvest = harvestView(this.ctx);
@@ -1220,6 +1341,7 @@ export class Game {
     this.mapUi.update(frameDt);
     this.updateInteractPrompt(px, pz);
     this.updateQuestUi(px, pz);
+    this.updateFeelFrame(px, pz, frameDt, hudState);
 
     this.devtools.frame(frameDt, () => ({
       entities: this.world.entityCount,
@@ -1230,7 +1352,33 @@ export class Game {
       enemies: this.world.query(EnemyAI).filter((e) => !this.world.has(e, Dead)).length,
       wave: this.encounter?.wave ?? 0,
       kills: this.ctx.stats.kills,
+      assetsFailed: this.renderer.assets.failed.length,
     }));
+  }
+
+  /**
+   * Extra freeze and shake on top of what skills ask for (F001, F009): a hit taken, a crit, a kill, an elite or boss
+   * kill with a slow-motion beat, and the slow fall of the hero's death (F014). Shake and slow motion follow the
+   * screen-shake setting (they are camera motion); the freeze is a few milliseconds and always plays.
+   */
+  private applyFeel(events: GameEvent[]): void {
+    const w = this.world;
+    const max = w.get(this.player, Health)?.max ?? 0;
+    const feel = frameFeel(events, max, (e) => (w.has(e, Boss) ? 'boss' : w.has(e, Elite) ? 'elite' : null));
+    if (feel.hitstopMs > 0) {
+      this.hitstop = Math.max(this.hitstop, feel.hitstopMs / 1000);
+      this.loop.timeScale = 0;
+    }
+    if (!this.renderer.screenShake) return;
+    if (feel.trauma > 0) this.renderer.rig.addTrauma(feel.trauma);
+    if (feel.slowmoS > 0) {
+      this.slowmoLeft = Math.max(this.slowmoLeft, feel.slowmoS);
+      this.slowmoScale = FEEL.slowmoScale;
+    }
+    if (events.some((e) => e.type === 'death' && e.isPlayer)) {
+      this.slowmoLeft = 0.9;
+      this.slowmoScale = 0.3;
+    }
   }
 
   /** Tactile cues for the big moments (src/ui/haptics.ts): a heavy hit taken, death, a legendary drop. */
@@ -1244,11 +1392,14 @@ export class Game {
 
   private handleEvents(events: GameEvent[]): void {
     this.renderer.handleEvents(events);
+    this.applyFeel(events);
+    // Sounds are chosen for the whole frame at once (a kill plays its death sound only; Lightbearer's blows ring).
+    for (const cue of soundsForEvents(events)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
     for (const event of events) {
       this.damageNumbers.handle(event);
       this.enemyBars.handle(event);
       this.hapticFor(event);
-      for (const cue of soundsForEvent(event)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
+      this.coach.signalEvent(event);
       switch (event.type) {
         case 'hitstop':
           this.hitstop = Math.max(this.hitstop, event.ms / 1000);
@@ -1268,6 +1419,11 @@ export class Game {
           break;
         case 'loot':
           playDropSound(event.rarity);
+          // The best drops land with a short freeze.
+          if (dropHitstopMs(event.rarity) > 0) {
+            this.hitstop = Math.max(this.hitstop, dropHitstopMs(event.rarity) / 1000);
+            this.loop.timeScale = 0;
+          }
           if (rarityRank(event.rarity) >= rarityRank('legendary')) this.mapUi.addPip(event.x, event.z, 5000);
           break;
         case 'pickup':
@@ -1397,7 +1553,8 @@ export class Game {
   private updateEnemyBars(dt: number, px: number, pz: number): void {
     const infos = this.enemyInfos;
     infos.length = 0;
-    const blips: MapBlip[] = [];
+    const blips = this.blipBuf;
+    blips.length = 0;
     const exposure = this.zone?.storm.exposure ?? 0;
     for (const e of this.world.query(EnemyAI, Health, Transform)) {
       if (this.world.has(e, Dead)) continue;
@@ -1436,6 +1593,37 @@ export class Game {
     this.enemyBars.update(dt, infos, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
   }
 
+  private inCombat = false;
+  private crowdAt = 0;
+
+  /**
+   * Per-frame feel: camera look-ahead toward the cursor in a fight and a pull-back in a crowd (F018), the colour drain
+   * of death (F014), the tips watching the HUD (F006) and the golden guide to the first objective (F007).
+   */
+  private updateFeelFrame(px: number, pz: number, _dt: number, hud: HudState): void {
+    this.inCombat = hud.combat ?? false;
+    this.coach.observe(hud);
+    this.renderer.setDeathLook(hud.dead);
+    const rig = this.renderer.rig;
+    const aim = this.inCombat && !hud.dead && !this.touchControls.shown ? this.ctx.pickGround() : null;
+    const ahead = aim ? lookAheadOffset(aim.x - px, aim.z - pz) : { x: 0, z: 0 };
+    rig.setLookAhead(ahead.x, ahead.z);
+    if (this.realTime >= this.crowdAt) {
+      this.crowdAt = this.realTime + 0.3;
+      let near = 0;
+      for (const e of this.world.query(EnemyAI, Transform)) {
+        if (this.world.has(e, Dead)) continue;
+        const tr = this.world.req(e, Transform);
+        if (Math.abs(tr.x - px) < CROWD_RANGE && Math.abs(tr.z - pz) < CROWD_RANGE && Math.hypot(tr.x - px, tr.z - pz) < CROWD_RANGE) near++;
+      }
+      rig.setCrowd(near);
+    }
+    // The golden trail: only for the first main quest, and only once the tip banner has been shown.
+    const goal = hud.dead ? null : guideGoal(this.ctx.quests?.tracked ?? null, this.frameQuestMarkers, px, pz);
+    if (goal && this.feelUi.takeGuideBanner()) this.hud.showBanner(t('feel.guideBanner'), 3);
+    this.renderer.setGuide(goal, px, pz);
+  }
+
   private updateQuestUi(px: number, pz: number): void {
     const rt = this.ctx.quests;
     if (!rt) return;
@@ -1444,7 +1632,7 @@ export class Game {
     if (rt.tracked) {
       let best: { x: number; z: number } | null = null;
       let bestD = Infinity;
-      for (const m of questMarkers(this.world, this.ctx)) {
+      for (const m of this.frameQuestMarkers) {
         if (m.quest !== rt.tracked) continue;
         const d = Math.hypot(m.x - px, m.z - pz);
         if (d < bestD) {
@@ -1529,7 +1717,7 @@ export class Game {
     const service = NPCS.get(npc)?.service;
     if (service) buttons.push({ label: t(`npcs.${npc}.service`), onClick: () => this.openService(service) });
     buttons.push({ label: t('questUi.goodbye'), onClick: () => this.closeDialogue() });
-    return this.page(npc, t(`npcs.${npc}.greeting`), buttons);
+    return this.page(npc, t(greetingKey(rt, npc)), buttons);
   }
 
   private questOffer(npc: string, id: string): void {
@@ -1596,7 +1784,7 @@ export class Game {
   private restockVendor(): void {
     const user = this.world.req(this.player, SkillUser);
     const level = this.world.req(this.player, Progression).level;
-    this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`), tierMods(this.ctx));
+    this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`), tierMods(this.ctx), this.ctx.zone?.def.key);
     this.vendorRestockAt = this.ctx.time + VENDOR.refreshSeconds;
     this.vendorBuyback = [];
   }
@@ -1867,11 +2055,28 @@ export class Game {
       bossEngaged,
       playerDead: this.world.has(this.player, Dead),
       storm: inInstance ? 0 : (zone?.storm.exposure ?? 0),
+      ...this.threatInputs(),
     };
+  }
+
+  /** For the combat layer: enemies hunting the player within earshot, and the player's life. */
+  private threatInputs(): Pick<AudioScene, 'aggroCount' | 'healthFraction'> {
+    const health = this.world.get(this.player, Health);
+    const healthFraction = health && health.max > 0 ? health.current / health.max : 1;
+    const tr = this.playerTransform;
+    let aggroCount = 0;
+    for (const e of this.world.query(EnemyAI, Transform)) {
+      if (!this.world.req(e, EnemyAI).aggro || this.world.has(e, Dead)) continue;
+      const et = this.world.req(e, Transform);
+      if (Math.hypot(et.x - tr.x, et.z - tr.z) <= THREAT_RANGE) aggroCount++;
+    }
+    return { aggroCount, healthFraction };
   }
 
   /** Per frame: music and ambience follow the scene, and the player's footsteps keep time. */
   private updateAudio(px: number, pz: number, dt: number): void {
+    // The Escape menu freezes the world: the music and ambience drop and dull with it (they come back on resume).
+    this.music.setPaused(this.pauseMenu.pausing);
     this.music.update(this.audioScene(), dt);
     const moved = dt > 0 ? Math.hypot(px - this.lastFoot.x, pz - this.lastFoot.z) / dt : 0;
     this.lastFoot.x = px;
@@ -1879,7 +2084,7 @@ export class Game {
     const p = this.player;
     const walking = !this.world.has(p, Dead) && !this.world.has(p, Mounted) && !this.world.has(p, ForcedMove) && !this.fading;
     // A jump of many metres in one frame is a teleport or zone change, not a stride.
-    if (this.footsteps.update(dt, walking && moved < 25 ? moved : 0)) audio.play('footstep', { volume: FOOTSTEP_VOLUME });
+    if (this.footsteps.update(dt, walking && moved < 25 ? moved : 0)) audio.play('footstep', footstepPlay(surfaceOf(this.zone?.def.id ?? '')));
   }
 
   /** Audio state for the ?debug API: format, sprite, music, voices and the last sounds played. */
@@ -2028,7 +2233,19 @@ export class Game {
 
   // ---- Player lifecycle -----------------------------------------------------
 
+  /** Rise after dying: a short fade out and in around the move, a rising cue, then 2 s of golden grace (F014). */
   respawn(): void {
+    if (!this.world.has(this.player, Dead) || this.fading) return;
+    this.fadeTo(
+      () => {
+        this.doRespawn();
+        audio.play('heal');
+      },
+      { name: t('feel.rose'), minBlack: 0.6 },
+    );
+  }
+
+  private doRespawn(): void {
     const w = this.world;
     const p = this.player;
     if (!w.has(p, Dead)) return;
@@ -2052,6 +2269,9 @@ export class Game {
       w.add(p, Invulnerable, { remaining: 2 });
       return;
     }
+    // The death toll (G018): a little gold and half the potion charges.
+    const lost = applyDeathPenalty(w, p);
+    if (lost.gold > 0 || lost.potions > 0) this.toasts.show(t('death.penalty', { gold: lost.gold, potions: lost.potions }));
     // Back at the nearest discovered teleporter (docs/world-and-gameplay.md §13).
     const tr = this.playerTransform;
     // Inside a dungeon you come back at its entrance; bosses reset (docs/world-and-gameplay.md §13).
@@ -2189,7 +2409,7 @@ export class Game {
       this.enterZone(def.id, x, z);
       this.hud.showBanner(t(`zones.${def.key}.name`), 2.4);
       this.autosave();
-    });
+    }, { name: t(`zones.${def.key}.name`), tip: true, prepare: this.prepareZone(def.id) });
     return true;
   }
 
@@ -2265,6 +2485,11 @@ export class Game {
     for (const e of this.world.query(Boss, EnemyAI)) {
       if (this.announced.has(e) || !this.world.req(e, Boss).engaged || this.world.has(e, Dead)) continue;
       this.announced.add(e);
+      // A soft push-in and cinema bars for 1.2 s; input stays live. Camera motion, so it follows the screen-shake setting (F021).
+      if (this.renderer.screenShake) {
+        this.renderer.rig.pulseZoom(1.2, 0.82);
+        this.feelUi.bossBeat(1.4);
+      }
       const ai = this.world.req(e, EnemyAI);
       const portrait = artUrl(`bosses/${worldBossPortrait(ai.defId) ?? ai.defId}`);
       if (!portrait) continue;
@@ -2641,8 +2866,9 @@ export class Game {
   save(quiet = false): void {
     if (this.slot === null) return;
     try {
-      this.saves.write(slotKey(this.slot), this.snapshot());
-      if (!quiet) this.toasts.show(t('save.saved'));
+      const result = this.saves.write(slotKey(this.slot), this.snapshot());
+      if (!result.ok) this.toasts.show(t(`save.autosaveFailed.${result.reason}`), 'error', 8000);
+      else if (!quiet) this.toasts.show(t('save.saved'));
     } catch {
       this.toasts.show(t('save.storageUnavailable'), 'error');
     }
@@ -2656,7 +2882,7 @@ export class Game {
         this.toasts.show(t('save.noSave'), 'error');
         return false;
       }
-      this.applySave(data);
+      if (!this.applyChecked(data, this.slot)) return false;
       this.toasts.show(t('save.loaded'));
       return true;
     } catch (err) {
@@ -2666,8 +2892,31 @@ export class Game {
     }
   }
 
+  /**
+   * Applies a parsed save: unknown ids are removed first (and the original kept as a backup), and if
+   * any step throws the previous state is put back. When that is not possible autosave stays off so a
+   * half-applied world is never written over the slot. Returns false when the save was not applied.
+   */
+  private applyChecked(parsed: SaveData, slot: number | null): boolean {
+    const { data, dropped } = sanitizeSave(parsed);
+    if (dropped.length > 0 && slot !== null) this.saves.keepOriginal(slotKey(slot), 'dropped');
+    const outcome = runSaveApply(
+      { apply: (d) => this.applySave(d), snapshot: () => (this.playing ? this.snapshot() : null) },
+      data,
+    );
+    if (!outcome.ok) {
+      console.error('[ashfall] applying a save failed', outcome.error);
+      this.autosaveSuppressed = !outcome.restored;
+      this.toasts.show(t(outcome.restored ? 'save.restoreFailed' : 'save.loadHalfApplied'), 'error', 6000);
+      return false;
+    }
+    this.autosaveSuppressed = false;
+    if (dropped.length > 0) this.toasts.show(t('save.droppedRefs', { count: dropped.length }), 'info', 5000);
+    return true;
+  }
+
   exportSave(): void {
-    const blob = new Blob([serializeSave(this.snapshot())], { type: 'application/json' });
+    const blob = new Blob([serializeSave(this.snapshot(), true)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2679,7 +2928,7 @@ export class Game {
 
   importSave(json: string): void {
     try {
-      this.applySave(parseSave(json));
+      if (!this.applyChecked(parseSave(json), null)) return;
       this.toasts.show(t('save.imported'));
     } catch (err) {
       const reason = err instanceof SaveError ? err.message : String(err);

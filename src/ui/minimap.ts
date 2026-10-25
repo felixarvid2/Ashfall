@@ -235,12 +235,6 @@ function project(v: View, x: number, z: number): [number, number] {
   return [v.cx + (dx * v.cos - dz * v.sin) * v.scale, v.cy + (dx * v.sin + dz * v.cos) * v.scale];
 }
 
-function unproject(v: View, sx: number, sy: number): [number, number] {
-  const a = (sx - v.cx) / v.scale;
-  const b = (sy - v.cy) / v.scale;
-  return [v.px + a * v.cos + b * v.sin, v.pz - a * v.sin + b * v.cos];
-}
-
 export class MapUi {
   private readonly mini: HTMLCanvasElement;
   private readonly miniCtx: CanvasRenderingContext2D;

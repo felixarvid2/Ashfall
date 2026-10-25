@@ -133,7 +133,7 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
         const x = ptr.x + Math.sin(a) * d;
         const z = ptr.z + Math.cos(a) * d;
         boss.pending.push({ x, z, t: f.warning, kind: 'fireball' });
-        ctx.events.push({ type: 'telegraph', owner: null, x, z, shape: { kind: 'circle', radius: f.radius }, duration: f.warning, color: f.color ?? '#ff7a1a' });
+        ctx.events.push({ type: 'telegraph', owner: null, x, z, shape: { kind: 'circle', radius: f.radius }, duration: f.warning, color: f.color ?? '#ff7a1a', cue: 'boss' });
       }
     }
     // Spore beams: a line from the boss toward where the player stands now.
@@ -142,7 +142,7 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
       boss.timers.beams = b.every;
       const facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
       boss.pending.push({ x: tr.x, z: tr.z, t: b.warning, kind: 'beam', facing });
-      ctx.events.push({ type: 'telegraph', owner: null, x: tr.x, z: tr.z, shape: { kind: 'line', length: b.length, width: b.width, facing }, duration: b.warning, color: b.color ?? '#7dff5a' });
+      ctx.events.push({ type: 'telegraph', owner: null, x: tr.x, z: tr.z, shape: { kind: 'line', length: b.length, width: b.width, facing }, duration: b.warning, color: b.color ?? '#7dff5a', cue: 'boss' });
     }
     // The drill head: a slow beam turning around the arena centre.
     if (ph.sweep) {
@@ -173,13 +173,13 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
       tr.z = tr.prevZ = z;
       ctx.events.push({ type: 'vfx', kind: 'blink', x, z, radius: 2, facing: 0 });
       boss.pending.push({ x, z, t: t.warning, kind: 'pulse' });
-      ctx.events.push({ type: 'telegraph', owner: null, x, z, shape: { kind: 'circle', radius: t.radius }, duration: t.warning, color: t.color ?? '#6ad8ff' });
+      ctx.events.push({ type: 'telegraph', owner: null, x, z, shape: { kind: 'circle', radius: t.radius }, duration: t.warning, color: t.color ?? '#6ad8ff', cue: 'boss' });
     }
     if (ph.shrink && (boss.shrinkStep ?? 0) < ph.shrink.steps.length && (boss.timers.shrink = (boss.timers.shrink ?? 0) - dt) <= 0) {
       boss.timers.shrink = Infinity;
       const frac = ph.shrink.steps[boss.shrinkStep ?? 0]!;
       boss.pending.push({ x: boss.arena.x, z: boss.arena.z, t: ph.shrink.warning, kind: 'shrink' });
-      ctx.events.push({ type: 'telegraph', owner: null, x: boss.arena.x, z: boss.arena.z, shape: { kind: 'circle', radius: boss.arena.radius * frac }, duration: ph.shrink.warning, color: '#ff4a1a' });
+      ctx.events.push({ type: 'telegraph', owner: null, x: boss.arena.x, z: boss.arena.z, shape: { kind: 'circle', radius: boss.arena.radius * frac }, duration: ph.shrink.warning, color: '#ff4a1a', cue: 'boss' });
       ctx.events.push({ type: 'banner', key: 'bosses.floorCollapse', seconds: 1.6 });
     }
     if (ph.tentacles && (boss.timers.tentacles = (boss.timers.tentacles ?? ph.tentacles.every) - dt) <= 0) {
@@ -201,7 +201,7 @@ export function bossSystem(world: World, dt: number, ctx: GameContext): void {
     if (ph.plates && (boss.timers.plates -= dt) <= 0) {
       boss.timers.plates = ph.plates.every;
       boss.pending.push({ x: ptr.x, z: ptr.z, t: ph.plates.warning });
-      ctx.events.push({ type: 'telegraph', owner: null, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: ph.plates.radius }, duration: ph.plates.warning, color: '#ff3a2a' });
+      ctx.events.push({ type: 'telegraph', owner: null, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: ph.plates.radius }, duration: ph.plates.warning, color: '#ff3a2a', cue: 'boss' });
     }
     for (const p of boss.pending) p.t -= dt;
     for (const p of boss.pending.filter((q) => q.t <= 0)) {

@@ -1,6 +1,6 @@
 /** Affix pools. Values at item power 100; greater affixes roll ×1.5. */
 import type { z } from 'zod';
-import type { AffixDefSchema } from './schemas';
+import type { AffixDefSchema, StatKey } from './schemas';
 
 type Affix = z.input<typeof AffixDefSchema>;
 
@@ -10,10 +10,10 @@ const ALL = [...ARMOR, ...JEWELRY, 'weapon', 'offHand'] as const;
 
 export const AFFIXES: Affix[] = [
   // Attributes
-  { id: 'strength', stat: 'strength', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 10, adjective: 'Mighty' },
-  { id: 'dexterity', stat: 'dexterity', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 6, adjective: 'Deft' },
-  { id: 'intelligence', stat: 'intelligence', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 6, adjective: 'Shrewd' },
-  { id: 'willpower', stat: 'willpower', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 6, adjective: 'Stalwart' },
+  { id: 'strength', stat: 'strength', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 8, adjective: 'Mighty' },
+  { id: 'dexterity', stat: 'dexterity', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 8, adjective: 'Deft' },
+  { id: 'intelligence', stat: 'intelligence', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 8, adjective: 'Shrewd' },
+  { id: 'willpower', stat: 'willpower', min: 6, max: 10, scaling: 'linear', types: [...ALL], weight: 8, adjective: 'Stalwart' },
   { id: 'all_attributes', stat: 'allAttributes', min: 3, max: 5, scaling: 'linear', types: ['amulet'], weight: 4, adjective: 'Exalted' },
   // Defence
   { id: 'max_life', stat: 'maxLife', min: 18, max: 30, scaling: 'linear', types: ['helm', 'chest', 'pants', 'boots', 'amulet', 'offHand'], weight: 10, adjective: 'Hale' },
@@ -36,6 +36,7 @@ export const AFFIXES: Affix[] = [
   { id: 'dmg_stunned', stat: 'damageVsStunned', min: 0.1, max: 0.16, scaling: 'sqrt', types: ['weapon', 'gloves', 'pants'], weight: 5, adjective: 'Crushing' },
   { id: 'dmg_burning', stat: 'damageVsBurning', min: 0.1, max: 0.16, scaling: 'sqrt', types: ['weapon', 'gloves', 'ring'], weight: 5, adjective: 'Searing' },
   { id: 'melee_damage', stat: 'meleeDamage', min: 0.06, max: 0.1, scaling: 'sqrt', types: ['weapon', 'gloves', 'ring'], weight: 5, adjective: 'Pummeling' },
+  { id: 'ranged_damage', stat: 'rangedDamage', min: 0.06, max: 0.1, scaling: 'sqrt', types: ['weapon', 'gloves', 'ring'], weight: 5, adjective: 'Farreaching' },
   // Utility
   { id: 'cooldown', stat: 'cooldownReduction', min: 0.03, max: 0.06, scaling: 'none', types: ['helm', 'amulet', 'offHand'], weight: 5, adjective: 'Tireless' },
   { id: 'resource_gen', stat: 'resourceGen', min: 0.05, max: 0.09, scaling: 'none', types: ['helm', 'amulet', 'ring', 'offHand'], weight: 5, adjective: 'Kindled' },
@@ -43,3 +44,17 @@ export const AFFIXES: Affix[] = [
   { id: 'barrier_bonus', stat: 'barrierBonus', min: 0.08, max: 0.14, scaling: 'sqrt', types: ['chest', 'offHand', 'amulet'], weight: 4, adjective: 'Shielding' },
   { id: 'potion_healing', stat: 'potionHealing', min: 0.1, max: 0.18, scaling: 'none', types: ['chest', 'pants', 'boots'], weight: 4, adjective: 'Restoring' },
 ];
+
+/** The class's primary attribute rolls this many times as often as the other three (docs/loot.md). */
+export const PRIMARY_ATTRIBUTE_WEIGHT = 1.5;
+
+/**
+ * Per-class weight multipliers on affix stats, on top of the primary attribute rule: melee and ranged damage follow
+ * how the class fights (Bastion has no ranged skill, Spectre has one melee skill). Classes not listed roll the plain weights.
+ */
+export const CLASS_AFFIX_WEIGHTS: Readonly<Record<string, Partial<Record<StatKey, number>>>> = {
+  bastion: { meleeDamage: 1.5, rangedDamage: 0.4 },
+  spectre: { rangedDamage: 1.5, meleeDamage: 0.4 },
+  xenomant: { rangedDamage: 1.25, meleeDamage: 0.6 },
+  lightbearer: { rangedDamage: 1.25, meleeDamage: 0.75 },
+};

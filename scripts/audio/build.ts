@@ -5,8 +5,12 @@
  *
  *  SFX       one mono sprite, public/assets/audio/sfx.{ogg,mp3}: every clip trimmed, capped, peak-
  *            normalised to -3 dBFS, separated by 0.1 s of silence, starting on a 10 ms grid
- *  Ambience  amb/<name>.{ogg,mp3}: mono loops, the tail crossfaded into the head, -24 dBFS RMS
- *  Music     music/<name>.{ogg,mp3}: stereo loops at -16 LUFS, length untouched
+ *  Ambience  amb/<name>.{ogg,mp3}: mono loops of AMB_SEGMENTS source passes (alternately reversed, each at a
+ *            slightly different speed) crossfaded into one 20 s+ loop so the repeat is not heard, -24 dBFS RMS
+ *  Hit gains the hit.* sounds are loudness-matched (RMS of their clips) and capped at 0.35-0.4 s, so
+ *            rapid multi-hit casts are not smeared by one long clip (F024)
+ *  Music     music/<name>.{ogg,mp3}: stereo loops at -16 LUFS, length untouched; the Core's two tracks
+ *            are synthesised here (see SYNTH_MUSIC), so they have no third-party source
  *  Catalog   src/audio/catalog.gen.ts (SoundEntry per SoundId, see src/audio/soundIds.ts)
  *
  * mp3 and offsets: an mp3 encoder delays the audio by 1105 samples (576 encoder + 529 decoder), and
@@ -18,9 +22,11 @@
  * instead: browsers trim the delay and padding with it, so their length is exact (checked too).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { matchGains, shortTermDb } from './loudness';
+import { SYNTH_MUSIC } from './synth';
 import { AMBIENCE_IDS, MUSIC_IDS, SFX_IDS, type SoundBus, type SoundId } from '../../src/audio/soundIds';
 
 const ROOT = new URL('../..', import.meta.url).pathname;
@@ -29,13 +35,16 @@ const OUT = join(ROOT, 'public', 'assets', 'audio');
 const CATALOG = join(ROOT, 'src', 'audio', 'catalog.gen.ts');
 
 const SR = 44100;
-const BUDGET = 12_000_000; // bytes, everything in public/assets/audio
+// bytes, everything in public/assets/audio. 12 MB until the Core's two tracks and the 20 s+ ambience loops (F012) came.
+const BUDGET = 13_000_000;
 const SFX_PEAK_DB = -3;
 const SFX_CAP = 2.5; // seconds
 const GAP = 4410; // samples of silence between sprite clips (and before the first)
 const GRID = 441; // clips start on multiples of 10 ms so the catalog offsets are exact decimals
 const AMB_FADE = 0.5; // seconds of tail crossfaded into the head
 const AMB_RMS_DB = -24;
+/** Playback speed of each pass of the source in a long ambience: six passes of about 4.5 s. */
+const AMB_SPEEDS = [1, 0.94, 1.06, 0.97, 1.04, 0.91];
 const MUSIC_LUFS = -16;
 const MUSIC_TP_DB = -1.5;
 
@@ -69,19 +78,29 @@ interface Pick {
   gain: number;
   /** Longest clip in seconds (default SFX_CAP); longer sources are cut and faded out. */
   cap?: number;
+  /** Base playback rate in the catalog (default 1), for ids that reuse clips at another pitch. */
+  rate?: number;
 }
+
+/** Rapid-hit sounds stay this short (seconds), so several overlapping hits stay distinct. */
+const HIT_CAP = 0.35;
+const HIT_CAP_HEAVY = 0.4;
 
 /** id → source. Chosen by file name and length (nobody has auditioned them); 2-4 variants for the repeated ones. */
 const SFX: Record<(typeof SFX_IDS)[number], Pick> = {
-  'hit.physical': { files: from(IMP, 'impactPunch_medium_000', 'impactPunch_medium_001', 'impactSoft_medium_000', 'impactSoft_medium_001'), gain: 0.9 },
-  'hit.heat': { files: from(SCI, 'thrusterFire_000', 'thrusterFire_001'), gain: 0.8, cap: 0.45 },
-  'hit.cold': { files: from(IMP, 'impactGlass_light_000', 'impactGlass_light_001', 'impactGlass_light_002'), gain: 0.85 },
-  'hit.toxic': { files: from(SCI, 'slime_000', 'slime_001'), gain: 0.9, cap: 0.6 },
-  'hit.energy': { files: from(DIG, 'zap1', 'zap2'), gain: 0.7, cap: 0.8 },
-  'hit.void': { files: from(DIG, 'phaserDown1', 'phaserDown2', 'phaserDown3'), gain: 0.8 },
-  'hit.crit': { files: from(IMP, 'impactMetal_heavy_000', 'impactMetal_heavy_001', 'impactPlate_heavy_000'), gain: 1 },
-  'hit.player': { files: from(IMP, 'impactPunch_heavy_000', 'impactPunch_heavy_001', 'impactPunch_heavy_002'), gain: 1 },
-  miss: { files: from(RPG, 'knifeSlice', 'knifeSlice2', 'cloth2'), gain: 0.55 },
+  // The hit.* gains are loudness-matched by the build (see matchHitGains); `gain` here is only a trim on top.
+  'hit.physical': { files: from(IMP, 'impactPunch_medium_000', 'impactPunch_medium_001', 'impactSoft_medium_000', 'impactSoft_medium_001'), gain: 1, cap: HIT_CAP },
+  'hit.heat': { files: from(SCI, 'thrusterFire_000', 'thrusterFire_001'), gain: 1, cap: HIT_CAP },
+  'hit.cold': { files: from(IMP, 'impactGlass_light_000', 'impactGlass_light_001', 'impactGlass_light_002'), gain: 1, cap: HIT_CAP },
+  'hit.toxic': { files: from(SCI, 'slime_000', 'slime_001'), gain: 1, cap: HIT_CAP },
+  'hit.energy': { files: from(DIG, 'zap1', 'zap2'), gain: 1, cap: HIT_CAP },
+  'hit.void': { files: from(DIG, 'phaserDown1', 'phaserDown2', 'phaserDown3'), gain: 1, cap: HIT_CAP },
+  // Lightbearer's hits: short glassy plucks, not the zap shared with every other energy skill.
+  'hit.holy': { files: from(INT, 'pluck_001', 'pluck_002', 'glass_003'), gain: 1, cap: HIT_CAP },
+  'hit.crit': { files: from(IMP, 'impactMetal_heavy_000', 'impactMetal_heavy_001', 'impactPlate_heavy_000'), gain: 1, cap: HIT_CAP_HEAVY },
+  'hit.player': { files: from(IMP, 'impactPunch_heavy_000', 'impactPunch_heavy_001', 'impactPunch_heavy_002'), gain: 1, cap: HIT_CAP_HEAVY },
+  // A whiff is cloth moving through air; no clip is shared with the swings (F002).
+  miss: { files: from(RPG, 'cloth2', 'cloth3', 'cloth4'), gain: 0.55 },
   'death.organic': { files: from(IMP, 'impactSoft_heavy_000', 'impactSoft_heavy_001').concat(from(SCI, 'slime_000')), gain: 1 },
   'death.machine': { files: from(SCI, 'explosionCrunch_002').concat(from(IMP, 'impactMetal_heavy_003', 'impactPlate_heavy_002')), gain: 1 },
   'death.player': { files: from(SCI, 'lowFrequency_explosion_001'), gain: 1 },
@@ -89,6 +108,9 @@ const SFX: Record<(typeof SFX_IDS)[number], Pick> = {
   'shot.heavy': { files: from(SCI, 'laserLarge_000', 'laserLarge_001', 'laserLarge_002'), gain: 0.8 },
   'shot.enemy': { files: from(SCI, 'laserRetro_000', 'laserRetro_001', 'laserRetro_002'), gain: 0.55 },
   'melee.swing': { files: from(RPG, 'knifeSlice', 'knifeSlice2', 'drawKnife2'), gain: 0.7 },
+  // Enemy and minion swings: other, noisier clips, played lower (F002).
+  'swing.enemy': { files: from(RPG, 'drawKnife1', 'drawKnife3', 'chop'), gain: 0.75, rate: 0.82 },
+  'swing.minion': { files: from(RPG, 'cloth1', 'clothBelt', 'clothBelt2'), gain: 0.6, rate: 0.93 },
   'melee.slam': { files: from(IMP, 'impactMining_000', 'impactMining_001', 'impactPlate_heavy_003'), gain: 1 },
   'explosion.small': { files: from(SCI, 'explosionCrunch_000', 'explosionCrunch_001'), gain: 0.9 },
   'explosion.large': { files: from(SCI, 'lowFrequency_explosion_000', 'explosionCrunch_004'), gain: 1 },
@@ -99,9 +121,17 @@ const SFX: Record<(typeof SFX_IDS)[number], Pick> = {
   'cast.summon': { files: from(DIG, 'powerUp1', 'powerUp3'), gain: 0.75 },
   'cast.trap': { files: from(RPG, 'metalLatch').concat(from(IMP, 'impactMetal_light_000')), gain: 0.85 },
   'cast.flame': { files: from(SCI, 'thrusterFire_002', 'thrusterFire_003'), gain: 0.75, cap: 0.8 },
+  // Lightbearer: a bell with a rising shimmer for the cast, a soft glass tick for a pulse (F003).
+  'cast.holy': { files: from(IMP, 'impactBell_heavy_002', 'impactBell_heavy_003').concat(from(DIG, 'powerUp11')), gain: 0.7, cap: 1.1 },
+  'holy.pulse': { files: from(INT, 'glass_001', 'glass_002'), gain: 0.4, cap: 0.3 },
   heal: { files: from(DIG, 'powerUp8', 'powerUp9'), gain: 0.7 },
   overheat: { files: from(DIG, 'zapThreeToneDown'), gain: 0.7 },
-  telegraph: { files: from(DIG, 'lowThreeTone'), gain: 0.7 },
+  // Telegraphs by shape (F010): tick, low rumble, rising whine, sharp rise, one rising beat for bosses.
+  'telegraph.melee': { files: from(INT, 'tick_004', 'select_001', 'toggle_001'), gain: 0.7, cap: 0.2 },
+  'telegraph.slam': { files: from(DIG, 'lowDown').concat(from(SCI, 'spaceEngineLow_001')), gain: 0.75, cap: 0.9 },
+  'telegraph.beam': { files: from(DIG, 'phaserUp5', 'phaserUp6'), gain: 0.55, cap: 0.9 },
+  'telegraph.charge': { files: from(DIG, 'highUp', 'zapThreeToneUp'), gain: 0.65, cap: 0.7 },
+  'telegraph.boss': { files: from(DIG, 'lowThreeTone', 'threeTone1'), gain: 0.85 },
   footstep: { files: from(IMP, 'footstep_concrete_000', 'footstep_concrete_001', 'footstep_concrete_002', 'footstep_concrete_003'), gain: 0.5 },
   levelUp: { files: from(HIT, 'jingles_HIT15'), gain: 0.85 },
   'quest.start': { files: from(INT, 'question_002'), gain: 0.7 },
@@ -137,11 +167,14 @@ const MUSIC: Record<(typeof MUSIC_IDS)[number], { file: string; gain: number }> 
   'music.refinery_district': { file: 'abstraction/Week 20.1 - Magnetic Tape SCUFFED.ogg', gain: 0.8 },
   'music.hydroponic_vaults': { file: 'abstraction/Week 13 - Primordial Soup BASE.ogg', gain: 0.8 },
   'music.deep_mines': { file: 'abstraction/Week 24 - Pull Me Down DEEP WELL.ogg', gain: 0.8 },
+  'music.the_core': { file: 'synth:the_core', gain: 0.8 },
   'music.boss': { file: 'abstraction/Week 19 - Dark Portents SHROUDED FUTURE.ogg', gain: 0.8 },
   'music.boss_mines': { file: 'abstraction/Week 24 - Pull Me Down GRAVITY.ogg', gain: 0.8 },
+  'music.boss_core': { file: 'synth:boss_core', gain: 0.8 },
 };
 
 interface Entry {
+  rate?: number;
   id: SoundId;
   file: string;
   clips: { start: number; duration: number }[];
@@ -218,9 +251,9 @@ function lagOf(ref: Float32Array, test: Float32Array, from: number, len: number,
   return best;
 }
 
-function encodeOgg(wavFile: string, out: string): void {
+function encodeOgg(wavFile: string, out: string, quality = 3): void {
   mkdirSync(dirname(out), { recursive: true });
-  ffmpeg(['-i', wavFile, '-map_metadata', '-1', '-c:a', 'libvorbis', '-q:a', '3', out]);
+  ffmpeg(['-i', wavFile, '-map_metadata', '-1', '-c:a', 'libvorbis', '-q:a', String(quality), out]);
 }
 
 function encodeMp3(wavFile: string, out: string, bitrate: string, gaplessTag: boolean): void {
@@ -323,15 +356,51 @@ function loopWithCrossfade(x: Float32Array): Float32Array {
   return out;
 }
 
+/** `x` played at `speed` (1 = as is), by linear interpolation; optionally backwards. */
+function resample(x: Float32Array, speed: number, reversed: boolean): Float32Array {
+  const n = Math.floor((x.length - 1) / speed);
+  const y = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const p = i * speed;
+    const a = Math.floor(p);
+    const v = x[a]! + (x[a + 1]! - x[a]!) * (p - a);
+    y[reversed ? n - 1 - i : i] = v;
+  }
+  return y;
+}
+
+/**
+ * A long ambience from a 5 s source: AMB_SEGMENTS passes of it, odd ones backwards and each at its own
+ * speed, joined by equal-power crossfades. Engine noise has no melody, so the passes do not read as a
+ * repeat; the whole is 20 s+ before it loops (F012).
+ */
+function longAmbience(src: Float32Array): Float32Array {
+  const f = Math.round(AMB_FADE * SR);
+  const parts = AMB_SPEEDS.map((speed, i) => resample(src, speed, i % 2 === 1));
+  const total = parts.reduce((n, p) => n + p.length - f, f);
+  const out = new Float32Array(total);
+  let pos = 0;
+  parts.forEach((p, k) => {
+    for (let i = 0; i < p.length; i++) {
+      const inFade = k > 0 && i < f;
+      const t = ((i + 0.5) / f) * (Math.PI / 2);
+      out[pos + i]! += inFade ? p[i]! * Math.sin(t) : p[i]! * (k < parts.length - 1 && i >= p.length - f ? Math.cos(((i - (p.length - f) + 0.5) / f) * (Math.PI / 2)) : 1);
+    }
+    pos += p.length - f;
+  });
+  return out;
+}
+
 function ambience(tmp: string, id: string, file: string): { duration: number } {
   const name = id.slice('amb.'.length);
-  let y = loopWithCrossfade(decode(join(SRC, file), 1)[0]!);
+  let y = loopWithCrossfade(longAmbience(decode(join(SRC, file), 1)[0]!));
   const k = Math.min(db(AMB_RMS_DB) / rmsOf(y), db(SFX_PEAK_DB) / peakOf(y));
   y = y.map((v) => v * k);
   const w = join(tmp, `${name}.wav`);
   writeFileSync(w, wav([y]));
-  encodeOgg(w, join(OUT, 'amb', `${name}.ogg`));
-  encodeMp3(w, join(OUT, 'amb', `${name}.mp3`), '96k', true);
+  // Engine noise: a low bitrate is enough, and these loops are five times longer than they were.
+  encodeOgg(w, join(OUT, 'amb', `${name}.ogg`), 1);
+  encodeMp3(w, join(OUT, 'amb', `${name}.mp3`), '48k', true);
   verifyLoop(`amb/${name}`, [y]);
   return { duration: y.length / SR };
 }
@@ -347,15 +416,22 @@ function loudness(file: string): { lufs: number; truePeak: number } {
 
 function music(tmp: string, id: string, file: string): { duration: number; lufs: number } {
   const name = id.slice('music.'.length);
-  const src = join(SRC, file);
+  const synth = file.startsWith('synth:');
+  let src = join(SRC, file);
+  if (synth) {
+    // Synthesised tracks are rendered to a WAV first so the same loudness measurement applies.
+    src = join(tmp, `synth-${name}.wav`);
+    writeFileSync(src, wav(SYNTH_MUSIC[file.slice('synth:'.length)]!(SR)));
+  }
   const m = loudness(src);
   // Plain gain (loudnorm's linear mode without its dynamic fallback), so the loop point is untouched.
   const gainDb = Math.min(MUSIC_LUFS - m.lufs, MUSIC_TP_DB - m.truePeak);
   const ch = decode(src, 2).map((c) => c.map((v) => v * db(gainDb)));
   const w = join(tmp, `${name}.wav`);
   writeFileSync(w, wav(ch));
-  encodeOgg(w, join(OUT, 'music', `${name}.ogg`));
-  encodeMp3(w, join(OUT, 'music', `${name}.mp3`), '128k', true);
+  // A synthesised drone has little high end: lower rates keep the audio budget (BUDGET).
+  encodeOgg(w, join(OUT, 'music', `${name}.ogg`), synth ? 0 : 3);
+  encodeMp3(w, join(OUT, 'music', `${name}.mp3`), synth ? '64k' : '128k', true);
   verifyLoop(`music/${name}`, ch);
   return { duration: ch[0]!.length / SR, lufs: m.lufs + gainDb };
 }
@@ -384,7 +460,7 @@ function checkSources(): void {
       );
     }
   }
-  const files = [...Object.values(SFX).flatMap((p) => p.files), ...Object.values(AMBIENCE).map((a) => a.file), ...Object.values(MUSIC).map((m) => m.file)];
+  const files = [...Object.values(SFX).flatMap((p) => p.files), ...Object.values(AMBIENCE).map((a) => a.file), ...Object.values(MUSIC).map((m) => m.file)].filter((f) => !f.startsWith('synth:'));
   const absent = files.filter((f) => !existsSync(join(SRC, f)));
   if (absent.length) throw new Error(`Source files missing from ${SRC}:\n  ${absent.join('\n  ')}`);
 }
@@ -396,13 +472,33 @@ function sizeOf(dir: string): number {
   }, 0);
 }
 
+/**
+ * Loudness-matches the hit.* sounds (F024; the maths is in loudness.ts). Every clip is peak-normalised, so a dense
+ * zap and a short transient differ in loudness. Prints the report and returns the catalog gains.
+ */
+function matchHitGains(sprite: Sprite): Map<string, number> {
+  const ids = SFX_IDS.filter((id) => id.startsWith('hit.'));
+  const levels = new Map<string, number>();
+  for (const id of ids) {
+    const pick = SFX[id];
+    const dbs = pick.files.map((f) => {
+      const c = sprite.clips.get(`${f}|${pick.cap ?? SFX_CAP}`)!;
+      return shortTermDb(sprite.pcm.subarray(c.start, c.start + c.length), SR);
+    });
+    levels.set(id, dbs.reduce((a, b) => a + b, 0) / dbs.length);
+  }
+  const gains = matchGains(levels, new Map(ids.map((id) => [id, SFX[id].gain])));
+  for (const id of ids) console.log(`  ${id.padEnd(12)} short-term ${levels.get(id)!.toFixed(1)} dBFS -> gain ${gains.get(id)}`);
+  return gains;
+}
+
 const num = (x: number) => String(Math.round(x * 1e6) / 1e6);
 
 function writeCatalog(entries: Entry[]): void {
   const lines = entries.map(
     (e) =>
       `  '${e.id}': { id: '${e.id}', file: '${e.file}', clips: [${e.clips.map((c) => `{ start: ${num(c.start)}, duration: ${num(c.duration)} }`).join(', ')}], ` +
-      `loop: ${e.loop}, bus: '${e.bus}', gain: ${num(e.gain)} },`,
+      `loop: ${e.loop}, bus: '${e.bus}', gain: ${num(e.gain)}${e.rate !== undefined && e.rate !== 1 ? `, rate: ${num(e.rate)}` : ''} },`,
   );
   writeFileSync(
     CATALOG,
@@ -422,6 +518,7 @@ function main(): void {
 
     const sprite = buildSprite();
     encodeSprite(sprite, tmp);
+    const hitGains = matchHitGains(sprite);
     for (const id of SFX_IDS) {
       const pick = SFX[id];
       const clips = pick.files.map((f) => {
@@ -429,7 +526,7 @@ function main(): void {
         // Round the duration up (to 0.1 ms): the extra sliver is silence.
         return { start: c.start / SR, duration: Math.ceil((c.length / SR) * 1e4) / 1e4 };
       });
-      entries.push({ id, file: 'sfx', clips, loop: false, bus: id.startsWith('ui.') ? 'ui' : 'sfx', gain: pick.gain });
+      entries.push({ id, file: 'sfx', clips, loop: false, bus: id.startsWith('ui.') ? 'ui' : 'sfx', gain: hitGains.get(id) ?? pick.gain, ...(pick.rate !== undefined ? { rate: pick.rate } : {}) });
     }
 
     for (const id of AMBIENCE_IDS) {

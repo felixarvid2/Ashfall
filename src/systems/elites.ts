@@ -22,17 +22,18 @@ import {
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { Rng } from '../core/rng';
-import { AFFIX_TUNING, ELITE_AFFIXES, EXCLUSIVE_AFFIXES, rareAffixCount, type EliteAffix } from '../data/elites';
+import { AFFIX_TUNING, EXCLUSIVE_AFFIXES, affixPool, rareAffixCount, type EliteAffix } from '../data/elites';
 import { t } from '../data/i18n';
 import { applyStatus } from './combat';
 import { spawnEnemy } from '../world/spawn';
 
-/** Roll `count` affixes that may appear together. */
-export function rollAffixes(rng: Rng, count: number): EliteAffix[] {
+/** Roll `count` affixes that may appear together (Force Wall and Laser Grid only from monster level 20). */
+export function rollAffixes(rng: Rng, count: number, level = 0): EliteAffix[] {
   const out: EliteAffix[] = [];
+  const pool = affixPool(level);
   let guard = 0;
   while (out.length < count && guard++ < 100) {
-    const a = rng.pick(ELITE_AFFIXES);
+    const a = rng.pick(pool);
     if (out.includes(a)) continue;
     if (EXCLUSIVE_AFFIXES.some(([x, y]) => (x === a && out.includes(y)) || (y === a && out.includes(x)))) continue;
     out.push(a);
@@ -46,12 +47,12 @@ export function rareName(rng: Rng): string {
   return t('elites.named', { first: rng.pick(pool('first')), epithet: rng.pick(pool('epithet')), title: rng.pick(pool('title')) });
 }
 
-export function championAffixes(rng: Rng): EliteAffix[] {
-  return rollAffixes(rng, rng.chance(0.5) ? 2 : 1);
+export function championAffixes(rng: Rng, level = 0): EliteAffix[] {
+  return rollAffixes(rng, rng.chance(0.5) ? 2 : 1, level);
 }
 
 export function rareAffixes(rng: Rng, level: number): EliteAffix[] {
-  return rollAffixes(rng, rareAffixCount(level));
+  return rollAffixes(rng, rareAffixCount(level), level);
 }
 
 /** Give an enemy its elite affixes (stats and glow come from makeElite). */
@@ -144,6 +145,62 @@ export function eliteSystem(world: World, dt: number, ctx: GameContext): void {
       });
       ctx.events.push({ type: 'telegraph', owner: null, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: s.radius }, duration: s.warning, color: '#b06aff' });
     }
+    // Force Wall: a line of energy laid across the player, perpendicular to the way the elite faces them.
+    if (el.affixes.includes('forceWall') && dist < AFFIX_TUNING.forceWall.range && dist > 3 && tick('forceWall', AFFIX_TUNING.forceWall.cooldown)) {
+      const w = AFFIX_TUNING.forceWall;
+      const facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z) + Math.PI / 2;
+      laserLine(world, ctx, ptr.x, ptr.z, facing, w, '#6ac8ff', [
+        { status: 'burning', duration: 1, dps: dmg * w.dpsOfDamage },
+        { status: 'chilled', duration: w.slow },
+      ], level);
+    }
+    // Laser Grid: two beams crossing under the player.
+    if (el.affixes.includes('laserGrid') && dist < AFFIX_TUNING.laserGrid.range && tick('laserGrid', AFFIX_TUNING.laserGrid.cooldown)) {
+      const g = AFFIX_TUNING.laserGrid;
+      const facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
+      for (const turn of [Math.PI / 4, -Math.PI / 4]) {
+        laserLine(world, ctx, ptr.x, ptr.z, facing + turn, g, '#ff3a5a', [{ status: 'burning', duration: 1.5, dps: dmg * g.dpsOfDamage }], level);
+      }
+    }
+  }
+}
+
+/**
+ * A warned line of hazards centred on (cx, cz): the telegraph shows the line, then a row of
+ * circular hazards (spaced by their radius) fires for `duration` seconds.
+ */
+function laserLine(
+  world: World,
+  ctx: GameContext,
+  cx: number,
+  cz: number,
+  facing: number,
+  o: { warning: number; length: number; width: number; radius: number; duration: number },
+  color: string,
+  applies: { status: 'burning' | 'chilled'; duration: number; dps?: number }[],
+  level: number,
+): void {
+  const dx = Math.sin(facing);
+  const dz = Math.cos(facing);
+  ctx.events.push({
+    type: 'telegraph',
+    owner: null,
+    x: cx - (dx * o.length) / 2,
+    z: cz - (dz * o.length) / 2,
+    shape: { kind: 'line', length: o.length, width: o.width, facing },
+    duration: o.warning,
+    color,
+  });
+  const step = o.radius * 1.6;
+  const n = Math.max(1, Math.round(o.length / step));
+  for (let i = 0; i < n; i++) {
+    const d = (i + 0.5) * (o.length / n) - o.length / 2;
+    const h = world.create();
+    world.add(h, Transform, makeTransform(cx + dx * d, 0, cz + dz * d));
+    world.add(h, PendingHazard, {
+      fuse: o.warning,
+      hazard: { team: 'enemy', radius: o.radius, remaining: o.duration, duration: o.duration, tickTimer: 0, applies, attackerLevel: level, color },
+    });
   }
 }
 

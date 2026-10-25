@@ -23,10 +23,10 @@ export interface Recipe {
 
 const o = (stat: StatKey, min: number, max: number, scaling: RecipeOption['scaling']): RecipeOption => ({ stat, min, max, scaling });
 
-/** The twelve tempering recipes. Tempered values are a step above normal affixes, to make them worth the charges. */
+/** The sixteen tempering recipes (twelve at first, four more with the Choir of Stone and the Echo Engine). Tempered values are a step above normal affixes, to make them worth the charges. */
 export const RECIPES: readonly Recipe[] = [
   { id: 'temper.offense.crit', group: 'offense', options: [o('critChance', 0.03, 0.05, 'none'), o('critDamage', 0.12, 0.2, 'sqrt')] },
-  { id: 'temper.offense.fury', group: 'offense', options: [o('damage', 0.09, 0.14, 'sqrt'), o('attackSpeed', 0.05, 0.09, 'none'), o('weaponDamage', 6, 10, 'linear')] },
+  { id: 'temper.offense.fury', group: 'offense', options: [o('damage', 0.09, 0.14, 'sqrt'), o('attackSpeed', 0.05, 0.09, 'none'), o('weaponDamage', 6, 10, 'linear'), o('rangedDamage', 0.09, 0.14, 'sqrt')] },
   { id: 'temper.offense.bane', group: 'offense', options: [o('damageVsElite', 0.12, 0.2, 'sqrt'), o('damageVsVulnerable', 0.14, 0.22, 'sqrt'), o('damageVsStunned', 0.14, 0.22, 'sqrt'), o('damageVsBurning', 0.14, 0.22, 'sqrt')] },
   { id: 'temper.defense.ward', group: 'defense', options: [o('resistAll', 0.04, 0.07, 'sqrt'), o('armor', 26, 42, 'linear')] },
   { id: 'temper.defense.vitality', group: 'defense', options: [o('maxLife', 26, 42, 'linear'), o('lifeOnKill', 5, 9, 'linear')] },
@@ -37,6 +37,11 @@ export const RECIPES: readonly Recipe[] = [
   { id: 'temper.mobility.stride', group: 'mobility', options: [o('moveSpeed', 0.06, 0.11, 'none')] },
   { id: 'temper.mobility.dash', group: 'mobility', options: [o('moveSpeed', 0.05, 0.09, 'none'), o('cooldownReduction', 0.035, 0.06, 'none')] },
   { id: 'temper.mobility.flow', group: 'mobility', options: [o('moveSpeed', 0.05, 0.09, 'none'), o('dexterity', 9, 14, 'linear'), o('attackSpeed', 0.04, 0.07, 'none')] },
+  // Four more (C012), found from the Choir of Stone and the Echo Engine as well as the older bosses.
+  { id: 'temper.offense.havoc', group: 'offense', options: [o('damage', 0.1, 0.15, 'sqrt'), o('critChance', 0.025, 0.045, 'none')] },
+  { id: 'temper.defense.aegis', group: 'defense', options: [o('maxLife', 22, 36, 'linear'), o('armor', 22, 36, 'linear'), o('resistAll', 0.03, 0.05, 'sqrt')] },
+  { id: 'temper.utility.focus', group: 'utility', options: [o('resourceGen', 0.06, 0.1, 'none'), o('cooldownReduction', 0.04, 0.07, 'none')] },
+  { id: 'temper.mobility.surge', group: 'mobility', options: [o('moveSpeed', 0.07, 0.12, 'none'), o('cooldownReduction', 0.03, 0.05, 'none')] },
 ];
 
 export const RECIPE_IDS: readonly string[] = RECIPES.map((r) => r.id);
@@ -85,30 +90,38 @@ export const MATERIAL_IDS = ['lumen_dust', 'rift_shard'] as const;
 
 // ---- Codex of Power ----------------------------------------------------------------------------
 
-/** The first clear of a dungeon (src/data/instances.ts, kind 'dungeon') unlocks this aspect (src/data/loot/aspects.ts). */
-export const CODEX_ASPECTS: Readonly<Record<string, string>> = {
-  meridians_hold: 'brutality',
-  bunker_sierra4: 'marksman',
-  drainage_tunnels: 'plague',
-  smelter_3: 'furnace',
-  pipe_alleys: 'fissure',
-  cathedral_crypt: 'molten_fists',
-  cold_hall: 'phantom',
-  seed_bank_depths: 'hive',
-  cocoon_chamber: 'aegis',
-  irrigation_system: 'predator',
-  sleeping_lab: 'virulent',
-  shaft_13: 'bullet_storm',
-  crystal_labyrinth: 'ricochet',
-  sunken_drill: 'unbroken',
-  archive: 'lifeblood',
-  burial_chamber: 'ancient_wrath',
+/**
+ * The first clear of a dungeon (src/data/instances.ts, kind 'dungeon') unlocks these aspects (src/data/loot/aspects.ts).
+ * A dungeon can unlock several; every class has at least five aspects it can reach here.
+ */
+export const CODEX_ASPECTS: Readonly<Record<string, readonly string[]>> = {
+  meridians_hold: ['brutality', 'mercy'],
+  bunker_sierra4: ['marksman', 'warding'],
+  drainage_tunnels: ['plague', 'strangler'],
+  smelter_3: ['furnace', 'coolant_reserve'],
+  pipe_alleys: ['fissure', 'thurible'],
+  cathedral_crypt: ['molten_fists', 'hallowed'],
+  cold_hall: ['phantom', 'vanishing'],
+  seed_bank_depths: ['hive', 'creeping_mold'],
+  cocoon_chamber: ['aegis', 'vestments'],
+  irrigation_system: ['predator', 'radiant'],
+  sleeping_lab: ['virulent', 'fervent'],
+  shaft_13: ['bullet_storm', 'iron_stride'],
+  crystal_labyrinth: ['ricochet', 'harbinger'],
+  sunken_drill: ['unbroken', 'processional'],
+  archive: ['lifeblood', 'mirage'],
+  burial_chamber: ['ancient_wrath'],
   // The Core's dungeons (Deep Rifts repeat, so they unlock nothing).
-  core_memory_of_ember: 'bulwark',
-  core_endless_shaft: 'blade_dancer',
-  core_singing_halls: 'parasitic',
-  core_chamber_of_creation: 'carapace',
+  core_memory_of_ember: ['bulwark', 'litany'],
+  core_endless_shaft: ['blade_dancer', 'sentinel'],
+  core_singing_halls: ['parasitic', 'verdict'],
+  core_chamber_of_creation: ['carapace', 'daybreak'],
 };
+
+/** Every Codex entry as [dungeon, aspect], in table order (the Codex panel lists these). */
+export function codexEntries(): [string, string][] {
+  return Object.entries(CODEX_ASPECTS).flatMap(([dungeon, aspects]) => aspects.map((a): [string, string] => [dungeon, a]));
+}
 
 /** Codex imprint cost: gold × item power / 100 (more than a cached aspect, since it never runs out). */
 export const CODEX_IMPRINT_COST = 140;

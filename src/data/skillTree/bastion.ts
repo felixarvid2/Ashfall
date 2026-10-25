@@ -64,8 +64,8 @@ export const BASTION_TREE: Tree = {
       effects: [{ kind: 'skillMod', skill: 'bastion.coolant_flush', mods: [{ op: 'mul', field: 'barrier', value: 1 }] }] },
     { id: 'm.coolant_flush.overpressure', branch: 'defensive', type: 'modifier', parent: 'e.coolant_flush', group: 'coolant_flush',
       effects: [{ kind: 'skillMod', skill: 'bastion.coolant_flush', mods: [{ op: 'mul', field: 'heal', value: 0.5 }] }] },
-    { id: 'p.reinforced_plating', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armor', value: 20 }] },
-    { id: 'p.vital_systems', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLife', value: 15 }] },
+    { id: 'p.reinforced_plating', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armorPct', value: 0.04 }] },
+    { id: 'p.vital_systems', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLifePct', value: 0.025 }] },
 
     // ---- Tactical
     skillNode('rocket_leap', 'tactical'),

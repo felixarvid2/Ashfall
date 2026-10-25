@@ -10,6 +10,7 @@
  */
 import { t } from '../data/i18n';
 import type { PanelSpec } from './panelStack';
+import { getJsonPref, setJsonPref } from '../core/localPrefs';
 
 export interface PanelHeaderOptions {
   /** The panel the header belongs to: enables swipe-down to close. */
@@ -136,21 +137,14 @@ export function enhanceScroll(el: HTMLElement, visible: () => boolean): void {
 const TIPS_KEY = 'ashfall.tips';
 
 function seenTips(): string[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(TIPS_KEY) ?? '[]') as unknown;
-    return Array.isArray(raw) ? raw.filter((s): s is string => typeof s === 'string') : [];
-  } catch {
-    return [];
-  }
+  const raw = getJsonPref<unknown>(TIPS_KEY, []);
+  return Array.isArray(raw) ? raw.filter((s): s is string => typeof s === 'string') : [];
 }
 
 function markTipSeen(id: string): void {
-  try {
-    const seen = seenTips();
-    if (!seen.includes(id)) localStorage.setItem(TIPS_KEY, JSON.stringify([...seen, id]));
-  } catch {
-    // Storage may be blocked; the tip simply shows again next time.
-  }
+  const seen = seenTips();
+  // Storage may be blocked; the tip simply shows again next time.
+  if (!seen.includes(id)) setJsonPref(TIPS_KEY, [...seen, id]);
 }
 
 /**

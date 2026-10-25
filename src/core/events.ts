@@ -12,6 +12,9 @@ export type TelegraphShape =
   | { kind: 'cone'; radius: number; arcDeg: number; facing: number }
   | { kind: 'line'; length: number; width: number; facing: number };
 
+/** Sound of a telegraph beyond its shape: a charge is a sharper rise than a beam, a boss attack a rising beat. */
+export type TelegraphCue = 'charge' | 'boss';
+
 export type VfxKind =
   | 'slash'
   | 'shockwave'
@@ -70,8 +73,8 @@ export type GameEvent =
   | { type: 'death'; target: Entity; x: number; z: number; isPlayer: boolean; family?: EnemyDef['family'] }
   | { type: 'hitstop'; ms: number }
   | { type: 'shake'; trauma: number }
-  | { type: 'telegraph'; owner: Entity | null; x: number; z: number; shape: TelegraphShape; duration: number; color: string }
-  | { type: 'vfx'; kind: VfxKind; x: number; z: number; radius: number; facing: number; arcDeg?: number; /** Tint for effects that take one (holy, holyRing). */ color?: string }
+  | { type: 'telegraph'; owner: Entity | null; x: number; z: number; shape: TelegraphShape; duration: number; color: string; /** Picks the warning sound when the shape alone does not (a charging line, a boss attack). */ cue?: TelegraphCue }
+  | { type: 'vfx'; kind: VfxKind; x: number; z: number; radius: number; facing: number; arcDeg?: number; /** Tint for effects that take one (holy, holyRing). */ color?: string; /** Who made a corpseBurst: only the Corpse Explosion skill sounds (an enemy burst already has its own death sound). */ source?: 'skill' }
   | { type: 'wave'; wave: number; enemies: number }
   | { type: 'waveCleared'; wave: number }
   | { type: 'overheat' }

@@ -98,6 +98,8 @@ export const QuestDefSchema = z.object({
   after: z.array(z.string()).default([]),
   /** Start when the player uses this object (a body, a log, a whistle in the ash). */
   trigger: z.union([z.object({ poi: z.string() }), z.object({ object: QuestObjectSchema })]).optional(),
+  /** Repeatable bounty: finished ones are offered again whenever the player re-enters the quest's region (C013). */
+  repeatable: z.boolean().default(false),
   /** Recommended level (shown in the log). */
   level: z.number().int().positive(),
   steps: z.array(QuestStepSchema).min(1),
@@ -105,6 +107,9 @@ export const QuestDefSchema = z.object({
     xp: z.number().int().nonnegative(),
     gold: z.number().int().nonnegative(),
     item: RaritySchema.optional(),
+    /** Crafting materials (bounties): Lumen Dust and Rift Shards. */
+    dust: z.number().int().nonnegative().default(0),
+    shards: z.number().int().nonnegative().default(0),
     /** Region Restoration points (§3.2). */
     restoration: z.number().int().nonnegative().default(0),
   }),

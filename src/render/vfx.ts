@@ -25,6 +25,8 @@ import { SpriteFx } from './spriteFx';
 interface TimedFx {
   group: THREE.Group;
   materials: THREE.MeshBasicMaterial[];
+  /** Geometry only this entry uses (freed when a trimmed entry is dropped); shared geometry is not listed. */
+  geometries?: THREE.BufferGeometry[];
   age: number;
   life: number;
   active: boolean;
@@ -74,9 +76,78 @@ export function telegraphOutlineOpacity(t: number, life: number, bright: boolean
   return base + (peak - base) * Math.min(1, (t - from) / Math.max(1e-6, 1 - from));
 }
 
+/** Seconds a ground-click marker lives (F005). */
+export const MOVE_MARKER_LIFE = 0.5;
+/** Two rings, the second 0.1 s behind: radius (m) and opacity at `age` seconds; null once that ring is over. */
+export function moveMarkerRing(age: number, ring: 0 | 1): { radius: number; opacity: number } | null {
+  const t = (age - ring * 0.1) / 0.4;
+  if (t < 0 || t >= 1) return null;
+  const ease = 1 - (1 - t) * (1 - t);
+  return { radius: 0.25 + 0.55 * ease, opacity: 0.85 * (1 - t) };
+}
+
+/** Seconds the level-up column of light lasts (F017). */
+export const LEVEL_BURST_LIFE = 0.8;
+
+/** Where a shimmer sits and its colour, by interactable kind (F019). Kinds not listed do not shimmer. */
+export const SHIMMER: Record<string, { color: string; size: number }> = {
+  chest: { color: '#ffd27a', size: 0.9 },
+  lockedChest: { color: '#ffb04a', size: 0.9 },
+  keycard: { color: '#6affc8', size: 0.7 },
+  pylon: { color: '#9a8aff', size: 1.1 },
+  teleporter: { color: '#6ac8ff', size: 1.4 },
+  lore: { color: '#b8b8c0', size: 0.7 },
+  relic: { color: '#ff9ae8', size: 0.9 },
+  stash: { color: '#ffd27a', size: 1 },
+  cache: { color: '#ffd27a', size: 0.9 },
+  harvestCache: { color: '#9affb0', size: 0.9 },
+};
+/** The nearest this many interactables within `SHIMMER_RANGE` metres shimmer. */
+export const SHIMMER_MAX = 6;
+export const SHIMMER_RANGE = 25;
+
+/** Indices of the (at most `max`) nearest points within `range` of (x, z), nearest first. */
+export function nearestWithin(points: readonly { x: number; z: number }[], x: number, z: number, range: number, max: number): number[] {
+  return points
+    .map((p, i) => ({ i, d: Math.hypot(p.x - x, p.z - z) }))
+    .filter((p) => p.d <= range)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, max)
+    .map((p) => p.i);
+}
+
+let hatchTexture: THREE.Texture | null = null;
+/** Diagonal stripes as an alpha map: a telegraph's outline reads as "will hurt" by its pattern, not only its colour (F022). */
+function hatch(): THREE.Texture | null {
+  if (hatchTexture) return hatchTexture;
+  if (typeof document === 'undefined') return null;
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, 32, 32);
+  g.strokeStyle = '#fff';
+  g.lineWidth = 9;
+  for (const o of [-32, 0, 32]) {
+    g.beginPath();
+    g.moveTo(o, 32);
+    g.lineTo(o + 32, 0);
+    g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(5, 5);
+  hatchTexture = tex;
+  return tex;
+}
+
 export class VfxSystem {
   readonly root = new THREE.Group();
   private readonly pools = new Map<string, TimedFx[]>();
+  /** Unit cylinders shared by every pillar and beam, whatever their colour. */
+  private pillarGeo: THREE.BufferGeometry | null = null;
+  private beamGeo: THREE.BufferGeometry | null = null;
   private readonly arcGeometries = new Map<number, THREE.BufferGeometry>();
   private readonly coneGeometries = new Map<number, THREE.BufferGeometry>();
   private readonly ringGeo = flat(new THREE.RingGeometry(0.86, 1, 64));
@@ -211,6 +282,26 @@ export class VfxSystem {
     return fx;
   }
 
+  /**
+   * Drop idle pool entries beyond `cap` per key and free their materials and own geometry. Keys carry colours
+   * and bands, so without this the pools only ever grow; call it when the zone changes.
+   */
+  trimPools(cap = 8): void {
+    for (const [key, pool] of this.pools) {
+      let idle = 0;
+      for (let i = pool.length - 1; i >= 0; i--) {
+        const fx = pool[i]!;
+        if (fx.active) continue;
+        if (++idle <= cap) continue;
+        pool.splice(i, 1);
+        this.root.remove(fx.group);
+        for (const m of fx.materials) m.dispose();
+        for (const g of fx.geometries ?? []) g.dispose();
+      }
+      if (pool.length === 0) this.pools.delete(key);
+    }
+  }
+
   private ring(color: string): Omit<TimedFx, 'age' | 'life' | 'active' | 'update'> {
     const mat = additive(color);
     const group = new THREE.Group();
@@ -231,6 +322,56 @@ export class VfxSystem {
     fx.update(fx, 0);
   }
 
+  /**
+   * Ground-click marker (F005): two small rings closing in on the spot, named `moveMarker`. `blocked` makes it red.
+   */
+  moveMarker(x: number, z: number, blocked = false): void {
+    const color = blocked ? '#ff4a3a' : '#ffe2a0';
+    const fx = this.acquire(`moveMarker:${color}`, () => {
+      const group = new THREE.Group();
+      group.name = 'moveMarker';
+      const materials = [additive(color), additive(color)];
+      for (const m of materials) group.add(new THREE.Mesh(this.ringGeo, m));
+      return { group, materials };
+    });
+    fx.life = MOVE_MARKER_LIFE;
+    fx.group.position.set(x, 0.06, z);
+    fx.update = (f) => {
+      f.group.children.forEach((child, i) => {
+        const r = moveMarkerRing(f.age, i as 0 | 1);
+        child.visible = r !== null;
+        if (r) {
+          child.scale.set(r.radius, 1, r.radius);
+          f.materials[i]!.opacity = r.opacity;
+        }
+      });
+    };
+    fx.update(fx, 0);
+  }
+
+  /** Level-up (F017): a golden ring and a column of light around the hero, `quiet` for reduced flashing (no column). */
+  levelBurst(x: number, z: number, quiet = false): void {
+    this.spawnRing('ring:levelup', '#ffd27a', x, z, 3.2, LEVEL_BURST_LIFE, 0.2);
+    if (quiet) return;
+    this.spawnPillar(x, z, 1.1, '#ffe9a8');
+    this.sparks.emit(x, 0.6, z, 22, '#ffd27a', 5);
+    this.sprites.holy(x, z, 3, '#ffe9a8');
+  }
+
+  private shimmerClock = 0;
+  /** Idle sparkle over the nearest interactables (F019); call once per frame with their positions and kinds. */
+  shimmer(points: readonly { x: number; z: number; kind: string }[], px: number, pz: number, dt: number): void {
+    this.shimmerClock += dt;
+    if (this.shimmerClock < 0.45) return;
+    this.shimmerClock = 0;
+    const show = points.filter((p) => SHIMMER[p.kind]);
+    for (const i of nearestWithin(show, px, pz, SHIMMER_RANGE, SHIMMER_MAX)) {
+      const p = show[i]!;
+      const look = SHIMMER[p.kind]!;
+      this.sprites.glow(p.x, 1.1, p.z, look.size, look.color, 0.6, 0.55);
+    }
+  }
+
   private spawnPullRing(x: number, z: number, radius: number): void {
     const fx = this.acquire('ring:pull', () => this.ring('#7ec8ff'));
     fx.life = 0.35;
@@ -248,7 +389,7 @@ export class VfxSystem {
     const fx = this.acquire(`pillar:${color}`, () => {
       const mat = additive(color, 0.6);
       const group = new THREE.Group();
-      group.add(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 16, 1, true).translate(0, 0.5, 0), mat));
+      group.add(new THREE.Mesh((this.pillarGeo ??= new THREE.CylinderGeometry(1, 1, 1, 16, 1, true).translate(0, 0.5, 0)), mat));
       return { group, materials: [mat] };
     });
     fx.life = 0.6;
@@ -266,7 +407,7 @@ export class VfxSystem {
     const fx = this.acquire('beam', () => {
       const mat = additive('#cfefff', 0.9);
       const group = new THREE.Group();
-      group.add(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 20, 1, true).translate(0, 0.5, 0), mat));
+      group.add(new THREE.Mesh((this.beamGeo ??= new THREE.CylinderGeometry(1, 1, 1, 20, 1, true).translate(0, 0.5, 0)), mat));
       return { group, materials: [mat] };
     });
     fx.life = 0.5;
@@ -512,9 +653,14 @@ export class VfxSystem {
       const outline = bright ? solid(color, 0.2) : additive(color, 0.18);
       const fill = bright ? solid(color, 0.32) : additive(color, 0.35);
       const group = new THREE.Group();
+      // A hatched outline (stripes) separates "will hurt in a moment" from the solid, pulsing hazard pools (F022).
+      const stripes = hatch();
+      if (stripes) outline.alphaMap = stripes;
       const outer = new THREE.Mesh(geo, outline);
       const inner = new THREE.Mesh(geo, fill);
       inner.position.y = 0.005;
+      // Always over the painted decals and hazard pools underneath.
+      outer.renderOrder = inner.renderOrder = 4;
       group.add(outer, inner);
       return { group, materials: [outline, fill] };
     });
@@ -701,7 +847,8 @@ export class VfxSystem {
           const fill = band !== null ? flat(new THREE.RingGeometry(band, 1, 64)) : this.discGeo;
           const edge = band !== null ? flat(new THREE.RingGeometry(band, band + 0.02, 64)) : this.ringGeo;
           group.add(new THREE.Mesh(fill, mat), new THREE.Mesh(edge, ringMat));
-          return { group, materials: [mat, ringMat] };
+          group.children.forEach((c) => (c.renderOrder = 3));
+          return { group, materials: [mat, ringMat], geometries: band !== null ? [fill, edge] : undefined };
         });
         fx.life = Infinity;
         fx.update = () => {};
@@ -715,7 +862,8 @@ export class VfxSystem {
       // Painted fire, gas and frost do the filling; the disc stays faint to show the exact edge.
       const painted = look !== 'plain' && hz.inner === undefined;
       fx.materials[0]!.opacity = (painted ? 0.05 : mine ? 0.1 : hz.inner !== undefined ? 0.55 : 0.22) * fade;
-      fx.materials[1]!.opacity = (painted ? 0.3 : mine ? 0.35 : 0.5) * fade;
+      // The edge pulses: "hurts now" is a solid, breathing ring, against a telegraph's hatching (F022).
+      fx.materials[1]!.opacity = (painted ? 0.3 : mine ? 0.35 : 0.5) * fade * (0.8 + 0.2 * Math.sin(this.time * 5));
       // Gas stops puffing a moment before the cloud ends, so nothing lingers after it is gone.
       if (painted && fade > 0.3 && (look !== 'gas' || hz.remaining > 0.9)) {
         if (look === 'fire') this.sprites.fireField(`h${e}`, tr.x, tr.z, hz.radius, dt, fade, isGreen(hz.color));

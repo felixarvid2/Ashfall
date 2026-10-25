@@ -30,7 +30,7 @@ export const XENOMANT_TREE: Tree = {
     { id: 'm.scalpel_slash.harvester', branch: 'basic', type: 'modifier', parent: 'e.scalpel_slash', group: 'scalpel_slash',
       effects: [{ kind: 'skillMod', skill: X('scalpel_slash'), mods: [{ op: 'add', field: 'resourceGain', value: 4 }] }] },
     { id: 'p.lumen_affinity', branch: 'basic', type: 'passive', effects: [{ kind: 'stat', stat: 'damage', value: 0.04 }] },
-    { id: 'p.cell_division', branch: 'basic', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLife', value: 12 }] },
+    { id: 'p.cell_division', branch: 'basic', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLifePct', value: 0.025 }] },
 
     // ---- Core
     skillNode('spore_burst', 'core'),
@@ -65,7 +65,7 @@ export const XENOMANT_TREE: Tree = {
       effects: [{ kind: 'skillMod', skill: X('spore_cocoon'), mods: [{ op: 'add', field: 'heal', value: 0.1 }] }] },
     { id: 'm.spore_cocoon.spore_shell', branch: 'defensive', type: 'modifier', parent: 'e.spore_cocoon', group: 'spore_cocoon',
       effects: [{ kind: 'skillMod', skill: X('spore_cocoon'), mods: [{ op: 'hazard', radius: 3, duration: 4, status: 'poisoned', dpsCoefficient: 0.5 }] }] },
-    { id: 'p.thick_hide', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armor', value: 15 }] },
+    { id: 'p.thick_hide', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armorPct', value: 0.04 }] },
     { id: 'p.vital_spores', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'potionHealing', value: 0.1 }] },
 
     // ---- Tactical
@@ -115,12 +115,14 @@ export const XENOMANT_TREE: Tree = {
       ] },
     { id: 'k.pandemic', branch: 'key', type: 'keyPassive',
       effects: [
-        { kind: 'damage', value: 0.3, multiplicative: true, when: 'poisoned' },
+        { kind: 'damage', value: 0.9, multiplicative: true, when: 'poisoned' },
         { kind: 'skillMod', skill: X('spore_burst'), mods: [{ op: 'mul', field: 'duration', value: 0.5 }] },
       ] },
     { id: 'k.symbiote', branch: 'key', type: 'keyPassive',
       effects: [
         { kind: 'damage', value: 0.25, multiplicative: true, when: 'melee' },
+        // Parasite Link is a ranged tether, so the melee bonus does not reach it: the key names it too.
+        { kind: 'skillMod', skill: X('parasite_link'), mods: [{ op: 'damage', value: 0.25, multiplicative: true }] },
         { kind: 'skillMod', skill: X('scalpel_slash'), mods: [{ op: 'add', field: 'lifeSteal', value: 0.06 }] },
         { kind: 'stat', stat: 'damageReduction', value: 0.1 },
       ] },

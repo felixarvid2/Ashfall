@@ -68,7 +68,7 @@ describe('Lumen: the arena', () => {
     for (const g of st.gates) expect(f.world.req(g, Collider).isStatic).toBe(true);
     expect(events(f.ctx).some((e) => e.type === 'banner' && e.key === 'bosses.lumen.intro')).toBe(true);
     const scene = { ...MENU_SCENE, phase: 'play' as const, zoneId: THE_CORE.id, bossEngaged: true };
-    expect(pickMusic(scene)).toBe('music.boss');
+    expect(pickMusic(scene)).toBe('music.boss_core');
   });
 
   it('leans the camera toward Lumen while it is fought, so the boss stays on screen', () => {

@@ -35,11 +35,19 @@ item type it drops as a rare; if no unique of the rolled rarity exists it drops 
 - Bases for future classes (Spectre, Xenomant) already drop: 85 % of drops are restricted to bases the
   player's class can use; the rest can be anything (brief §5.6).
 - Affix pools are per item type (a ring can't roll armor), and an item never rolls the same affix twice.
+- Armour and jewellery have a second base for helm, chest, boots, amulet and ring (Signal Visor, Mesh Vest,
+  Grip Boots, Lumen Locket, Signet Band). They have a different implicit (resource generation, resist all,
+  move speed, life, crit chance), start dropping at item power 150 and reuse the first tier's look until
+  their own art exists.
+- Affix weights depend on the class (`affixWeight`, `src/systems/loot/generate.ts`): the class's primary
+  attribute rolls 1.5× as often as the other three, and `meleeDamage` / `rangedDamage` follow how the class
+  fights (`CLASS_AFFIX_WEIGHTS` in `src/data/loot/affixes.ts`: Bastion favours melee, the other three ranged).
+  `rangedDamage` is a damage bonus against ranged hits, like `meleeDamage` for melee; the Fury temper has a ranged option.
 - Implicits: weapons give weapon damage (Hydraulic Hammer 28–34, Power Sword +8 % attack speed,
   Knuckles +4 % crit), armor gives armor, jewelry gives resistances.
 
 ## Crystals (sockets)
-Three crystals with tiers chipped / regular / flawless (by item power < 150 / < 300 / ≥ 300).
+Five crystals with tiers chipped / regular / flawless (by item power < 150 / < 300 / ≥ 300).
 Like Diablo 4 gems, the stat depends on where they are socketed:
 
 | Crystal | Weapon / off-hand | Armor | Jewelry |
@@ -47,6 +55,29 @@ Like Diablo 4 gems, the stat depends on where they are socketed:
 | Ember | +8/12/16 % damage to Burning | +10/20/32 life | +8/12/16 % heat resistance |
 | Lumen | +8/12/16 % damage to Vulnerable | +3/5/7 % resource generation | toxic resistance |
 | Void | +6/9/12 % crit damage | +1/1.5/2 % damage reduction | void resistance |
+| Frost | +8/12/16 % damage to Stunned | +12/22/36 armor | +8/12/16 % cold resistance |
+| Storm | +2/3/4 % attack speed | +4/6/9 % barrier | +8/12/16 % energy resistance |
+
+Frost and Storm reuse the Void and Lumen icons with their own tint until they get art.
+
+## Aspects, uniques and mythics (content pass)
+- Every class has at least two aspects of its own for each armour and jewellery slot, and every class skill has
+  an aspect or a unique (`tests/contentCoverage.test.ts`). The Codex of Power unlocks two aspects per dungeon
+  (`CODEX_ASPECTS` maps a dungeon to a list); every class can reach at least five of its own there.
+- Uniques: each class has one on gloves, ring or amulet (Reaper's Grip, Signet of Rot, Sunwheel Pendant,
+  Cinder Collar) besides its weapon, helm, chest or boots ones.
+- Mythics: `heart_of_lumen` is Bastion-only (its overheat effect needs Heat). Each other class has its own
+  (Aureole of the First Dawn, The Last Word, Diadem of the Swarm Queen) and `ouroboros_coil` suits every class.
+- A unique with `source: 'quest'` (the two Mother Tree rewards) is handed out by its quest only: it is never
+  rolled by `pickUnique` and never in a world boss chest (`worldBossUniques`).
+- `dt.dungeon_cache`, `dt.locked_chest` and `dt.event_gold` weight uniques ×1.5 (bosses ×3, rare elites ×2).
+
+## Trader stock
+Seven of the eight slots roll magic / rare / legendary by region (`VENDOR.regionStock`, by zone key), and the last slot
+is a legendary the player's class can use (a base it can equip and, if the aspect is class-bound, one for it).
+Legendary weight per region: Cinder Flats 3, Refinery 5, Hydroponic Vaults 8, Deep Mines 10, The Core 12 (the
+plain table is 5). From the Refinery on, uniques can appear in stock with weight 0.2 / 0.4 / 0.6 / 0.8. A call
+without a region (or an unknown one) uses the plain table and sells no uniques.
 
 ## Drop tables
 | Table | Item chance | Gold | Crystal | XP |

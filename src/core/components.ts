@@ -586,6 +586,8 @@ export interface Guardian {
   born: number;
   /** The bolt it fires (scaled by the owner's synced stats). */
   bolt: Impact;
+  /** Radius the bolts burst in (0 or missing = single target). */
+  explodeRadius?: number;
   /** Heals player-team allies near it on an interval; the healing counts as the owner's. */
   healPulse: { interval: number; radius: number; healFraction: number } | null;
   pulseTimer: number;

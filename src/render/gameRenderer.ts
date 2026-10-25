@@ -3,18 +3,18 @@
  * scene each frame. Game logic never imports this module.
  */
 import * as THREE from 'three';
-import { AwarenessMarkers, NavDebugOverlay } from './navOverlay';
+import { AwarenessMarkers, GuideLine, NavDebugOverlay } from './navOverlay';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { Boss, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { AttackTarget, Boss, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from '../data/weapons';
 import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena';
-import { buildGroundSplat } from './groundSplat';
+import { groundSplatCached } from './groundSplat';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnvFeature } from '../data/zones/zoneTypes';
 import { bridgeCellsOf, caveGrid, type CaveDef, type CaveGrid } from '../data/zones/caves';
@@ -30,6 +30,8 @@ import { memoryAtmosphere, type Atmosphere } from './memoryLook';
 import { proceduralWeapon } from './proceduralWeapons';
 import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
+import { disposeOwned, trackOwned } from './owned';
+import { recoilCurve } from './hitRecoil';
 import { LootVisuals } from './lootVisuals';
 import { PostFx, type GraphicsQuality } from './postfx';
 
@@ -47,11 +49,21 @@ export class GameRenderer {
   private awareness: AwarenessMarkers | null = null;
   private choir: ChoirLinks | null = null;
   private navDebug: NavDebugOverlay | null = null;
+  private guide: GuideLine | null = null;
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
   private readonly animators = new Map<Entity, CharacterAnimator>();
   /** Last time each entity played its hit reaction (seconds), to avoid stutter under constant hits. */
   private readonly lastHitAnim = new Map<Entity, number>();
+  /** Recoil in progress per enemy (F008): seconds since the hit and whether it was a crit. */
+  private readonly followPos = new THREE.Vector3();
+  private readonly recoils = new Map<Entity, { age: number; crit: boolean }>();
+  /** The last ground-click spot marked (F005) and the real time it was shown. */
+  private lastMarker: { x: number; z: number; at: number } | null = null;
+  /** Death desaturation (F014) and level-up glow (F017): targets set by events, eased in `render`. */
+  private deathDesat = 0;
+  private deathDesatTarget = 0;
+  private levelGlow = 0;
   /** Simulation speed (0 during hit-stop) so animations freeze with the world. */
   animationTimeScale = 1;
   private readonly tint = new THREE.Color();
@@ -85,6 +97,7 @@ export class GameRenderer {
     this.postfx = new PostFx(this.renderer, this.scene, this.rig.camera);
     this.moon = new THREE.DirectionalLight();
     this.scene.add(this.ash.points, this.vfx.root, this.loot.root);
+    this.assets.onModelLoaded((id) => this.swapPlaceholders(id));
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -93,6 +106,7 @@ export class GameRenderer {
   buildArena(arena: ArenaDef): void {
     this.exitInstance();
     this.disposeZone();
+    this.vfx.trimPools();
     const root = new THREE.Group();
     this.zoneRoot = root;
     this.scene.add(root);
@@ -519,7 +533,7 @@ export class GameRenderer {
   private texturedGroundMaterial(def: GroundDef, size: number, reps: number, seed: string, cut: THREE.Texture | null = null): THREE.MeshStandardMaterial {
     const res = 1024;
     const count = Math.min(def.layers.length, 6);
-    const splats = buildGroundSplat(def.patches, size, res, seed, count).map((data) => {
+    const splats = groundSplatCached(seed, def.patches, size, res, seed, count).map((data) => {
       const tex = new THREE.DataTexture(data, res, res, THREE.RGBAFormat);
       tex.magFilter = THREE.LinearFilter;
       tex.minFilter = THREE.LinearFilter;
@@ -667,6 +681,7 @@ export class GameRenderer {
       disc.rotateX(-Math.PI / 2);
       const mat = new THREE.MeshStandardMaterial({ color: '#3a7a92', emissive: '#0e3442', roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.8, polygonOffset: true, polygonOffsetFactor: -3 });
       const mesh = new THREE.InstancedMesh(disc, mat, water.length);
+      mesh.userData.own = true;
       const m = new THREE.Matrix4();
       water.forEach((w, i) => {
         m.makeScale(w.r, 1, w.r).setPosition(w.x, 0.06, w.z);
@@ -706,11 +721,10 @@ export class GameRenderer {
 
   /** A ground texture repeated across an instance floor of w × d metres (one tile per 7 m). */
   private instanceFloorTexture(name: string, w: number, d: number): THREE.Texture {
-    const texture = new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}assets/textures/ground/${name}.webp`);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    // A clone of the cached ground texture: it shares the decoded image and the GPU upload, only the repeat is its own.
+    const texture = this.groundTexture(name as GroundTexture).clone();
+    texture.userData.shared = false; // clone() copies the flag; this copy is ours to dispose on exit
     texture.repeat.set(w / 7, d / 7);
-    texture.anisotropy = 8;
     return texture;
   }
 
@@ -740,9 +754,15 @@ export class GameRenderer {
     this.scene.remove(this.instanceRoot);
     this.instanceRoot.traverse((o) => {
       const m = o as THREE.Mesh;
+      // Same guard as disposeZone: only free what the renderer made (userData.own) and never a shared texture.
+      if ((o as THREE.InstancedMesh).isInstancedMesh) {
+        (o as THREE.InstancedMesh).dispose();
+        if (!o.userData.own) return;
+      }
       m.geometry?.dispose();
-      (m.material as THREE.MeshStandardMaterial | undefined)?.map?.dispose();
-      (m.material as THREE.Material | undefined)?.dispose();
+      const mat = m.material as (THREE.Material & { map?: THREE.Texture | null }) | undefined;
+      if (!mat?.map?.userData.shared) mat?.map?.dispose();
+      mat?.dispose();
     });
     this.instanceRoot = null;
     this.instanceWater = null;
@@ -973,6 +993,11 @@ export class GameRenderer {
     });
   }
 
+  /** The death screen drains the colour; respawning (or loading) brings it back (F014). */
+  setDeathLook(on: boolean): void {
+    this.deathDesatTarget = on ? 0.85 : 0;
+  }
+
   /** Point on the ground under the cursor, or null if the ray misses. */
   pickGround(ndcX: number, ndcY: number): { x: number; z: number } | null {
     this.ndc.set(ndcX, ndcY);
@@ -986,7 +1011,15 @@ export class GameRenderer {
     for (const event of events) {
       this.vfx.handle(event);
       if (event.type === 'damage' && !event.dot && !this.reduceFlashing) this.flashes.set(event.target, 0.1);
+      // Every landed non-DoT hit on an enemy recoils, however often the hit animation is throttled (F008).
+      if (event.type === 'damage' && !event.dot && !event.toPlayer && event.amount + event.absorbed > 0 && this.objects.has(event.target)) this.recoils.set(event.target, { age: 0, crit: event.crit });
       if (event.type === 'shake' && this.screenShake) this.rig.addTrauma(event.trauma);
+      if (event.type === 'levelUp') {
+        const f = this.followPos;
+        this.vfx.levelBurst(f.x, f.z, this.reduceFlashing);
+        if (!this.reduceFlashing) this.levelGlow = 0.15;
+      }
+      if (event.type === 'death' && event.isPlayer) this.deathDesatTarget = 0.85;
     }
   }
 
@@ -1043,7 +1076,8 @@ export class GameRenderer {
     const scale = r.scale ?? 1;
     const h = size.h * scale;
     if (h < 4.5) return false;
-    const f = this.rig.focusPoint;
+    // The hero, not the camera focus: the focus leads toward the cursor in combat (F018).
+    const f = this.followPos;
     const cam = this.rig.camera.position;
     const vx = cam.x - f.x;
     const vz = cam.z - f.z;
@@ -1080,11 +1114,41 @@ export class GameRenderer {
     });
   }
 
+  /** Entities seen by this frame's sync, and the query result behind them (reused, not reallocated). */
+  private readonly seen = new Set<Entity>();
+  private readonly renderables: Entity[] = [];
+
+  /** Free what a retired entity's object owns: its cloned tint materials and per-entity sprite/ring materials. */
+  private retire(obj: THREE.Object3D): void {
+    for (const slot of (obj.userData.tint as TintSlot[] | undefined) ?? []) slot.material.dispose();
+    disposeOwned(obj);
+  }
+
+  /**
+   * A model finished loading after entities were drawn as its placeholder box (a zone set that missed
+   * it, or a late spawn): drop those objects so sync() builds them again from the real model.
+   */
+  private swapPlaceholders(id: string): void {
+    for (const [e, obj] of this.objects) {
+      if (obj.userData.placeholder !== true || obj.name !== id) continue;
+      this.scene.remove(obj);
+      this.retire(obj);
+      this.objects.delete(e);
+      this.recoils.delete(e);
+      this.flashes.delete(e);
+      this.animators.delete(e);
+      this.lastHitAnim.delete(e);
+    }
+  }
+
   /** Mirror ECS → scene, interpolating between the last two ticks by `alpha`. */
   sync(world: World, alpha: number, frameDt: number): void {
     this.time += frameDt;
-    const seen = new Set<Entity>();
-    for (const e of world.query(Transform, Renderable)) {
+    this.trackMoveMarker(world);
+    this.shimmerInteractables(world, frameDt);
+    const seen = this.seen;
+    seen.clear();
+    for (const e of world.queryInto(this.renderables, Transform, Renderable)) {
       seen.add(e);
       const tr = world.req(e, Transform);
       let obj = this.objects.get(e);
@@ -1101,6 +1165,7 @@ export class GameRenderer {
             const m = (o as THREE.Mesh).material as THREE.Material | undefined;
             if (m && 'fog' in m) {
               const own = m.clone() as THREE.MeshStandardMaterial;
+              trackOwned(obj!, own);
               own.fog = false;
               if (own.color) own.color.multiplyScalar(0.35);
               (o as THREE.Mesh).material = own;
@@ -1249,11 +1314,14 @@ export class GameRenderer {
         obj.rotation.z = lean.roll;
       }
       this.applyTint(world, e, obj, frameDt);
+      if (this.recoils.size > 0) this.applyRecoil(world, e, obj, frameDt);
     }
     for (const [e, obj] of this.objects) {
       if (!seen.has(e)) {
         this.scene.remove(obj);
+        this.retire(obj);
         this.objects.delete(e);
+        this.recoils.delete(e);
         this.flashes.delete(e);
         this.animators.delete(e);
         this.lastHitAnim.delete(e);
@@ -1273,10 +1341,76 @@ export class GameRenderer {
     this.loot.update(world, frameDt);
   }
 
+  /** A ground click shows where the hero is going (F005): a new or moved plain MoveTarget (no attack, pickup or use order). */
+  private trackMoveMarker(world: World): void {
+    for (const p of world.query(PlayerControlled)) {
+      const mt = world.get(p, MoveTarget);
+      if (!mt || world.has(p, AttackTarget) || world.has(p, PickupTarget) || world.has(p, InteractTarget) || world.has(p, Dead)) {
+        this.lastMarker = null;
+        return;
+      }
+      const last = this.lastMarker;
+      // Holding the button drags the target along; mark it again only after it has moved and a moment has passed.
+      if (!last || (Math.hypot(mt.x - last.x, mt.z - last.z) > 0.6 && this.time - last.at > 0.25)) {
+        this.vfx.moveMarker(mt.x, mt.z);
+        this.lastMarker = { x: mt.x, z: mt.z, at: this.time };
+      }
+      return;
+    }
+  }
+
+  private shimmerPoints: { x: number; z: number; kind: string }[] = [];
+  /** Idle sparkle over nearby chests, teleporters and lore (F019): only the nearest few, so a busy zone stays calm. */
+  private shimmerInteractables(world: World, dt: number): void {
+    const f = this.rig.focusPoint;
+    this.shimmerPoints.length = 0;
+    for (const e of world.query(Interactable, Transform)) {
+      const it = world.req(e, Interactable);
+      if (it.used) continue;
+      const tr = world.req(e, Transform);
+      if (Math.abs(tr.x - f.x) > 26 || Math.abs(tr.z - f.z) > 26) continue;
+      this.shimmerPoints.push({ x: tr.x, z: tr.z, kind: it.kind });
+    }
+    this.vfx.shimmer(this.shimmerPoints, f.x, f.z, dt);
+  }
+
+  /** Squash and push on a hit (F008), applied after the transform sync and undone when it ends. Bosses and turrets skip it. */
+  private applyRecoil(world: World, e: Entity, obj: THREE.Object3D, dt: number): void {
+    const r = this.recoils.get(e);
+    if (!r) return;
+    if (world.has(e, Dead) || world.has(e, Boss) || world.has(e, Turret)) {
+      this.recoils.delete(e);
+      return;
+    }
+    const base = (obj.userData.baseScale as number | undefined) ?? 1;
+    r.age += dt;
+    const c = recoilCurve(r.age, r.crit);
+    if (!c) {
+      obj.scale.setScalar(base);
+      this.recoils.delete(e);
+      return;
+    }
+    obj.scale.set(base * c.xz, base * c.y, base * c.xz);
+    const f = this.followPos;
+    const dx = obj.position.x - f.x;
+    const dz = obj.position.z - f.z;
+    const len = Math.hypot(dx, dz);
+    if (len > 0.01) {
+      obj.position.x += (dx / len) * c.push;
+      obj.position.z += (dz / len) * c.push;
+    }
+  }
+
   /** What the enemies are thinking: "!" and "?" markers, and the debug overlay when on. */
   updateMinds(world: World, nav: NavService | undefined, time: number): void {
     (this.awareness ??= new AwarenessMarkers(this.scene)).update(world, this.objects, time);
     this.navDebug?.update(nav, world);
+  }
+
+  /** The golden dotted guide to the first objective (F007); `goal` null hides it. */
+  setGuide(goal: { x: number; z: number } | null, x: number, z: number): void {
+    if (!goal && !this.guide) return;
+    (this.guide ??= new GuideLine(this.scene)).update(x, z, goal, this.time);
   }
 
   setNavOverlay(on: boolean): void {
@@ -1296,23 +1430,25 @@ export class GameRenderer {
     obj.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(obj);
     const top = (box.max.y - obj.position.y) / s;
-    const beacon = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: this.glowTexture(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false }),
-    );
+    const beaconMat = new THREE.SpriteMaterial({ map: this.glowTexture(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false });
+    const beacon = new THREE.Sprite(beaconMat);
+    trackOwned(obj, beaconMat);
     beacon.position.set(0, top + 0.15 / s, 0);
     beacon.scale.setScalar(0.9 / s);
     beacon.renderOrder = 3;
     obj.add(beacon);
 
     const ground = new THREE.Group();
-    const shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(0.75, 24).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ map: this.glowTexture(), color: '#000000', transparent: true, opacity: 0.55, depthWrite: false }),
-    );
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.62, 0.74, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
-    );
+    // The shadow disc and ring are the same for every drone: one geometry (and the shadow material) for all of them.
+    const marks = (this.droneMarkParts ??= {
+      shadowGeo: new THREE.CircleGeometry(0.75, 24).rotateX(-Math.PI / 2),
+      ringGeo: new THREE.RingGeometry(0.62, 0.74, 32).rotateX(-Math.PI / 2),
+      shadowMat: new THREE.MeshBasicMaterial({ map: this.glowTexture(), color: '#000000', transparent: true, opacity: 0.55, depthWrite: false }),
+    });
+    const ringMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+    trackOwned(obj, ringMat);
+    const shadow = new THREE.Mesh(marks.shadowGeo, marks.shadowMat);
+    const ring = new THREE.Mesh(marks.ringGeo, ringMat);
     ring.position.y = 0.005;
     ground.add(shadow, ring);
     ground.scale.setScalar(1 / s);
@@ -1323,13 +1459,16 @@ export class GameRenderer {
     obj.userData.droneMarks = { ground, beacon };
   }
 
+  private droneMarkParts: { shadowGeo: THREE.BufferGeometry; ringGeo: THREE.BufferGeometry; shadowMat: THREE.Material } | null = null;
+  private eyeMaterial: THREE.SpriteMaterial | null = null;
+
   /** Two small glowing points near the top of an enemy (dark zones). */
   private addEyes(obj: THREE.Object3D, scale: number): void {
     obj.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(obj);
     const top = (box.max.y / scale) * 0.86;
     const front = (box.max.z / scale) * 0.6;
-    const mat = new THREE.SpriteMaterial({ map: this.glowTexture(), color: '#ff4a2a', blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false });
+    const mat = (this.eyeMaterial ??= new THREE.SpriteMaterial({ map: this.glowTexture(), color: '#ff4a2a', blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
     for (const side of [-1, 1]) {
       const eye = new THREE.Sprite(mat);
       eye.position.set((side * 0.1) / scale, top, front);
@@ -1397,6 +1536,16 @@ export class GameRenderer {
     return { state: 'idle', loop: true, speed: 1 };
   }
 
+  private readonly families = new Map<string, string | null>();
+  private familyOf(defId: string): string | null {
+    let family = this.families.get(defId);
+    if (family === undefined) {
+      family = enemyDef(defId).family ?? null;
+      this.families.set(defId, family);
+    }
+    return family;
+  }
+
   /** Hit flash and status colours via the materials' emissive channel. */
   private applyTint(world: World, e: Entity, obj: THREE.Object3D, dt: number): void {
     const slots = obj.userData.tint as TintSlot[] | undefined;
@@ -1406,9 +1555,11 @@ export class GameRenderer {
       flash -= dt;
       this.flashes.set(e, flash);
     }
+    // The respawn grace (2 s) shows as a fading golden shimmer; dodge i-frames are too short to reach it (F014).
+    const grace = world.has(e, PlayerControlled) ? world.get(e, Invulnerable)?.remaining ?? 0 : 0;
+    const shield = grace > 0.6 && grace <= 2.5 && !this.reduceFlashing ? Math.min(1, grace / 2) : 0;
     const effects = world.get(e, StatusEffects);
-    const priority = ['burning', 'poisoned', 'chilled', 'frozen', 'marked', 'vulnerable'] as const;
-    const active = effects && !world.has(e, Dead) ? priority.find((id) => effects.list.some((s) => s.id === id)) : undefined;
+    const active = effects && !world.has(e, Dead) ? activeTintStatus(effects.list) : undefined;
     if (active) this.tint.set(STATUS_DEFS[active].color);
     // Holograms (decoys) and stealthed characters are drawn see-through.
     const hologram = world.get(e, Renderable)?.hologram ?? false;
@@ -1421,9 +1572,10 @@ export class GameRenderer {
       if (t) dim = THREE.MathUtils.clamp((17 - Math.hypot(t.x - f.x, t.z - f.z)) / 6, 0.05, 1);
     }
     const ai = world.get(e, EnemyAI);
-    const family = ai ? enemyDef(ai.defId).family : null;
+    const family = ai ? this.familyOf(ai.defId) : null;
     const infected = !world.has(e, Dead) && (family === 'infected' || family === 'lumen');
-    const stealth = effects?.list.some((s) => s.id === 'stealth') ?? false;
+    let stealth = false;
+    if (effects) for (const s of effects.list) if (s.id === 'stealth') stealth = true;
     // Lumen creations and shades: pulsing or flickering, faded out while they die without a death clip.
     const look = world.get(e, Renderable)?.look;
     const ls = look ? lookState(look, this.time, e) : null;
@@ -1463,6 +1615,9 @@ export class GameRenderer {
       if (flash > 0) {
         slot.material.emissive.set('#ffffff');
         slot.material.emissiveIntensity = 1.2;
+      } else if (shield > 0) {
+        slot.material.emissive.set('#ffd27a');
+        slot.material.emissiveIntensity = shield * (0.35 + 0.15 * Math.sin(this.time * 9));
       } else if (active) {
         slot.material.emissive.copy(this.tint);
         slot.material.emissiveIntensity = 0.16 + 0.1 * Math.sin(this.time * 10);
@@ -1485,6 +1640,7 @@ export class GameRenderer {
   /** Follow a world position with the camera and draw a frame; `look` moves the camera's focus off the player (a boss fight). */
   render(frameDt: number, followX: number, followY: number, followZ: number, look?: { x: number; z: number }): void {
     this.rig.update(look?.x ?? followX, followY, look?.z ?? followZ, frameDt);
+    this.followPos.set(followX, followY, followZ);
     const f = this.rig.focusPoint;
     // Keep the shadow frustum centred on the action.
     this.playerLight.position.set(followX, 4.5, followZ);
@@ -1497,6 +1653,11 @@ export class GameRenderer {
     // Post-processing tone-maps the scene: a moderate colour stays orange instead of washing out.
     if (this.moltenMaterial) this.moltenMaterial.color.setHSL(0.045, 1, 0.38 + Math.sin(this.time * 1.7) * 0.04);
     if (this.lavaTime) this.lavaTime.value = this.time;
+    // Death drains the colour; the level-up glow is a quick flash (F014, F017).
+    this.deathDesat += (this.deathDesatTarget - this.deathDesat) * (1 - Math.exp(-4 * frameDt));
+    this.postfx.setDeathDesat(this.deathDesat < 0.005 ? 0 : this.deathDesat);
+    this.levelGlow = Math.max(0, this.levelGlow - frameDt * 1.2);
+    this.postfx.setLevelGlow(this.levelGlow);
     this.renderer.info.reset();
     this.postfx.render(this.scene, this.rig.camera);
   }
@@ -1536,6 +1697,13 @@ export class GameRenderer {
 }
 
 const LIGHT_POOL = 12;
+/** The status whose colour wins when several are active, strongest first. */
+const TINT_PRIORITY = ['burning', 'poisoned', 'chilled', 'frozen', 'marked', 'vulnerable'] as const;
+
+function activeTintStatus(list: readonly { id: string }[]): (typeof TINT_PRIORITY)[number] | undefined {
+  for (const id of TINT_PRIORITY) for (const s of list) if (s.id === id) return id;
+  return undefined;
+}
 const CULL_DISTANCE = 95;
 
 /** A flat strip along a polyline (roads). */

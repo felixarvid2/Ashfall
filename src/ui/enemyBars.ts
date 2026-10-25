@@ -116,6 +116,8 @@ export const AFFIX_CHIPS: Record<string, { icon?: string; glyph: string }> = {
   fast: { glyph: 'FA' },
   freezing: { icon: 'chilled', glyph: 'FR' },
   mirroring: { glyph: 'MI' },
+  forceWall: { glyph: 'FW' },
+  laserGrid: { glyph: 'LG' },
 };
 
 /** The two-letter glyph of an affix (its first letters when unknown). */

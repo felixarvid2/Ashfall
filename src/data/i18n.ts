@@ -29,6 +29,11 @@ function lookup(dict: Dict, key: string): string | undefined {
   return typeof node === 'string' ? node : undefined;
 }
 
+/** Does a string exist for this key (in the active language or the English fallback)? */
+export function hasText(key: string): boolean {
+  return (lookup(active, key) ?? lookup(fallback, key)) !== undefined;
+}
+
 /** Phone wording ("Tap", "your target") instead of mouse wording ("Click", "the cursor"); the game sets it. */
 let touchWording = false;
 

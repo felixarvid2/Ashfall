@@ -71,14 +71,25 @@ export interface VoiceRule {
 }
 
 const DEFAULT_RULE: VoiceRule = { max: 4, interval: 0.05 };
+/** Hit sounds: a short cooldown and room for a volley of several (F024); they are capped at 0.4 s in the sprite. */
+const HIT_RULE: VoiceRule = { max: 6, interval: 0.04 };
 const RULES: Record<string, VoiceRule> = {
   footstep: { max: 2, interval: 0.12 },
   'hit.crit': { max: 2, interval: 0.08 },
   'melee.swing': { max: 3, interval: 0.06 },
+  'swing.enemy': { max: 3, interval: 0.06 },
+  'swing.minion': { max: 2, interval: 0.08 },
+  // A sanctuary or guardian pulses about twice a second at most; one tick per 0.6 s keeps a crowd of lights quiet.
+  'holy.pulse': { max: 1, interval: 0.6 },
+  'cast.holy': { max: 2, interval: 0.15 },
   'melee.slam': { max: 2, interval: 0.1 },
   'explosion.small': { max: 3, interval: 0.07 },
   'explosion.large': { max: 2, interval: 0.12 },
-  telegraph: { max: 3, interval: 0.15 },
+  'telegraph.melee': { max: 3, interval: 0.15 },
+  'telegraph.slam': { max: 3, interval: 0.15 },
+  'telegraph.beam': { max: 2, interval: 0.4 },
+  'telegraph.charge': { max: 2, interval: 0.3 },
+  'telegraph.boss': { max: 1, interval: 0.5 },
   heal: { max: 2, interval: 0.2 },
   'death.organic': { max: 3, interval: 0.06 },
   'death.machine': { max: 3, interval: 0.06 },
@@ -92,7 +103,7 @@ const RULES: Record<string, VoiceRule> = {
 };
 
 export function ruleFor(id: string): VoiceRule {
-  return RULES[id] ?? (id.startsWith('quest.') ? { max: 1, interval: 0.4 } : DEFAULT_RULE);
+  return RULES[id] ?? (id.startsWith('quest.') ? { max: 1, interval: 0.4 } : id.startsWith('hit.') ? HIT_RULE : DEFAULT_RULE);
 }
 
 /** Decides whether a sound may start: per-id voice cap, per-id retrigger interval and a global cap. */
@@ -137,6 +148,10 @@ export interface PlayOptions {
   z?: number;
   /** Extra linear gain (footsteps are quiet). */
   volume?: number;
+  /** Playback rate on top of the sound's own (footsteps on another surface). */
+  rate?: number;
+  /** Low-pass cutoff in Hz: a duller version of the clip (footsteps in ash and mud). */
+  lowpass?: number;
 }
 
 /** A looping sound (music, ambience) that fades in and out. */
@@ -148,8 +163,17 @@ export interface LoopHandle {
   stop(seconds: number): void;
 }
 
+/** Random pitch spread of a repeated sound: 4 % either way, 6 % for hits (F024). */
 const PITCH = 0.04;
+const HIT_PITCH = 0.06;
 const RECENT = 10;
+
+/** While the game is paused the music and ambience drop 9 dB and lose their highs (F016). */
+export const PAUSE_DUCK = 10 ** (-9 / 20);
+export const PAUSE_CUTOFF = 900;
+const OPEN_CUTOFF = 22000;
+/** Seconds to come back from a pause. */
+export const PAUSE_RESTORE = 0.25;
 
 const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'keydown', 'click'] as const;
 
@@ -158,6 +182,8 @@ export class AudioEngine {
   private busNodes: Partial<Record<BusName, GainNode>> = {};
   private duckNode: GainNode | null = null;
   private ambienceNode: GainNode | null = null;
+  private pauseStages: { filter: BiquadFilterNode; gain: GainNode }[] = [];
+  private paused = false;
   private settings: AudioSettings = { ...DEFAULT_AUDIO };
   private readonly limiter = new VoiceLimiter();
   private readonly buffers = new Map<string, AudioBuffer>();
@@ -170,7 +196,9 @@ export class AudioEngine {
   private installed = false;
   private unlocked = false;
   /** Set by the music controller, shown in the debug state. */
-  nowPlaying: { music: string | null; ambience: string | null } = { music: null, ambience: null };
+  nowPlaying: { music: string | null; ambience: string | null; layer: string | null } = { music: null, ambience: null, layer: null };
+  /** The last one-shot started, for the debug state (the footsteps' `rate` differs by surface). */
+  private last: { id: string; rate: number; volume: number } | null = null;
 
   /** Listen for the first gesture (capture, so touch controls that preventDefault cannot hide it). */
   install(): void {
@@ -213,6 +241,11 @@ export class AudioEngine {
     return this.busNodes.sfx ?? null;
   }
 
+  /** Bus the music and its layers play on (before the duck and pause stages). */
+  get musicBus(): AudioNode | null {
+    return this.busNodes.music ?? null;
+  }
+
   /** Bus for ambience loops, under sfx at its own level. */
   get ambienceBus(): AudioNode | null {
     return this.ambienceNode;
@@ -234,8 +267,22 @@ export class AudioEngine {
     const duck = gain();
     const amb = gain();
     amb.gain.value = AMBIENCE_LEVEL;
-    music.connect(duck).connect(master);
-    amb.connect(sfx);
+    // Music and ambience each pass a pause stage (low-pass + gain) that is wide open until the game pauses.
+    const stage = (): { filter: BiquadFilterNode; gain: GainNode } => {
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = OPEN_CUTOFF;
+      const g = gain();
+      filter.connect(g);
+      return { filter, gain: g };
+    };
+    const musicStage = stage();
+    const ambStage = stage();
+    music.connect(duck).connect(musicStage.filter);
+    musicStage.gain.connect(master);
+    amb.connect(ambStage.filter);
+    ambStage.gain.connect(sfx);
+    this.pauseStages = [musicStage, ambStage];
     sfx.connect(master);
     ui.connect(master);
     master.connect(ctx.destination);
@@ -280,6 +327,30 @@ export class AudioEngine {
     this.listener.yaw = yaw;
   }
 
+  /** Pause or resume the music and ambience: -9 dB and a low-pass while paused, back over PAUSE_RESTORE seconds. */
+  setPaused(paused: boolean): void {
+    if (paused === this.paused) return;
+    this.paused = paused;
+    const ctx = this.ctx;
+    if (!ctx) return;
+    // Going in is quick, coming out takes PAUSE_RESTORE.
+    const seconds = paused ? 0.08 : PAUSE_RESTORE;
+    for (const { filter, gain } of this.pauseStages) {
+      gain.gain.setTargetAtTime(paused ? PAUSE_DUCK : 1, ctx.currentTime, seconds / 3);
+      filter.frequency.setTargetAtTime(paused ? PAUSE_CUTOFF : OPEN_CUTOFF, ctx.currentTime, seconds / 3);
+    }
+  }
+
+  get isPaused(): boolean {
+    return this.paused;
+  }
+
+  /** Note a synthesised sound (the loot tones) in the debug trail, as the sprite sounds are. */
+  record(id: string): void {
+    this.recent.push(id);
+    if (this.recent.length > RECENT) this.recent.shift();
+  }
+
   /** Lower the music to `level` (0..1) over `seconds`; 1 restores it. */
   duckMusic(level: number, seconds: number): void {
     if (!this.ctx || !this.duckNode) return;
@@ -322,6 +393,25 @@ export class AudioEngine {
     return job;
   }
 
+  /** Files whose decoded audio is held right now (the sprite, music and ambience loops). */
+  loadedBuffers(): string[] {
+    return [...this.buffers.keys()];
+  }
+
+  /**
+   * Let go of a decoded file that is no longer needed (T008): a loop already playing it keeps its own
+   * reference until it ends, and asking for the file again fetches and decodes it afresh.
+   */
+  release(file: string): void {
+    const inFlight = this.loading.get(file);
+    if (inFlight && !this.buffers.has(file)) {
+      void inFlight.then(() => this.release(file));
+      return;
+    }
+    this.buffers.delete(file);
+    this.loading.delete(file);
+  }
+
   private bufferFor(entry: SoundEntry): AudioBuffer | null {
     const buf = this.buffers.get(entry.file);
     if (buf) return buf;
@@ -349,7 +439,8 @@ export class AudioEngine {
     const buffer = this.bufferFor(entry);
     if (!buffer || entry.clips.length === 0) return false;
     const clip = entry.clips[Math.floor(Math.random() * entry.clips.length)]!;
-    const rate = entry.bus === 'sfx' ? 1 + (Math.random() * 2 - 1) * PITCH : 1;
+    const spread = id.startsWith('hit.') ? HIT_PITCH : PITCH;
+    const rate = (entry.rate ?? 1) * (opts.rate ?? 1) * (entry.bus === 'sfx' ? 1 + (Math.random() * 2 - 1) * spread : 1);
     if (!this.limiter.tryStart(id, ctx.currentTime, clip.duration / rate)) return false;
 
     const src = ctx.createBufferSource();
@@ -358,20 +449,31 @@ export class AudioEngine {
     const g = ctx.createGain();
     g.gain.value = level;
     src.connect(g);
+    // Optional dulling filter, then the pan, then the bus.
+    let tail: AudioNode = g;
+    let filter: BiquadFilterNode | null = null;
+    if (opts.lowpass !== undefined && typeof ctx.createBiquadFilter === 'function') {
+      filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = opts.lowpass;
+      g.connect(filter);
+      tail = filter;
+    }
     if (pan !== 0 && typeof ctx.createStereoPanner === 'function') {
       const p = ctx.createStereoPanner();
       p.pan.value = pan;
-      g.connect(p).connect(busNode);
+      tail.connect(p).connect(busNode);
     } else {
-      g.connect(busNode);
+      tail.connect(busNode);
     }
     src.start(0, clip.start, clip.duration);
     src.onended = () => {
       src.disconnect();
       g.disconnect();
+      filter?.disconnect();
     };
-    this.recent.push(id);
-    if (this.recent.length > RECENT) this.recent.shift();
+    this.last = { id, rate, volume: level };
+    this.record(id);
     return true;
   }
 
@@ -443,8 +545,14 @@ export class AudioEngine {
     failedFiles: string[];
     music: string | null;
     ambience: string | null;
+    /** The combat layer over the music ('combat') or null. */
+    layer: string | null;
+    /** 1 normally, PAUSE_DUCK while the music and ambience are held down for a pause. */
+    pauseLevel: number;
     voices: number;
     recent: string[];
+    /** The last sprite sound started: its id, playback rate and level. */
+    lastPlay: { id: string; rate: number; volume: number } | null;
     muted: boolean;
   } {
     const sprite = SOUND_CATALOG['hit.physical']?.file ?? 'sfx';
@@ -455,8 +563,11 @@ export class AudioEngine {
       failedFiles: [...this.failed],
       music: this.nowPlaying.music,
       ambience: this.nowPlaying.ambience,
+      layer: this.nowPlaying.layer,
+      pauseLevel: this.paused ? PAUSE_DUCK : 1,
       voices: this.ctx ? this.limiter.active(this.ctx.currentTime) : 0,
       recent: [...this.recent],
+      lastPlay: this.last ? { ...this.last } : null,
       muted: this.settings.muted,
     };
   }

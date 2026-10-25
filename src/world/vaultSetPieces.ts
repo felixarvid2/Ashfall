@@ -9,6 +9,7 @@ import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { HubDef } from '../data/zones/zoneTypes';
 import { GAMMA, GREAT_DOME } from '../data/zones/hydroponicVaults';
+import { strongholdLifeMul } from '../data/bosses';
 import { resetBoss, spawnBoss } from '../systems/boss';
 import { monsterLevel } from '../systems/encounter';
 import { signal } from '../systems/quests';
@@ -149,7 +150,7 @@ function gamma(world: World, dt: number, ctx: GameContext, zone: ZoneRuntime, sp
         enemy: 'gamma_bloom',
         name: 'enemies.named.gamma_bloom',
         level,
-        lifeMul: 1 + 0.12 * (level - 1),
+        lifeMul: strongholdLifeMul(level),
         damageMul: 1,
         affixes: ['sporeSpreader'],
         script: 'gamma_bloom',

@@ -145,6 +145,10 @@ export const BASES: Base[] = [
   { id: 'servo_gauntlets', type: 'gloves', icon: 'icon.servo_gauntlets', implicits: [armor(12, 16)], maxSockets: 1 },
   { id: 'armored_greaves', type: 'pants', icon: 'icon.armored_greaves', implicits: [armor(22, 30)], maxSockets: 2 },
   { id: 'mag_boots', type: 'boots', icon: 'icon.mag_boots', implicits: [armor(12, 16)], maxSockets: 1 },
+  // ---- Second tier (C007): different implicit profiles; they start dropping at item power 150 and reuse the first tier's icon.
+  { id: 'signal_visor', type: 'helm', icon: 'icon.combat_helm', implicits: [armor(10, 14), { stat: 'resourceGen', min: 0.04, max: 0.04, scaling: 'none' }], maxSockets: 1, minItemPower: 150 },
+  { id: 'mesh_vest', type: 'chest', icon: 'icon.plated_vest', implicits: [armor(18, 26), { stat: 'resistAll', min: 0.03, max: 0.04, scaling: 'sqrt' }], maxSockets: 2, minItemPower: 150 },
+  { id: 'grip_boots', type: 'boots', icon: 'icon.mag_boots', implicits: [armor(8, 12), { stat: 'moveSpeed', min: 0.04, max: 0.04, scaling: 'none' }], maxSockets: 1, minItemPower: 150 },
   // ---- Jewellery (all classes)
   {
     id: 'signal_pendant',
@@ -159,6 +163,22 @@ export const BASES: Base[] = [
     icon: 'icon.conduit_ring',
     implicits: [{ stat: 'resistAll', min: 0.02, max: 0.03, scaling: 'sqrt' }],
     maxSockets: 1,
+  },
+  {
+    id: 'lumen_locket',
+    type: 'amulet',
+    icon: 'icon.signal_pendant',
+    implicits: [{ stat: 'maxLife', min: 24, max: 32, scaling: 'linear' }],
+    maxSockets: 1,
+    minItemPower: 150,
+  },
+  {
+    id: 'signet_band',
+    type: 'ring',
+    icon: 'icon.conduit_ring',
+    implicits: [{ stat: 'critChance', min: 0.02, max: 0.02, scaling: 'none' }],
+    maxSockets: 1,
+    minItemPower: 150,
   },
   // ---- Crystals (socketables)
   { id: 'crystal', type: 'crystal', icon: 'icon.crystal_ember' },

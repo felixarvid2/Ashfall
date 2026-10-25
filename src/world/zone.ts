@@ -12,7 +12,7 @@ import type { HubDef, ZoneDef } from '../data/zones/zoneTypes';
 import { monsterLevel } from '../systems/encounter';
 import { spawnEnemy } from './spawn';
 import { applyAffixes, championAffixes, rareAffixes } from '../systems/elites';
-import type { EliteAffix } from '../data/elites';
+import { eliteDamageMul, eliteLifeMul, type EliteAffix } from '../data/elites';
 import { createSetPieces, extraHubs, type SetPieceState } from './setPieces';
 import { createEvents, type EventState } from './worldEvents';
 import { createStorm, type StormState } from './storm';
@@ -200,7 +200,7 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
   }
   const rarePicks = ids.flatMap((enemy, i) => (plain(enemy) ? [i] : []));
   const rareIndex = !champion && rng.chance(template.rareChance * (harvest?.eliteMul ?? 1)) && rarePicks.length ? rarePicks[rng.int(0, rarePicks.length - 1)]! : -1;
-  const shared = champion ? championAffixes(rng) : [];
+  const shared = champion ? championAffixes(rng, level) : [];
   const extra: Entity[] = [];
   state.members = ids.map((enemy, i) => {
     const a = rng.range(0, Math.PI * 2);
@@ -225,17 +225,16 @@ function spawnPack(world: World, ctx: GameContext, zone: ZoneRuntime, id: string
 export function makeElite(world: World, e: Entity, kind: 'champion' | 'rare', rng: Rng, affixes?: EliteAffix[]): Entity[] {
   const health = world.req(e, Health);
   const stats = world.req(e, CombatStats);
-  const mul = kind === 'rare' ? 4 : 2;
-  health.max *= mul;
+  health.max *= eliteLifeMul(kind, stats.level);
   health.current = health.max;
-  stats.weaponDamage *= kind === 'rare' ? 1.5 : 1.25;
+  stats.weaponDamage *= eliteDamageMul(kind, stats.level);
   stats.tags.push('elite', kind);
   const r = world.get(e, Renderable);
   if (r) {
     r.glow = kind === 'rare' ? '#ffd23a' : '#4a8aff';
     r.scale = (r.scale ?? 1) * (kind === 'rare' ? 1.25 : 1.1);
   }
-  applyAffixes(world, e, kind, affixes ?? (kind === 'rare' ? rareAffixes(rng, stats.level) : championAffixes(rng)), rng);
+  applyAffixes(world, e, kind, affixes ?? (kind === 'rare' ? rareAffixes(rng, stats.level) : championAffixes(rng, stats.level)), rng);
   if (kind !== 'rare') return [];
   // Rare elites bring a few ordinary minions of their own kind.
   const ai = world.req(e, EnemyAI);

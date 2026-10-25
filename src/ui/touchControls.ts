@@ -12,7 +12,6 @@ import { fullscreenOrFallback, isFullscreen, onFullscreenChange } from './fullsc
 import type { Action } from '../data/settings';
 import type { TouchMenuEntry } from './soundPanel';
 import { haptic } from './haptics';
-import { panelStack } from './panelStack';
 
 /** Touch screens without a precise pointer (phones, tablets). */
 export function isTouchDevice(): boolean {
@@ -129,7 +128,6 @@ export class TouchControls {
   private attackEl: HTMLElement | null = null;
   private tooltipTimer: ReturnType<typeof setTimeout> | null = null;
   private tooltipHide: ReturnType<typeof setTimeout> | null = null;
-  private readonly menu: HTMLElement;
   private readonly more: HTMLElement;
   private readonly moreButton: HTMLButtonElement;
   private readonly fabSheet: HTMLElement;
@@ -167,7 +165,6 @@ export class TouchControls {
     // Menu row: the five panel buttons and a "more" button; the rest sits in a popover.
     const menu = document.createElement('div');
     menu.className = 'touch-menu';
-    this.menu = menu;
     const menuButton = (id: string, label: string, onClick: () => void, iconId = id): HTMLButtonElement => {
       const b = document.createElement('button');
       b.className = 'touch-menu-btn';

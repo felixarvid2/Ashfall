@@ -52,10 +52,12 @@ interface Candidate {
   taunt: number;
 }
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const combatantsBuf: Entity[] = [];
 /** Living, visible player-team entities enemies may attack (player, decoys, minions). */
 function targetCandidates(world: World, ctx: GameContext, seeStealth = false): Candidate[] {
   const out: Candidate[] = [];
-  for (const e of world.query(Faction, Health, Transform)) {
+  for (const e of world.queryInto(combatantsBuf, Faction, Health, Transform)) {
     if (world.req(e, Faction).team !== 'player' || world.has(e, Dead)) continue;
     if (!seeStealth && hasStatus(world, e, 'stealth')) continue;
     // Nobody is attacked inside a safe hub.
@@ -80,8 +82,27 @@ export function chooseTarget(candidates: readonly Candidate[], x: number, z: num
   }
   return best;
 }
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const enemyMoversBuf: Entity[] = [];
+
+/** True while enemyAISystem runs: `cur` and the other module-level state below are not reentrant. */
+let aiRunning = false;
 
 export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): void {
+  if (aiRunning) {
+    // A nested call (a boss script inside a hit callback, say) would clobber `cur` mid-enemy.
+    if (import.meta.env.DEV) throw new Error('enemyAISystem is not reentrant');
+    return;
+  }
+  aiRunning = true;
+  try {
+    runEnemyAI(world, frameDt, ctx);
+  } finally {
+    aiRunning = false;
+  }
+}
+
+function runEnemyAI(world: World, frameDt: number, ctx: GameContext): void {
   nav = ctx.nav;
   cur.world = world;
   cur.ctx = ctx;
@@ -92,7 +113,7 @@ export function enemyAISystem(world: World, frameDt: number, ctx: GameContext): 
   regrowFallen(world, ctx);
   choirAura(world, ctx, frameDt);
 
-  for (const e of world.query(EnemyAI, Transform, Mover)) {
+  for (const e of world.queryInto(enemyMoversBuf, EnemyAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
     const ai = world.req(e, EnemyAI);
     // Enraged bosses run their wind-ups and cooldowns faster.
@@ -447,6 +468,8 @@ function watchStuck(ai: EnemyAIData, tr: Transform, speed: number, dx: number, d
   st.want = 0;
 }
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const enemiesBuf: Entity[] = [];
 /**
  * Melee attackers spread round their target instead of queueing on one side: each keeps roughly its
  * bearing, neighbours are pushed apart until they fit, and whoever doesn't fit the inner ring waits
@@ -456,7 +479,7 @@ function assignSlots(world: World, ctx: GameContext): Map<Entity, { x: number; z
   const out = new Map<Entity, { x: number; z: number }>();
   type Member = { e: Entity; a: number; ring: number; w: number; d: number; pinned: boolean };
   const groups = new Map<Entity, Member[]>();
-  for (const e of world.query(EnemyAI, Transform)) {
+  for (const e of world.queryInto(enemiesBuf, EnemyAI, Transform)) {
     const ai = world.req(e, EnemyAI);
     if (!ai.aggro || ai.chasing === undefined || ai.burrowed || world.has(e, Dead)) continue;
     const def = enemyDef(ai.defId);
@@ -638,7 +661,7 @@ function rusher(
       ctx.events.push({ type: 'vfx', kind: 'enemySlash', x: tr.x, z: tr.z, radius: atk.range, facing: tr.facing, arcDeg: atk.arcDeg });
       ai.state = 'recover';
       ai.timer = atk.recovery;
-      ai.cooldown = atk.cooldown;
+      ai.cooldown = Math.max(0, atk.cooldown - telegraphLead(def));
     }
     return;
   }
@@ -656,7 +679,8 @@ function rusher(
   if (dist <= atk.range + playerRadius * 0.5 && ai.cooldown <= 0 && placed) {
     ai.state = 'windup';
     ai.attackSeq++;
-    ai.timer = atk.windup;
+    const lead = telegraphLead(def);
+    ai.timer = atk.windup + lead;
     ai.aimX = ptr.x;
     ai.aimZ = ptr.z;
     tr.facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
@@ -666,12 +690,18 @@ function rusher(
       x: tr.x,
       z: tr.z,
       shape: { kind: 'cone', radius: atk.range + playerRadius, arcDeg: atk.arcDeg, facing: tr.facing },
-      duration: atk.windup,
+      duration: atk.windup + lead,
       color: '#ff3b2f',
     });
     return;
   }
   closeIn(mover, tr, ptr, mover.speed, atk.range * 0.7);
+}
+
+/** Seconds the red telegraph of a lunge or a flanker's swing shows before its wind-up (G025); the cooldown gives them back, so damage per second is unchanged. */
+export const TELEGRAPH_LEAD = 0.15;
+export function telegraphLead(def: EnemyDef): number {
+  return def.attack.kind === 'lunge' || (def.behavior === 'flanker' && def.attack.kind === 'melee') ? TELEGRAPH_LEAD : 0;
 }
 
 /** Grab and fling the target along the thrower's facing; it lands stunned. */
@@ -785,7 +815,7 @@ function lunger(
     ctx.events.push({ type: 'vfx', kind: 'dodge', x: tr.x, z: tr.z, radius: atk.width, facing: tr.facing });
     ai.state = 'recover';
     ai.timer = atk.recovery + atk.distance / atk.speed;
-    ai.cooldown = atk.cooldown;
+    ai.cooldown = Math.max(0, atk.cooldown - telegraphLead(def));
     return;
   }
   if (ai.state === 'recover') {
@@ -798,11 +828,11 @@ function lunger(
   if (dist <= atk.range && ai.cooldown <= 0) {
     ai.state = 'windup';
     ai.attackSeq++;
-    ai.timer = atk.windup;
+    ai.timer = atk.windup + telegraphLead(def);
     ai.aimX = ptr.x;
     ai.aimZ = ptr.z;
     tr.facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
-    ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'line', length: atk.distance, width: atk.width, facing: tr.facing }, duration: atk.windup, color: '#ffb03a' });
+    ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'line', length: atk.distance, width: atk.width, facing: tr.facing }, duration: atk.windup + telegraphLead(def), color: '#ffb03a', cue: 'charge' });
     return;
   }
   // Between lunges it keeps a little distance, circling, so the next dash has room.

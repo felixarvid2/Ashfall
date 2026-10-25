@@ -34,7 +34,6 @@ import {
   type PylonType,
 } from '../data/interactables';
 import type { Impact } from '../data/schemas';
-import type { PoiDef } from '../data/zones/zoneTypes';
 import { applyDamage, applyStatus, isAlive, targetState } from '../systems/combat';
 import { computeTaken } from '../systems/damage';
 import { monsterLevel } from '../systems/encounter';

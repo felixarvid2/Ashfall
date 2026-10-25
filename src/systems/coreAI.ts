@@ -70,7 +70,7 @@ export function blinkDestination(
  * Runs before the attack logic of an aggro'd enemy. Returns true while it holds the enemy still (a blink
  * being prepared), false once the normal AI should carry on.
  */
-export function coreAct(world: World, ctx: GameContext, e: Entity, ai: EnemyAIData, def: EnemyDef, tr: Transform, dt: number): boolean {
+export function coreAct(world: World, ctx: GameContext, _e: Entity, ai: EnemyAIData, def: EnemyDef, tr: Transform, dt: number): boolean {
   const b = def.blink;
   if (!b || !ai.aggro) return false;
   const player = world.first(PlayerControlled, Transform);

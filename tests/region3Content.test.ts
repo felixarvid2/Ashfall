@@ -263,7 +263,7 @@ describe('Vaults quests', () => {
     expect(QUESTS.get('mq.green_door')!.after).toEqual(['mq.vire']);
     expect(QUESTS.get('mq.green_door')!.steps[0]!.zone).toBe('zone.refinery_district');
     const mains = [...QUESTS.values()].filter((q) => q.zone === HYDROPONIC_VAULTS.id && q.kind === 'main');
-    const sides = [...QUESTS.values()].filter((q) => q.zone === HYDROPONIC_VAULTS.id && q.kind === 'side');
+    const sides = [...QUESTS.values()].filter((q) => q.zone === HYDROPONIC_VAULTS.id && q.kind === 'side' && !q.repeatable);
     expect(mains).toHaveLength(6);
     expect(sides).toHaveLength(10);
     const last = QUESTS.get('mq.mother_tree')!.steps.at(-1)!;

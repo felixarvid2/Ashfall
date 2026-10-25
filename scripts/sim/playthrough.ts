@@ -29,7 +29,7 @@ import { EventQueue } from '../../src/core/events';
 import { Rng } from '../../src/core/rng';
 import { SpatialHash } from '../../src/core/spatial';
 import { classDef, enemyDef } from '../../src/data/db';
-import { PROGRESSION, baseItem } from '../../src/data/loot/db';
+import { baseItem } from '../../src/data/loot/db';
 import { defaultSettings } from '../../src/data/settings';
 import { TEST_ARENA } from '../../src/data/zones/testArena';
 import { collisionSystem, spatialSystem } from '../../src/systems/collision';
@@ -129,6 +129,8 @@ const DT = 1 / 60;
 const RESPAWN_DELAY = 3;
 /** Chance the bot reacts to a telegraphed attack with a dodge (an average player, not a perfect one). */
 const DODGE_SKILL = 0.35;
+/** Melee plans only fire projectile skills (the fallback starter) at targets this close. */
+const MELEE_SHOOT_RANGE = 4;
 
 function makeContext(seed: string): GameContext {
   return {
@@ -392,6 +394,8 @@ function bot(world: World, ctx: GameContext, player: Entity, plan: PlayPlan, rng
       if (step.guardiansBelow !== undefined && guardiansOf(world, player).length >= step.guardiansBelow) continue;
       // Heals ignore how far the enemy is: they are about our own side.
       if (step.allyHurtBelow === undefined && dist - targetRadius > reach(c.def.effect)) continue;
+      // A melee build does not stand still shooting its starter dart at a drone 11 m away: it walks up to it.
+      if (plan.style === 'melee' && c.def.effect.kind === 'projectile' && dist - targetRadius > MELEE_SHOOT_RANGE) continue;
       const corpse = step.needsCorpse ? findCorpses(world, tt.x, tt.z, 8, 1)[0] : undefined;
       const aim = corpse !== undefined ? world.req(corpse, Transform) : tt;
       user.request = { slot, aimX: aim.x, aimZ: aim.z, ttl: 0.25 };

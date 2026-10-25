@@ -4,6 +4,8 @@
  */
 import type { Rng } from '../../core/rng';
 import type { TierMods } from '../../data/endgame/tiers';
+import { CLASS_AFFIX_WEIGHTS, PRIMARY_ATTRIBUTE_WEIGHT } from '../../data/loot/affixes';
+import { CLASSES } from '../../data/db';
 import { AFFIX_DEFS, ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, PROGRESSION, UNIQUE_DEFS, baseItem, rarityDef } from '../../data/loot/db';
 import { resolveEffects, type Effect } from '../../data/effects';
 import { effectiveAffixes } from '../endgame/itemMods';
@@ -76,13 +78,20 @@ function rollValue(rng: Rng, def: { min: number; max: number; scaling: 'linear' 
   return roundStat(rng.range(def.min, def.max) * powerScale(def.scaling, itemPower));
 }
 
-/** Roll distinct affixes from the pool allowed for this item type. */
-export function rollAffixes(rng: Rng, type: ItemType, count: number, itemPower: number, greaterChance: number): RolledStat[] {
+/** Weight of an affix for a class: the primary attribute rolls 1.5x, melee and ranged damage follow how the class fights. */
+export function affixWeight(a: AffixDef, classId?: string): number {
+  if (!classId) return a.weight;
+  const primary = CLASSES.get(classId)?.attributes.primary;
+  return a.weight * (a.stat === primary ? PRIMARY_ATTRIBUTE_WEIGHT : 1) * (CLASS_AFFIX_WEIGHTS[classId]?.[a.stat] ?? 1);
+}
+
+/** Roll distinct affixes from the pool allowed for this item type; `classId` skews the weights towards what the class uses. */
+export function rollAffixes(rng: Rng, type: ItemType, count: number, itemPower: number, greaterChance: number, classId?: string): RolledStat[] {
   const pool = [...AFFIX_DEFS.values()].filter((a) => a.types.includes(type));
   const chosen: AffixDef[] = [];
   while (chosen.length < count && chosen.length < pool.length) {
     const remaining = pool.filter((a) => !chosen.includes(a));
-    chosen.push(rng.weighted(remaining.map((a) => ({ item: a, weight: a.weight }))));
+    chosen.push(rng.weighted(remaining.map((a) => ({ item: a, weight: affixWeight(a, classId) }))));
   }
   return chosen.map((a) => {
     const greater = rng.chance(greaterChance);
@@ -130,7 +139,7 @@ export function rollAspectValue(rng: Rng, aspect: AspectDef, itemPower: number):
 }
 
 export function pickUnique(rng: Rng, rarity: 'unique' | 'mythic', classId: string): UniqueDef | null {
-  const all = [...UNIQUE_DEFS.values()].filter((u) => u.rarity === rarity);
+  const all = [...UNIQUE_DEFS.values()].filter((u) => u.rarity === rarity && u.source !== 'quest');
   const own = all.filter((u) => !u.classes || u.classes.includes(classId));
   const pool = own.length > 0 && rng.chance(PROGRESSION.ownClassShare) ? own : all;
   return pool.length ? rng.pick(pool) : null;
@@ -157,7 +166,7 @@ export function generateItem(rng: Rng, opts: GenerateOptions): Item {
   const def = rarityDef(rarity);
   const implicits = base.implicits.map((imp) => ({ stat: imp.stat, value: rollValue(rng, imp, ip) }));
   const count = rng.int(def.affixes[0], def.affixes[1]);
-  const affixes = rollAffixes(rng, base.type, count, ip, Math.min(1, def.greaterChance + (opts.greaterBonus ?? 0)));
+  const affixes = rollAffixes(rng, base.type, count, ip, Math.min(1, def.greaterChance + (opts.greaterBonus ?? 0)), opts.classId);
   const baseName = opts.nameOf?.(base.id) ?? base.id;
   const item: Item = {
     uid: opts.uid,
@@ -285,7 +294,18 @@ export function xpToNext(level: number): number {
   return Math.round(PROGRESSION.xpBase * Math.pow(level, PROGRESSION.xpExponent));
 }
 
-/** XP for killing an enemy: drop-table XP scaled by its level. */
-export function killXp(table: DropTable, enemyLevel: number): number {
-  return Math.round(table.xp * (1 + PROGRESSION.xpPerEnemyLevel * (enemyLevel - 1)));
+/**
+ * Kill XP multiplier for a character above the zone's level cap (G019): 1 at or below the cap, then
+ * `1 - falloffPerLevel x levels over`, never under `falloffFloor`.
+ */
+export function xpFalloff(playerLevel: number, zoneMaxLevel: number): number {
+  const over = playerLevel - zoneMaxLevel;
+  if (!(over > 0)) return 1;
+  return Math.max(PROGRESSION.xpFalloffFloor, 1 - PROGRESSION.xpFalloffPerLevel * over);
+}
+
+/** XP for killing an enemy: drop-table XP scaled by its level (and by `xpFalloff` when the caller passes the zone's cap). */
+export function killXp(table: DropTable, enemyLevel: number, over?: { playerLevel: number; zoneMaxLevel: number }): number {
+  const fall = over ? xpFalloff(over.playerLevel, over.zoneMaxLevel) : 1;
+  return Math.round(table.xp * (1 + PROGRESSION.xpPerEnemyLevel * (enemyLevel - 1)) * fall);
 }

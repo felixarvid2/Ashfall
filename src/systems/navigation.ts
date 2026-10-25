@@ -90,6 +90,8 @@ export interface NavService {
 
 // ---- The system -------------------------------------------------------------------------------
 
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const huntersBuf: Entity[] = [];
 /** Rebuild the grid and fields when they are stale. */
 export function navigationSystem(world: World, _dt: number, ctx: GameContext): void {
   const player = world.first(PlayerControlled, Transform);
@@ -100,7 +102,7 @@ export function navigationSystem(world: World, _dt: number, ctx: GameContext): v
   // Who is being hunted, and by how many.
   let hunting = false;
   const chased = new Map<Entity, number>();
-  for (const e of world.query(EnemyAI)) {
+  for (const e of world.queryInto(huntersBuf, EnemyAI)) {
     const ai = world.req(e, EnemyAI);
     if (!ai.aggro || world.has(e, Dead)) continue;
     hunting = true;

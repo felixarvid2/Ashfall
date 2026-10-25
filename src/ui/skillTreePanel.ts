@@ -417,7 +417,7 @@ export class SkillTreePanel {
     else if (n.type === 'passive') {
       // Passives show an emblem for the stat they raise.
       const stat = n.effects.find((e) => e.kind === 'stat');
-      const url = (stat && 'stat' in stat && artUrl(`stats/${stat.stat}`)) || artUrl('stats/generic');
+      const url = (stat && 'stat' in stat && artUrl(`stats/${stat.stat.replace(/Pct$/, '')}`)) || artUrl('stats/generic');
       if (url) card.appendChild(Object.assign(document.createElement('img'), { src: url, alt: '', draggable: false, className: 'tree-node-emblem' }));
     }
     const name = document.createElement('div');

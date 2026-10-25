@@ -57,8 +57,6 @@ function setup(def: ZoneDef = CINDER_FLATS, tier = 2, playtime = 0) {
   return { world, ctx, zone, player };
 }
 
-const at = (def: ZoneDef, id: string) => def.packs.find((p) => p.id === id)!;
-
 describe('rotation', () => {
   it('one region per 20 minutes of play time, through the five regions in order, then around again', () => {
     expect(ROT).toBe(1200);

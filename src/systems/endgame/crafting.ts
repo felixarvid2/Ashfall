@@ -9,6 +9,7 @@ import type { GameContext } from '../../core/context';
 import type { Rng } from '../../core/rng';
 import {
   CODEX_ASPECTS,
+  codexEntries,
   CODEX_IMPRINT_COST,
   MASTERWORK,
   RECIPE_DEFS,
@@ -184,20 +185,20 @@ export function masterworkReset(inv: Inventory, item: Item): CraftResult {
 
 /** The dungeon that unlocks an aspect, or null (aspects without a dungeon are never in the Codex). */
 export function codexDungeon(aspectId: string): string | null {
-  return Object.entries(CODEX_ASPECTS).find(([, a]) => a === aspectId)?.[0] ?? null;
+  return codexEntries().find(([, a]) => a === aspectId)?.[0] ?? null;
 }
 
 export function codexUnlocked(ctx: GameContext, aspectId: string): boolean {
   return ctx.account?.endgame.codex.includes(aspectId) ?? false;
 }
 
-/** The first clear of a dungeon unlocks its aspect for the account. Returns the aspect id if it was new. */
-export function unlockCodexForDungeon(ctx: GameContext, dungeonId: string): string | null {
-  const aspect = CODEX_ASPECTS[dungeonId];
+/** The first clear of a dungeon unlocks its aspects for the account. Returns the ones that were new, in table order. */
+export function unlockCodexForDungeon(ctx: GameContext, dungeonId: string): string[] {
   const codex = ctx.account?.endgame.codex;
-  if (!aspect || !codex || codex.includes(aspect)) return null;
-  codex.push(aspect);
-  return aspect;
+  if (!codex) return [];
+  const fresh = (CODEX_ASPECTS[dungeonId] ?? []).filter((a) => !codex.includes(a));
+  codex.push(...fresh);
+  return fresh;
 }
 
 /** Aspect strength for a Codex imprint: the middle of its range, pushed up by the World Tier's item power and greater chance. */

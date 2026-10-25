@@ -6,7 +6,7 @@ import { SaveDataSchema } from '../src/core/save';
 import { CODEX_ASPECTS, MASTERWORK, RECIPES, RECIPE_DEFS, RECIPE_IDS, SALVAGE_DUST, TEMPERING } from '../src/data/endgame/crafting';
 import { INSTANCES } from '../src/data/instances';
 import { TIER_TABLE } from '../src/data/endgame/tiers';
-import { ASPECT_DEFS, BASE_ITEMS } from '../src/data/loot/db';
+import { ASPECT_DEFS } from '../src/data/loot/db';
 import { STAT_KEYS } from '../src/data/loot/schemas';
 import {
   canTemper,
@@ -24,6 +24,7 @@ import {
   temperChargesLeft,
   temperCost,
   temperItem,
+  codexUnlocked,
   unlockCodexForDungeon,
 } from '../src/systems/endgame/crafting';
 import { effectiveAffixes, masterworkMultiplier } from '../src/systems/endgame/itemMods';
@@ -56,11 +57,11 @@ function ctxAt(tier = 2) {
 }
 
 describe('recipes', () => {
-  it('there are twelve, three per group, with valid stats and ranges', () => {
-    expect(RECIPES).toHaveLength(12);
+  it('there are sixteen, four per group, with valid stats and ranges', () => {
+    expect(RECIPES).toHaveLength(16);
     expect(RECIPE_IDS).toEqual(RECIPES.map((r) => r.id));
-    expect(new Set(RECIPE_IDS).size).toBe(12);
-    for (const g of ['offense', 'defense', 'utility', 'mobility']) expect(RECIPES.filter((r) => r.group === g)).toHaveLength(3);
+    expect(new Set(RECIPE_IDS).size).toBe(16);
+    for (const g of ['offense', 'defense', 'utility', 'mobility']) expect(RECIPES.filter((r) => r.group === g)).toHaveLength(4);
     for (const r of RECIPES) {
       expect(r.id.startsWith(`temper.${r.group}.`)).toBe(true);
       expect(r.options.length).toBeGreaterThan(0);
@@ -268,21 +269,36 @@ describe('Codex of Power', () => {
   it('maps every dungeon to a distinct, real aspect', () => {
     const dungeons = INSTANCES.filter((i) => i.kind === 'dungeon' && i.id !== 'deep_rift').map((i) => i.id);
     expect(Object.keys(CODEX_ASPECTS).sort()).toEqual([...dungeons].sort());
-    const aspects = Object.values(CODEX_ASPECTS);
+    const aspects = Object.values(CODEX_ASPECTS).flat();
     expect(new Set(aspects).size).toBe(aspects.length);
     for (const a of aspects) expect(ASPECT_DEFS.has(a)).toBe(true);
     expect(codexDungeon('brutality')).toBe('meridians_hold');
+    expect(codexDungeon('mercy')).toBe('meridians_hold');
     expect(codexDungeon('echo')).toBeNull();
+  });
+
+  it('every class can reach at least five aspects through the Codex', () => {
+    const reachable = new Set(Object.values(CODEX_ASPECTS).flat());
+    for (const cls of ['bastion', 'spectre', 'xenomant', 'lightbearer']) {
+      const own = [...ASPECT_DEFS.values()].filter((a) => reachable.has(a.id) && a.classes?.includes(cls));
+      expect(own.length, cls).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it('imprints a Lightbearer aspect unlocked by a Core dungeon', () => {
+    const ctx = ctxAt();
+    expect(unlockCodexForDungeon(ctx, 'core_memory_of_ember')).toEqual(['bulwark', 'litany']);
+    expect(codexUnlocked(ctx, 'litany')).toBe(true);
   });
 
   it('unlocks an aspect on the first clear only, for the account', () => {
     const ctx = ctxAt();
-    expect(unlockCodexForDungeon(ctx, 'meridians_hold')).toBe('brutality');
-    expect(unlockCodexForDungeon(ctx, 'meridians_hold')).toBeNull();
-    expect(unlockCodexForDungeon(ctx, 'not_a_dungeon')).toBeNull();
-    expect(unlockCodexForDungeon(ctx, 'dm_bunker')).toBeNull();
-    expect(ctx.account!.endgame.codex).toEqual(['brutality']);
-    expect(unlockCodexForDungeon(makeCtx(), 'archive')).toBeNull();
+    expect(unlockCodexForDungeon(ctx, 'meridians_hold')).toEqual(['brutality', 'mercy']);
+    expect(unlockCodexForDungeon(ctx, 'meridians_hold')).toEqual([]);
+    expect(unlockCodexForDungeon(ctx, 'not_a_dungeon')).toEqual([]);
+    expect(unlockCodexForDungeon(ctx, 'dm_bunker')).toEqual([]);
+    expect(ctx.account!.endgame.codex).toEqual(['brutality', 'mercy']);
+    expect(unlockCodexForDungeon(makeCtx(), 'archive')).toEqual([]);
   });
 
   it('imprints unlocked aspects without limit and without a cache', () => {

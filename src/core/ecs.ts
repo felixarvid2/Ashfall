@@ -21,10 +21,23 @@ export function defineComponent<T>(name: string): ComponentType<T> {
   return { name };
 }
 
+/** Told when a watched component type is set or dropped on an entity (see World.watch). */
+export interface ComponentWatcher<T> {
+  /** `add()` ran for this entity and type (also when it replaces an existing value). */
+  added(e: Entity, data: T): void;
+  /** The component is gone: `remove()` or `destroy()`. */
+  removed(e: Entity): void;
+}
+
+/** One component type's data. Watchers are only set on the few stores a system indexes (colliders). */
+class Store extends Map<Entity, unknown> {
+  watchers: ComponentWatcher<unknown>[] | null = null;
+}
+
 export class World {
   private nextId: Entity = 1;
   private readonly alive = new Set<Entity>();
-  private readonly stores = new Map<ComponentType<unknown>, Map<Entity, unknown>>();
+  private readonly stores = new Map<ComponentType<unknown>, Store>();
   private readonly pendingDestroy: Entity[] = [];
 
   create(): Entity {
@@ -40,7 +53,9 @@ export class World {
   /** Destroys immediately. Use destroyDeferred() while iterating a query. */
   destroy(e: Entity): void {
     if (!this.alive.delete(e)) return;
-    for (const store of this.stores.values()) store.delete(e);
+    for (const store of this.stores.values()) {
+      if (store.delete(e) && store.watchers) for (const w of store.watchers) w.removed(e);
+    }
   }
 
   destroyDeferred(e: Entity): void {
@@ -58,12 +73,29 @@ export class World {
 
   add<T>(e: Entity, type: ComponentType<T>, data: T): T {
     if (!this.alive.has(e)) throw new Error(`World.add: entity ${e} is not alive`);
-    this.store(type).set(e, data);
+    const store = this.store(type);
+    store.set(e, data);
+    if (store.watchers) for (const w of store.watchers) w.added(e, data);
     return data;
   }
 
   remove<T>(e: Entity, type: ComponentType<T>): void {
-    this.stores.get(type)?.delete(e);
+    const store = this.stores.get(type);
+    if (store?.delete(e) && store.watchers) for (const w of store.watchers) w.removed(e);
+  }
+
+  /** Get told about every add/remove of a component type; returns the function that stops it. */
+  watch<T>(type: ComponentType<T>, watcher: ComponentWatcher<T>): () => void {
+    const store = this.store(type);
+    const w = watcher as ComponentWatcher<unknown>;
+    (store.watchers ??= []).push(w);
+    return () => {
+      const list = store.watchers;
+      if (!list) return;
+      const i = list.indexOf(w);
+      if (i >= 0) list.splice(i, 1);
+      if (list.length === 0) store.watchers = null;
+    };
   }
 
   get<T>(e: Entity, type: ComponentType<T>): T | undefined {
@@ -83,32 +115,110 @@ export class World {
 
   /** All entities that have every listed component. Iterates the smallest store. */
   query(...types: ComponentType<unknown>[]): Entity[] {
-    if (types.length === 0) return [...this.alive];
-    let smallest: Map<Entity, unknown> | undefined;
-    for (const type of types) {
-      const store = this.stores.get(type);
-      if (!store || store.size === 0) return [];
-      if (!smallest || store.size < smallest.size) smallest = store;
+    return this.fill([], types);
+  }
+
+  /**
+   * Like query(), but fills `out` (cleared first) instead of allocating, and returns it. Still a snapshot, so
+   * entities may be added or destroyed while the caller walks `out`. Don't share one `out` between a loop and
+   * a callee that also fills it.
+   */
+  queryInto(out: Entity[], ...types: ComponentType<unknown>[]): Entity[] {
+    return this.fill(out, types);
+  }
+
+  private fill(out: Entity[], types: readonly ComponentType<unknown>[]): Entity[] {
+    out.length = 0;
+    const smallest = this.smallestStore(types);
+    if (smallest === undefined) return out;
+    if (smallest === null) {
+      for (const e of this.alive) out.push(e);
+      return out;
     }
-    const result: Entity[] = [];
-    for (const e of smallest!.keys()) {
-      if (types.every((t) => this.stores.get(t)!.has(e))) result.push(e);
+    // Resolve the other stores once; up to three types need no per-entity store lookup at all.
+    const n = types.length;
+    if (n === 1) {
+      for (const e of smallest.keys()) out.push(e);
+    } else if (n === 2) {
+      const [s0, s1] = [this.stores.get(types[0]!)!, this.stores.get(types[1]!)!];
+      for (const e of smallest.keys()) if (s0.has(e) && s1.has(e)) out.push(e);
+    } else if (n === 3) {
+      const [s0, s1, s2] = [this.stores.get(types[0]!)!, this.stores.get(types[1]!)!, this.stores.get(types[2]!)!];
+      for (const e of smallest.keys()) if (s0.has(e) && s1.has(e) && s2.has(e)) out.push(e);
+    } else {
+      for (const e of smallest.keys()) {
+        let all = true;
+        for (let i = 0; i < n; i++) {
+          if (!this.stores.get(types[i]!)!.has(e)) {
+            all = false;
+            break;
+          }
+        }
+        if (all) out.push(e);
+      }
     }
-    return result;
+    return out;
+  }
+
+  /**
+   * Calls fn for every entity that has all the listed components, without building an array. This walks the
+   * live store, so destroy() mid-loop skips the not-yet-visited entity and an entity given the last component
+   * mid-loop may or may not be visited; use query()/queryInto() when the body spawns same-shaped entities.
+   */
+  forEach(types: readonly ComponentType<unknown>[], fn: (e: Entity) => void): void {
+    const smallest = this.smallestStore(types);
+    if (smallest === undefined) return;
+    if (smallest === null) {
+      for (const e of this.alive) fn(e);
+      return;
+    }
+    const n = types.length;
+    if (n === 1) {
+      for (const e of smallest.keys()) fn(e);
+    } else if (n === 2) {
+      const s0 = this.stores.get(types[0]!)!;
+      const s1 = this.stores.get(types[1]!)!;
+      for (const e of smallest.keys()) if (s0.has(e) && s1.has(e)) fn(e);
+    } else {
+      outer: for (const e of smallest.keys()) {
+        for (let i = 0; i < n; i++) if (!this.stores.get(types[i]!)!.has(e)) continue outer;
+        fn(e);
+      }
+    }
   }
 
   /** First entity matching the query, if any (handy for singletons like the player). */
   first(...types: ComponentType<unknown>[]): Entity | undefined {
-    return this.query(...types)[0];
+    const smallest = this.smallestStore(types);
+    if (smallest === undefined) return undefined;
+    if (smallest === null) return this.alive.values().next().value;
+    const n = types.length;
+    outer: for (const e of smallest.keys()) {
+      for (let i = 0; i < n; i++) if (!this.stores.get(types[i]!)!.has(e)) continue outer;
+      return e;
+    }
+    return undefined;
   }
 
-  private store<T>(type: ComponentType<T>): Map<Entity, T> {
+  /** The smallest store among `types`; null for no types (every entity); undefined if some store is empty. */
+  private smallestStore(types: readonly ComponentType<unknown>[]): Store | null | undefined {
+    if (types.length === 0) return null;
+    let smallest: Store | undefined;
+    for (let i = 0; i < types.length; i++) {
+      const store = this.stores.get(types[i]!);
+      if (!store || store.size === 0) return undefined;
+      if (!smallest || store.size < smallest.size) smallest = store;
+    }
+    return smallest;
+  }
+
+  private store<T>(type: ComponentType<T>): Store {
     let store = this.stores.get(type);
     if (!store) {
-      store = new Map();
+      store = new Store();
       this.stores.set(type, store);
     }
-    return store as Map<Entity, T>;
+    return store;
   }
 }
 
@@ -117,9 +227,13 @@ export type System<Ctx> = (world: World, dt: number, ctx: Ctx) => void;
 /** Runs systems in registration order every fixed tick. */
 export class Scheduler<Ctx> {
   private readonly systems: { name: string; run: System<Ctx> }[] = [];
+  /** Turn on to add up the wall time of every system in `times` (ms; the perf harness and the devtools read it). */
+  profile = false;
+  readonly times = new Map<string, number>();
 
   add(name: string, run: System<Ctx>): this {
     this.systems.push({ name, run });
+    this.times.set(name, 0);
     return this;
   }
 
@@ -128,7 +242,20 @@ export class Scheduler<Ctx> {
   }
 
   tick(world: World, dt: number, ctx: Ctx): void {
-    for (const system of this.systems) system.run(world, dt, ctx);
+    if (this.profile) {
+      for (const system of this.systems) {
+        const t0 = performance.now();
+        system.run(world, dt, ctx);
+        this.times.set(system.name, this.times.get(system.name)! + performance.now() - t0);
+      }
+    } else {
+      for (const system of this.systems) system.run(world, dt, ctx);
+    }
     world.flushDestroyed();
+  }
+
+  /** Zero the profile counters. */
+  resetTimes(): void {
+    for (const name of this.times.keys()) this.times.set(name, 0);
   }
 }

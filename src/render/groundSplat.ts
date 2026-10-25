@@ -17,6 +17,8 @@ export function buildGroundSplat(patches: GroundPatch[], extent: number, res: nu
   const slow = new ValueNoise(`${seed}-variation`, 64);
   const half = extent / 2;
   const first = splats[0]!;
+  // (A coarse 256 px variation grid upsampled would be 4x cheaper but drifts by up to 27/255; with the
+  // allocation-free noise below the exact pass is ~40 ms, so it stays exact.)
   for (let j = 0; j < res; j++) {
     const z = -half + (j + 0.5) * cell;
     for (let i = 0; i < res; i++) {
@@ -57,27 +59,58 @@ function smooth(a: number, b: number, v: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** Tiling value noise in [0, 1] with a few octaves. */
+/** Tiling value noise in [0, 1] with a few octaves. `n` must be a power of two. */
 class ValueNoise {
   private readonly grid: Float32Array;
+  private readonly mask: number;
   constructor(seed: string, private readonly n: number) {
     const rng = new Rng(seed);
     this.grid = Float32Array.from({ length: n * n }, () => rng.next());
+    this.mask = n - 1;
   }
+  /** One octave; allocation-free (it runs about three million times per zone entry). */
   private at(x: number, z: number): number {
     const n = this.n;
+    const m = this.mask;
+    const grid = this.grid;
     const xi = Math.floor(x);
     const zi = Math.floor(z);
     const fx = x - xi;
     const fz = z - zi;
     const sx = fx * fx * (3 - 2 * fx);
     const sz = fz * fz * (3 - 2 * fz);
-    const g = (a: number, b: number) => this.grid[(((b % n) + n) % n) * n + (((a % n) + n) % n)]!;
-    const top = g(xi, zi) + (g(xi + 1, zi) - g(xi, zi)) * sx;
-    const bottom = g(xi, zi + 1) + (g(xi + 1, zi + 1) - g(xi, zi + 1)) * sx;
+    const x0 = xi & m;
+    const x1 = (xi + 1) & m;
+    const r0 = (zi & m) * n;
+    const r1 = ((zi + 1) & m) * n;
+    const a = grid[r0 + x0]!;
+    const c = grid[r1 + x0]!;
+    const top = a + (grid[r0 + x1]! - a) * sx;
+    const bottom = c + (grid[r1 + x1]! - c) * sx;
     return top + (bottom - top) * sz;
   }
   fbm(x: number, z: number): number {
     return (this.at(x, z) * 0.6 + this.at(x * 2.1 + 17, z * 2.1 + 31) * 0.3 + this.at(x * 4.3 + 5, z * 4.3 + 11) * 0.1);
   }
+}
+
+const CACHE_LIMIT = 2;
+const cache = new Map<string, Uint8Array[]>();
+
+/**
+ * `buildGroundSplat` memoised under `key` (a zone id): the weights are a pure function of static zone
+ * data, so coming back to a zone costs nothing. The two most recent zones stay (a few MB each).
+ */
+export function groundSplatCached(key: string, patches: GroundPatch[], extent: number, res: number, seed: string, layers = 3): Uint8Array[] {
+  const id = `${key}|${extent}|${res}|${seed}|${layers}`;
+  const hit = cache.get(id);
+  if (hit) {
+    cache.delete(id);
+    cache.set(id, hit);
+    return hit;
+  }
+  const built = buildGroundSplat(patches, extent, res, seed, layers);
+  cache.set(id, built);
+  while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
+  return built;
 }

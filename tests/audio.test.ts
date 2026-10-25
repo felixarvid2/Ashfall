@@ -36,7 +36,7 @@ describe('event sounds', () => {
 
   it('maps each effect to a catalogued sound, or to nothing on purpose', () => {
     for (const kind of Object.keys(VFX_SOUNDS) as VfxKind[]) {
-      const cues = soundsForEvent({ type: 'vfx', kind, x: 1, z: 2, radius: 1, facing: 0 });
+      const cues = soundsForEvent({ type: 'vfx', kind, x: 1, z: 2, radius: 1, facing: 0, source: 'skill' });
       const mapped = VFX_SOUNDS[kind];
       if (mapped === null) expect(cues).toEqual([]);
       else {
@@ -54,8 +54,8 @@ describe('event sounds', () => {
     const vfx = (kind: VfxKind, radius = 1) => soundsForEvent({ type: 'vfx', kind, x: 0, z: 0, radius, facing: 0 })[0]?.id;
     expect(vfx('muzzle')).toBe('shot.light');
     expect(vfx('slash')).toBe('melee.swing');
-    expect(vfx('enemySlash')).toBe('melee.swing');
-    expect(vfx('minionSlash')).toBe('melee.swing');
+    expect(vfx('enemySlash')).toBe('swing.enemy');
+    expect(vfx('minionSlash')).toBe('swing.minion');
     expect(vfx('slam')).toBe('melee.slam');
     expect(vfx('leapLand')).toBe('melee.slam');
     expect(vfx('shockwave')).toBe('melee.slam');
@@ -67,7 +67,11 @@ describe('event sounds', () => {
     expect(vfx('flame')).toBe('cast.flame');
     expect(vfx('heal')).toBe('heal');
     expect(vfx('sporePulse')).toBe('cast.bio');
-    expect(vfx('corpseBurst')).toBe('cast.bio');
+    // An enemy's corpse burst has its death sound; only the Corpse Explosion skill sounds (F011).
+    expect(vfx('corpseBurst')).toBeUndefined();
+    expect(soundsForEvent({ type: 'vfx', kind: 'corpseBurst', x: 0, z: 0, radius: 2, facing: 0, source: 'skill' })[0]?.id).toBe('cast.bio');
+    expect(vfx('holy')).toBe('cast.holy');
+    expect(vfx('holyRing')).toBe('holy.pulse');
     expect(vfx('bomblet')).toBe('explosion.small');
     expect(vfx('explosion', 2)).toBe('explosion.small');
     expect(vfx('explosion', 6)).toBe('explosion.large');
@@ -120,7 +124,7 @@ describe('event sounds', () => {
     expect(ids({ type: 'discover', id: 'x' })).toEqual(['discover']);
     expect(ids({ type: 'overheat' })).toEqual(['overheat']);
     expect(ids({ type: 'interact', kind: 'lore', id: 'x' })).toEqual(['interact']);
-    expect(ids({ type: 'telegraph', owner: null, x: 1, z: 2, shape: { kind: 'circle', radius: 2 }, duration: 1, color: '#f00' })).toEqual(['telegraph']);
+    expect(ids({ type: 'telegraph', owner: null, x: 1, z: 2, shape: { kind: 'circle', radius: 2 }, duration: 1, color: '#f00' })).toEqual(['telegraph.slam']);
     expect(ids({ type: 'miss', x: 0, y: 0, z: 0 })).toEqual(['miss']);
   });
 
@@ -166,7 +170,9 @@ describe('voice limiter', () => {
   });
 
   it('has sensible default rules', () => {
-    expect(ruleFor('hit.physical')).toEqual({ max: 4, interval: 0.05 });
+    expect(ruleFor('melee.swing').max).toBeGreaterThan(0);
+    expect(ruleFor('hit.physical')).toEqual({ max: 6, interval: 0.04 });
+    expect(ruleFor('cast.tech')).toEqual({ max: 4, interval: 0.05 });
     expect(ruleFor('footstep').max).toBeLessThanOrEqual(2);
     expect(ruleFor('levelUp').max).toBe(1);
     expect(ruleFor('quest.complete').max).toBe(1);
@@ -301,7 +307,7 @@ describe('audio settings', () => {
 /** A just-enough AudioContext: records what gets started. */
 function installFakeAudio() {
   const started: { buffer: unknown; offset: number; duration: number; rate: number }[] = [];
-  const param = () => ({ value: 0, setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn() });
+  const param = () => ({ value: 0, setValueAtTime: vi.fn(), setTargetAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(), cancelScheduledValues: vi.fn() });
   const node = () => ({ gain: param(), pan: param(), connect: (n: unknown) => n, disconnect: vi.fn() });
   class FakeContext {
     state = 'running';
@@ -309,6 +315,8 @@ function installFakeAudio() {
     destination = node();
     createGain = node;
     createStereoPanner = node;
+    createBiquadFilter = () => ({ type: '', frequency: param(), connect: (n: unknown) => n, disconnect: vi.fn() });
+    createOscillator = () => ({ type: '', frequency: { ...param(), exponentialRampToValueAtTime: vi.fn() }, connect: (n: unknown) => n, start: vi.fn(), stop: vi.fn() });
     createBufferSource() {
       const src = { buffer: null as unknown, playbackRate: { value: 1 }, loop: false, loopStart: 0, loopEnd: 0, onended: null, connect: (n: unknown) => n, disconnect: vi.fn(), stop: vi.fn(), start: (_when: number, offset: number, duration: number) => started.push({ buffer: src.buffer, offset, duration, rate: src.playbackRate.value }) };
       return src;
@@ -351,8 +359,9 @@ describe('engine', () => {
 
     expect(e.play('hit.physical')).toBe(true);
     expect(started).toHaveLength(1);
-    expect(started[0]!.rate).toBeGreaterThanOrEqual(0.96);
-    expect(started[0]!.rate).toBeLessThanOrEqual(1.04);
+    // Hits wander 6 % either way (F024).
+    expect(started[0]!.rate).toBeGreaterThanOrEqual(0.94);
+    expect(started[0]!.rate).toBeLessThanOrEqual(1.06);
     // Retrigger interval: the same id again in the same instant is dropped.
     expect(e.play('hit.physical')).toBe(false);
     // UI sounds are not pitched.
@@ -382,7 +391,7 @@ describe('engine', () => {
     const e = new AudioEngine();
     e.unlock();
     await vi.waitFor(() => expect(e.debugState().spriteLoaded).toBe(true));
-    const ids: SoundId[] = ['hit.physical', 'hit.heat', 'hit.cold', 'hit.toxic', 'hit.energy', 'hit.void', 'miss', 'heal', 'overheat', 'telegraph', 'discover', 'interact'];
+    const ids: SoundId[] = ['hit.physical', 'hit.heat', 'hit.cold', 'hit.toxic', 'hit.energy', 'hit.void', 'miss', 'heal', 'overheat', 'telegraph.slam', 'discover', 'interact'];
     for (const id of ids) expect(e.play(id)).toBe(true);
     expect(e.debugState().recent).toEqual(ids.slice(-10));
   });

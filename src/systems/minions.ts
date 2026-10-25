@@ -130,9 +130,11 @@ function syncStats(world: World, minion: Entity, owner: Entity): void {
   m.multiplicative = o.multiplicative;
   m.attackSpeed = o.attackSpeed;
 }
+/** Reused by the loop below so a tick does not allocate its entity list. */
+const minionMoversBuf: Entity[] = [];
 
 export function minionSystem(world: World, dt: number, ctx: GameContext): void {
-  for (const e of world.query(MinionAI, Transform, Mover)) {
+  for (const e of world.queryInto(minionMoversBuf, MinionAI, Transform, Mover)) {
     if (world.has(e, Dead)) continue;
     const ai = world.req(e, MinionAI);
     if (!world.isAlive(ai.owner) || world.has(ai.owner, Dead)) {
@@ -269,7 +271,7 @@ function attack(world: World, ctx: GameContext, e: Entity, ai: MinionAI, tr: Tra
             lifeSteal: 0,
           },
       pierce: 0,
-      explodeRadius: 0,
+      explodeRadius: guardian?.explodeRadius ?? 0,
       gain: 0,
       hit: [],
       color,

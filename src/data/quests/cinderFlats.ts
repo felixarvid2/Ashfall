@@ -136,7 +136,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'locket', x: LENA.x + 6, z: LENA.z + 8, asset: 'prop.echo_relic', scale: 0.35 }] },
       { kind: 'talk', npc: 'tomas' },
     ],
-    rewards: { xp: 260, gold: 50, restoration: 1 },
+    rewards: { xp: 260, gold: 50, item: 'magic', restoration: 1 },
   },
   {
     id: 'sq.logs',
@@ -168,7 +168,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'benny' },
     ],
-    rewards: { xp: 260, gold: 60, restoration: 1 },
+    rewards: { xp: 260, gold: 60, item: 'magic', restoration: 1 },
   },
   {
     id: 'sq.spices',
@@ -180,7 +180,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
       { kind: 'kill', count: 3, enemy: 'spore_carrier' },
       { kind: 'talk', npc: 'benny' },
     ],
-    rewards: { xp: 160, gold: 30 },
+    rewards: { xp: 160, gold: 30, item: 'magic' },
   },
   {
     id: 'sq.old_dog',
@@ -194,7 +194,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'collar', x: KENNEL.x - 2, z: KENNEL.z - 4, asset: 'prop.echo_relic', scale: 0.3 }] },
       { kind: 'talk', npc: 'hekla' },
     ],
-    rewards: { xp: 200, gold: 40, restoration: 1 },
+    rewards: { xp: 200, gold: 40, item: 'magic', restoration: 1 },
   },
   {
     id: 'sq.radio',
@@ -214,7 +214,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'pell' },
     ],
-    rewards: { xp: 230, gold: 50, restoration: 1 },
+    rewards: { xp: 230, gold: 50, item: 'magic', restoration: 1 },
   },
   {
     id: 'sq.rations',
@@ -266,7 +266,7 @@ export const CINDER_FLATS_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'hekla' },
     ],
-    rewards: { xp: 220, gold: 45, restoration: 1 },
+    rewards: { xp: 220, gold: 45, item: 'magic', restoration: 1 },
   },
   {
     id: 'sq.letter',

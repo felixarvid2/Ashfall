@@ -1,6 +1,7 @@
 /**
  * Enemy pack templates for open-world packs (docs/world-and-gameplay.md §8.1): mostly fodder,
  * one or two specialists, sometimes a heavy. Counts are [min, max].
+ * Regions 2-4 mix in security drones / troopers so 10-18 % of spawns shoot (tests/progressionPass.test.ts).
  */
 export interface PackMember {
   enemy: string;
@@ -34,6 +35,8 @@ export const PACK_TEMPLATES: PackTemplate[] = [
       { enemy: 'security_drone', count: [1, 2], chance: 0.6 },
       { enemy: 'bloater', count: [1, 1], chance: 0.35 },
       { enemy: 'spore_hound', count: [2, 3], chance: 0.3 },
+      { enemy: 'ash_thrower', count: [1, 2], chance: 0.4 },
+      { enemy: 'rust_drone', count: [1, 2], chance: 0.35 },
     ],
     championChance: 0.08,
     rareChance: 0.06,
@@ -45,6 +48,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
       { enemy: 'spore_hound', count: [2, 4], chance: 0.6 },
       { enemy: 'spore_carrier', count: [1, 1], chance: 0.5 },
       { enemy: 'bloater', count: [1, 2], chance: 0.4 },
+      { enemy: 'ash_thrower', count: [1, 2], chance: 0.35 },
     ],
     championChance: 0.1,
     rareChance: 0.08,
@@ -55,6 +59,8 @@ export const PACK_TEMPLATES: PackTemplate[] = [
       { enemy: 'infected_colonist', count: [3, 5] },
       { enemy: 'security_drone', count: [2, 3] },
       { enemy: 'sergeant', count: [1, 1], chance: 0.35 },
+      { enemy: 'rust_drone', count: [1, 2], chance: 0.4 },
+      { enemy: 'ash_thrower', count: [1, 2], chance: 0.3 },
     ],
     championChance: 0.12,
     rareChance: 0.1,
@@ -78,6 +84,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
       { enemy: 'flame_drone', count: [1, 2], chance: 0.5 },
       { enemy: 'smelter', count: [1, 2], chance: 0.45 },
       { enemy: 'welder', count: [1, 2], chance: 0.35 },
+      { enemy: 'security_drone', count: [1, 2], chance: 0.7 },
       { enemy: 'fire_bloater', count: [1, 1], chance: 0.3 },
     ],
     championChance: 0.1,
@@ -88,6 +95,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     members: [
       { enemy: 'welder', count: [2, 3] },
       { enemy: 'flame_drone', count: [1, 3] },
+      { enemy: 'governor_drone', count: [1, 2], chance: 0.6 },
       { enemy: 'cargo_loader', count: [1, 1], chance: 0.25 },
       { enemy: 'sergeant', count: [1, 1], chance: 0.15 },
     ],
@@ -98,6 +106,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'rd_slag',
     members: [
       { enemy: 'slag_hound', count: [3, 5] },
+      { enemy: 'governor_drone', count: [1, 1], chance: 0.5 },
       { enemy: 'fire_bloater', count: [1, 2], chance: 0.5 },
       { enemy: 'slagborn', count: [1, 1], chance: 0.35 },
     ],
@@ -108,6 +117,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'rd_stacks',
     members: [
       { enemy: 'scorched_walker', count: [3, 5] },
+      { enemy: 'security_drone', count: [1, 2], chance: 0.55 },
       { enemy: 'slag_hound', count: [1, 3], chance: 0.6 },
       { enemy: 'fire_bloater', count: [1, 1], chance: 0.4 },
       { enemy: 'smelter', count: [1, 1], chance: 0.3 },
@@ -120,6 +130,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     members: [
       { enemy: 'smelter', count: [2, 4] },
       { enemy: 'welder', count: [1, 2], chance: 0.6 },
+      { enemy: 'security_drone', count: [1, 2], chance: 0.5 },
       { enemy: 'smelter_priest', count: [1, 1], chance: 0.45 },
       { enemy: 'scorched_walker', count: [2, 3], chance: 0.5 },
     ],
@@ -131,6 +142,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'hv_road',
     members: [
       { enemy: 'overgrown_walker', count: [3, 5] },
+      { enemy: 'security_drone', count: [1, 3], chance: 0.7 },
       { enemy: 'spore_hound', count: [2, 4], chance: 0.5 },
       { enemy: 'mutated_botanist', count: [1, 2], chance: 0.4 },
       { enemy: 'swarm_bloater', count: [1, 1], chance: 0.3 },
@@ -143,6 +155,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'hv_outer',
     members: [
       { enemy: 'overgrown_walker', count: [3, 5] },
+      { enemy: 'governor_drone', count: [1, 2], chance: 0.6 },
       { enemy: 'mutated_botanist', count: [1, 2], chance: 0.6 },
       { enemy: 'swarm_bloater', count: [1, 1], chance: 0.35 },
     ],
@@ -153,6 +166,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'hv_sea',
     members: [
       { enemy: 'spore_hound', count: [5, 7] },
+      { enemy: 'security_drone', count: [1, 2], chance: 0.55 },
       { enemy: 'vine_weaver', count: [1, 2], chance: 0.55 },
       { enemy: 'spore_swarm', count: [2, 4], chance: 0.5 },
       { enemy: 'mossborn', count: [1, 1], chance: 0.3 },
@@ -165,6 +179,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'hv_seed',
     members: [
       { enemy: 'overgrown_walker', count: [3, 5] },
+      { enemy: 'security_trooper', count: [1, 1], chance: 0.35 },
       { enemy: 'mutated_botanist', count: [1, 2], chance: 0.55 },
       { enemy: 'mossborn', count: [1, 1], chance: 0.35 },
       { enemy: 'sergeant', count: [1, 1], chance: 0.15 },
@@ -177,6 +192,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     members: [
       { enemy: 'vine_weaver', count: [2, 3] },
       { enemy: 'overgrown_walker', count: [2, 4], chance: 0.7 },
+      { enemy: 'governor_drone', count: [1, 2], chance: 0.5 },
       { enemy: 'spore_swarm', count: [2, 3], chance: 0.5 },
       { enemy: 'cocoon_warden', count: [1, 1], chance: 0.3 },
     ],
@@ -200,6 +216,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'dm_tunnel',
     members: [
       { enemy: 'crystal_walker', count: [3, 5] },
+      { enemy: 'governor_drone', count: [1, 2], chance: 0.6 },
       { enemy: 'blind_hound', count: [2, 3], chance: 0.5 },
       { enemy: 'infected_miner', count: [1, 2], chance: 0.45 },
       { enemy: 'shard_bloater', count: [1, 1], chance: 0.3 },
@@ -211,6 +228,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'dm_shafts',
     members: [
       { enemy: 'infected_miner', count: [2, 4] },
+      { enemy: 'security_drone', count: [1, 2], chance: 0.6 },
       { enemy: 'crystal_walker', count: [2, 3], chance: 0.7 },
       { enemy: 'burrower', count: [1, 2], chance: 0.45 },
       { enemy: 'ore_crusher', count: [1, 1], chance: 0.2 },
@@ -222,6 +240,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'dm_caves',
     members: [
       { enemy: 'crystal_walker', count: [2, 4] },
+      { enemy: 'security_trooper', count: [1, 2], chance: 0.45 },
       { enemy: 'crystal_sentinel', count: [1, 2], chance: 0.6 },
       { enemy: 'blind_hound', count: [3, 5], chance: 0.5 },
       { enemy: 'shard_bloater', count: [1, 2], chance: 0.35 },
@@ -233,6 +252,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'dm_lake',
     members: [
       { enemy: 'blind_hound', count: [3, 5] },
+      { enemy: 'governor_drone', count: [1, 2], chance: 0.5 },
       { enemy: 'burrower', count: [1, 2], chance: 0.55 },
       { enemy: 'ore_crusher', count: [1, 1], chance: 0.3 },
       { enemy: 'drill_colossus', count: [1, 1], chance: 0.05 },
@@ -244,6 +264,7 @@ export const PACK_TEMPLATES: PackTemplate[] = [
     id: 'dm_elder',
     members: [
       { enemy: 'echo', count: [3, 5] },
+      { enemy: 'security_trooper', count: [1, 1], chance: 0.35 },
       { enemy: 'crystal_sentinel', count: [1, 2], chance: 0.5 },
       { enemy: 'crystal_walker', count: [2, 3], chance: 0.4 },
     ],

@@ -101,3 +101,27 @@ export const AssetManifestSchema = z.object({
 
 export type AssetEntry = z.infer<typeof AssetEntrySchema>;
 export type AssetManifest = z.infer<typeof AssetManifestSchema>;
+
+/**
+ * What the game needs of an entry at runtime (T006): the slim projection served as the virtual module
+ * `virtual:asset-manifest` (tools/runtimeManifestPlugin.ts). Prompts, Meshy task ids and stats stay in
+ * assets/manifest.json, which only the pipeline tools and the dev-time validator read.
+ */
+export const RuntimeEntrySchema = AssetEntrySchema.pick({
+  id: true,
+  category: true,
+  status: true,
+  file: true,
+  lods: true,
+  placeholder: true,
+  glow: true,
+  heightMeters: true,
+}).extend({ meshy: z.object({ clips: z.record(z.string(), z.string()).optional() }).default({}) });
+
+export const RuntimeManifestSchema = z.object({
+  version: z.literal(1),
+  assets: z.array(RuntimeEntrySchema),
+});
+
+export type RuntimeEntry = z.infer<typeof RuntimeEntrySchema>;
+export type RuntimeManifest = z.infer<typeof RuntimeManifestSchema>;

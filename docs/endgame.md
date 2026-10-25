@@ -50,9 +50,9 @@ level 50 earn **Neural Matrix** points instead of nothing.
   one is cleared (two levels when cleared with more than half the time left).
 - A rift mixes rooms and enemies from every region. Kills fill a progress bar (elites more); at 100 % the
   Rift Guardian spawns, an earlier boss in the Lumen look. 10 minutes to kill it.
-- Enemy life and damage ×1.06 per level on top of level 50 (world tiers don't apply inside a rift).
+- Enemy life ×1.06 and damage ×1.035 per level on top of level 50 (world tiers don't apply inside a rift).
 - Cleared in time: three glyph upgrade attempts (chance falls as the glyph's level passes the rift's level
-  / 5), a reward cache, item power up to +2 per level (cap 540), and the account's best level.
+  / 5), a reward cache, item power +2 per level (rift 100 = 610), and the account's best level.
   Out of time: the rift collapses, no upgrades.
 - Rift 20 unlocks World Tier 3, rift 40 World Tier 4.
 
@@ -61,7 +61,7 @@ level 50 earn **Neural Matrix** points instead of nothing.
 - One every 45 minutes of play time (the brief says three hours; shortened for a browser game, data value).
   Announced five minutes ahead with a toast, a map marker and a HUD countdown; despawns 15 minutes after it
   appears.
-- Three bosses at fixed spots spread over the five regions, each with several phases and a large health
+- Five bosses (the Choir of Stone and the Echo Engine were added in C012, both with a 30 % unique chance) at fixed spots spread over the five regions, each with several phases and a large health
   pool scaled by the World Tier: the Ashen Colossus, the Mother of Spores, the Hollow Engine (existing
   large models in the Lumen look).
 - Reward: a chest with a guaranteed legendary, a chance at a unique, tempering recipes and materials.
@@ -76,7 +76,7 @@ level 50 earn **Neural Matrix** points instead of nothing.
 
 ## Crafting and the Codex
 
-- **Tempering** (blacksmith): recipes (12: offense, defense, utility, mobility) found from world bosses,
+- **Tempering** (blacksmith): recipes (16: four each of offense, defense, utility, mobility; Havoc, Aegis, Focus and Surge are the newest) found from world bosses,
   Harvest caches and Rift Guardians. Tempering adds one random affix from the recipe's list; at most two
   tempered affixes per item; each item has five tempering charges.
 - **Masterworking** (blacksmith): ranks 0–12 for gold and materials (Lumen Dust from salvaging legendaries,
@@ -140,9 +140,13 @@ the end of each part.
   Once every room has woken and the bar is not full, a surge pack arrives every 6 s while fewer than 6 enemies are alive.
 - **Guardian:** one of five earlier bosses (Brood Mother, Slag Heart, Vine Matriarch, Archivist, Elder Guardian) in the
   Lumen look, with extra life of ×1.2 to ×12 on top of its own. **600 s** for the whole run.
-- **Scaling:** monsters are level 50; life and damage ×1.06 per rift level.
+- **Scaling:** monsters are level 50; life ×1.06 and damage ×1.035 per rift level (`riftScale`, `riftDamageScale`):
+  rift 20 ×3.2 life / ×2.0 damage, rift 40 ×10.3 / ×4.0 (like World Tier 4: ×6 / ×2.5), rift 100 ×339 / ×31. Damage
+  used to follow life (rift 40 hit ×10.3, a wall unrelated to the tier it unlocks).
 - **Rewards (cleared in time):** 3 glyph upgrade attempts; a cache with 2 + floor(level / 25) guaranteed legendaries at
-  item power 410 + 2 × level (cap 540), 2 + 0.25 × level Rift Shards and a 25 % chance of a tempering recipe; the
+  item power 410 + 2 × level (610 at rift 100, so every level pays more), 2 + 0.25 × level Rift Shards, a 25 % chance of a
+  tempering recipe and one extra unique (5 % + 0.4 % per level, so 45 % at rift 100; above rift 60 it is a mythic with
+  0.1 % per level above 60, 4 % at rift 100); the
   account's best level and time; rift 20 and 40 unlock World Tier 3 and 4. A first clear also gives a glyph if the
   character has none. Out of time the rift collapses and throws you out, with no upgrades.
 - **Leaving early:** using the start-room exit while the rift is running (bar or guardian) first shows a warning toast;
@@ -194,3 +198,7 @@ Harvest line with the shard counter (`.endgame-stack`, built in `game.ts`, posit
 under the title. Touch landscape: left, under the menu row. Touch portrait: left, under the region name and the World
 Tier badge. The tier badge stays under the region name; the target frame and event box moved 12 px down to clear it,
 and the landscape quest tracker 22 px down.
+
+## Repeatable bounties (C013)
+
+Three per region (`src/data/quests/bounties.ts`, ids `bt.*`), offered by hub NPCs once the region's last main quest is done. A cull, a salvage-and-clear run and a named hunt each. They pay gold, XP (times the World Tier), a guaranteed rare and Lumen Dust and/or Rift Shards. A finished bounty returns when the player enters its region again (`resetBounties`, called from `rebuildQuestWorld`).

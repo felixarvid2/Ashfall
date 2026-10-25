@@ -56,6 +56,48 @@ export function viewForAspect(aspect: number, baseFovDeg: number = DEFAULTS.fovD
   return { fovDeg, fullFovDeg, distanceScale: 1.15, shift: s };
 }
 
+/** Furthest the look-ahead moves the focus from the hero (m). */
+export const LOOK_AHEAD_MAX = 1.5;
+/** Cursor distance (m) at which the look-ahead reaches its maximum. */
+const LOOK_AHEAD_FULL_AT = 12;
+/** This many hostile enemies close by pull the camera back a little (F018). */
+export const CROWD_COUNT = 5;
+export const CROWD_RANGE = 12;
+export const CROWD_ZOOM = 1.1;
+
+/**
+ * Look-ahead (F018): how far to shift the camera focus toward the aim point. `dx`/`dz` run from the hero to the
+ * cursor; the shift grows with the cursor distance and never exceeds `max` metres.
+ */
+export function lookAheadOffset(dx: number, dz: number, max: number = LOOK_AHEAD_MAX): { x: number; z: number } {
+  const len = Math.hypot(dx, dz);
+  if (len < 1e-3 || max <= 0) return { x: 0, z: 0 };
+  const k = (Math.min(max, (len / LOOK_AHEAD_FULL_AT) * max)) / len;
+  return { x: dx * k, z: dz * k };
+}
+
+/** Distance multiplier for a crowd: 1.1 from five hostile enemies on (F018). */
+export function crowdZoom(hostilesNear: number): number {
+  return hostilesNear >= CROWD_COUNT ? CROWD_ZOOM : 1;
+}
+
+/** Seconds a boss/elite intro push-in takes to settle (F021). */
+const PULSE_IN = 0.3;
+const PULSE_OUT = 0.4;
+
+/**
+ * Distance multiplier of a push-in (F021) `age` seconds after it started: eases to `factor` (< 1 = closer), holds, then
+ * eases back so it is exactly 1 at `total`.
+ */
+export function pulseZoomCurve(age: number, total: number, factor: number): number {
+  if (age <= 0 || age >= total) return 1;
+  const inT = Math.min(PULSE_IN, total / 2);
+  const outT = Math.min(PULSE_OUT, total / 2);
+  const w = age < inT ? age / inT : age > total - outT ? (total - age) / outT : 1;
+  const eased = w * w * (3 - 2 * w);
+  return 1 + (factor - 1) * eased;
+}
+
 export class CameraRig {
   readonly camera: THREE.PerspectiveCamera;
   readonly yaw: number;
@@ -69,6 +111,14 @@ export class CameraRig {
   /** Screen-shake trauma in [0, 1]; shake strength is trauma². */
   private trauma = 0;
   private shakeTime = 0;
+  /** Look-ahead target and its smoothed value (F018). */
+  private lookTarget = { x: 0, z: 0 };
+  private look = { x: 0, z: 0 };
+  /** Crowd pull-back: target and smoothed multiplier (F018). */
+  private crowdTarget = 1;
+  private crowd = 1;
+  /** A timed push-in (F021). */
+  private pulse = { age: 0, total: 0, factor: 1 };
 
   constructor(aspect: number, options: Partial<CameraRigOptions> = {}) {
     this.opts = { ...DEFAULTS, ...options };
@@ -93,6 +143,27 @@ export class CameraRig {
     this.targetDistance = THREE.MathUtils.clamp(this.targetDistance + steps * (max - min) * 0.15, min, max);
   }
 
+  /** Shift the focus toward an aim point (offset in metres from the hero); smoothed. Zero turns it off. */
+  setLookAhead(x: number, z: number): void {
+    this.lookTarget.x = x;
+    this.lookTarget.z = z;
+  }
+
+  /** Pull back a little when `hostilesNear` enemies are close (F018). */
+  setCrowd(hostilesNear: number): void {
+    this.crowdTarget = crowdZoom(hostilesNear);
+  }
+
+  /** Soft push-in for `seconds` (F021): the follow distance shrinks to `factor` of itself and eases back. */
+  pulseZoom(seconds: number, factor = 0.82): void {
+    this.pulse = { age: 0, total: seconds, factor };
+  }
+
+  /** The distance the camera sits at now, with crowd and push-in applied (tests, debugging). */
+  get effectiveDistance(): number {
+    return this.distance * this.crowd * pulseZoomCurve(this.pulse.age, this.pulse.total, this.pulse.factor);
+  }
+
   addTrauma(amount: number): void {
     this.trauma = Math.min(1, this.trauma + amount);
   }
@@ -101,9 +172,14 @@ export class CameraRig {
     this.trauma = Math.max(0, this.trauma - dt * 1.8);
     this.shakeTime += dt;
     const k = 1 - Math.exp(-this.opts.followSharpness * dt);
-    this.focus.x += (targetX - this.focus.x) * k;
+    const kl = 1 - Math.exp(-3 * dt);
+    this.look.x += (this.lookTarget.x - this.look.x) * kl;
+    this.look.z += (this.lookTarget.z - this.look.z) * kl;
+    this.crowd += (this.crowdTarget - this.crowd) * (1 - Math.exp(-2 * dt));
+    if (this.pulse.age < this.pulse.total) this.pulse.age += dt;
+    this.focus.x += (targetX + this.look.x - this.focus.x) * k;
     this.focus.y += (targetY + 1 - this.focus.y) * k;
-    this.focus.z += (targetZ - this.focus.z) * k;
+    this.focus.z += (targetZ + this.look.z - this.focus.z) * k;
     this.distance += (this.targetDistance - this.distance) * (1 - Math.exp(-10 * dt));
     this.apply();
   }
@@ -136,10 +212,11 @@ export class CameraRig {
   }
 
   private apply(): void {
-    const horizontal = Math.cos(this.pitch) * this.distance;
+    const distance = this.effectiveDistance;
+    const horizontal = Math.cos(this.pitch) * distance;
     this.camera.position.set(
       this.focus.x + Math.sin(this.yaw) * horizontal,
-      this.focus.y + Math.sin(this.pitch) * this.distance,
+      this.focus.y + Math.sin(this.pitch) * distance,
       this.focus.z + Math.cos(this.yaw) * horizontal,
     );
     this.camera.lookAt(this.focus);

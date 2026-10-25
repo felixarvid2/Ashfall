@@ -9,6 +9,7 @@ import { armorMitigation } from '../systems/damage';
 import { xpToNext } from '../systems/loot/generate';
 import { panelStack } from './panelStack';
 import { tooltipSheet } from './tooltipSheet';
+import { getJsonPref, setJsonPref } from '../core/localPrefs';
 
 export interface CharacterSnapshot {
   className: string;
@@ -45,22 +46,15 @@ const DEFAULT_OPEN: Record<SectionKey, boolean> = { attributes: true, offense: t
 const OPEN_KEY = 'ashfall.charSections';
 
 function loadOpen(): Record<SectionKey, boolean> {
-  try {
-    const raw = JSON.parse(localStorage.getItem(OPEN_KEY) ?? '{}') as Record<string, unknown>;
-    const out = { ...DEFAULT_OPEN };
-    for (const k of Object.keys(out) as SectionKey[]) if (typeof raw[k] === 'boolean') out[k] = raw[k] as boolean;
-    return out;
-  } catch {
-    return { ...DEFAULT_OPEN };
-  }
+  const raw = getJsonPref<Record<string, unknown>>(OPEN_KEY, {});
+  const out = { ...DEFAULT_OPEN };
+  for (const k of Object.keys(out) as SectionKey[]) if (typeof raw[k] === 'boolean') out[k] = raw[k] as boolean;
+  return out;
 }
 
 function saveOpen(open: Record<SectionKey, boolean>): void {
-  try {
-    localStorage.setItem(OPEN_KEY, JSON.stringify(open));
-  } catch {
-    // Storage may be blocked; the sections just reset next time.
-  }
+  // Storage may be blocked; the sections just reset next time.
+  setJsonPref(OPEN_KEY, open);
 }
 
 /** The numbers of every section, from a snapshot. Exported for tests. */

@@ -349,6 +349,10 @@ export const SkillEffectSchema = z.discriminatedUnion('kind', [
     radius: z.number().positive(),
     duration: z.number().positive(),
     interval: z.number().positive(),
+    /** Live sanctums of this skill per owner; casting at the cap removes the oldest (0 = no cap). */
+    maxConcurrent: z.number().int().nonnegative().default(0),
+    /** Longest the duration can grow to after modifiers (0 = no cap). */
+    maxDuration: z.number().nonnegative().default(0),
     allyHealFraction: z.number().min(0).max(1).default(0),
     allyApplies: z.array(StatusApplySchema).default([]),
     impact: ImpactSchema.optional(),
@@ -366,6 +370,8 @@ export const SkillEffectSchema = z.discriminatedUnion('kind', [
     range: z.number().positive(),
     attackCooldown: z.number().positive(),
     bolt: ImpactSchema,
+    /** Bolts burst in this radius around the target (0 = single target). */
+    explodeRadius: z.number().nonnegative().default(0),
     healPulse: z
       .object({ interval: z.number().positive(), radius: z.number().positive(), healFraction: z.number().min(0).max(1) })
       .optional(),
@@ -379,6 +385,8 @@ export const SkillDefSchema = z.object({
   category: z.enum(['basic', 'core', 'defensive', 'tactical', 'mastery', 'ultimate']),
   /** Seconds before the skill can be used again (0 = limited by cast time only). */
   cooldown: z.number().nonnegative(),
+  /** Floor for the effective cooldown after every reduction (Benediction); 0 = none. */
+  minCooldown: z.number().nonnegative().default(0),
   resourceCost: z.number().nonnegative().default(0),
   /** Resource generated when the skill hits at least one enemy (or on use for buffs/leaps). */
   resourceGain: z.number().nonnegative().default(0),
@@ -466,6 +474,9 @@ export type EnemyFamily = z.infer<typeof EnemyFamilySchema>;
 export const ENEMY_LOOKS = ['lumen', 'shade'] as const;
 export const EnemyLookSchema = z.enum(ENEMY_LOOKS);
 export type EnemyLook = z.infer<typeof EnemyLookSchema>;
+
+/** Shortest wind-up a melee, cone or lunge attack should have, so a dodge (0.25 s of invulnerability) can answer it. */
+export const MIN_WINDUP = 0.4;
 
 const EnemyAttackSchema = z.discriminatedUnion('kind', [
   z.object({
@@ -581,6 +592,8 @@ export const EnemyDefSchema = z.object({
   collider: z.object({ radius: z.number().positive(), mass: z.number().positive() }),
   /** Drop table id in src/data/loot/tables.ts (defaults to "dt.<enemy id>"). */
   dropTable: z.string().optional(),
+  /** Intentionally fast: allowed a melee, cone or lunge wind-up under MIN_WINDUP (tests/enemyAI.test.ts). */
+  quick: z.boolean().default(false),
   attack: EnemyAttackSchema,
   onDeath: z
     .object({

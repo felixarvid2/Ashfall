@@ -22,11 +22,11 @@ const text = (id: string) => {
 };
 
 describe('The Core quests', () => {
-  it('has 6 main quests, 8 side quests and a mystery', () => {
+  it('has 6 main quests, 9 side quests (one a choice, C015) and a mystery', () => {
     expect(coreQuests.filter((q) => q.kind === 'main').map((q) => q.id)).toEqual([
       'mq.core_bore', 'mq.last_camp', 'mq.bridges_of_light', 'mq.what_lumen_remembers', 'mq.elevator_base', 'mq.one_who_remembers',
     ]);
-    expect(coreQuests.filter((q) => q.kind === 'side')).toHaveLength(8);
+    expect(coreQuests.filter((q) => q.kind === 'side' && !q.repeatable)).toHaveLength(9);
     expect(coreQuests.filter((q) => q.kind === 'mystery')).toHaveLength(1);
   });
 
@@ -115,7 +115,8 @@ describe('The Last Camp', () => {
     const ctx = makeCtx({ zone, quests: createQuestRuntime(), account: emptyAccount(), worldHalfSize: zone.def.halfSize });
     spawnQuestWorld(world, ctx);
     const here = world.query(Npc);
-    expect(here).toHaveLength(camp.length);
+    // Followers that depend on a choice (C015) are not there before it is made.
+    expect(here).toHaveLength(camp.filter((n) => !n.choice).length);
     for (const e of here) {
       const t = world.req(e, Transform);
       expect(hubAt(zone, t.x, t.z)?.id, world.req(e, Npc).id).toBe('hub.camp');

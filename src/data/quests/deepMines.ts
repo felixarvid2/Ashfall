@@ -35,6 +35,10 @@ export const MINES_NPCS: NpcInput[] = [
   { id: 'okafor_mines', zone: ZONE, asset: 'npc.technician', x: HUB.x + 7, z: HUB.z + 9, facing: -2.6, choice: { quest: 'mq.mother_tree', option: 'spare' } },
   { id: 'ruiz_mines', zone: ZONE, asset: 'enemy.sergeant', x: HUB.x + 7, z: HUB.z + 9, facing: -2.6, scale: 0.9, choice: { quest: 'mq.mother_tree', option: 'burn' } },
   // The miners move into Mining Station Aurum once it is reclaimed.
+  // Who comes to Station Zero when the ledger was shared (sq.foremans_ledger).
+  { id: 'tam', zone: ZONE, asset: 'npc.defector', x: HUB.x - 10, z: HUB.z + 3, facing: 1.2, scale: 0.95, choice: { quest: 'sq.foremans_ledger', option: 'share' } },
+  // Heard before it is seen (my.whisper).
+  { id: 'whisper_voice', zone: ZONE, asset: 'npc.defector', ...p(-102, 298), facing: 1.2, scale: 0.9, questOnly: true },
   { id: 'vasquez', zone: ZONE, asset: 'npc.defector', x: AURUM.x + 7, z: AURUM.z - 4, facing: -1.8, requires: AURUM.id },
 ];
 
@@ -53,7 +57,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'reach', x: HUB.x, z: HUB.z + 6, radius: 14 },
       { kind: 'talk', npc: 'brask' },
     ],
-    rewards: { xp: 11000, gold: 1200, item: 'rare', restoration: 1 },
+    rewards: { xp: 5700, gold: 1200, item: 'rare', restoration: 1 },
   },
   {
     id: 'mq.lights_in_the_dark',
@@ -67,7 +71,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'kill', count: 10, near: { x: LIGHT.x, z: LIGHT.z, radius: 60 } },
       { kind: 'talk', npc: 'brask' },
     ],
-    rewards: { xp: 12000, gold: 1300, restoration: 1 },
+    rewards: { xp: 6250, gold: 1300, restoration: 1 },
   },
   {
     id: 'mq.missing_shift',
@@ -81,7 +85,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'objective', id: 'dungeon.shaft_13', ...p(-100, -230) },
       { kind: 'talk', npc: 'brask' },
     ],
-    rewards: { xp: 13500, gold: 1450, item: 'rare', restoration: 1 },
+    rewards: { xp: 7000, gold: 1450, item: 'rare', restoration: 1 },
   },
   {
     id: 'mq.aurum',
@@ -95,7 +99,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'objective', id: AURUM.id, x: AURUM.x, z: AURUM.z },
       { kind: 'talk', npc: 'vasquez' },
     ],
-    rewards: { xp: 15500, gold: 1650, item: 'rare', restoration: 1 },
+    rewards: { xp: 8050, gold: 1650, item: 'rare', restoration: 1 },
   },
   {
     id: 'mq.elder_gate',
@@ -109,7 +113,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'objective', id: 'dungeon.archive', ...p(-90, 290) },
       { kind: 'talk', npc: 'brask' },
     ],
-    rewards: { xp: 17500, gold: 1850, item: 'rare', restoration: 1 },
+    rewards: { xp: 9100, gold: 1850, item: 'rare', restoration: 1 },
   },
   {
     id: 'mq.governor',
@@ -123,7 +127,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'objective', id: DRILL_CONTROL.id, x: DRILL_CONTROL.x, z: DRILL_CONTROL.z },
       { kind: 'talk', npc: 'brask' },
     ],
-    rewards: { xp: 22000, gold: 2600, item: 'legendary', restoration: 2 },
+    rewards: { xp: 11450, gold: 2600, item: 'legendary', restoration: 2 },
   },
 
   // ---- Side quests ---------------------------------------------------------------
@@ -148,7 +152,7 @@ export const MINES_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'brask' },
     ],
-    rewards: { xp: 4200, gold: 520, restoration: 1 },
+    rewards: { xp: 2200, gold: 520, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.shortcuts',
@@ -169,7 +173,7 @@ export const MINES_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'nils' },
     ],
-    rewards: { xp: 4500, gold: 560, restoration: 1 },
+    rewards: { xp: 2350, gold: 560, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.rosetta',
@@ -190,7 +194,7 @@ export const MINES_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'nils' },
     ],
-    rewards: { xp: 6200, gold: 700, item: 'legendary', restoration: 1 },
+    rewards: { xp: 3200, gold: 700, item: 'legendary', restoration: 1 },
   },
   {
     id: 'sq.blind_one',
@@ -204,7 +208,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'kill', count: 1, spawn: { enemy: 'blind_hound', x: LAKE_SHORE.x + 4, z: LAKE_SHORE.z + 4, name: 'enemies.named.old_ears', elite: 'rare', escorts: 5 } },
       { kind: 'talk', npc: 'gerd' },
     ],
-    rewards: { xp: 5200, gold: 640, item: 'rare', restoration: 1 },
+    rewards: { xp: 2700, gold: 640, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.dynamite',
@@ -218,7 +222,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'dynamite.cache', x: WORKINGS.x + 4, z: WORKINGS.z + 3, asset: 'prop.supply_chest' }] },
       { kind: 'talk', npc: 'oona' },
     ],
-    rewards: { xp: 4600, gold: 620 },
+    rewards: { xp: 2400, gold: 620, item: 'rare' },
   },
   {
     id: 'sq.crystal_song',
@@ -239,7 +243,7 @@ export const MINES_QUESTS: QuestInput[] = [
       },
       { kind: 'talk', npc: 'nils' },
     ],
-    rewards: { xp: 5000, gold: 600, restoration: 1 },
+    rewards: { xp: 2600, gold: 600, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.the_drowned',
@@ -252,7 +256,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'objective', id: 'dungeon.sunken_drill', ...p(270, -32) },
       { kind: 'talk', npc: 'vasquez' },
     ],
-    rewards: { xp: 7000, gold: 820, item: 'rare', restoration: 1 },
+    rewards: { xp: 3650, gold: 820, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.prism',
@@ -265,7 +269,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'objective', id: 'dungeon.crystal_labyrinth', ...p(-266, 116) },
       { kind: 'talk', npc: 'gerd' },
     ],
-    rewards: { xp: 6600, gold: 780, item: 'rare', restoration: 1 },
+    rewards: { xp: 3450, gold: 780, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.canary',
@@ -279,7 +283,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'canary.cage', x: SHAFTS.x + 6, z: SHAFTS.z + 5, asset: 'prop.prisoner_cage', scale: 0.3 }] },
       { kind: 'talk', npc: 'oona' },
     ],
-    rewards: { xp: 3800, gold: 460, restoration: 1 },
+    rewards: { xp: 2000, gold: 460, item: 'rare', restoration: 1 },
   },
   // The follower's own quest (only one of the two is ever offered).
   {
@@ -294,7 +298,7 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 3, poiKind: 'crystal' },
       { kind: 'talk', npc: 'okafor_mines' },
     ],
-    rewards: { xp: 5600, gold: 600, item: 'legendary', restoration: 1 },
+    rewards: { xp: 2900, gold: 600, item: 'legendary', restoration: 1 },
   },
   {
     id: 'sq.old_orders',
@@ -308,7 +312,30 @@ export const MINES_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, ids: ['dm.lore.11'] },
       { kind: 'talk', npc: 'ruiz_mines' },
     ],
-    rewards: { xp: 5600, gold: 600, item: 'legendary', restoration: 1 },
+    rewards: { xp: 2900, gold: 600, item: 'legendary', restoration: 1 },
+  },
+
+  // A choice (C015): what to do with the dead foreman's ledger. 'share' brings his old crew's foreman to the hub.
+  {
+    id: 'sq.foremans_ledger',
+    zone: ZONE,
+    kind: 'side',
+    giver: 'gerd',
+    after: ['mq.missing_shift'],
+    level: 34,
+    steps: [
+      { kind: 'reach', ...CAVES, radius: 16 },
+      { kind: 'interact', count: 1, objects: [{ id: 'ledger.foreman', x: CAVES.x + 6, z: CAVES.z - 5, asset: 'prop.echo_relic', scale: 0.3 }] },
+      {
+        kind: 'choice',
+        npc: 'gerd',
+        options: [
+          { id: 'share', gold: 900, xp: 1800 },
+          { id: 'keep', item: 'rare', xp: 1200 },
+        ],
+      },
+    ],
+    rewards: { xp: 1500, gold: 300, restoration: 1 },
   },
 
   // ---- Mystery -----------------------------------------------------------------------
@@ -322,9 +349,10 @@ export const MINES_QUESTS: QuestInput[] = [
     steps: [
       { kind: 'reach', ...p(-40, 262), radius: 9, marker: false },
       { kind: 'reach', ...p(-86, 286), radius: 9, marker: false },
-      { kind: 'reach', ...p(-100, 300), radius: 9, marker: false },
+      // C016: the voice has a speaker, hidden in the rock until the trail reaches it.
+      { kind: 'talk', npc: 'whisper_voice', marker: false },
       { kind: 'interact', count: 1, objects: [{ id: 'whisper.cache', ...p(-96, 296), asset: 'prop.supply_chest' }], marker: false },
     ],
-    rewards: { xp: 7000, gold: 1100, item: 'legendary', restoration: 1 },
+    rewards: { xp: 3650, gold: 1100, item: 'legendary', restoration: 1 },
   },
 ];

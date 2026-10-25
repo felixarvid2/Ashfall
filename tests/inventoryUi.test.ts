@@ -118,7 +118,7 @@ describe('comparison verdict (P056)', () => {
     const worn = item('power_sword', 'rare', 60, { sockets: [null, null] });
     const next = item('hydraulic_hammer', 'legendary', 100, { sockets: [null] });
     const parts = compareVerdict({ damagePct: 0.002, life: 0, stats: [{ stat: 'armor', delta: 152 }, { stat: 'weaponDamage', delta: 9 }] }, next, worn);
-    expect(parts.map((p) => p.text)).toEqual(['+0.2% Damage', '+152 Armor', '−1 socket']);
+    expect(parts.map((p) => p.text)).toEqual(['+0.2% Damage', '+152 Armour', '−1 socket']);
     expect(parts.map((p) => p.up)).toEqual([true, true, false]);
   });
 

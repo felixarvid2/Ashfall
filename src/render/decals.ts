@@ -25,6 +25,9 @@ const SETS: Record<string, [DecalKey, number, number, number][]> = {
   'zone.the_core': [['lumen_growth', 3, 2, 4], ['rubble', 2, 1.5, 3], ['floor_grate', 2, 1.2, 2], ['crystal_shards', 1, 1.5, 3], ['footprints', 1, 1.5, 2.5], ['puddle', 1, 1.5, 3]],
 };
 
+/** Ambient decals are a touch see-through so a telegraph or hazard pool drawn over one stays the loudest thing on the ground. */
+export const DECAL_OPACITY = 0.82;
+
 const textures = new Map<DecalKey, THREE.Texture>();
 function texture(key: DecalKey): THREE.Texture | null {
   let t = textures.get(key);
@@ -109,6 +112,8 @@ export function buildDecals(root: THREE.Object3D, arena: ArenaDef): void {
     const material = new THREE.MeshStandardMaterial({
       map,
       transparent: true,
+      // Ambient decals stay behind telegraphs and hazards: a little see-through, and drawn first (F022).
+      opacity: DECAL_OPACITY,
       depthWrite: false,
       roughness: 1,
       metalness: 0,

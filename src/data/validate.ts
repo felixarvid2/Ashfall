@@ -7,7 +7,10 @@ import { AssetManifestSchema } from './assetManifest';
 import { fieldAccess } from '../systems/skillCompile';
 import { CLASSES, ENCOUNTERS, ENEMY_DEFS, SKILLS, SKILL_TREES, STATUS_DEFS } from './db';
 import type { Effect } from './effects';
-import { ASPECT_DEFS, BASE_ITEMS, UNIQUE_DEFS } from './loot/db';
+import { ASPECT_DEFS, BASE_ITEMS, DROP_TABLE_DEFS, UNIQUE_DEFS } from './loot/db';
+import { ITEM_TYPES, STAT_KEYS } from './loot/schemas';
+import { CODEX_ASPECTS, RECIPES } from './endgame/crafting';
+import { INSTANCES } from './instances';
 import en from './lang/en.json';
 import { SettingsSchema } from './settings';
 import { TEST_ARENA, type ArenaDef } from './zones/testArena';
@@ -220,6 +223,35 @@ export function validateGameData(): string[] {
   for (const q of QUESTS.values()) {
     if (!zoneIds.has(q.zone)) errors.push(`quest ${q.id}: unknown zone ${q.zone}`);
     for (const step of q.steps) if (step.zone && !zoneIds.has(step.zone)) errors.push(`quest ${q.id}: unknown step zone ${step.zone}`);
+  }
+
+  // C025: cross-references that used to fail only in play.
+  const instanceIds = new Set(INSTANCES.map((i) => i.id));
+  for (const [dungeon, aspects] of Object.entries(CODEX_ASPECTS)) {
+    if (!instanceIds.has(dungeon)) errors.push(`codex: ${dungeon} is not an instance`);
+    for (const a of aspects) if (!ASPECT_DEFS.has(a)) errors.push(`codex: ${dungeon} unlocks unknown aspect ${a}`);
+  }
+  for (const q of QUESTS.values()) {
+    for (const step of q.steps) {
+      if (step.kind !== 'choice') continue;
+      for (const o of step.options) if (o.unique && !UNIQUE_DEFS.has(o.unique)) errors.push(`quest ${q.id}: choice ${o.id} gives unknown unique ${o.unique}`);
+    }
+  }
+  for (const enemy of ENEMY_DEFS.values()) if (enemy.dropTable && !DROP_TABLE_DEFS.has(enemy.dropTable)) errors.push(`enemy ${enemy.id}: unknown drop table ${enemy.dropTable}`);
+  for (const recipe of RECIPES) {
+    if (recipe.options.length === 0) errors.push(`recipe ${recipe.id}: no options`);
+    for (const o of recipe.options) {
+      if (!(STAT_KEYS as readonly string[]).includes(o.stat)) errors.push(`recipe ${recipe.id}: unknown stat ${o.stat}`);
+      if (o.min > o.max) errors.push(`recipe ${recipe.id}: ${o.stat} min > max`);
+    }
+  }
+  // Every class has an aspect of its own for every gear slot (C002).
+  for (const cls of CLASSES.values()) {
+    for (const type of ITEM_TYPES) {
+      if (type === 'crystal') continue;
+      const own = [...ASPECT_DEFS.values()].some((a) => a.classes?.length === 1 && a.classes[0] === cls.id && a.types.includes(type));
+      if (!own) errors.push(`aspects: class ${cls.id} has no aspect of its own for ${type}`);
+    }
   }
 
   if (!SettingsSchema.safeParse({}).success) errors.push('settings: defaults do not validate');

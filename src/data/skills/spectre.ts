@@ -142,7 +142,7 @@ export const SPECTRE_SKILLS: Skill[] = [
     resourceGain: 10,
     castTime: 0,
     recovery: 0.05,
-    effect: { kind: 'blink', maxRange: 7, invulnerable: 0.25 },
+    effect: { kind: 'blink', maxRange: 7, invulnerable: 0.4 },
   },
   {
     // Tactical: three mines that arm and explode when enemies step near.

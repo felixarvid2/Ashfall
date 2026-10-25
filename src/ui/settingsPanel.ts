@@ -8,7 +8,6 @@
  */
 import { t } from '../data/i18n';
 import {
-  ACTIONS,
   BRIGHTNESS_RANGE,
   MAX_KEYS_PER_ACTION,
   isBindableKey,
