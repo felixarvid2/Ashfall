@@ -100,6 +100,37 @@ export function guideGoal(
   return best;
 }
 
+/**
+ * Waypoints still ahead of the hero (B05): leading ones within `reach` metres, or with the next one nearer than they
+ * are, have been passed. The last one always stays.
+ */
+export function routeAhead(route: readonly { x: number; z: number }[], px: number, pz: number, reach = 2.5): { x: number; z: number }[] {
+  const d = (i: number): number => Math.hypot(route[i]!.x - px, route[i]!.z - pz);
+  let i = 0;
+  while (i < route.length - 1 && (d(i) < reach || d(i + 1) <= d(i))) i++;
+  return route.slice(i);
+}
+
+/**
+ * Who or what the first-quest guide leads to, by name: the person to talk to or the teleporter to find. Null when the
+ * step has no named target (reach this place, kill them): the banner then quotes the step text (B05).
+ */
+export function guideDestinationName(
+  step: { kind: string; npc?: string; teleporter?: string } | undefined,
+  tr: (key: string) => string = t,
+): string | null {
+  if (!step) return null;
+  if ((step.kind === 'talk' || step.kind === 'choice') && step.npc) return tr(`npcs.${step.npc}.name`);
+  if (step.kind === 'discover' && step.teleporter) return tr(`zones.teleporters.${step.teleporter}`);
+  return null;
+}
+
+/** The one-time banner: "Follow the golden trail to Benny" / "... : Climb out of the crater" (B05). */
+export function guideBannerText(place: string | null, stepText: string, tr: (key: string, params?: Record<string, string>) => string = t): string {
+  if (place) return tr('feel.guideBannerPlace', { place });
+  return stepText ? tr('feel.guideBannerStep', { step: stepText }) : tr('feel.guideBanner');
+}
+
 const GUIDE_SEEN = 'ashfall.guideSeen';
 
 export class FeelUi {
@@ -132,6 +163,11 @@ export class FeelUi {
     this.letterbox.classList.add('on');
     clearTimeout(this.letterboxTimer);
     this.letterboxTimer = setTimeout(() => this.letterbox.classList.remove('on'), seconds * 1000);
+  }
+
+  /** Reset tips (B06): the "follow the trail" banner may show again. */
+  resetGuideBanner(): void {
+    setPref(GUIDE_SEEN, '0');
   }
 
   /** Put the destination and the next tip on the dark screen. `name` may be empty (a respawn shows only its line). */

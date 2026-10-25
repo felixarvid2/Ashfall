@@ -510,3 +510,5 @@
   #ui.touch-ui.portrait .wave-sub, #ui.touch-ui.portrait .tier-badge { display: none; }
   #ui.touch-ui.portrait .toast-stack > .toast:not(:last-child) { display: none; }
 }
+.rift-records { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+.rift-chip.mine { border-color: #b48cff; color: #fff; }

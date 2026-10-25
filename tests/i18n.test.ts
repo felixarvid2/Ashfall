@@ -73,6 +73,10 @@ describe('language string lint (C022)', () => {
     report(all.filter(([, v]) => american.test(prose(v).replace(/\bmeters?\b/gi, ''))).map(([k, v]) => `${k}: ${v.slice(0, 60)}`));
   });
 
+  it('writes an ellipsis as three dots, never the single character (B10)', () => {
+    report(all.filter(([, v]) => v.includes('\u2026')).map(([k, v]) => `${k}: ${v.slice(0, 60)}`));
+  });
+
   it('names no real brand or other game', () => {
     report(all.filter(([, v]) => /\b(Kevlar|Diablo|iPhone)\b/.test(v)).map(([k]) => k));
   });

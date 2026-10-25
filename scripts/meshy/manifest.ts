@@ -1,8 +1,8 @@
 /** Load/save assets/manifest.json with schema validation and atomic writes. */
 import { closeSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { AssetManifestSchema, type AssetEntry, type AssetManifest } from '../../src/data/assetManifest';
-import { ROOT } from './env';
+import { AssetManifestSchema, type AssetEntry, type AssetManifest } from '../../src/data/assetManifest.ts';
+import { ROOT } from './env.ts';
 
 export const MANIFEST_PATH = resolve(ROOT, 'assets/manifest.json');
 export const SOURCE_DIR = resolve(ROOT, 'assets/source');

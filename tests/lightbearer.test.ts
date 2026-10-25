@@ -20,6 +20,7 @@ import {
 import { World, type Entity } from '../src/core/ecs';
 import type { GameContext } from '../src/core/context';
 import { ENEMY_DEFS, SKILLS, enemyDef } from '../src/data/db';
+import { UNIQUE_DEFS } from '../src/data/loot/db';
 import { SANCTUM_MIN_INTERVAL, compileSkill } from '../src/systems/skillCompile';
 import { fieldAccess } from '../src/systems/skillCompile';
 import { SKILL_FIELDS } from '../src/data/effects';
@@ -629,6 +630,16 @@ describe('balance pass (G001-G008)', () => {
     expect(e.kind === 'sanctum' && e.duration).toBeCloseTo(17.5, 5);
     const plain = effectOf('lightbearer.sanctuary', [{ op: 'mul', field: 'duration', value: 0.3 }]);
     expect(plain.kind === 'sanctum' && plain.duration).toBeCloseTo(9.1, 5); // below the cap: untouched
+  });
+
+  it('D01: Halo of the Penitent keeps Sanctuary up at most 35 % of the time (was 47 %)', () => {
+    const halo = UNIQUE_DEFS.get('halo_of_the_penitent')!;
+    const mods = halo.effects.flatMap((e) => (e.kind === 'skillMod' && e.skill === 'lightbearer.sanctuary' ? e.mods : []));
+    const c = compileSkill('lightbearer.sanctuary', 1, mods as Parameters<typeof compileSkill>[2]).def;
+    expect(c.effect.kind).toBe('sanctum');
+    const duration = c.effect.kind === 'sanctum' ? c.effect.duration : 0;
+    expect(duration / effectiveCooldown(c, 0)).toBeLessThanOrEqual(0.351);
+    expect(duration / effectiveCooldown(c, 0)).toBeGreaterThan(0.25); // still a strong item, not a nerf to nothing
   });
 
   it('Benediction cannot come back sooner than 30 s, whatever the reductions', () => {

@@ -96,11 +96,41 @@ export function sortGrid(grid: readonly (Item | null)[], mode: SortMode): (Item 
   return sorted;
 }
 
-/** Which of an item's slots a swap should default to: an empty one, else the one wearing the weaker item. */
-export function defaultTargetSlot(slots: readonly Slot[], equipped: Partial<Record<Slot, Item>>): Slot | undefined {
+/**
+ * Which of an item's slots a swap should default to: an empty one, else the one wearing the weaker item. With
+ * `compareIn` (what wearing the item in a slot would change) "weaker" is judged by that comparison, the same numbers
+ * the arrows and Equip best use (B07): the slot where the item fares best is the one with the weaker ring. Without it,
+ * the lower item power decides.
+ */
+export function defaultTargetSlot(
+  slots: readonly Slot[],
+  equipped: Partial<Record<Slot, Item>>,
+  compareIn?: (slot: Slot) => LoadoutComparison | null,
+): Slot | undefined {
   const empty = slots.find((s) => !equipped[s]);
   if (empty) return empty;
-  return [...slots].sort((a, b) => (equipped[a]?.itemPower ?? 0) - (equipped[b]?.itemPower ?? 0))[0];
+  const byPower = [...slots].sort((a, b) => (equipped[a]?.itemPower ?? 0) - (equipped[b]?.itemPower ?? 0));
+  if (!compareIn || slots.length < 2) return byPower[0];
+  let best: Slot | undefined;
+  let bestCmp: LoadoutComparison | null = null;
+  for (const slot of byPower) {
+    const cmp = compareIn(slot);
+    if (!cmp) continue;
+    if (!bestCmp || compareRank(cmp, bestCmp) > 0) {
+      best = slot;
+      bestCmp = cmp;
+    }
+  }
+  return best ?? byPower[0];
+}
+
+/** Orders two comparisons of the same item: better sign first, then the damage estimate, then life (> 0: `a` is better). */
+function compareRank(a: LoadoutComparison, b: LoadoutComparison): number {
+  const sign = upgradeSign(a) - upgradeSign(b);
+  if (sign !== 0) return sign;
+  if (Math.abs(a.damagePct - b.damagePct) >= 0.0005) return a.damagePct - b.damagePct;
+  if (Math.abs(a.life - b.life) >= 0.5) return a.life - b.life;
+  return 0;
 }
 
 /** Rarities that ask for a confirmation before they are salvaged. */
@@ -270,9 +300,13 @@ export function junkItems(grid: readonly (Item | null)[]): { index: number; item
 }
 
 /** The slot a ring-like item goes to with Shift+right-click (B011): the one `defaultTargetSlot` would not pick. */
-export function otherSlot(slots: readonly Slot[], equipped: Partial<Record<Slot, Item>>): Slot | undefined {
+export function otherSlot(
+  slots: readonly Slot[],
+  equipped: Partial<Record<Slot, Item>>,
+  compareIn?: (slot: Slot) => LoadoutComparison | null,
+): Slot | undefined {
   if (slots.length < 2) return undefined;
-  const first = defaultTargetSlot(slots, equipped);
+  const first = defaultTargetSlot(slots, equipped, compareIn);
   return slots.find((s) => s !== first);
 }
 

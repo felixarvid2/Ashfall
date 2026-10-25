@@ -42,12 +42,12 @@ function setup() {
 }
 
 describe('repeatable bounties (C013)', () => {
-  it('has three per region, given by hub NPCs of that region once the campaign is done', () => {
-    expect(bounties).toHaveLength(15);
+  it('has four per region (three hunts and an escort), given by hub NPCs of that region once the campaign is done', () => {
+    expect(bounties).toHaveLength(20);
     for (const zone of REGIONS) {
       const mine = bounties.filter((q) => q.zone === zone);
-      expect(mine, zone).toHaveLength(3);
-      expect(new Set(mine.map((q) => q.giver)).size, `${zone} givers`).toBe(3);
+      expect(mine, zone).toHaveLength(4);
+      expect(new Set(mine.map((q) => q.giver)).size, `${zone} givers`).toBeGreaterThanOrEqual(3);
       for (const q of mine) {
         expect(NPCS.get(q.giver!)?.zone, q.id).toBe(zone);
         expect(q.after, q.id).toHaveLength(1);
@@ -57,6 +57,30 @@ describe('repeatable bounties (C013)', () => {
         expect(q.rewards.restoration, q.id).toBe(0);
         expect(q.steps.at(-1)!.kind, q.id).toBe('talk');
       }
+    }
+  });
+
+  it('D03: every region has one escort bounty on a route with reachable, sensible waypoints', () => {
+    const texts = (en as unknown as { quests: { bt: Record<string, { escortName?: string; steps: Record<string, string>; talk2?: string }> } }).quests.bt;
+    for (const zone of REGIONS) {
+      const escorts = bounties.filter((q) => q.zone === zone && q.steps.some((st) => st.kind === 'escort'));
+      expect(escorts, zone).toHaveLength(1);
+      const q = escorts[0]!;
+      expect(q.steps.map((st) => st.kind), q.id).toEqual(['reach', 'escort', 'talk']);
+      const esc = q.steps[1]!;
+      if (esc.kind !== 'escort') throw new Error('escort expected');
+      const reach = q.steps[0]!;
+      if (reach.kind !== 'reach') throw new Error('reach expected');
+      expect([reach.x, reach.z], q.id).toEqual(esc.path[0]);
+      for (let i = 1; i < esc.path.length; i++) {
+        const [ax, az] = esc.path[i - 1]!;
+        const [bx, bz] = esc.path[i]!;
+        const len = Math.hypot(bx - ax, bz - az);
+        expect(len, `${q.id} leg ${i}`).toBeGreaterThan(2);
+        expect(len, `${q.id} leg ${i}`).toBeLessThan(400);
+      }
+      expect(texts[q.id.replace('bt.', '')]?.escortName, q.id).toBeTruthy();
+      expect(texts[q.id.replace('bt.', '')]?.talk2, q.id).toBeTruthy();
     }
   });
 

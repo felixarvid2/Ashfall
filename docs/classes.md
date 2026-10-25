@@ -125,7 +125,7 @@ Three intended builds:
 Aspects: Merciful, Warding, Hallowed, Litanist's, Judge's, Sentinel's, Radiant, Fervent, Daybreak's.
 Uniques: **Dawnbringer** (sun staff: Holy Light bursts on impact, leaves burning ground 3 s, 20 % less
 damage per hit), **Halo of the Penitent** (combat helm: Sanctuary lasts twice as long and covers 40 % more
-area, its cooldown is 50 % longer).
+area, its cooldown is twice as long: uptime 35 %).
 
 New bases: **Censer Mace** (weapon, 22–27 weapon damage, 12–18 life, 2 sockets), **Sun Staff** (weapon,
 25–31 weapon damage, +5 % Devotion gain, 2 sockets), **Reliquary Lantern** (off-hand, +6 % Devotion gain,

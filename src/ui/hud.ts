@@ -15,42 +15,9 @@ import type { SkillDef } from '../data/schemas';
 import { BOSS_SCRIPTS } from '../data/bosses';
 import { getPref, setPref } from '../core/localPrefs';
 
-/** "KeyW" → "W", "Digit1" → "1", "F3" → "F3". */
-export function keyLabel(code: string): string {
-  if (code.startsWith('Key')) return code.slice(3);
-  if (code.startsWith('Digit')) return code.slice(5);
-  if (code === 'Backquote') return '§';
-  if (code === 'Space') return 'Space';
-  if (code.startsWith('Shift')) return 'Shift';
-  if (code.startsWith('Alt')) return 'Alt';
-  if (code.startsWith('Control')) return 'Ctrl';
-  if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
-  return KEY_NAMES[code] ?? code;
-}
-
-/** Readable names for keys whose code is not what the key cap shows (rebinding, B042). */
-const KEY_NAMES: Record<string, string> = {
-  ArrowUp: '↑',
-  ArrowDown: '↓',
-  ArrowLeft: '←',
-  ArrowRight: '→',
-  Minus: '-',
-  Equal: '=',
-  Comma: ',',
-  Period: '.',
-  Slash: '/',
-  Semicolon: ';',
-  Quote: "'",
-  BracketLeft: '[',
-  BracketRight: ']',
-  Backslash: '\\',
-  IntlBackslash: '<',
-  Backspace: 'Bksp',
-  CapsLock: 'Caps',
-  PageUp: 'PgUp',
-  PageDown: 'PgDn',
-  Escape: 'Esc',
-};
+// Key and pad button names live in core/inputLabels.ts (the language layer fills {key:action} from there too).
+import { actionLabel, keyLabel, padPrompts } from '../core/inputLabels';
+export { keyLabel, actionLabel };
 
 /** Life fractions where the boss script changes phase (tick marks on its bar); `{}` for a script with one phase. */
 export function bossPhaseTicks(script: string | undefined): { phases?: number[] } {
@@ -115,6 +82,8 @@ export interface HudState {
   dead: boolean;
   /** "Slain by Champion Ash Walker - Molten" while dead (A046); empty when nothing named hit the hero. */
   deathCause?: string;
+  /** The last three hits and the damage of the last 5 s, listed under the cause (B04). */
+  deathRecap?: { lines: string[]; summary: string };
   xp: { level: number; current: number; next: number; skillPoints: number };
   /** Learned active skills that are not on the action bar (B036): an accent dot on the Skills entry while above 0. */
   unassignedSkills?: number;
@@ -367,6 +336,8 @@ export class Hud {
   private readonly death: HTMLDivElement;
   private readonly deathHint: HTMLDivElement;
   private readonly deathCause: HTMLParagraphElement;
+  private readonly deathRecap: HTMLUListElement;
+  private deathRecapKey = '';
   private readonly riseButton: HTMLButtonElement;
   /** Seconds left before the touch respawn button works (counts down while dead). */
   private deathLock = 0;
@@ -514,7 +485,11 @@ export class Hud {
     this.deathCause = document.createElement('p');
     this.deathCause.className = 'death-cause';
     this.deathCause.dataset.testid = 'death-cause';
-    this.death.append(dt, this.deathCause, this.deathHint, this.riseButton);
+    this.deathRecap = document.createElement('ul');
+    this.deathRecap.className = 'death-recap';
+    this.deathRecap.dataset.testid = 'death-recap';
+    this.deathRecap.hidden = true;
+    this.death.append(dt, this.deathCause, this.deathRecap, this.deathHint, this.riseButton);
     this.death.hidden = true;
     // A click elsewhere does nothing (A045): a thumb mashing LMB must not skip the screen; the button and R respawn.
 
@@ -590,15 +565,22 @@ export class Hud {
   }
 
   updateHint(moveMode: MoveMode, bindings: Record<Action, string[]>): void {
-    const first = (a: Action) => keyLabel(bindings[a][0] ?? '?');
-    const move =
-      moveMode === 'wasd'
+    const pad = padPrompts();
+    const first = (a: Action) => actionLabel(a, bindings);
+    const move = pad
+      ? t('hud.padMove')
+      : moveMode === 'wasd'
         ? [first('moveUp'), first('moveLeft'), first('moveDown'), first('moveRight')].join('')
         : t('moveMode.clickHint');
-    this.hint.textContent = t(moveMode === 'click' ? 'hud.controlsHintClick' : 'hud.controlsHint', {
+    this.hint.textContent = t(pad ? 'hud.controlsHintPad' : moveMode === 'click' ? 'hud.controlsHintClick' : 'hud.controlsHint', {
+      s1: actionLabel('skill1'),
+      s2: actionLabel('skill2'),
+      s3: actionLabel('skill3'),
+      s4: actionLabel('skill4'),
+      pause: actionLabel('pause'),
       move,
-      lmb: 'LMB',
-      rmb: 'RMB',
+      lmb: pad ? actionLabel('attack') : 'LMB',
+      rmb: pad ? actionLabel('altAttack') : 'RMB',
       dodge: first('dodge'),
       potion: first('potion'),
       inv: first('inventory'),
@@ -608,7 +590,7 @@ export class Hud {
       pickup: first('pickup'),
       debug: first('toggleDebug'),
     });
-    this.respawnKey = first('respawn');
+    this.respawnKey = pad ? actionLabel('pickup') : first('respawn');
     this.deathHint.textContent = this.touch ? t('hud.respawnTap') : t('hud.respawnHint', { key: this.respawnKey });
   }
 
@@ -646,6 +628,23 @@ export class Hud {
     this.showBanner(text, 3.4, { variant: 'levelup', ...(skillPoints > 0 ? { sub, onTap } : {}) });
     this.lifeOrb.pulse();
     haptic('levelUp');
+  }
+
+  /** The recap under the cause line (B04): up to three hit lines and the 5 s total; rebuilt only when the text changes. */
+  private renderDeathRecap(recap: { lines: string[]; summary: string } | undefined): void {
+    const rows = recap ? [...recap.lines, ...(recap.summary ? [recap.summary] : [])] : [];
+    const key = rows.join('\n');
+    if (key === this.deathRecapKey) return;
+    this.deathRecapKey = key;
+    this.deathRecap.hidden = rows.length === 0;
+    this.deathRecap.replaceChildren(
+      ...rows.map((text, i) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        if (recap?.summary && i === rows.length - 1) li.className = 'death-recap-total';
+        return li;
+      }),
+    );
   }
 
   private renderBanner(item: BannerItem | null): void {
@@ -925,6 +924,7 @@ export class Hud {
       this.deathCause.textContent = cause;
       this.deathCause.hidden = cause === '';
     }
+    this.renderDeathRecap(state.dead ? state.deathRecap : undefined);
     if (state.dead !== this.wasDead) {
       this.wasDead = state.dead;
       this.deathAt = performance.now();

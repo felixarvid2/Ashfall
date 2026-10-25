@@ -2,11 +2,14 @@
   "game": {
     "title": "Ashfall",
     "subtitle": "Kharos IV — one year after the fall",
-    "loading": "Loading assets… {done}/{total}",
+    "loading": "Loading assets... {done}/{total}",
     "modelFailed": "A character model failed to load; a stand-in is shown. Reloading the page may fix it."
   },
   "error": {
     "reload": "Reload",
+    "copy": "Copy details",
+    "copied": "Copied",
+    "copyFailed": "Copy failed - select the text above",
     "webgl": {
       "title": "Graphics unavailable",
       "message": "This browser or device could not start WebGL, which the game needs. Try another browser, turn on hardware acceleration, or restart the device."
@@ -38,6 +41,12 @@
     "youDied": "You have fallen",
     "slainBy": "Slain by {name}",
     "slainByAffix": "Slain by {name} - {affix}",
+    "recap": {
+      "environment": "The environment",
+      "line": "{name}: {amount} {type} damage",
+      "total": "Last {seconds} s: {amount} damage taken",
+      "types": { "physical": "physical", "heat": "heat", "cold": "cold", "toxic": "toxic", "energy": "energy", "void": "void" }
+    },
     "respawnHint": "Press {key} or click to rise again",
     "dodge": "Dodge",
     "potion": "Stim pack",
@@ -47,6 +56,8 @@
     "cost": "Costs {amount} {resource}",
     "generates": "Generates {amount} {resource}",
     "slotEmpty": "Empty slot",
+    "controlsHintPad": "{move} move · {lmb} attack · {rmb} skill · {s1} {s2} {s3} {s4} skills · {dodge} dodge · {potion} potion · {inv} inventory · {map} map · {pause} pause",
+    "padMove": "Left stick",
     "controlsHintClick": "{lmb} move, attack and use · {rmb} skill · 1–4 skills · Shift+{lmb} attack in place · {dodge} dodge · {potion} potion · {inv} inventory · {skills} skills · {map} map · {quests} quests · {debug} debug",
     "respawnTap": "Tap to rise again",
     "levelUpSub": "Skill points to spend \u00b7 tap",
@@ -613,6 +624,7 @@
     "equipped": "Equipped",
     "compare": "Compared to equipped",
     "compareVs": "vs {name} ({power})",
+    "summary": { "damage": "{value}% damage", "life": "{value}% life", "lifeFlat": "{value} life", "same": "No change in damage or life" },
     "compareVsSlot": "vs {slot}: {name} ({power})",
     "compareVsEmpty": "vs empty {slot}",
     "newStat": "New stat",
@@ -705,6 +717,8 @@
       "salvageOneTitle": "Salvage {name}?",
       "salvageOneBody": "You get {gold} gold. This cannot be undone.",
       "salvageButton": "Salvage",
+      "salvageMaterials": "You also get {n} {material}.",
+      "salvageWithMaterials": "Salvage: {gold} gold + {n} {material}",
       "better": "Better than what you wear",
       "worse": "Worse than what you wear",
       "new": "New"
@@ -1979,7 +1993,7 @@
     },
     "radiant": {
       "name": "Radiant",
-      "desc": "Your ranged attacks deal x{value} damage."
+      "desc": "Your ranged attacks deal {value} more damage."
     },
     "fervent": {
       "name": "Fervent",
@@ -2078,7 +2092,7 @@
     },
     "halo_of_the_penitent": {
       "name": "Halo of the Penitent",
-      "effect": "Sanctuary lasts twice as long and covers 40% more area, but its cooldown is 50% longer.",
+      "effect": "Sanctuary lasts twice as long and covers 40% more area, but takes twice as long to return.",
       "flavor": "Worn heavy, so the sinner remembers."
     },
     "reapers_grip": {
@@ -2311,6 +2325,7 @@
       "boss": "Boss",
       "you": "You",
       "sideQuest": "Side quest",
+      "mysteryQuest": "Mystery",
       "dungeon": "Dungeon",
       "bunker": "Bunker",
       "stronghold": "Stronghold",
@@ -2324,7 +2339,7 @@
     "enterHub": "Entering {name}",
     "leaveHub": "Leaving {name}",
     "noCombat": "You can't fight here",
-    "teleporting": "Teleporting to {name}…",
+    "teleporting": "Teleporting to {name}...",
     "hint": "{map} map"
   },
   "interact": {
@@ -2550,7 +2565,7 @@
       },
       "6": {
         "title": "Survey team, last call",
-        "body": "…filters are clogging, we are turning back. Hollis says he hears singing in the spores. Nobody else does. Hollis is walking toward the trees. Hollis, come back. Hollis—"
+        "body": "...filters are clogging, we are turning back. Hollis says he hears singing in the spores. Nobody else does. Hollis is walking toward the trees. Hollis, come back. Hollis—"
       },
       "7": {
         "title": "Okafor's notes, day 40",
@@ -3461,7 +3476,7 @@
         },
         "offer": "I've got a bike frame. Good one, pre-quarantine. It's missing everything that makes it go.\nThere's an engine in a crate by the border, a wheel near the slag road, a fuel cell west by the belts.\nBring them and I'll give you something faster than your feet.",
         "talk1": "Engine's sound, the wheel's true, the cell holds charge. Give me an hour.\n...There. She's yours. Call it with the bike key (B) out in the open. Not in here — I just swept.",
-        "done": "You have a motorbike. Press B in the open world to ride."
+        "done": "You have a motorbike. Press {key:mount} in the open world to ride."
       },
       "sabotage": {
         "title": "Sabotage",
@@ -4020,6 +4035,51 @@
       }
     },
     "bt": {
+      "cf_tanker": {
+        "title": "Bounty: Dry Run",
+        "summary": "Benny has another tanker of fuel oil stuck out on Route 7 and wants it walked home.",
+        "steps": { "0": "Find the tanker on Route 7", "1": "Escort the tanker to Outpost Ember", "2": "Return to Benny" },
+        "offer": "Another tanker, west of the overpass, engine still warm. Same deal as the water run: it only rolls if somebody walks beside it.\nKeep the hounds off it and I will make it worth the walk.",
+        "talk2": "Fuel oil, and the tank is full. We are lit for a week.\nThe board stays open. Roads keep eating tankers.",
+        "done": "Ember keeps its lamps lit.",
+        "escortName": "Fuel Tanker"
+      },
+      "rd_tanker": {
+        "title": "Bounty: Coolant Run",
+        "summary": "Tobin needs a coolant tanker walked down the stack road to the Coolant Works.",
+        "steps": { "0": "Find the coolant tanker at the top of the stack road", "1": "Escort the tanker to the Coolant Works", "2": "Return to Tobin" },
+        "offer": "There is a coolant tanker at the head of the stack road. The smelters keep tipping it, and the pumps down here are running dry.\nWalk it home. It only drives while you are close.",
+        "talk2": "Coolant in the lines again. The pumps will thank you, if pumps could.\nCome back when the road has swallowed another one.",
+        "done": "The pumps run cold and quiet.",
+        "escortName": "Coolant Tanker"
+      },
+      "hv_tanker": {
+        "title": "Bounty: Seed Run",
+        "summary": "Okafor wants a nutrient tanker taken along the east ring road to the Seed Bank.",
+        "steps": { "0": "Find the nutrient tanker on the ring road", "1": "Escort the tanker to the Seed Bank", "2": "Return to Okafor" },
+        "offer": "The Seed Bank needs nutrient solution and the only tanker left is parked on the east ring road.\nWalk it all the way to the doors. The vines will test it. They always do.",
+        "talk2": "Solution in the Seed Bank tanks. The seeds will live another season.\nThere is always another tanker. Ask me again.",
+        "done": "The Seed Bank drinks again.",
+        "escortName": "Nutrient Tanker"
+      },
+      "dm_tanker": {
+        "title": "Bounty: Pumping Station",
+        "summary": "Brask needs a coolant tanker walked from the shaft road to Station Zero.",
+        "steps": { "0": "Find the coolant tanker at the shaft road", "1": "Escort the tanker to Station Zero", "2": "Return to Brask" },
+        "offer": "The shaft road is clear, mostly. There is a coolant tanker parked at the junction and the pumps here are starving.\nWalk it down to the station. Mind the burrowers; they love the rumble.",
+        "talk2": "Coolant in the tanks. The pumps stop screaming.\nCome back when the next one is stuck.",
+        "done": "Station Zero hums again.",
+        "escortName": "Coolant Tanker"
+      },
+      "core_tanker": {
+        "title": "Bounty: Camp Water",
+        "summary": "Maren needs the empty cab brought down the east drift to the Last Camp again.",
+        "steps": { "0": "Find the empty cab at the east drift", "1": "Escort the cab to the camp road", "2": "Return to Maren" },
+        "offer": "The cab is on the east drift where Rhee left it, and the camp needs water.\nThe shades stalk anything that moves with a light on. Walk beside it and it will make the road.",
+        "talk2": "Water in the camp barrels. Nobody asked where it came from.\nWe will need it again soon.",
+        "done": "The Last Camp drinks.",
+        "escortName": "Water Cab"
+      },
       "cf_drones": {
         "title": "Bounty: Rusted Wings",
         "summary": "Hekla pays for security drone scrap; the roads are full of it.",
@@ -4379,6 +4439,8 @@
       "price": "Price: {gold} gold",
       "sellFor": "Sells for {gold} gold",
       "sold": "Sold",
+      "reroll": "Reroll stock - {gold} gold",
+      "rerollHint": "Roll new stock now. The price rises with every reroll today and starts again tomorrow.",
       "buyback": "Buyback ({n})",
       "buybackPrice": "Buy back for {gold} gold",
       "buyTitle": "Buy",
@@ -4429,6 +4491,8 @@
       "count": "Stash {used}/{total} - shared by all characters",
       "empty": "Nothing stored yet. Tap a backpack item to store it.",
       "storeJunk": "Store all junk ({n})",
+      "depositMaterials": "Deposit all materials ({n})",
+      "withdrawMaterials": "Take all materials ({n})",
       "pages": "Stash pages",
       "page": "Page {n}",
       "movedIn": "Moved to stash.",
@@ -4668,7 +4732,7 @@
       "done": "Cleared. Take what you earned and leave.",
       "valves": "Shut the pumps in order: {n}/{count} · next: {next}",
       "follow": "Follow the maintenance robot: room {n}/{count}",
-      "followDown": "The robot is down. Hold on, it is rebooting…",
+      "followDown": "The robot is down. Hold on, it is rebooting...",
       "rescue": "Free the prisoners: {n}/{count}",
       "defend": "Restart the compressor",
       "defendRunning": "Keep the compressor running: {s}s",
@@ -4798,7 +4862,7 @@
     },
     "supplyDrop": {
       "title": "Supply Drop",
-      "falling": "A supply crate is falling…",
+      "falling": "A supply crate is falling...",
       "objective": "Reach the crate before the scavengers loot it: {s}s",
       "contested": "Drive the scavengers off the crate first."
     },
@@ -4979,10 +5043,55 @@
   "death": {
     "penalty": "Death toll: gold -{gold}, potion charges -{potions}."
   },
+  "feats": {
+    "heading": "Feats ({done}/{total})",
+    "done": "Done",
+    "earned": "Feat earned: {name}",
+    "titleEarned": "New title: {title}",
+    "wear": "Wear title: {title}",
+    "titleWorn": "Title worn: {title} (tap to remove)",
+    "titleLocked": "Title: {title}",
+    "first_blood": {"name": "First Blood", "desc": "Defeat 100 enemies."},
+    "exterminator": {"name": "Exterminator", "desc": "Defeat 1,000 enemies."},
+    "ashwalker": {"name": "Ashwalker", "desc": "Defeat 10,000 enemies.", "title": "Ashwalker"},
+    "elite_hunter": {"name": "Elite Hunter", "desc": "Defeat 25 champions or rare enemies."},
+    "elite_bane": {"name": "Elite Bane", "desc": "Defeat 250 champions or rare enemies.", "title": "Elite Bane"},
+    "boss_slayer": {"name": "Boss Slayer", "desc": "Defeat a boss."},
+    "boss_hunter": {"name": "Boss Hunter", "desc": "Defeat 5 bosses."},
+    "boss_bane": {"name": "Bane of Giants", "desc": "Defeat 20 bosses.", "title": "Giantfall"},
+    "lucky_find": {"name": "Lucky Find", "desc": "Pick up a unique item."},
+    "collector": {"name": "Collector", "desc": "Pick up 10 unique or mythic items.", "title": "Collector"},
+    "mythic_find": {"name": "Mythic Find", "desc": "Pick up a mythic item.", "title": "Mythbound"},
+    "rift_runner": {"name": "Rift Runner", "desc": "Clear a Deep Rift."},
+    "rift_veteran": {"name": "Rift Veteran", "desc": "Clear 10 Deep Rifts."},
+    "rift_master": {"name": "Rift Master", "desc": "Clear 50 Deep Rifts.", "title": "Riftmaster"},
+    "deep_diver": {"name": "Deep Diver", "desc": "Clear Rift 20."},
+    "abyss_walker": {"name": "Abyss Walker", "desc": "Clear Rift 50.", "title": "Abyssal"},
+    "daily_grind": {"name": "Daily Grind", "desc": "Clear a daily rift."},
+    "veteran": {"name": "Veteran", "desc": "Reach level 30."},
+    "four_paths": {"name": "Four Paths", "desc": "Take a hero of every class to level 10.", "title": "Pathfinder"},
+    "errand_runner": {"name": "Errand Runner", "desc": "Complete 10 quests or bounties."},
+    "wasteland_hand": {"name": "Wasteland Hand", "desc": "Complete 50 quests or bounties.", "title": "Wasteland Hand"}
+  },
   "rifts": {
     "title": "Deep Rift",
     "locked": "The obelisk is dormant. Defeat Lumen to wake it.",
     "badLevel": "That rift level is not open yet.",
+    "daily": {
+      "enter": "Daily Rift \u00b7 Rift {level}",
+      "hint": "The same rooms for everyone today. It pays like a normal clear but does not open new levels; it keeps its own record.",
+      "today": "Today's best: {time}",
+      "none": "Not cleared today.",
+      "best": "Best daily time: {time}"
+    },
+    "records": {
+      "title": "Best times at Rift {level}:",
+      "none": "No recorded clears at Rift {level} yet.",
+      "row": "{class} {time}",
+      "first": "First recorded clear at this level for this class.",
+      "beaten": "New class record! The old one was {time}.",
+      "kept": "Your class record stays at {time}."
+    },
     "intro": "Step through the obelisk into a rift that holds every region at once. Slay enough enemies to call the Rift Guardian, then kill it within {minutes} minutes.",
     "best": "Best: Rift {level}, cleared in {time}",
     "noBest": "No rift cleared yet.",
@@ -5130,7 +5239,7 @@
   },
   "underground": {
     "noFlares": "No flares left. They come back with time.",
-    "creak": "The roof creaks…"
+    "creak": "The roof creaks..."
   },
   "panels": {
     "cancel": "Cancel",
@@ -5166,6 +5275,9 @@
     },
     "screenShake": "Screen shake",
     "showFps": "Show FPS",
+    "showTips": "Show tips",
+    "showTipsHint": "Hints while you play and on the loading screen.",
+    "resetTips": "Reset tips",
     "vibration": "Vibration",
     "vibrationHint": "Short buzzes for hits, loot and level-ups.",
     "pauseInMenus": "Pause in menus",
@@ -5184,6 +5296,8 @@
     "accessibility": "Accessibility",
     "reduceFlashing": "Reduce flashing",
     "reduceFlashingHint": "Turns the low-life pulse, hit flashes and ready flashes into steady looks.",
+    "reduceMotion": "Reduce motion",
+    "reduceMotionHint": "Turns off slow motion, camera push-ins, cinema bars, camera look-ahead and hit squash.",
     "colorblind": "Colour-blind palette",
     "colorblindModes": { "off": "Off", "protanopia": "Protan", "deuteranopia": "Deutan", "tritanopia": "Tritan" },
     "colorblindHint": "Swaps green and red for blue and orange, and separates the rarity colours.",
@@ -5218,6 +5332,29 @@
       "toggleDebug": "Debug panel"
     },
     "pressKey": "Press a key",
+    "gamepad": "Gamepad",
+    "gamepadHint": "Click a button, then press the new one on your controller. The sticks move and aim; menus use the D-pad, A and B.",
+    "pressButton": "Press a button",
+    "padConflict": "{button} is used by {action}. Press it again to swap.",
+    "padActions": {
+      "attack": "Attack",
+      "altAttack": "Second skill",
+      "skill1": "Skill 1",
+      "skill2": "Skill 2",
+      "skill3": "Skill 3",
+      "skill4": "Skill 4",
+      "dodge": "Dodge",
+      "potion": "Stim pack",
+      "pickup": "Interact and pick up",
+      "mount": "Ride the bike",
+      "flare": "Flare",
+      "inventory": "Inventory",
+      "character": "Character",
+      "skills": "Skills",
+      "quests": "Quest log",
+      "map": "Map",
+      "pause": "Pause menu"
+    },
     "keyConflict": "{key} is used by {action}. Press it again to swap.",
     "keyChange": "{action}: {key}. Change key",
     "keyAdd": "{action}: add a second key",
@@ -5235,28 +5372,30 @@
     "interact": "Tap the prompt to use or talk.",
     "click": "Left-click the ground to move. Hold the button to keep walking.",
     "strike": "Click an enemy to attack it. Right-click uses your second skill.",
-    "skill": "New skill point. Press K to spend it.",
-    "potion": "Low on life. Press Q to drink a stim.",
-    "dodge": "A red area means an attack is coming. Press Space to roll out of it.",
-    "loot": "Loot dropped. Click it, or walk over it and press E, to pick it up.",
-    "bag": "You picked something up. Press I to open your bag and right-click an item to equip it.",
-    "quest": "First quest done. Press J for the quest log and pick your next one."
+    "skill": "New skill point. Press {key:skills} to spend it.",
+    "potion": "Low on life. Press {key:potion} to drink a stim.",
+    "dodge": "A red area means an attack is coming. Press {key:dodge} to roll out of it.",
+    "loot": "Loot dropped. Click it, or walk over it and press {key:pickup}, to pick it up.",
+    "bag": "You picked something up. Press {key:inventory} to open your bag and right-click an item to equip it.",
+    "quest": "First quest done. Press {key:quests} for the quest log and pick your next one."
   },
   "feel": {
     "guideBanner": "Follow the golden trail to your objective",
+    "guideBannerPlace": "Follow the golden trail to {place}",
+    "guideBannerStep": "Follow the golden trail: {step}",
     "loading": "Entering {name}",
     "tips": [
-      "Dodge with Space: the roll is invulnerable for a moment.",
+      "Dodge with {key:dodge}: the roll is invulnerable for a moment.",
       "A red hatched area on the ground is an attack that has not landed yet.",
       "Safe hubs refill your stim packs.",
-      "Hold Alt to show every item label on the ground.",
-      "Press M for the map. Teleporters you have found are free fast travel.",
+      "Hold {key:showLabels} to show every item label on the ground.",
+      "Press {key:map} for the map. Teleporters you have found are free fast travel.",
       "Elite enemies drop better loot. Look for the coloured name plate.",
       "Right-click a bag item to equip it. Locked items are never salvaged.",
-      "Spend skill points with K. New skills fill the first empty slot.",
-      "Low on life? Q drinks a stim. Kills charge the next one.",
-      "Shift-click attacks in place without walking toward the target.",
-      "Press J for the quest log and to choose which quest is tracked.",
+      "Spend skill points with {key:skills}. New skills fill the first empty slot.",
+      "Low on life? {key:potion} drinks a stim. Kills charge the next one.",
+      "{key:forceStand}-click attacks in place without walking toward the target.",
+      "Press {key:quests} for the quest log and to choose which quest is tracked.",
       "Lore terminals tell you what happened before the ash.",
       "Salvage junk gives gold and dust; locked items are skipped.",
       "Bosses reset if you die: use the time to read their telegraphs.",

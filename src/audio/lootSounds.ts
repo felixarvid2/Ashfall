@@ -98,6 +98,14 @@ export function playGoldSound(): void {
   tone(2400, 0.04, 0.06, 'square', 0.03);
 }
 
+/** Soft cue for loot the magnet delivers (B12): a light tick for gold, a short rising note for a crystal; quieter than a click-pickup. */
+export function playMagnetSound(kind: 'gold' | 'item'): void {
+  if (!audio()) return;
+  engine.record(kind === 'gold' ? 'loot.magnetGold' : 'loot.magnetCrystal');
+  if (kind === 'gold') tone(1900, 0, 0.05, 'sine', 0.05, 2500);
+  else tone(700, 0, 0.12, 'sine', 0.07, 1050);
+}
+
 export function playPickupSound(): void {
   tone(300, 0, 0.08, 'triangle', 0.1, 600);
 }

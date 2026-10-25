@@ -8,8 +8,8 @@
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
-import { applyReview, type ReviewAction } from '../scripts/meshy/actions';
-import { loadManifest, saveManifest, SOURCE_DIR } from '../scripts/meshy/manifest';
+import { applyReview, type ReviewAction } from '../scripts/meshy/actions.ts';
+import { loadManifest, saveManifest, SOURCE_DIR } from '../scripts/meshy/manifest.ts';
 
 const TYPES: Record<string, string> = { glb: 'model/gltf-binary', png: 'image/png', jpg: 'image/jpeg', json: 'application/json' };
 

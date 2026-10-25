@@ -6,14 +6,61 @@
 import { t } from '../data/i18n';
 import { panelStack } from './panelStack';
 
+/**
+ * A panel whose code is fetched the first time it is needed (C02). `ensure()` builds it once (the dynamic import
+ * and `new`); until then `open` is false and `ifLoaded` does nothing, so per-frame refreshes cost nothing.
+ */
+export class LazyPanel<T> {
+  private panel: T | null = null;
+  private loading: Promise<T> | null = null;
+  private readonly onLoad: ((panel: T) => void)[] = [];
+  constructor(private readonly build: () => Promise<T>) {}
+
+  get loaded(): T | null {
+    return this.panel;
+  }
+
+  /** Runs after the panel is built, before `ensure()` resolves (the stack registration hangs here). */
+  whenLoaded(fn: (panel: T) => void): void {
+    this.onLoad.push(fn);
+  }
+
+  ensure(): Promise<T> {
+    return (this.loading ??= this.build().then((panel) => {
+      this.panel = panel;
+      for (const fn of this.onLoad) fn(panel);
+      return panel;
+    }).catch((err) => {
+      this.loading = null;
+      throw err;
+    }));
+  }
+
+  /** Runs `fn` on the panel if it exists already. */
+  ifLoaded(fn: (panel: T) => void): void {
+    if (this.panel) fn(this.panel);
+  }
+
+  /** Runs `fn` on the panel, loading it first when needed. */
+  run(fn: (panel: T) => void): void {
+    this.ensure().then(fn, (err) => console.warn('Panel failed to load', err));
+  }
+}
+
+/** What the registry needs of a `LazyPanel` (methods only, so a `LazyPanel<ConcretePanel>` fits). */
+export interface LazyHandle<T> {
+  whenLoaded(fn: (panel: T) => void): void;
+  ensure(): Promise<T>;
+}
+
 /** The parts of the panels this file needs; each class already has these methods. */
 export interface GamePanels {
   inventory: { open: boolean; toggle(force?: boolean): void };
-  character: { open: boolean; toggle(): void };
-  skills: { open: boolean; toggle(): void };
+  character: LazyHandle<{ open: boolean; toggle(): void }>;
+  skills: LazyHandle<{ open: boolean; toggle(): void }>;
   map: { open: boolean; toggle(): void };
   quests: { open: boolean; toggle(): void };
-  settings: { element: HTMLElement; open: boolean; show(): void; close(): void };
+  settings: LazyHandle<{ element: HTMLElement; open: boolean; show(): void; close(): void }>;
   /** The Escape pause menu (B041). */
   pause: { element: HTMLElement; open: boolean; show(): void; close(): void; canOpen(): boolean };
   tier: { open: boolean; close(): void };
@@ -55,16 +102,17 @@ export function registerGamePanels(root: HTMLElement, p: GamePanels): void {
     open: () => p.inventory.toggle(true), close: () => p.inventory.toggle(false),
     tab: { icon: 'inventory', label: t('touch.menu.inventory') },
   });
-  panelStack.register({
-    id: 'character', el: q('.character-panel'), kind: 'main',
-    open: openIf(p.character), close: closeIf(p.character),
+  // Character, skills and settings are built on first use: their tabs exist now, the panels when first opened.
+  p.character.whenLoaded((c) => panelStack.register({
+    id: 'character', el: q('.character-panel'), kind: 'main', open: openIf(c), close: closeIf(c),
     tab: { icon: 'character', label: t('touch.menu.character') },
-  });
-  panelStack.register({
-    id: 'skills', el: q('.tree-panel'), kind: 'main', hint: '.inv-hint',
-    open: openIf(p.skills), close: closeIf(p.skills),
+  }));
+  panelStack.registerLazy({ id: 'character', tab: { icon: 'character', label: t('touch.menu.character') }, load: () => p.character.ensure().then(() => undefined) });
+  p.skills.whenLoaded((s) => panelStack.register({
+    id: 'skills', el: q('.tree-panel'), kind: 'main', hint: '.inv-hint', open: openIf(s), close: closeIf(s),
     tab: { icon: 'skills', label: t('touch.menu.skills') },
-  });
+  }));
+  panelStack.registerLazy({ id: 'skills', tab: { icon: 'skills', label: t('touch.menu.skills') }, load: () => p.skills.ensure().then(() => undefined) });
   panelStack.register({
     id: 'map', el: q('.map-panel'), kind: 'main', title: t('map.title'),
     open: openIf(p.map), close: closeIf(p.map),
@@ -75,10 +123,10 @@ export function registerGamePanels(root: HTMLElement, p: GamePanels): void {
     open: openIf(p.quests), close: closeIf(p.quests),
     tab: { icon: 'quests', label: t('touch.menu.quests') },
   });
-  panelStack.register({
-    id: 'settings', el: p.settings.element, kind: 'main',
-    open: () => p.settings.show(), close: () => p.settings.close(),
-  });
+  p.settings.whenLoaded((st) => panelStack.register({
+    id: 'settings', el: st.element, kind: 'main', open: () => st.show(), close: () => st.close(),
+  }));
+  panelStack.registerLazy({ id: 'settings', load: () => p.settings.ensure().then(() => undefined) });
   panelStack.register({
     id: 'pause', el: p.pause.element, kind: 'main',
     open: () => p.pause.show(), close: () => p.pause.close(),

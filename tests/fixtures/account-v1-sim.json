@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "relics": {},
+  "restoration": {},
+  "stash": [
+    {
+      "uid": "fixture-sim-4",
+      "base": "hydraulic_hammer",
+      "rarity": "common",
+      "itemPower": 21,
+      "name": "hydraulic_hammer",
+      "implicits": [
+        {
+          "stat": "weaponDamage",
+          "value": 15
+        }
+      ],
+      "affixes": [],
+      "sockets": []
+    },
+    {
+      "uid": "fixture-sim-5",
+      "base": "power_sword",
+      "rarity": "legendary",
+      "itemPower": 21,
+      "name": "Pale Remnant",
+      "implicits": [
+        {
+          "stat": "weaponDamage",
+          "value": 12
+        },
+        {
+          "stat": "attackSpeed",
+          "value": 0.08
+        }
+      ],
+      "affixes": [
+        {
+          "stat": "attackSpeed",
+          "value": 0.048,
+          "affix": "attack_speed"
+        },
+        {
+          "stat": "damageVsStunned",
+          "value": 0.099,
+          "affix": "dmg_stunned"
+        },
+        {
+          "stat": "dexterity",
+          "value": 5,
+          "affix": "dexterity",
+          "greater": true
+        }
+      ],
+      "sockets": [
+        null,
+        null
+      ],
+      "aspect": {
+        "id": "cinder_core",
+        "value": 8
+      }
+    },
+    {
+      "uid": "fixture-sim-6",
+      "base": "combat_helm",
+      "rarity": "common",
+      "itemPower": 16,
+      "name": "combat_helm",
+      "implicits": [
+        {
+          "stat": "armor",
+          "value": 8
+        }
+      ],
+      "affixes": [],
+      "sockets": []
+    }
+  ],
+  "endgame": {
+    "tierUnlocked": 1,
+    "tier": 1,
+    "codex": [],
+    "riftBest": 0,
+    "riftOpen": 0,
+    "riftTime": 0,
+    "playtime": 180
+  },
+  "riftRecords": {},
+  "dailyRifts": {},
+  "vendor": {
+    "date": "",
+    "rerolls": 0
+  },
+  "materials": {},
+  "feats": {
+    "done": {},
+    "stats": {
+      "kills": 18
+    },
+    "title": null
+  }
+}

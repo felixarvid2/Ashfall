@@ -80,3 +80,7 @@
 /* ---- Death screen cause line (A046): its own paragraph, because the hint paragraph is hidden on desktop ---- */
 #ui .death-screen p.death-cause, #ui:not(.touch-ui) .death-screen p.death-cause { display: block; margin: 4px 0 8px; color: #e8dcc8; letter-spacing: 0.06em; text-align: center; }
 #ui .death-screen p.death-cause[hidden], #ui:not(.touch-ui) .death-screen p.death-cause[hidden] { display: none; }
+/* Death recap (B04): the last three hits and the damage of the last 5 s. */
+#ui .death-screen ul.death-recap { list-style: none; margin: 0 0 10px; padding: 0; text-align: center; color: #b9ad98; font-size: calc(0.8rem * var(--text-scale, 1)); line-height: 1.5; }
+#ui .death-screen ul.death-recap[hidden] { display: none; }
+#ui .death-screen ul.death-recap .death-recap-total { margin-top: 4px; color: #e8dcc8; }

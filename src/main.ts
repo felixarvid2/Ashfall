@@ -94,4 +94,5 @@ const select = new CharacterSelect(ui, () => game.characterSlots(), {
   },
   remove: (slot) => game.deleteCharacter(slot),
   portraitUrl: (classId) => game.renderer.assets.iconUrl(`icon.portrait_${classId}`, import.meta.env.BASE_URL),
+  title: () => game.wornTitleText(),
 });

@@ -1,8 +1,13 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
-import { assetViewerPlugin } from './tools/assetViewerPlugin';
-import { runtimeManifestPlugin } from './tools/runtimeManifestPlugin';
+import { assetViewerPlugin } from './tools/assetViewerPlugin.ts';
+import { runtimeManifestPlugin } from './tools/runtimeManifestPlugin.ts';
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
 export default defineConfig({
+  // The version shown in the error report's "Copy details" (C13).
+  define: { __APP_VERSION__: JSON.stringify(version) },
   // Relative base so the build can be served from any sub-path (e.g. GitHub Pages).
   base: './',
   plugins: [assetViewerPlugin(), runtimeManifestPlugin()],
@@ -17,7 +22,7 @@ export default defineConfig({
       output: {
         // Libraries in their own long-cacheable chunks (they change far less often than the game), the
         // texts and the content data apart from the code. The meshopt decoder stays its own lazy chunk:
-        // artifact pages never load it. Panels that open late (the Neural Matrix, the epilogue, hub services) are dynamic imports
+        // artifact pages never load it. Panels that open late (the Neural Matrix, the epilogue, hub services, character, skills, settings) are dynamic imports
         // and stay out of `game-ui`, so they are fetched the first time they are used (T005).
         codeSplitting: {
           groups: [
@@ -25,7 +30,7 @@ export default defineConfig({
             { name: 'vendor-zod', test: /node_modules[\\/]zod[\\/]/, priority: 3 },
             { name: 'lang', test: /src[\\/]data[\\/]lang[\\/]/, priority: 2 },
             { name: 'game-data', test: /src[\\/]data[\\/]/, priority: 1 },
-            { name: 'game-ui', test: /src[\\/]ui[\\/](?!matrixPanel|epilogue|servicePanel).*\.ts$/, priority: 1 },
+            { name: 'game-ui', test: /src[\\/]ui[\\/](?!matrixPanel|epilogue|servicePanel|characterPanel|skillTreePanel|settingsPanel).*\.ts$/, priority: 1 },
           ],
         },
       },

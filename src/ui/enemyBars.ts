@@ -72,6 +72,10 @@ export const BAR_FADE = 0.6;
 export const BAR_MAX = 24;
 export const BAR_MAX_TOUCH = 12;
 export const ELITE_RANGE = 28;
+/** Seconds an elite's name flashes when its plate first shows (B02). */
+export const INTRO_SECONDS = 0.4;
+/** Whether an intro that started at `startedAt` is still playing at `clock` (B02). */
+export const introActive = (startedAt: number, clock: number): boolean => clock >= startedAt && clock - startedAt < INTRO_SECONDS;
 /** Plates are kept this far above the bottom edge: the action bar and orbs live there (590 at 720p). */
 export const PLATE_BOTTOM_MARGIN = 130;
 
@@ -207,6 +211,10 @@ export class EnemyBars {
   private readonly screen = { x: 0, y: 0 };
   private readonly seen = new Set<number>();
   private clock = 0;
+  /** Elites whose intro has played (id -> clock time it started), B02. */
+  private readonly intros = new Map<number, number>();
+  /** Called when an elite's plate shows for the first time (the game nudges the camera). */
+  onIntro: ((info: EnemyBarInfo) => void) | undefined;
 
   constructor(private readonly root: HTMLElement) {
     this.layer = document.createElement('div');
@@ -219,7 +227,10 @@ export class EnemyBars {
   handle(event: GameEvent): void {
     if (event.type === 'damage') {
       if (!event.toPlayer && event.amount + event.absorbed > 0) this.hits.set(event.target, this.clock);
-    } else if (event.type === 'death') this.hits.delete(event.target);
+    } else if (event.type === 'death') {
+      this.hits.delete(event.target);
+      this.intros.delete(event.target);
+    }
   }
 
   /** Seconds since the enemy's last hit, or undefined. */
@@ -284,8 +295,20 @@ export class EnemyBars {
         e.shown = true;
         e.el.hidden = false;
       }
+      if (s.plate) this.playIntro(i, e);
     }
     for (const [id, e] of this.live) if (!seen.has(id)) this.release(id, e);
+  }
+
+  /** The 0.4 s name flash the first time an elite's plate shows (B02); `.intro` is removed when it is over. */
+  private playIntro(i: EnemyBarInfo, e: Entry): void {
+    let at = this.intros.get(i.id);
+    if (at === undefined) {
+      at = this.clock;
+      this.intros.set(i.id, at);
+      this.onIntro?.(i);
+    }
+    e.el.classList.toggle('intro', introActive(at, this.clock));
   }
 
   /** Number of bars and plates on screen (tests, debugging). */
@@ -299,6 +322,7 @@ export class EnemyBars {
     e.shown = false;
     e.key = '';
     e.tx = e.ty = e.pct = e.alpha = -1;
+    e.el.classList.remove('intro');
     (e.plate ? this.freePlates : this.freeBars).push(e);
   }
 

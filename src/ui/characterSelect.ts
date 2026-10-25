@@ -39,6 +39,8 @@ export interface CharacterSelectActions {
   create(slot: number, classId: string, name: string): void;
   remove(slot: number): void;
   portraitUrl(classId: string): string | null;
+  /** D13: the cosmetic title earned from feats, shown under each hero's name. */
+  title?(): string | null;
 }
 
 /** Classes that can be picked. */
@@ -197,6 +199,12 @@ export class CharacterSelect {
     const info = document.createElement('div');
     info.className = 'char-slot-info';
     info.textContent = `${t(`items.classes.${c.classId}`)} · ${t('ui.level', { level: c.level })}`;
+    const title = this.actions.title?.();
+    const titleEl = document.createElement('div');
+    titleEl.className = 'char-slot-title';
+    titleEl.dataset.testid = `slot-${slot.index}-title`;
+    titleEl.textContent = title ?? '';
+    titleEl.hidden = !title;
     const played = document.createElement('div');
     played.className = 'char-slot-played';
     const when = relativeTime(c.savedAt);
@@ -207,9 +215,9 @@ export class CharacterSelect {
       where.className = 'char-slot-detail';
       where.dataset.testid = `slot-${slot.index}-detail`;
       where.textContent = detail;
-      text.append(name, info, where, played);
+      text.append(name, titleEl, info, where, played);
     } else {
-      text.append(name, info, played);
+      text.append(name, titleEl, info, played);
     }
 
     // A 44 px options button in its own column, so a tap near the corner cannot delete or start the game (P040).

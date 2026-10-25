@@ -82,11 +82,24 @@ export interface HitSource {
   at: number;
 }
 
+/** One hit on the player, for the death recap (B04). */
+export interface HitRecord {
+  /** The attacking enemy, when there was one (hazards and damage over time have none). */
+  src?: HitSource;
+  amount: number;
+  damageType: DamageType;
+  dot: boolean;
+  /** Game time of the hit (s). */
+  at: number;
+}
+
 export interface Health {
   current: number;
   max: number;
   /** The player's last attacker (A046); unset until an enemy hits. */
   lastHitSource?: HitSource;
+  /** The player's recent hits, newest last: a few direct hits and every tick of the last seconds (B04). */
+  recentHits?: HitRecord[];
 }
 export const Health = defineComponent<Health>('Health');
 

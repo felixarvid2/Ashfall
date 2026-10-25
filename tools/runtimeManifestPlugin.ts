@@ -4,7 +4,7 @@
  * Runs for the dev server, the build and vitest alike.
  */
 import type { Plugin } from 'vite';
-import { readRuntimeManifest } from '../scripts/assets/runtimeManifest';
+import { readRuntimeManifest } from '../scripts/assets/runtimeManifest.ts';
 
 const ID = 'virtual:asset-manifest';
 const RESOLVED = `\0${ID}`;

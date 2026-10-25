@@ -119,6 +119,8 @@ export class CameraRig {
   private crowd = 1;
   /** A timed push-in (F021). */
   private pulse = { age: 0, total: 0, factor: 1 };
+  /** Reduce-motion setting (B01): no look-ahead, crowd pull-back or push-in; follow and zoom stay. */
+  private reduceMotionOn = false;
 
   constructor(aspect: number, options: Partial<CameraRigOptions> = {}) {
     this.opts = { ...DEFAULTS, ...options };
@@ -143,19 +145,36 @@ export class CameraRig {
     this.targetDistance = THREE.MathUtils.clamp(this.targetDistance + steps * (max - min) * 0.15, min, max);
   }
 
+  /** Turn off the camera's own motion (look-ahead, crowd pull-back, push-ins) for the reduce-motion setting (B01). */
+  setReduceMotion(on: boolean): void {
+    this.reduceMotionOn = on;
+    if (on) {
+      this.lookTarget = { x: 0, z: 0 };
+      this.crowdTarget = 1;
+      this.pulse = { age: 0, total: 0, factor: 1 };
+    }
+  }
+
+  get reduceMotion(): boolean {
+    return this.reduceMotionOn;
+  }
+
   /** Shift the focus toward an aim point (offset in metres from the hero); smoothed. Zero turns it off. */
   setLookAhead(x: number, z: number): void {
+    if (this.reduceMotionOn) return;
     this.lookTarget.x = x;
     this.lookTarget.z = z;
   }
 
   /** Pull back a little when `hostilesNear` enemies are close (F018). */
   setCrowd(hostilesNear: number): void {
+    if (this.reduceMotionOn) return;
     this.crowdTarget = crowdZoom(hostilesNear);
   }
 
   /** Soft push-in for `seconds` (F021): the follow distance shrinks to `factor` of itself and eases back. */
   pulseZoom(seconds: number, factor = 0.82): void {
+    if (this.reduceMotionOn) return;
     this.pulse = { age: 0, total: seconds, factor };
   }
 

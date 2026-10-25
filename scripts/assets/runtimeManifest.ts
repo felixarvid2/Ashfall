@@ -4,7 +4,7 @@
  * Used by tools/runtimeManifestPlugin.ts (the `virtual:asset-manifest` module) and by tests.
  */
 import { readFileSync } from 'node:fs';
-import { RuntimeManifestSchema, type RuntimeManifest } from '../../src/data/assetManifest';
+import { RuntimeManifestSchema, type RuntimeManifest } from '../../src/data/assetManifest.ts';
 
 const MANIFEST = new URL('../../assets/manifest.json', import.meta.url);
 

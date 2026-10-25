@@ -208,8 +208,8 @@ export class AudioEngine {
     for (const type of UNLOCK_EVENTS) window.addEventListener(type, unlock, { capture: true, passive: true });
     document.addEventListener('visibilitychange', () => {
       if (!this.ctx) return;
-      if (document.hidden) void this.ctx.suspend().catch(() => {});
-      else if (this.unlocked) void this.ctx.resume().catch(() => {});
+      if (document.hidden) void this.ctx.suspend().catch(() => {}); // a closed context cannot suspend
+      else if (this.unlocked) void this.ctx.resume().catch(() => {}); // autoplay policy: the next gesture unlocks
     });
   }
 
@@ -219,7 +219,7 @@ export class AudioEngine {
     if (!this.ctx) this.build();
     const ctx = this.ctx;
     if (!ctx) return;
-    if (ctx.state !== 'running') void ctx.resume().catch(() => {});
+    if (ctx.state !== 'running') void ctx.resume().catch(() => {}); // autoplay policy: the next gesture unlocks
     if (this.unlocked) return;
     this.unlocked = true;
     void this.load(SOUND_CATALOG['hit.physical']?.file ?? 'sfx');

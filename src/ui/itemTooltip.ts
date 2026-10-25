@@ -6,7 +6,7 @@ import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/genera
 import { MASTERWORK } from '../data/endgame/crafting';
 import { effectiveAffixes } from '../systems/endgame/itemMods';
 import { artUrl, itemArtUrl } from './art';
-import { affixRollRange, isHighRoll, powerDelta, powerDeltaText } from './inventoryLogic';
+import { affixRollRange, isHighRoll, powerDelta, powerDeltaText, upgradeSign } from './inventoryLogic';
 
 export function formatStat(stat: StatKey, value: number): string {
   const sign = value >= 0 ? '+' : '−';
@@ -37,6 +37,8 @@ export interface Comparison {
   stats: { stat: StatKey; delta: number }[];
   damagePct: number;
   life: number;
+  /** Change in max life as a share of the current one (B11); absent in older callers. */
+  lifePct?: number;
 }
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
@@ -249,10 +251,30 @@ function itemTypeLine(item: Item): string {
   return item.crystal ? t('items.types.crystal') : `${t(`items.rarity.${item.rarity}`)} ${base ? t(`items.types.${base.type}`) : ''}`;
 }
 
+/** "12" / "3.4" / "0.6": a percentage without a useless decimal. */
+function shortPct(share: number): string {
+  const p = Math.abs(share) * 100;
+  return p >= 10 ? String(Math.round(p)) : p.toFixed(1).replace(/\.0$/, '');
+}
+
+/** The one-line headline of a comparison: "+12% damage, −3% life" (B11). Tone is the overall verdict. */
+export function compareSummary(c: Comparison): { text: string; tone: 'up' | 'down' | 'flat' } {
+  const parts: string[] = [];
+  const sign = (n: number) => (n > 0 ? '+' : '−');
+  if (Math.abs(c.damagePct) >= 0.0005) parts.push(t('items.summary.damage', { value: `${sign(c.damagePct)}${shortPct(c.damagePct)}` }));
+  if (c.lifePct !== undefined) {
+    if (Math.abs(c.lifePct) >= 0.0005) parts.push(t('items.summary.life', { value: `${sign(c.lifePct)}${shortPct(c.lifePct)}` }));
+  } else if (Math.abs(c.life) >= 0.5) parts.push(t('items.summary.lifeFlat', { value: `${sign(c.life)}${Math.round(Math.abs(c.life))}` }));
+  const verdict = upgradeSign(c);
+  return { text: parts.length > 0 ? parts.join(', ') : t('items.summary.same'), tone: verdict > 0 ? 'up' : verdict < 0 ? 'down' : 'flat' };
+}
+
 /** The comparison block: a heading ("Compared to equipped" or "vs Etched Ring (70)") and one line per stat difference. */
 export function renderComparison(comparison: Comparison, heading?: string): HTMLElement {
   const cmp = el('div', 'item-tip-compare');
   cmp.appendChild(el('div', 'muted item-tip-compare-head', heading ?? t('items.compare')));
+  const summary = compareSummary(comparison);
+  cmp.appendChild(el('div', `item-tip-summary ${summary.tone}`, summary.text));
   const line = (label: string, delta: number, pct: boolean) => {
     if (Math.abs(delta) < (pct ? 0.0005 : 0.5)) return;
     const up = delta > 0;

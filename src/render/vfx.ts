@@ -358,6 +358,11 @@ export class VfxSystem {
     this.sprites.holy(x, z, 3, '#ffe9a8');
   }
 
+  /** A few small sparks where the loot magnet's delivery arrives (B12); gold is warm, crystals cool. */
+  magnetSpark(x: number, z: number, color: string): void {
+    this.sparks.emit(x, 0.9, z, 5, color, 2);
+  }
+
   private shimmerClock = 0;
   /** Idle sparkle over the nearest interactables (F019); call once per frame with their positions and kinds. */
   shimmer(points: readonly { x: number; z: number; kind: string }[], px: number, pz: number, dt: number): void {

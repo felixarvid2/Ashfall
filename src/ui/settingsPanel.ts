@@ -10,14 +10,21 @@ import { t } from '../data/i18n';
 import {
   BRIGHTNESS_RANGE,
   MAX_KEYS_PER_ACTION,
+  PAD_ACTIONS,
   isBindableKey,
+  isBindablePadButton,
   rebindKey,
+  rebindPad,
   resetBinding,
+  resetPadBinding,
   resolveKeybindings,
+  resolvePadBindings,
   tabDefaults,
   type Action,
+  type PadAction,
   type Settings,
 } from '../data/settings';
+import type { GamepadInput } from '../core/gamepad';
 import { armConfirm } from './confirmSheet';
 import { hapticsSupported, haptic } from './haptics';
 import { keyLabel } from './hud';
@@ -29,11 +36,15 @@ const TABS: SettingsTab[] = ['sound', 'display', 'controls'];
 
 export interface SettingsDeps {
   settings: () => Settings;
+  /** Reset tips (B06): every onboarding tip and first-run banner shows again, and Show tips turns on. */
+  resetTips?: () => void;
   /** Change settings, apply them and save. */
   apply: (patch: Partial<Settings>) => void;
   soundUi: SoundUi;
   /** Mute switch of the Sound tab. */
   toggleMute: () => void;
+  /** The gamepad, for rebinding its buttons (A02); without it the Gamepad group is left out. */
+  pad?: GamepadInput;
 }
 
 /** Text size steps: label key, scale. */
@@ -215,6 +226,8 @@ export class SettingsPanel {
     page.append(
       this.switchRow(t('settings.screenShake'), undefined, () => this.deps.settings().screenShake, (on) => this.change({ screenShake: on }), 'shake'),
       this.switchRow(t('settings.showFps'), undefined, () => this.deps.settings().showFps, (on) => this.change({ showFps: on }), 'fps'),
+      this.switchRow(t('settings.showTips'), t('settings.showTipsHint'), () => this.deps.settings().showTips, (on) => this.change({ showTips: on }), 'tips'),
+      this.resetTipsRow(),
     );
     if (hapticsSupported()) {
       // Vibration only matters on a phone: `html:not(.touch-device) .touch-only` hides it (B043, menus.css).
@@ -240,6 +253,7 @@ export class SettingsPanel {
       ),
       el('h3', 'settings-group', t('settings.accessibility')),
       this.switchRow(t('settings.reduceFlashing'), t('settings.reduceFlashingHint'), () => this.deps.settings().reduceFlashing, (on) => this.change({ reduceFlashing: on }), 'reduce-flashing'),
+      this.switchRow(t('settings.reduceMotion'), t('settings.reduceMotionHint'), () => this.deps.settings().reduceMotion, (on) => this.change({ reduceMotion: on }), 'reduce-motion'),
       this.row(
         t('settings.colorblind'),
         this.segmented(
@@ -299,6 +313,7 @@ export class SettingsPanel {
       thumbLayout,
       buttonSize,
       this.buildKeyList(),
+      ...(this.deps.pad ? [this.buildPadList(this.deps.pad)] : []),
       this.resetRow('controls'),
     );
     return page;
@@ -401,7 +416,124 @@ export class SettingsPanel {
     return row;
   }
 
+  // ---- Gamepad rebinding (A02) ----------------------------------------------------------------
+
+  private buildPadList(pad: GamepadInput): HTMLElement {
+    const list = el('div', 'key-list pad-list');
+    list.dataset.testid = 'pad-list';
+    list.classList.add('touch-hide');
+    list.append(el('h3', 'settings-group', t('settings.gamepad')), el('p', 'settings-hint', t('settings.gamepadHint')));
+    for (const action of PAD_ACTIONS) list.append(this.padRow(pad, action));
+    return list;
+  }
+
+  private padRow(pad: GamepadInput, action: PadAction): HTMLDivElement {
+    const row = el('div', 'key-row pad-row');
+    row.dataset.testid = `pad-row-${action}`;
+    row.dataset.action = action;
+    const name = t(`settings.padActions.${action}`);
+    const chips = el('div', 'key-chips');
+    const reset = el('button', 'key-reset', '↺');
+    reset.type = 'button';
+    reset.dataset.testid = `pad-reset-${action}`;
+    reset.title = t('settings.keyReset');
+    reset.setAttribute('aria-label', `${t('settings.keyReset')}: ${name}`);
+    reset.addEventListener('click', () => {
+      this.stopListening?.();
+      this.change({ padBindings: resetPadBinding(this.deps.settings(), action) });
+      this.refresh();
+    });
+    const hint = el('p', 'key-hint');
+    hint.hidden = true;
+    hint.setAttribute('role', 'status');
+
+    const startListening = (slot: number, chip: HTMLButtonElement) => {
+      this.stopListening?.();
+      chip.classList.add('listening');
+      chip.textContent = t('settings.pressButton');
+      let pending: string | null = null;
+      // Every button press goes here (nothing else sees it) until one is bindable.
+      const listen = (): (() => void) =>
+        pad.capture((code) => {
+          if (!isBindablePadButton(code)) {
+            release = listen();
+            return;
+          }
+          const result = rebindPad(this.deps.settings(), action, slot, code, pending === code);
+          if (!result.padBindings) {
+            pending = code;
+            hint.textContent = t('settings.padConflict', { button: keyLabel(code), action: t(`settings.padActions.${result.conflicts[0]!}`) });
+            hint.hidden = false;
+            release = listen();
+            return;
+          }
+          this.stopListening?.();
+          this.change({ padBindings: result.padBindings });
+          this.refresh();
+        });
+      let release = listen();
+      // Escape on the keyboard or a click elsewhere gives up.
+      const giveUp = (e: Event) => {
+        if (e instanceof KeyboardEvent ? e.code === 'Escape' : !(e.target as Element | null)?.closest?.('.key-chip')) {
+          if (e instanceof KeyboardEvent) e.stopImmediatePropagation();
+          this.stopListening?.();
+        }
+      };
+      window.addEventListener('pointerdown', giveUp, true);
+      window.addEventListener('keydown', giveUp, true);
+      this.stopListening = () => {
+        release();
+        window.removeEventListener('pointerdown', giveUp, true);
+        window.removeEventListener('keydown', giveUp, true);
+        this.stopListening = null;
+        hint.hidden = true;
+        render();
+      };
+    };
+
+    const render = () => {
+      const buttons = resolvePadBindings(this.deps.settings())[action];
+      const nodes: HTMLButtonElement[] = [];
+      const addChip = (slot: number, code: string | null) => {
+        const chip = el('button', code ? 'key-chip' : 'key-chip add', code ? keyLabel(code) : '+');
+        chip.type = 'button';
+        chip.dataset.testid = `pad-chip-${action}-${slot}`;
+        chip.setAttribute('aria-label', code ? t('settings.keyChange', { action: name, key: keyLabel(code) }) : t('settings.keyAdd', { action: name }));
+        chip.addEventListener('click', () => startListening(slot, chip));
+        nodes.push(chip);
+      };
+      buttons.forEach((code, i) => addChip(i, code));
+      if (buttons.length === 0) addChip(0, null);
+      else if (buttons.length < MAX_KEYS_PER_ACTION) addChip(buttons.length, null);
+      chips.replaceChildren(...nodes);
+      reset.hidden = !(action in (this.deps.settings().padBindings ?? {}));
+      row.classList.toggle('unbound', buttons.length === 0);
+    };
+    this.refreshers.push(render);
+    render();
+    row.append(el('div', 'key-label', name), chips, reset, hint);
+    return row;
+  }
+
   // ---- Reset (B047) ---------------------------------------------------------------------------
+
+  /** "Reset tips" (B06): two taps, then every tip and first-run banner is new again and Show tips is on. */
+  private resetTipsRow(): HTMLDivElement {
+    const row = el('div', 'settings-row settings-reset-row');
+    const btn = el('button', 'settings-reset', t('settings.resetTips'));
+    btn.type = 'button';
+    btn.dataset.testid = 'settings-reset-tips';
+    armConfirm(btn, {
+      armedLabel: t('settings.resetConfirm'),
+      run: () => {
+        this.deps.resetTips?.();
+        this.change({ showTips: true });
+        this.refresh();
+      },
+    });
+    row.append(btn);
+    return row;
+  }
 
   /** "Reset this tab": two taps (armConfirm), then the tab's settings go back to their defaults. */
   private resetRow(tab: 'display' | 'controls'): HTMLDivElement {

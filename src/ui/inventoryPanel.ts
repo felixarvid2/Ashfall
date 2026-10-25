@@ -10,6 +10,7 @@ import { BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
 import { itemArtUrl, rarityFrameUrl } from './art';
 import { SLOTS, slotsFor, type Item, type Slot } from '../data/loot/schemas';
 import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/generate';
+import { salvagePreview } from '../systems/endgame/crafting';
 import {
   FILTER_CHIPS,
   SORT_MODES,
@@ -78,6 +79,18 @@ function storedSort(): SortMode | null {
 function storeSort(mode: SortMode): void {
   // Private mode: the choice just is not remembered.
   setPref(SORT_KEY, mode);
+}
+
+/** D09: " You also get 4 Lumen Dust." for the salvage confirmations; empty when the items give no materials. */
+export function materialsLine(items: readonly Item[]): string {
+  const dust = salvagePreview(items).lumen_dust;
+  return dust > 0 ? ` ${t('items.bag.salvageMaterials', { n: dust, material: t('crafting.materials.lumen_dust') })}` : '';
+}
+
+/** The salvage button text: the gold, plus the materials when there are any. */
+export function salvageLabel(gold: number, items: readonly Item[]): string {
+  const dust = salvagePreview(items).lumen_dust;
+  return dust > 0 ? t('items.bag.salvageWithMaterials', { gold, n: dust, material: t('crafting.materials.lumen_dust') }) : t('items.bag.salvage', { gold });
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -425,7 +438,7 @@ export class InventoryPanel {
           if (!item || item.crystal || this.selectMode) return;
           // Shift+right-click: the other ring slot (B011).
           const base = BASE_ITEMS.get(item.base);
-          const other = e.shiftKey && base ? otherSlot(slotsFor(base.type), this.getInventory().equipped) : undefined;
+          const other = e.shiftKey && base ? otherSlot(slotsFor(base.type), this.getInventory().equipped, (s) => this.actions.compare(item, s)) : undefined;
           if (other) this.actions.equip(index, other);
           else this.actions.equip(index);
         });
@@ -628,7 +641,7 @@ export class InventoryPanel {
       const gold = salvageValue(item);
       void confirmSheet({
         title: t('items.bag.salvageOneTitle', { name: itemDisplayName(item) }),
-        body: t('items.bag.salvageOneBody', { gold }),
+        body: t('items.bag.salvageOneBody', { gold }) + materialsLine([item]),
         confirmLabel: t('items.bag.salvageButton'),
         danger: true,
       }).then((ok) => {
@@ -708,7 +721,7 @@ export class InventoryPanel {
             comparison: this.actions.compare(item, slot),
           }))
         : [];
-    const defaultSlot = defaultTargetSlot(slots, inv.equipped);
+    const defaultSlot = defaultTargetSlot(slots, inv.equipped, (s) => this.actions.compare(item, s));
     const content = renderItemSheet(item, classId, { equipped: !isGrid, targets, defaultSlot });
     const buttons: NonNullable<Parameters<typeof tooltipSheet.show>[0]['actions']> = [];
 
@@ -745,7 +758,7 @@ export class InventoryPanel {
       const gold = salvageValue(item);
       const confirm = needsSalvageConfirm(item);
       buttons.push({
-        label: item.locked ? t('items.bag.locked') : t('items.bag.salvage', { gold }),
+        label: item.locked ? t('items.bag.locked') : salvageLabel(gold, [item]),
         danger: true,
         disabled: !!item.locked,
         keepOpen: confirm,
@@ -756,7 +769,7 @@ export class InventoryPanel {
           }
           void confirmSheet({
             title: t('items.bag.salvageOneTitle', { name: itemDisplayName(item) }),
-            body: t('items.bag.salvageOneBody', { gold }),
+            body: t('items.bag.salvageOneBody', { gold }) + materialsLine([item]),
             confirmLabel: t('items.bag.salvageButton'),
             danger: true,
           }).then((ok) => {
@@ -892,7 +905,7 @@ export class InventoryPanel {
       }
       void confirmSheet({
         title: t('items.bag.salvageManyTitle', { n: items.length }),
-        body: t('items.bag.salvageManyBody', { gold }),
+        body: t('items.bag.salvageManyBody', { gold }) + materialsLine(items),
         confirmLabel: t('items.bag.salvageButton'),
         danger: true,
       }).then((ok) => {
@@ -942,7 +955,7 @@ export class InventoryPanel {
     const base = BASE_ITEMS.get(item.base);
     const slots = !item.crystal && base ? slotsFor(base.type) : [];
     const comparable = !equipped && slots.length > 0;
-    const defaultSlot = comparable ? defaultTargetSlot(slots, inv.equipped) : undefined;
+    const defaultSlot = comparable ? defaultTargetSlot(slots, inv.equipped, (s) => this.actions.compare(item, s)) : undefined;
     const targets: CompareTarget[] = comparable
       ? slots.map((slot) => ({
           slot,

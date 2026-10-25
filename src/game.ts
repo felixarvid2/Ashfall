@@ -42,7 +42,6 @@ import { GameLoop } from './core/loop';
 import { Rng, randomSeed } from './core/rng';
 import {
   CHARACTER_SLOTS,
-  SAVE_VERSION,
   NewerSaveError,
   SaveError,
   SaveStore,
@@ -55,16 +54,16 @@ import {
   type SaveWriteResult,
 } from './core/save';
 import { SpatialHash } from './core/spatial';
-import { classDef, skill } from './data/db';
+import { CLASSES, classDef, skill } from './data/db';
 import { setTouchWording, t } from './data/i18n';
 import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
 import { START_ZONE, ZONES, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
 import { classAssetIds, zoneAssetIds, zoneLaterAssetIds } from './data/assetSets';
 import type { ZoneDef } from './data/zones/zoneTypes';
-import { makeElite, createZoneRuntime, decodeRevealed, encodeRevealed, nearestTeleporter, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
+import { makeElite, createZoneRuntime, decodeRevealed, nearestTeleporter, suspendZone, zoneSystem, type ZoneRuntime } from './world/zone';
 import { GameRenderer } from './render/gameRenderer';
 import { collisionSystem, spatialSystem } from './systems/collision';
-import { navigationSystem } from './systems/navigation';
+import { buildGrid, findPath, navigationSystem } from './systems/navigation';
 import { UNDERGROUND, litFloodlights, rockSystem, undergroundState, undergroundSystem } from './world/underground';
 import { bridgeSystem, gravitySystem } from './world/theCore';
 import { isAlive, kill } from './systems/combat';
@@ -83,15 +82,16 @@ import { statusSystem } from './systems/status';
 import { enemyNear } from './systems/targeting';
 import { DamageNumbers } from './ui/damageNumbers';
 import { EnemyBars, ELITE_RANGE, FramePool, newBarInfo, setInfoAffixes, type EnemyBarInfo } from './ui/enemyBars';
-import { CharacterPanel } from './ui/characterPanel';
+import type { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
-import { bestLoadout, sortGrid, type EquipMove, type SortMode } from './ui/inventoryLogic';
-import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
+import { bestLoadout, defaultTargetSlot, sortGrid, type EquipMove, type SortMode } from './ui/inventoryLogic';
+import type { SkillTreePanel } from './ui/skillTreePanel';
+import { skillIconId } from './ui/serviceLogic';
 import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import type { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
-import { dropHitstopMs, playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
+import { dropHitstopMs, playDropSound, playGoldSound, playMagnetSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
 import { soundsForEvents } from './audio/eventSounds';
 import { FootstepClock, footstepPlay } from './audio/footsteps';
@@ -109,17 +109,17 @@ import * as matrix from './systems/endgame/matrix';
 import { monsterLevel } from './systems/encounter';
 import { canRefund, learn, learnedSkills, pointsSpent, refundCost, refundRank, resetTree, respecCost, tree } from './systems/skillTree';
 import { DevTools } from './ui/devtools';
-import { MapUi, type MapBlip, type MapFeature } from './ui/minimap';
+import { MapUi, questMarker, type MapBlip, type MapFeature } from './ui/minimap';
 import { artUrl } from './ui/art';
 import { Hud, type HudState } from './ui/hud';
 import { playerStatuses } from './ui/statusTiles';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
-import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount } from './core/account';
+import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount, type AccountData } from './core/account';
 import { runSaveApply, sanitizeSave } from './core/saveRefs';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
-import { deathCauseLine } from './ui/deathCause';
+import { deathCauseLine, deathRecap } from './ui/deathCause';
 import { bossPhaseTicks, keyLabel } from './ui/hud';
 import { LORE_XP_PER_LEVEL } from './data/interactables';
 import {
@@ -130,7 +130,6 @@ import {
   offeredBy,
   questMarkers,
   questSystem,
-  saveQuests,
   rebuildQuestWorld,
   setQuestState,
   spawnUnlockedNpcs,
@@ -147,7 +146,9 @@ import { RiftHud, RiftPanel } from './ui/riftPanel';
 import { RIFT, RIFT_ID } from './data/endgame/rifts';
 import { riftObeliskAt } from './data/endgame/riftObelisks';
 import { GLYPH_DEFS } from './data/endgame/matrix';
-import { riftEntryProblem, riftGlyphAttempt, riftHud, riftOpenLevel, riftsUnlocked } from './systems/endgame/rifts';
+import { dailyKey, dailyRecord, dailyRiftLevel, dailyRiftSeed, riftEntryProblem, riftGlyphAttempt, riftHud, riftOpenLevel, riftRecord, riftsUnlocked } from './systems/endgame/rifts';
+import { FEATS } from './data/feats';
+import { featProgress, setTitle, trackFeats, wornTitle } from './systems/feats';
 import { TIER_BEACONS } from './data/endgame/beacons';
 import { chooseTier, currentTier, monsterLevelCap, playerInCombat, setEnemyScaling, tickPlaytime, tierMods } from './systems/endgame/tiers';
 import {
@@ -161,8 +162,13 @@ import {
   sell as sellItem,
   buyBack as buyBackItem,
   type BuybackEntry,
+  depositMaterials,
+  payVendorReroll,
+  rerollsToday,
   stashSlots,
   toStash,
+  vendorRerollCost,
+  withdrawMaterials,
 } from './systems/hub/services';
 import { codexImprint, codexValue, grantSalvageDust, masterworkRankUp, masterworkReset, temperItem } from './systems/endgame/crafting';
 import { VENDOR } from './data/services';
@@ -172,13 +178,15 @@ import { CREDIT_KEYS, epilogueKeys, type LumenChoice } from './data/lumen';
 import { chooseLumen, lumenCameraFocus } from './world/lumen';
 import type { EpilogueScreen } from './ui/epilogue';
 import { panelStack } from './ui/panelStack';
-import { registerGamePanels, registerServicePanel } from './ui/panelRegistry';
+import { buildSaveData } from './systems/saveSnapshot';
+import { LazyPanel, registerGamePanels, registerServicePanel } from './ui/panelRegistry';
 import { meanItemPower } from './ui/characterSelect';
 import { PauseMenu } from './ui/pauseMenu';
-import { SettingsPanel } from './ui/settingsPanel';
+import type { SettingsPanel } from './ui/settingsPanel';
 import { CoachMarks, questRewardSummary, takeFirstQuestToast } from './ui/onboarding';
 import { CROWD_RANGE, lookAheadOffset } from './render/camera';
-import { FeelUi, guideGoal, holdThenRelease, realHoldEnv } from './ui/feelUi';
+import { FeelUi, GUIDE_QUEST, guideBannerText, guideDestinationName, guideGoal, holdThenRelease, realHoldEnv, routeAhead } from './ui/feelUi';
+import { GUIDE_NEAR } from './render/navOverlay';
 import { FEEL, frameFeel } from './systems/impact';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
@@ -246,8 +254,9 @@ export class Game {
   private readonly devtools: DevTools;
   private readonly damageNumbers: DamageNumbers;
   private readonly inventoryPanel: InventoryPanel;
-  private readonly characterPanel: CharacterPanel;
-  private readonly skillTreePanel: SkillTreePanel;
+  // Character, skills and settings panels are fetched on first use (C02).
+  private readonly characterPanel: LazyPanel<CharacterPanel>;
+  private readonly skillTreePanel: LazyPanel<SkillTreePanel>;
   private readonly lootLabels: LootLabels;
   private readonly mapUi: MapUi;
   private readonly interactPrompt: InteractPrompt;
@@ -256,7 +265,7 @@ export class Game {
   /** Built when the ending starts: the screen is 7 kB of code most sessions never need (T005). */
   private epilogue: EpilogueScreen | null = null;
   private endingLoading = false;
-  private settingsPanel!: SettingsPanel;
+  private settingsPanel!: LazyPanel<SettingsPanel>;
   private pauseMenu!: PauseMenu;
   private uiRoot!: HTMLElement;
   /** The backpack was opened by a hub service, so closing the service closes it too. */
@@ -273,7 +282,11 @@ export class Game {
   private readonly blipPool = new FramePool<MapBlip>(() => ({ x: 0, z: 0, kind: 'normal' }));
   private readonly featureBuf: MapFeature[] = [];
   /** Quest markers, computed once per frame and shared by the minimap and the tracker arrow. */
+  /** Real time of the last magnet cue (B12). */
+  private lastMagnetCue = -Infinity;
   private frameQuestMarkers: ReturnType<typeof questMarkers> = [];
+  /** The golden guide's cached walking route (B05). */
+  private guideCache: { gx: number; gz: number; at: number; points: { x: number; z: number }[] } | null = null;
   /** The floodlights and flares behind the renderer's dynamic lights (dark zones), to skip rebuilding an unchanged set. */
   private dynamicLightKey = '';
   private readonly questTracker: QuestTracker;
@@ -345,6 +358,7 @@ export class Game {
 
     this.renderer = new GameRenderer(canvas);
     this.renderer.screenShake = this.settings.screenShake;
+    this.renderer.reduceMotion = this.settings.reduceMotion;
     this.renderer.reduceFlashing = this.settings.reduceFlashing;
     this.renderer.setBrightness(this.settings.brightness);
     this.renderer.setQuality(this.settings.graphics);
@@ -480,6 +494,10 @@ export class Game {
     this.dialogue = new DialoguePanel(uiRoot);
     this.npcPlates = new NpcPlates(uiRoot, (id) => this.walkToNpc(id));
     this.enemyBars = new EnemyBars(uiRoot);
+    // Elite beat (B02): a small camera nudge when an elite's plate first shows (skipped with reduce motion or no shake).
+    this.enemyBars.onIntro = () => {
+      if (this.renderer.screenShake && !this.renderer.reduceMotion) this.renderer.rig.addTrauma(0.12);
+    };
     this.questTracker = new QuestTracker(uiRoot, () => this.input.pressAction('quests'));
     this.questLog = new QuestLog(
       uiRoot,
@@ -533,8 +551,10 @@ export class Game {
         salvage: (i) => this.salvageItem(i),
         salvageMany: (indices) => this.salvageItems(indices),
         salvageJunk: () => {
-          const gold = salvageJunk(this.world.req(this.player, Inventory));
+          let dust = 0;
+          const gold = salvageJunk(this.world.req(this.player, Inventory), undefined, (item) => (dust += grantSalvageDust(this.ctx, item)));
           if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
+          if (dust > 0) this.toasts.show(t('crafting.salvageDust', { n: dust }));
           this.afterInventoryChange();
         },
         sort: (mode) => this.sortInventory(mode),
@@ -554,6 +574,34 @@ export class Game {
       iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       stock: () => this.vendorStock,
       stash: () => stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots),
+      rerollCost: () => vendorRerollCost(this.world.req(this.player, Progression).level, rerollsToday(this.ctx.account!.vendor, dailyKey())),
+      rerollStock: () => {
+        const r = payVendorReroll(this.world.req(this.player, Inventory), this.world.req(this.player, Progression).level, this.ctx.account!.vendor, dailyKey());
+        if (r.ok) {
+          this.restockVendor();
+          audio.play('ui.coins');
+          saveAccount(this.storage, this.ctx.account!);
+          this.autosave();
+        }
+        this.serviceResult(r);
+      },
+      materials: () => ({ character: this.ctx.endgame?.materials ?? {}, stash: this.ctx.account?.materials ?? {} }),
+      depositMaterials: () => {
+        const n = this.ctx.endgame && this.ctx.account ? depositMaterials(this.ctx.endgame.materials, this.ctx.account.materials) : 0;
+        if (n > 0) {
+          this.toasts.show(t('services.stash.movedIn'));
+          saveAccount(this.storage, this.ctx.account!);
+          this.autosave();
+        }
+      },
+      withdrawMaterials: () => {
+        const n = this.ctx.account ? withdrawMaterials(matrix.ensureEndgame(this.ctx).materials, this.ctx.account.materials) : 0;
+        if (n > 0) {
+          this.toasts.show(t('services.stash.movedOut'));
+          saveAccount(this.storage, this.ctx.account!);
+          this.autosave();
+        }
+      },
       compare: (item) => this.compare(item),
       buyback: () => this.vendorBuyback,
       buyBack: (i) => {
@@ -590,8 +638,10 @@ export class Game {
         if (item) this.serviceResult(rerollAffix(this.ctx.loot.rng, inv, item, ai, tierMods(this.ctx)));
       },
       salvageJunk: (keep) => {
-        const gold = salvageJunk(this.world.req(this.player, Inventory), keep);
+        let dust = 0;
+        const gold = salvageJunk(this.world.req(this.player, Inventory), keep, (item) => (dust += grantSalvageDust(this.ctx, item)));
         if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
+        if (dust > 0) this.toasts.show(t('crafting.salvageDust', { n: dust }));
         this.afterInventoryChange();
       },
       extract: (gi) => this.serviceResult(extractAspect(this.world.req(this.player, Inventory), gi)),
@@ -659,6 +709,17 @@ export class Game {
         return { open: riftOpenLevel(this.ctx), best: e?.riftBest ?? 0, time: e?.riftTime ?? 0 };
       },
       enter: (level) => this.enterRift(level),
+      records: (level) =>
+        [...CLASSES.keys()].flatMap((id) => {
+          const time = riftRecord(this.ctx.account, id, level);
+          return time > 0 ? [{ classId: id, className: t(`items.classes.${id}`), time, mine: id === this.world.get(this.player, SkillUser)?.classId }] : [];
+        }),
+      daily: () => {
+        if (!this.ctx.account) return null;
+        const date = dailyKey();
+        return { level: dailyRiftLevel(date, riftOpenLevel(this.ctx)), ...dailyRecord(this.ctx.account, date) };
+      },
+      enterDaily: () => this.enterRift(dailyRiftLevel(dailyKey(), riftOpenLevel(this.ctx)), dailyKey()),
       glyphs: () => (this.ctx.endgame?.glyphs ?? []).map((g) => ({ id: g.id, name: this.glyphName(g.id), level: g.level })),
       attempts: () => this.ctx.instance?.rift?.attempts ?? 0,
       result: () => this.ctx.instance?.rift?.result ?? null,
@@ -691,7 +752,9 @@ export class Game {
         this.servicePanel?.close();
       }
     });
-    this.characterPanel = new CharacterPanel(uiRoot, () => ({
+    this.characterPanel = new LazyPanel(async () => {
+      const { CharacterPanel: Panel } = await import('./ui/characterPanel');
+      return new Panel(uiRoot, () => ({
       className: t(`items.classes.${this.world.req(this.player, SkillUser).classId}`),
       progression: this.world.req(this.player, Progression),
       combat: this.world.req(this.player, CombatStats),
@@ -711,8 +774,16 @@ export class Game {
         return { used: grid.filter((i) => i !== null).length, max: grid.length };
       })(),
       portraitUrl: this.renderer.assets.iconUrl(`icon.portrait_${this.world.req(this.player, SkillUser).classId}`, import.meta.env.BASE_URL),
-    }));
-    this.skillTreePanel = new SkillTreePanel(
+      feats: this.ctx.account ? this.featRows(this.ctx.account) : undefined,
+    }), {
+        wearTitle: (id) => {
+          if (this.ctx.account && setTitle(this.ctx.account, id)) saveAccount(this.storage, this.ctx.account);
+        },
+      });
+    });
+    this.skillTreePanel = new LazyPanel(async () => {
+      const { SkillTreePanel: Panel } = await import('./ui/skillTreePanel');
+      const panel = new Panel(
       uiRoot,
       () => {
         const user = this.world.req(this.player, SkillUser);
@@ -739,9 +810,8 @@ export class Game {
         iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       },
     );
-    // The Neural Matrix (endgame) is a second view of the skill panel; its stats join every recompute.
-    setExtraEffects(() => matrix.matrixEffects(this.ctx.endgame));
-    this.skillTreePanel.setMatrixLoader(async (): Promise<MatrixPanel> => {
+    // The Neural Matrix (endgame) is a second view of the skill panel.
+    panel.setMatrixLoader(async (): Promise<MatrixPanel> => {
       const { MatrixPanel: Matrix } = await import('./ui/matrixPanel');
       return new Matrix(
         uiRoot,
@@ -756,6 +826,10 @@ export class Game {
         },
       );
     });
+      return panel;
+    });
+    // The matrix's stats join every recompute, whether or not the skill panel has been opened.
+    setExtraEffects(() => matrix.matrixEffects(this.ctx.endgame));
     this.hud.setSkillResolvers(
       (id) => this.world.get(this.player, SkillUser)?.compiled[id]?.def ?? skill(id),
       (id) => this.renderer.assets.iconUrl(skillIconId(id), import.meta.env.BASE_URL),
@@ -850,13 +924,20 @@ export class Game {
     this.mapUi.reduceFlashing = this.settings.reduceFlashing;
 
     // Settings panel (sound, display, controls) and the registration of every panel with the stack.
-    this.settingsPanel = new SettingsPanel(uiRoot, {
+    this.settingsPanel = new LazyPanel(async () => {
+      const { SettingsPanel: Panel } = await import('./ui/settingsPanel');
+      return new Panel(uiRoot, {
       settings: () => this.settings,
       apply: (patch) => this.applySettings(patch),
       soundUi: this.soundUi,
       toggleMute: () => this.toggleMute(),
+      resetTips: () => {
+        this.coach.reset();
+        this.feelUi.resetGuideBanner();
+      },
     });
-    this.soundUi.openSettings = () => this.settingsPanel.toggle('sound');
+    });
+    this.soundUi.openSettings = () => this.settingsPanel.run((p) => p.toggle('sound'));
     this.pauseMenu = new PauseMenu(uiRoot, {
       exportSave: () => this.exportSave(),
       toCharacterSelect: () => {
@@ -880,7 +961,13 @@ export class Game {
       closeDialogue: () => this.closeDialogue(),
     });
     uiRoot.style.setProperty('--paused-label', JSON.stringify(t('panels.paused')));
-    this.coach = new CoachMarks(uiRoot, { toast: (m) => this.toasts.show(m) });
+    this.coach = new CoachMarks(uiRoot, {
+      toast: (m) => this.toasts.show(m),
+      onSkip: () => this.applySettings({ showTips: false }),
+    });
+    // Show tips (B06): the setting and the coach's stored "skipped" flag agree from the start.
+    if (this.coach.skipped) this.settings.showTips = false;
+    else if (!this.settings.showTips) this.coach.setEnabled(false);
     this.feelUi = new FeelUi(uiRoot, this.fade);
 
     this.player = spawnPlayer(this.world, DEFAULT_CLASS, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
@@ -926,7 +1013,7 @@ export class Game {
   async prepareZone(zoneId: string, classId?: string, onProgress?: (done: number, total: number) => void): Promise<void> {
     const def = hasZone(zoneId) ? zoneDef(zoneId) : START_ZONE;
     const ids = [...(classId ? classAssetIds(classId) : []), ...zoneAssetIds(def)];
-    await Promise.all([this.renderer.assets.ensure(ids, onProgress), this.renderer.preloadGround([def.ground])]).catch(() => undefined);
+    await Promise.all([this.renderer.assets.ensure(ids, onProgress), this.renderer.preloadGround([def.ground])]).catch(() => undefined); // assets.ensure already warns per file; the placeholders stay
     const own = classId ? classDef(classId).assetId : null;
     if (own && !this.renderer.assets.hasModel(own)) this.toasts.show(t('game.modelFailed'), 'error', 12000);
   }
@@ -938,7 +1025,7 @@ export class Game {
   async settleAssets(onProgress?: (done: number, total: number) => void): Promise<void> {
     const ids = new Set<string>();
     for (const e of this.world.query(Renderable)) ids.add(this.world.req(e, Renderable).assetId);
-    await this.renderer.assets.ensure(ids, onProgress).catch(() => undefined);
+    await this.renderer.assets.ensure(ids, onProgress).catch(() => undefined); // already warned per file
     void this.renderer.assets.ensure(zoneLaterAssetIds(this.zoneDef));
   }
 
@@ -956,6 +1043,12 @@ export class Game {
   // ---- Characters -------------------------------------------------------------
 
   /** What is in each character slot, for the select screen. */
+  /** D13: the cosmetic title the account wears (shown under every hero's name on character select), or null. */
+  wornTitleText(): string | null {
+    const id = wornTitle(this.ctx.account);
+    return id ? t(`feats.${id}.title`) : null;
+  }
+
   characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null; corrupt?: boolean; newer?: boolean }[] {
     return Array.from({ length: CHARACTER_SLOTS }, (_, index) => {
       try {
@@ -1152,7 +1245,7 @@ export class Game {
     if (this.fading) return;
     this.fading = true;
     const started = performance.now();
-    this.feelUi.setCard(opts.name ?? '', opts.tip ?? false);
+    this.feelUi.setCard(opts.name ?? '', (opts.tip ?? false) && this.settings.showTips);
     this.fade.classList.add('on');
     const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
     const assetWait = opts.assetWait ?? ASSET_WAIT_MS;
@@ -1165,7 +1258,7 @@ export class Game {
           this.fading = false;
         };
         // Models the new place spawned that nobody prefetched load while the screen is still black (capped).
-        const settled = Promise.race([this.settleAssets().catch(() => undefined), wait(assetWait)]);
+        const settled = Promise.race([this.settleAssets().catch(() => undefined) /* never rejects in practice */, wait(assetWait)]);
         holdThenRelease(
           realHoldEnv,
           started,
@@ -1176,7 +1269,7 @@ export class Game {
     };
     setTimeout(() => {
       // The other zone's models and ground load during the fade; the swap waits for them (capped).
-      if (opts.prepare) void Promise.race([opts.prepare.catch(() => undefined), wait(ASSET_WAIT_MS)]).then(swapAndShow);
+      if (opts.prepare) void Promise.race([opts.prepare.catch(() => undefined) /* prepareZone warned */, wait(ASSET_WAIT_MS)]).then(swapAndShow);
       else swapAndShow();
     }, ZONE_FADE * 1000);
   }
@@ -1228,8 +1321,8 @@ export class Game {
     if (input.wasPressed('quickLoad')) this.load();
     if (input.wasPressed('respawn') && this.world.has(this.player, Dead) && !this.hud.respawnLocked) this.respawn();
     if (input.wasPressed('inventory')) this.inventoryPanel.toggle();
-    if (input.wasPressed('character')) this.characterPanel.toggle();
-    if (input.wasPressed('skills')) this.skillTreePanel.toggle();
+    if (input.wasPressed('character')) this.characterPanel.run((p) => p.toggle());
+    if (input.wasPressed('skills')) this.skillTreePanel.run((p) => p.toggle());
     if (input.wasPressed('map')) this.mapUi.toggle();
     if (input.wasPressed('quests')) this.questLog.toggle();
     if (input.wasPressed('toggleMute')) this.toggleMute();
@@ -1317,8 +1410,8 @@ export class Game {
     this.lootLabels.update(this.world, px, pz, this.input.isDown('showLabels'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
     );
-    if (this.characterPanel.open && Math.floor(this.realTime * 4) !== Math.floor((this.realTime - frameDt) * 4)) {
-      this.characterPanel.refresh();
+    if (this.characterPanel.loaded?.open && Math.floor(this.realTime * 4) !== Math.floor((this.realTime - frameDt) * 4)) {
+      this.characterPanel.loaded.refresh();
     }
     this.announceBosses();
     if (this.tierPanel.open && Math.floor(this.realTime * 2) !== Math.floor((this.realTime - frameDt) * 2)) this.tierPanel.refresh();
@@ -1338,7 +1431,7 @@ export class Game {
     this.frameQuestMarkers = questMarkers(this.world, this.ctx);
     this.mapUi.markers = this.ctx.instance
       ? this.instanceMarkers()
-      : this.frameQuestMarkers.map((m) => ({ x: m.x, z: m.z, color: m.main ? '#ffd23a' : '#e8e0d0' }));
+      : this.frameQuestMarkers.map((m) => questMarker(m.x, m.z, questDef(m.quest).kind));
     const worldBoss = worldBossMarker(this.ctx);
     if (worldBoss) this.mapUi.markers.push({ ...worldBoss, shape: 'diamond' });
     const harvest = harvestView(this.ctx);
@@ -1375,7 +1468,8 @@ export class Game {
       this.hitstop = Math.max(this.hitstop, feel.hitstopMs / 1000);
       this.loop.timeScale = 0;
     }
-    if (!this.renderer.screenShake) return;
+    // Shake follows the screen-shake setting; slow motion also stops with reduce motion (B01).
+    if (!this.renderer.screenShake || this.renderer.reduceMotion) return;
     if (feel.trauma > 0) this.renderer.rig.addTrauma(feel.trauma);
     if (feel.slowmoS > 0) {
       this.slowmoLeft = Math.max(this.slowmoLeft, feel.slowmoS);
@@ -1396,7 +1490,41 @@ export class Game {
     else if (event.type === 'loot' && (event.rarity === 'legendary' || event.rarity === 'unique' || event.rarity === 'mythic')) haptic('legendary');
   }
 
+  /** D12: the feats list for the character panel. */
+  private featRows(account: AccountData) {
+    const worn = wornTitle(account);
+    return FEATS.map((f) => {
+      const p = featProgress(account, f);
+      return {
+        id: f.id,
+        name: t(`feats.${f.id}.name`),
+        description: t(`feats.${f.id}.desc`),
+        icon: this.renderer.assets.iconUrl(`icon.${f.icon}`, import.meta.env.BASE_URL),
+        value: p.value,
+        goal: f.goal,
+        done: p.done,
+        title: f.title ? t(`feats.${f.id}.title`) : null,
+        worn: worn === f.id,
+      };
+    });
+  }
+
+  /** D12: counts the frame's events into the account's feats and announces what was earned. */
+  private trackFeats(events: GameEvent[]): void {
+    const account = this.ctx.account;
+    if (!account) return;
+    const earned = trackFeats(this.world, account, this.player, events);
+    if (earned.length === 0) return;
+    for (const f of earned) {
+      this.toasts.show(t('feats.earned', { name: t(`feats.${f.id}.name`) }), 'info', 4000);
+      if (f.title) this.toasts.show(t('feats.titleEarned', { title: t(`feats.${f.id}.title`) }), 'info', 4000);
+    }
+    saveAccount(this.storage, account);
+    this.characterPanel.ifLoaded((p) => p.refresh());
+  }
+
   private handleEvents(events: GameEvent[]): void {
+    this.trackFeats(events);
     this.renderer.handleEvents(events);
     this.applyFeel(events);
     // Sounds are chosen for the whole frame at once (a kill plays its death sound only; Lightbearer's blows ring).
@@ -1433,7 +1561,15 @@ export class Game {
           if (rarityRank(event.rarity) >= rarityRank('legendary')) this.mapUi.addPip(event.x, event.z, 5000);
           break;
         case 'pickup':
-          if (event.kind === 'gold') playGoldSound();
+          if (event.magnet) {
+            // The magnet (B12): a soft tick and a small spark, at most ten a second so a pile of coins is not a rattle.
+            if (this.realTime - this.lastMagnetCue >= 0.1) {
+              this.lastMagnetCue = this.realTime;
+              playMagnetSound(event.kind);
+              this.renderer.magnetSpark(event.kind);
+            }
+            if (event.kind === 'item') this.touchControls.setDot('inventory', true);
+          } else if (event.kind === 'gold') playGoldSound();
           else {
             playPickupSound();
             this.touchControls.setDot('inventory', true);
@@ -1445,8 +1581,8 @@ export class Game {
           this.vendorRestockAt = -Infinity;
           this.hud.levelUp(this.world.req(this.player, Progression).skillPoints, t('ui.levelUp', { level: event.level }), t('hud.levelUpSub'), () => this.input.pressAction('skills'));
           this.toasts.show(t('ui.skillPoint'));
-          this.characterPanel.refresh();
-          this.skillTreePanel.refresh();
+          this.characterPanel.ifLoaded((p) => p.refresh());
+          this.skillTreePanel.ifLoaded((p) => p.refresh());
           this.autosave();
           break;
         case 'overheat':
@@ -1647,8 +1783,25 @@ export class Game {
     }
     // The golden trail: only for the first main quest, and only once the tip banner has been shown.
     const goal = hud.dead ? null : guideGoal(this.ctx.quests?.tracked ?? null, this.frameQuestMarkers, px, pz);
-    if (goal && this.feelUi.takeGuideBanner()) this.hud.showBanner(t('feel.guideBanner'), 3);
-    this.renderer.setGuide(goal, px, pz);
+    if (goal && this.settings.showTips && this.feelUi.takeGuideBanner()) {
+      const rt = this.ctx.quests;
+      const st = rt?.active.get(GUIDE_QUEST);
+      const step = st ? questDef(GUIDE_QUEST).steps[st.step] : undefined;
+      this.hud.showBanner(guideBannerText(guideDestinationName(step), this.stepText(GUIDE_QUEST)), 3);
+    }
+    this.renderer.setGuide(goal, px, pz, goal ? this.guideRoute(goal, px, pz) : undefined);
+  }
+
+  /** The walking route of the golden guide (B05): A* on the nav grid once a second, straight when there is none. */
+  private guideRoute(goal: { x: number; z: number }, px: number, pz: number): { x: number; z: number }[] {
+    const c = this.guideCache;
+    if (!c || c.gx !== goal.x || c.gz !== goal.z || this.realTime - c.at >= 1) {
+      // Far goals fade out near the hero anyway; a goal beyond the nav window has no path and stays a straight line.
+      const far = Math.hypot(goal.x - px, goal.z - pz) > GUIDE_NEAR;
+      const path = far ? findPath(this.ctx.nav?.grid ?? buildGrid(this.world, this.ctx, px, pz), px, pz, goal.x, goal.z) : null;
+      this.guideCache = { gx: goal.x, gz: goal.z, at: this.realTime, points: path && path.length > 0 ? [...path.slice(0, -1), goal] : [goal] };
+    }
+    return routeAhead(this.guideCache!.points, px, pz);
   }
 
   private updateQuestUi(px: number, pz: number): void {
@@ -1986,7 +2139,7 @@ export class Game {
       case 'relic':
         if (detail) this.toasts.show(t('interact.relic', { bonus: t(`relics.${detail}`) }));
         saveAccount(this.storage, this.ctx.account!);
-        this.characterPanel.refresh();
+        this.characterPanel.ifLoaded((p) => p.refresh());
         this.autosave();
         break;
       case 'codex':
@@ -2010,7 +2163,7 @@ export class Game {
       case 'restoration':
         if (id) this.toasts.show(t(`restoration.rewards.${id}`));
         saveAccount(this.storage, this.ctx.account!);
-        this.skillTreePanel.refresh();
+        this.skillTreePanel.ifLoaded((p) => p.refresh());
         this.autosave();
         break;
       case 'stash':
@@ -2280,7 +2433,7 @@ export class Game {
       exposure: this.ctx.instance ? 0 : sporeExposure(),
       flares: !this.ctx.instance && this.zone?.def.dark ? { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: keyLabel(resolveKeybindings(this.settings).flare[0] ?? 'F') } : undefined,
       dead: w.has(p, Dead),
-      ...(w.has(p, Dead) ? { deathCause: deathCauseLine(health.lastHitSource, this.ctx.time) } : {}),
+      ...(w.has(p, Dead) ? { deathCause: deathCauseLine(health.lastHitSource, this.ctx.time), deathRecap: deathRecap(health.recentHits, this.ctx.time) } : {}),
       xp: (() => {
         const prog = w.req(p, Progression);
         return { level: prog.level, current: prog.xp, next: xpToNext(prog.level), skillPoints: prog.skillPoints };
@@ -2376,16 +2529,16 @@ export class Game {
   }
 
   /** Enter a Deep Rift of this level from the Rift Obelisk (docs/endgame.md). */
-  enterRift(level: number): void {
+  enterRift(level: number, daily: string | null = null): void {
     const zone = this.zone;
     const at = zone ? riftObeliskAt(zone.def.id) : undefined;
     if (!zone || !at || this.ctx.instance || this.fading || this.world.has(this.player, Dead)) return;
     const problem = riftEntryProblem(this.ctx, level);
     if (problem) return this.notice(problem === 'locked' ? 'rifts.locked' : 'rifts.badLevel', 'error');
-    this.startInstance(RIFT_ID, 'riftObelisk', RIFT.monsterLevel, { x: at.x + 3, z: at.z + 3 }, level);
+    this.startInstance(RIFT_ID, 'riftObelisk', RIFT.monsterLevel, { x: at.x + 3, z: at.z + 3 }, level, daily);
   }
 
-  private startInstance(defId: string, poiId: string, level: number, exit: { x: number; z: number }, riftLevel?: number): void {
+  private startInstance(defId: string, poiId: string, level: number, exit: { x: number; z: number }, riftLevel?: number, daily: string | null = null): void {
     const zone = this.zone;
     if (!zone) return;
     // Wake-up packs far away would only sit there: put them back to sleep.
@@ -2396,7 +2549,9 @@ export class Game {
       st.state = 'dormant';
     }
     this.world.flushDestroyed();
-    const rt = buildInstance(this.world, this.ctx, defId, poiId, `${this.ctx.rng.seed}-${this.instanceCount++}`, level, exit, riftLevel);
+    // D11: the daily rift is built from the date, so its rooms are the same all day.
+    const rt = buildInstance(this.world, this.ctx, defId, poiId, daily ? dailyRiftSeed(daily) : `${this.ctx.rng.seed}-${this.instanceCount++}`, level, exit, riftLevel);
+    if (rt.rift) rt.rift.daily = daily;
     this.ctx.instance = rt;
     this.ctx.worldHalfSize = 2600;
     const xs = rt.layout.rooms.map((r) => roomCenter(r));
@@ -2556,7 +2711,7 @@ export class Game {
       if (this.announced.has(e) || !this.world.req(e, Boss).engaged || this.world.has(e, Dead)) continue;
       this.announced.add(e);
       // A soft push-in and cinema bars for 1.2 s; input stays live. Camera motion, so it follows the screen-shake setting (F021).
-      if (this.renderer.screenShake) {
+      if (this.renderer.screenShake && !this.renderer.reduceMotion) {
         this.renderer.rig.pulseZoom(1.2, 0.82);
         this.feelUi.bossBeat(1.4);
       }
@@ -2593,36 +2748,14 @@ export class Game {
 
   snapshot(): SaveData {
     const tr = this.playerTransform;
-    const prog = this.world.req(this.player, Progression);
-    const inv = this.world.req(this.player, Inventory);
-    return {
-      version: SAVE_VERSION,
-      savedAt: new Date().toISOString(),
-      seed: this.ctx.rng.seed,
-      rngState: [...this.ctx.rng.getState()],
-      tick: this.ctx.tick,
-      character: { name: this.characterName || t(`items.classes.${this.world.req(this.player, SkillUser).classId}`), classId: this.world.req(this.player, SkillUser).classId },
+    const user = this.world.req(this.player, SkillUser);
+    return buildSaveData(this.world, this.player, this.ctx, {
+      zoneId: this.zoneDef.id,
+      name: this.characterName || t(`items.classes.${user.classId}`),
       // Saving inside a dungeon puts you back at its entrance.
-      player: { position: this.ctx.instance ? { x: this.ctx.instance.exit.x, y: 0, z: this.ctx.instance.exit.z } : { x: tr.x, y: 0, z: tr.z }, facing: tr.facing },
-      progression: { ...prog, restorationGranted: prog.restorationGranted ?? 0 },
-      inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped, aspects: inv.aspects ?? [] }),
-      loot: { seq: this.ctx.loot.seq, rngState: [...this.ctx.loot.rng.getState()] },
-      skills: (() => {
-        const user = this.world.req(this.player, SkillUser);
-        return { ranks: { ...user.tree.ranks }, slots: [...user.slots] };
-      })(),
-      world: {
-        zone: this.zoneDef.id,
-        zones: Object.fromEntries(
-          [...(this.ctx.zones ?? new Map<string, ZoneRuntime>()).values()].map((z) => [
-            z.def.id,
-            { discovered: [...z.discovered], revealed: encodeRevealed(z), found: [...z.found], keycards: [...z.keycards] },
-          ]),
-        ),
-      },
-      quests: saveQuests(this.ctx.quests!),
-      endgame: structuredClone(this.ctx.endgame ?? SaveDataSchema.shape.endgame.parse(undefined)),
-    };
+      position: this.ctx.instance ? { x: this.ctx.instance.exit.x, z: this.ctx.instance.exit.z } : { x: tr.x, z: tr.z },
+      facing: tr.facing,
+    });
   }
 
   applySave(data: SaveData): void {
@@ -2712,7 +2845,8 @@ export class Game {
 
   equipItem(index: number, slot?: Slot): void {
     const user = this.world.req(this.player, SkillUser);
-    const r = equipFromGrid(this.world.req(this.player, Inventory), index, user.classId, slot);
+    const item = this.world.req(this.player, Inventory).grid[index];
+    const r = equipFromGrid(this.world.req(this.player, Inventory), index, user.classId, slot ?? (item ? this.defaultSlotFor(item) : undefined));
     if (!r.ok) this.notice(`loot.cannot.${r.reason}`, 'error');
     else audio.play('ui.equip');
     this.afterInventoryChange();
@@ -2782,11 +2916,18 @@ export class Game {
     const inv = this.world.req(this.player, Inventory);
     const base = BASE_ITEMS.get(item.base);
     if (!base || slotsFor(base.type).length === 0) return null;
-    const slot: Slot | null = forSlot && slotsFor(base.type).includes(forSlot)
-      ? forSlot
-      : slotsFor(base.type).length > 1 ? (targetSlot(inv, item) ?? null) : (slotsFor(base.type)[0] ?? null);
+    const slot: Slot | null = forSlot && slotsFor(base.type).includes(forSlot) ? forSlot : (this.defaultSlotFor(item) ?? null);
     if (!slot) return null;
     return this.compareIn(item, slot, inv.equipped);
+  }
+
+  /** The slot an item goes to without being told: an empty one, else (rings) the one where the item fares best, i.e. the weaker ring (B07). */
+  private defaultSlotFor(item: Item): Slot | undefined {
+    const inv = this.world.req(this.player, Inventory);
+    const base = BASE_ITEMS.get(item.base);
+    const slots = base ? slotsFor(base.type) : [];
+    if (slots.length < 2) return slots[0];
+    return defaultTargetSlot(slots, inv.equipped, (s) => this.compareIn(item, s, inv.equipped)) ?? targetSlot(inv, item) ?? undefined;
   }
 
   /** What wearing `item` in `slot` changes against the gear in `equipped` (a snapshot, so Equip best can try moves ahead). */
@@ -2841,7 +2982,7 @@ export class Game {
       const free = user.slots.indexOf(null);
       if (free >= 0) user.slots[free] = skillId;
     }
-    this.skillTreePanel.refresh();
+    this.skillTreePanel.ifLoaded((p) => p.refresh());
   }
 
   /** After a Neural Matrix action: stats and panels follow, or the reason it failed is shown. */
@@ -2851,8 +2992,8 @@ export class Game {
       return;
     }
     recomputePlayer(this.world, this.player);
-    this.skillTreePanel.refresh();
-    this.characterPanel.refresh();
+    this.skillTreePanel.ifLoaded((p) => p.refresh());
+    this.characterPanel.ifLoaded((p) => p.refresh());
     this.autosave();
   }
 
@@ -2887,7 +3028,7 @@ export class Game {
     recomputePlayer(this.world, this.player);
     user.slots = user.slots.map((s) => (s && user.compiled[s] ? s : null));
     if (!user.slots.some(Boolean)) user.slots[0] = classDef(user.classId).actionBar[0] ?? null;
-    this.skillTreePanel.refresh();
+    this.skillTreePanel.ifLoaded((p) => p.refresh());
     this.inventoryPanel.refresh();
   }
 
@@ -2913,7 +3054,7 @@ export class Game {
     recomputePlayer(this.world, this.player);
     user.slots = user.slots.map((s) => (s && user.compiled[s] ? s : null));
     if (!user.slots.some(Boolean)) user.slots[0] = classDef(user.classId).actionBar[0] ?? null;
-    this.skillTreePanel.refresh();
+    this.skillTreePanel.ifLoaded((p) => p.refresh());
     this.inventoryPanel.refresh();
   }
 
@@ -2924,7 +3065,7 @@ export class Game {
     const existing = skillId ? user.slots.indexOf(skillId) : -1;
     if (existing >= 0) user.slots[existing] = user.slots[slot] ?? null;
     user.slots[slot] = skillId;
-    this.skillTreePanel.refresh();
+    this.skillTreePanel.ifLoaded((p) => p.refresh());
   }
 
   private afterInventoryChange(): void {
@@ -3030,6 +3171,8 @@ export class Game {
     if (patch.textScale !== undefined) document.documentElement.style.setProperty('--text-scale', String(patch.textScale));
     if (patch.graphics !== undefined) this.renderer.setQuality(patch.graphics);
     if (patch.screenShake !== undefined) this.renderer.screenShake = patch.screenShake;
+    if (patch.reduceMotion !== undefined) this.renderer.reduceMotion = patch.reduceMotion;
+    if (patch.showTips !== undefined) this.coach?.setEnabled(patch.showTips);
     if (patch.showFps !== undefined) this.devtools.setShowFps(patch.showFps);
     if (patch.haptics !== undefined) setHaptics(patch.haptics);
     if (patch.reduceFlashing !== undefined) this.hud.setReduceFlashing(patch.reduceFlashing);

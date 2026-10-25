@@ -17,6 +17,19 @@ const MINI_SIZE = 180;
 /** Metres shown from the centre of the minimap to its edge. */
 const MINI_RANGE = 85;
 const MAP_SIZE = 640;
+/** Longest side (device px) the full map's backing store may grow to when zoomed in (B08). */
+export const MAP_BACKING_MAX = 2560;
+
+/**
+ * Backing-store scale of the full map (B08): the canvas is drawn in 640 x 640 logical units and its pixel buffer is
+ * `scale` times that, so the picture stays sharp on a high-DPI screen and when the CSS zoom magnifies it. `cssWidth`
+ * is the unzoomed on-screen width, `dpr` the device pixel ratio. Rounded up to half steps (so a wheel zoom does not
+ * resize the buffer every notch), at least 1, and capped so the buffer stays at or under `MAP_BACKING_MAX`.
+ */
+export function mapBackingScale(cssWidth: number, dpr: number, zoom: number, max = MAP_BACKING_MAX): number {
+  const want = (Math.max(1, dpr) * Math.max(1, zoom) * (cssWidth > 0 ? cssWidth : MAP_SIZE)) / MAP_SIZE;
+  return Math.max(1, Math.min(max / MAP_SIZE, Math.ceil(want * 2 - 1e-6) / 2));
+}
 
 const POI_STYLE: Partial<Record<PoiKind, { color: string; r: number; shape: 'dot' | 'square' | 'diamond' }>> = {
   dungeon: { color: '#ff8a3a', r: 5, shape: 'square' },
@@ -81,12 +94,34 @@ export function focusZoom(px: number, py: number, size: number): MapZoom {
   return centerOn({ z: FOCUS_ZOOM, tx: 0, ty: 0 }, px, py, size);
 }
 
+/** What kind of quest a map marker belongs to: the quest's own `kind` in the data (B09). */
+export type QuestMarkerKind = 'main' | 'side' | 'mystery';
+
+/** Marker colour and legend entry per quest kind: the one place both the markers and the legend read (B09). */
+export const QUEST_MARKER_STYLE: Record<QuestMarkerKind, { color: string; legend: 'quest' | 'sideQuest' | 'mysteryQuest' }> = {
+  main: { color: '#ffd23a', legend: 'quest' },
+  side: { color: '#e8e0d0', legend: 'sideQuest' },
+  mystery: { color: '#b79cff', legend: 'mysteryQuest' },
+};
+
+/** A map marker for a quest of `kind` (its colour comes from `QUEST_MARKER_STYLE`). */
+export function questMarker(x: number, z: number, kind: QuestMarkerKind): MapMarker {
+  return { x, z, color: QUEST_MARKER_STYLE[kind].color, quest: kind };
+}
+
 export interface MapMarker {
   x: number;
   z: number;
   color: string;
   /** Default: a dot. */
   shape?: 'dot' | 'square' | 'diamond';
+  /** Quest markers carry their quest's kind; the legend and hover labels classify by it, not by colour (B09). */
+  quest?: QuestMarkerKind;
+}
+
+/** The quest kind of a marker; markers without one (dungeon objects, the world boss) are not quest markers. */
+export function markerQuestKind(m: MapMarker): QuestMarkerKind | null {
+  return m.quest ?? null;
 }
 
 /** A hostile on the minimap (A016). */
@@ -201,8 +236,9 @@ export interface LegendEntry {
 /** Every glyph the maps draw, with the colour it is drawn in (B038); the legend lists the ones present. */
 export const LEGEND: LegendEntry[] = [
   { key: 'teleporter', color: '#5ad2ff', shape: 'diamond' },
-  { key: 'quest', color: '#ffd23a', shape: 'dot' },
-  { key: 'sideQuest', color: '#e8e0d0', shape: 'dot' },
+  { key: 'quest', color: QUEST_MARKER_STYLE.main.color, shape: 'dot' },
+  { key: 'sideQuest', color: QUEST_MARKER_STYLE.side.color, shape: 'dot' },
+  { key: 'mysteryQuest', color: QUEST_MARKER_STYLE.mystery.color, shape: 'dot' },
   { key: 'boss', color: POI_STYLE.boss!.color, shape: 'diamond' },
   { key: 'dungeon', color: POI_STYLE.dungeon!.color, shape: 'square' },
   { key: 'stronghold', color: POI_STYLE.stronghold!.color, shape: 'square' },
@@ -223,6 +259,7 @@ export interface LegendPresence {
   caches: boolean;
   mainQuest: boolean;
   sideQuest: boolean;
+  mysteryQuest?: boolean;
   /** The player is on this map. */
   you: boolean;
 }
@@ -237,6 +274,8 @@ export function legendFor(p: LegendPresence): LegendEntry[] {
         return p.mainQuest;
       case 'sideQuest':
         return p.sideQuest;
+      case 'mysteryQuest':
+        return p.mysteryQuest === true;
       case 'gate':
         return p.gates;
       case 'cache':
@@ -394,19 +433,19 @@ export class MapUi {
 
   /** Lists the glyphs this map draws; rebuilt only when that set changes (B038). */
   private refreshLegend(zone: ZoneRuntime, here: boolean): void {
-    const main = this.markers.some((m) => m.color === '#ffd23a');
-    const side = this.markers.some((m) => m.color !== '#ffd23a' && !m.shape);
+    const kinds = new Set(this.markers.map(markerQuestKind));
     const entries = legendFor({
       poiKinds: new Set([
         ...zone.def.pois.filter((p) => POI_STYLE[p.kind] && (p.kind !== 'relic' || zone.found.has(p.id))).map((p) => p.kind as string),
         // The world boss marker is a diamond in the boss colour.
-        ...(here && this.markers.some((m) => m.shape === 'diamond') ? ['boss'] : []),
+        ...(here && this.markers.some((m) => !m.quest && m.shape === 'diamond') ? ['boss'] : []),
       ]),
       teleporters: zone.def.teleporters.some((tp) => zone.discovered.has(tp.id)),
       gates: zone.def.gates.length > 0,
       caches: this.harvest?.active.zoneId === zone.def.id && (this.harvest?.caches.length ?? 0) > 0,
-      mainQuest: here && main,
-      sideQuest: here && side,
+      mainQuest: here && kinds.has('main'),
+      sideQuest: here && kinds.has('side'),
+      mysteryQuest: here && kinds.has('mystery'),
       you: here,
     });
     const key = entries.map((e) => e.key).join(',');
@@ -683,6 +722,11 @@ export class MapUi {
     const here = zone === this.zone();
     const c = this.fullCtx;
     const v = this.fullView(zone);
+    // Sharp at any zoom and pixel ratio: a bigger pixel buffer, drawn in the same 640-unit coordinates (B08).
+    const scale = mapBackingScale(this.fullCanvas.offsetWidth || MAP_SIZE, window.devicePixelRatio || 1, this.zoom.z);
+    const px = Math.round(MAP_SIZE * scale);
+    if (this.fullCanvas.width !== px) this.fullCanvas.width = this.fullCanvas.height = px;
+    c.setTransform(px / MAP_SIZE, 0, 0, px / MAP_SIZE, 0, 0);
     // Markers keep their on-screen size when the canvas is scaled down to a phone or zoomed in.
     this.fullK = MAP_SIZE / ((this.fullCanvas.offsetWidth || MAP_SIZE) * this.zoom.z);
     const k = this.fullK;
@@ -866,11 +910,13 @@ export class MapUi {
     const harvest = this.harvest?.active.zoneId === def.id ? this.harvest : null;
     if (harvest) {
       c.fillStyle = 'rgba(255, 110, 30, 0.1)';
-      c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+      // Logical units: the full map's pixel buffer is larger than MAP_SIZE (B08).
+      const side = range === Infinity ? MAP_SIZE : MINI_SIZE;
+      c.fillRect(0, 0, side, side);
       if (range === Infinity) {
         c.strokeStyle = 'rgba(255, 138, 58, 0.85)';
         c.lineWidth = 4;
-        c.strokeRect(2, 2, c.canvas.width - 4, c.canvas.height - 4);
+        c.strokeRect(2, 2, side - 4, side - 4);
       }
     }
 
@@ -1109,7 +1155,10 @@ export class MapUi {
     for (const tp of def.teleporters) if (zone.discovered.has(tp.id)) add(tp.x, tp.z, t(`zones.teleporters.${tp.id}`));
     for (const g of def.gates) if (seen(g.x, g.z)) add(g.x, g.z, t('map.legend.gate'));
     for (const cache of this.harvest?.active.zoneId === def.id ? this.harvest.caches : []) add(cache.x, cache.z, t('map.legend.cache'));
-    if (zone === this.zone()) for (const m of this.markers) add(m.x, m.z, m.shape === 'diamond' ? t('map.legend.boss') : m.color === '#ffd23a' ? t('map.legend.quest') : t('map.legend.sideQuest'));
+    if (zone === this.zone()) for (const m of this.markers) {
+      const kind = markerQuestKind(m);
+      add(m.x, m.z, kind ? t(`map.legend.${QUEST_MARKER_STYLE[kind].legend}`) : m.shape === 'diamond' ? t('map.legend.boss') : t('map.legend.sideQuest'));
+    }
     return out;
   }
 

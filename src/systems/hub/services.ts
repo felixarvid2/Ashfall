@@ -86,6 +86,30 @@ export function rollVendorStock(
   return stock;
 }
 
+// ---- Trader reroll (D05) --------------------------------------------------------------
+
+/** Gold for the next stock reroll after `rerollsToday` paid ones. */
+export function vendorRerollCost(level: number, rerollsToday: number): number {
+  const { base, perLevel, growth } = VENDOR.reroll;
+  return Math.round(base * (1 + perLevel * level) * growth ** Math.max(0, rerollsToday));
+}
+
+/** Rerolls paid on `date` (the stored count belongs to one date and starts again on the next). */
+export function rerollsToday(state: { date: string; rerolls: number }, date: string): number {
+  return state.date === date ? state.rerolls : 0;
+}
+
+/** Takes the gold for a reroll and counts it for `date`. The caller rolls the new stock when this succeeds. */
+export function payVendorReroll(inv: Inventory, level: number, state: { date: string; rerolls: number }, date: string): ServiceResult {
+  const count = rerollsToday(state, date);
+  const cost = vendorRerollCost(level, count);
+  if (inv.gold < cost) return fail('gold');
+  inv.gold -= cost;
+  state.date = date;
+  state.rerolls = count + 1;
+  return { ok: true };
+}
+
 export function buyPrice(item: Item): number {
   return Math.max(VENDOR.minPrice, Math.round(salvageValue(item) * VENDOR.priceMultiplier)) * VENDOR.rarityPrice[item.rarity];
 }
@@ -165,10 +189,11 @@ export function rerollAffix(rng: Rng, inv: Inventory, item: Item, affixIndex: nu
 }
 
 /** Salvage every junk item (common, magic, marked; never locked) in the backpack, except the grid indexes in `keep`. Returns gold gained. */
-export function salvageJunk(inv: Inventory, keep?: ReadonlySet<number>): number {
+export function salvageJunk(inv: Inventory, keep?: ReadonlySet<number>, onSalvaged?: (item: Item) => void): number {
   let gold = 0;
   inv.grid.forEach((item, i) => {
     if (!item || !isJunk(item) || keep?.has(i)) return;
+    onSalvaged?.(item);
     gold += salvageValue(item);
     inv.grid[i] = null;
   });
@@ -233,6 +258,30 @@ export function stashSlots(stash: (Item | null)[], bonusSlots: number): (Item | 
   const size = STASH.baseSlots + bonusSlots;
   while (stash.length < size) stash.push(null);
   return stash;
+}
+
+/** D10: moves every material of a character into the account's shared pool. Returns how many units moved. */
+export function depositMaterials(character: Record<string, number>, pool: Record<string, number>): number {
+  let moved = 0;
+  for (const [id, n] of Object.entries(character)) {
+    if (n <= 0) continue;
+    pool[id] = (pool[id] ?? 0) + n;
+    moved += n;
+    delete character[id];
+  }
+  return moved;
+}
+
+/** D10: takes the whole shared pool back into the character. Returns how many units moved. */
+export function withdrawMaterials(character: Record<string, number>, pool: Record<string, number>): number {
+  let moved = 0;
+  for (const [id, n] of Object.entries(pool)) {
+    if (n <= 0) continue;
+    character[id] = (character[id] ?? 0) + n;
+    moved += n;
+    delete pool[id];
+  }
+  return moved;
 }
 
 export function toStash(inv: Inventory, gridIndex: number, stash: (Item | null)[]): ServiceResult {

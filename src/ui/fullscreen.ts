@@ -48,7 +48,7 @@ export async function toggleFullscreen(doc: FullscreenDoc = document as unknown 
 function lockLandscape(): void {
   try {
     const lock = (screen.orientation as { lock?: (o: string) => Promise<void> } | undefined)?.lock;
-    if (lock && window.innerWidth > window.innerHeight) void lock.call(screen.orientation, 'landscape').catch(() => {});
+    if (lock && window.innerWidth > window.innerHeight) void lock.call(screen.orientation, 'landscape').catch(() => {}); // the browser may refuse a lock outside fullscreen; the layout copes
   } catch {
     // Not supported.
   }

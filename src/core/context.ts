@@ -15,6 +15,15 @@ export interface TouchState {
   attack: boolean;
 }
 
+/** The gamepad as player control sees it (null unless the pad was used last): sticks have +y up and a dead zone. */
+export interface PadState {
+  stick: { x: number; y: number } | null;
+  aim: { x: number; y: number } | null;
+  /** Basic attack held (the left-mouse slot) and the second skill held (the right-mouse slot). */
+  attack: boolean;
+  alt: boolean;
+}
+
 export interface InputState {
   isDown(action: Action): boolean;
   wasPressed(action: Action): boolean;
@@ -22,6 +31,8 @@ export interface InputState {
   wasMousePressed(button?: number): boolean;
   /** Present while the touch controls are shown. */
   touch?: TouchState | null;
+  /** Present while the gamepad was the last device used and no menu owns it (round 3, A01). */
+  pad?: PadState | null;
 }
 
 export interface GameContext {

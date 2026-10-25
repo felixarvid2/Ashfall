@@ -63,6 +63,8 @@ const MAIN_KINDS: ReadonlySet<PanelKind> = new Set(['main', 'service']);
 class PanelStack {
   private root: HTMLElement | null = null;
   private readonly entries = new Map<string, Entry>();
+  /** Panels registered with `registerLazy` and not built yet. */
+  private readonly lazy = new Map<string, { load: () => Promise<void>; loading: Promise<void> | null }>();
   /** Visible panels, oldest first. */
   private order: string[] = [];
   /** History entries this stack has pushed (the browser's Back walks them). */
@@ -133,8 +135,19 @@ class PanelStack {
     this.escapeFallback = fn;
   }
 
+  /**
+   * A panel whose code loads on first use (C02): its tab (and so its place in the tab bar) exists now, and
+   * `open(id)` runs `load`, which builds the panel and `register`s it; the stack then opens it.
+   */
+  registerLazy(spec: { id: string; tab?: { icon: string; label: string }; load: () => Promise<void> }): void {
+    if (this.entries.has(spec.id) || this.lazy.has(spec.id)) throw new Error(`panel already registered: ${spec.id}`);
+    this.lazy.set(spec.id, { load: spec.load, loading: null });
+    if (spec.tab) this.addTab({ id: spec.id, tab: spec.tab } as PanelSpec);
+  }
+
   register(spec: PanelSpec): void {
     if (this.entries.has(spec.id)) throw new Error(`panel already registered: ${spec.id}`);
+    this.lazy.delete(spec.id);
     const entry: Entry = { spec, visible: false, scroll: 0, observer: new MutationObserver((records) => this.onMutations(entry, records)) };
     this.entries.set(spec.id, entry);
     if (spec.header !== false && spec.kind !== 'modal') adoptHeader(spec, () => this.dismiss(spec.id));
@@ -143,7 +156,7 @@ class PanelStack {
       if (entry.visible) entry.scroll = spec.el.scrollTop;
     });
     entry.observer.observe(spec.el, { attributes: true, attributeFilter: ['hidden'], childList: true, subtree: true });
-    if (spec.tab) this.addTab(spec);
+    if (spec.tab && !this.tabButtons.has(spec.id)) this.addTab(spec);
     this.sync(entry);
   }
 
@@ -154,7 +167,7 @@ class PanelStack {
   }
 
   has(id: string): boolean {
-    return this.entries.has(id);
+    return this.entries.has(id) || this.lazy.has(id);
   }
 
   isOpen(id: string): boolean {
@@ -164,6 +177,17 @@ class PanelStack {
   /** The id of the topmost open panel. */
   top(): string | null {
     return this.order[this.order.length - 1] ?? null;
+  }
+
+  /** The root element and kind of a registered panel (gamepad focus navigation scopes itself to the top one). */
+  panel(id: string): { el: HTMLElement; kind: PanelKind } | null {
+    const spec = this.entries.get(id)?.spec;
+    return spec ? { el: spec.el, kind: spec.kind } : null;
+  }
+
+  /** What Escape does without the key event: close the top panel, else the fallback (the pause menu). True when it did something. */
+  escape(): boolean {
+    return this.closeTop() || (this.escapeFallback?.() ?? false);
   }
 
   openIds(): string[] {
@@ -176,6 +200,14 @@ class PanelStack {
   }
 
   open(id: string): void {
+    const pending = this.lazy.get(id);
+    if (pending) {
+      pending.loading ??= pending.load().then(() => this.open(id), (err) => {
+        pending.loading = null;
+        console.warn(`Panel '${id}' failed to load`, err);
+      });
+      return;
+    }
     const entry = this.entries.get(id);
     if (!entry || entry.visible) return;
     if (entry.spec.open) entry.spec.open();

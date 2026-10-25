@@ -195,7 +195,7 @@ async function models(): Promise<void> {
     await fetchTo(g.url, join(dir, `${id}.gltf`));
     for (const [rel, f] of Object.entries(g.include)) await fetchTo(f.url, join(dir, rel));
     const thumb = `https://cdn.polyhaven.com/asset_img/thumbs/${id}.png?width=512`;
-    await fetchTo(thumb, join(dir, 'thumb.png')).catch(() => undefined);
+    await fetchTo(thumb, join(dir, 'thumb.png')).catch(() => undefined); // the thumbnail is optional
     if (!existsSync(out)) {
       const doc = await io.read(join(dir, `${id}.gltf`));
       // Scatter is instanced, which doesn't take morph targets (the wheel rim has a dent shape key).

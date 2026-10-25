@@ -11,6 +11,7 @@ import { PLANS } from '../scripts/sim/plans';
 import { playthrough } from '../scripts/sim/playthrough';
 import { simulate, type Build } from '../scripts/sim/sim';
 import { classDef, skill } from '../src/data/db';
+import { ASPECT_DEFS } from '../src/data/loot/db';
 import { computePlayerStats } from '../src/systems/stats';
 import { tree, treeEffects, newTreeState } from '../src/systems/skillTree';
 
@@ -110,6 +111,26 @@ describe('class balance pass (G012-G016)', () => {
     const pack = simulate(b, 60, 'sim', { dummy: 'security_trooper', pack: 5 }).dps;
     expect(single).toBeGreaterThanOrEqual(490);
     expect(pack / single).toBeLessThanOrEqual(4.3);
+  });
+});
+
+describe('D02: Zealot stacking', () => {
+  it('the exorcist with Zealot, Sacred Flame and Radiant on four slots stays within 10 % of the best build of any other class at L30', () => {
+    const stacked = build('Radiant on 4 slots');
+    const others = BUILDS.filter((b) => b.level === 30 && b.classId !== 'lightbearer');
+    const best = Math.max(...others.map((b) => dps(b)));
+    const plain = dps(build('(Lightbearer) exorcist: Magnus'));
+    const full = dps(stacked);
+    expect(full).toBeLessThanOrEqual(best * 1.1);
+    // The aspects are worth something, but nothing like the 2.1x they were before the cap.
+    expect(full / plain).toBeGreaterThan(1.1);
+    expect(full / plain).toBeLessThan(1.4);
+  });
+
+  it('Radiant adds to the damage pool instead of multiplying with itself', () => {
+    const radiant = ASPECT_DEFS.get('radiant')!;
+    expect(radiant.effects).toEqual([{ kind: 'damage', value: '$', multiplicative: false, when: 'ranged' }]);
+    expect(radiant.max).toBeLessThanOrEqual(0.07);
   });
 });
 
