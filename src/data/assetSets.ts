@@ -60,7 +60,7 @@ export function zoneInstanceAssetIds(zone: ZoneDef): string[] {
   const ids: string[] = [];
   for (const poi of zone.pois) {
     if (poi.kind !== 'dungeon' && poi.kind !== 'bunker') continue;
-    const wanted = poi.data?.dungeon ?? poi.data?.bunker;
+    const wanted = poi.data?.dungeon ?? poi.data?.instance;
     const def = INSTANCES.find((i) => i.id === wanted);
     if (def) ids.push(...instanceAssetIds(def));
   }

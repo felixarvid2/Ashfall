@@ -200,6 +200,8 @@ import { spawnEnemy, spawnPlayer } from './world/spawn';
 
 /** Placeholder class for the player entity before a character is chosen. */
 const DEFAULT_CLASS = 'bastion';
+/** Longest the black fade waits for models to load before showing the zone anyway (placeholders swap in later). */
+const ASSET_WAIT_MS = 8000;
 /** Seconds of the black fade when crossing into another zone or teleporting there. */
 const ZONE_FADE = 0.35;
 /** Seconds between automatic saves while playing. */
@@ -1124,7 +1126,7 @@ export class Game {
     const gate = this.zoneDef.gates.find((g) => g.id === gateId);
     if (!gate || !hasZone(gate.to.zone)) return;
     const target = zoneDef(gate.to.zone).gates.find((g) => g.id === gate.to.gate);
-    if (!target) return;
+    if (!target || this.fading) return;
     this.fadeTo(() => {
       this.enterZone(gate.to.zone, target.arrive.x, target.arrive.z);
       this.hud.showBanner(t(`zones.${this.zoneDef.key}.name`), 2.6);
@@ -1145,7 +1147,8 @@ export class Game {
     const started = performance.now();
     this.feelUi.setCard(opts.name ?? '', opts.tip ?? false);
     this.fade.classList.add('on');
-    setTimeout(() => {
+    const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+    const swapAndShow = () => {
       try {
         swap();
       } finally {
@@ -1157,10 +1160,17 @@ export class Game {
           this.fading = false;
         };
         const hold = blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000);
+        // Models the new place spawned that nobody prefetched load while the screen is still black (capped).
+        const settled = Promise.race([this.settleAssets().catch(() => undefined), wait(ASSET_WAIT_MS)]);
         // Two frames of the new place, then whatever is left of the minimum; a timer stands in if frames are not coming.
-        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(release, blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000))));
-        setTimeout(release, hold + 1500);
+        void settled.then(() => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(release, blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000)))));
+        setTimeout(release, hold + 1500 + ASSET_WAIT_MS);
       }
+    };
+    setTimeout(() => {
+      // The other zone's models and ground load during the fade; the swap waits for them (capped).
+      if (opts.prepare) void Promise.race([opts.prepare.catch(() => undefined), wait(ASSET_WAIT_MS)]).then(swapAndShow);
+      else swapAndShow();
     }, ZONE_FADE * 1000);
   }
 
@@ -2394,7 +2404,7 @@ export class Game {
       this.enterZone(def.id, x, z);
       this.hud.showBanner(t(`zones.${def.key}.name`), 2.4);
       this.autosave();
-    }, { name: t(`zones.${def.key}.name`), tip: true });
+    }, { name: t(`zones.${def.key}.name`), tip: true, prepare: this.prepareZone(def.id) });
     return true;
   }
 

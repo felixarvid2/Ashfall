@@ -16,6 +16,7 @@ import './ui/desktop/inventory.css';
 import './ui/desktop/services.css';
 import './ui/desktop/menus.css';
 import { Game } from './game';
+import { START_ZONE } from './data/zones';
 import { t } from './data/i18n';
 import { CharacterSelect } from './ui/characterSelect';
 import { registerFonts } from './ui/fonts';
@@ -53,17 +54,43 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
   (window as unknown as { ashfall: Game }).ashfall = game;
 }
 
-// Character select, then the game loop starts.
+// Character select, then the game loop starts. The class's and the zone's models load first, behind the
+// loading screen, so the select itself appears at once.
+let starting = false;
+const startWith = async (prepare: () => Promise<void>, begin: () => boolean): Promise<void> => {
+  if (starting) return;
+  starting = true;
+  loading.textContent = t('game.loading', { done: 0, total: '…' });
+  ui.appendChild(loading);
+  const progress = (done: number, total: number) => (loading.textContent = t('game.loading', { done, total }));
+  try {
+    await prepare();
+    if (!begin()) return;
+    // Models for what the zone spawned that the data sets don't name (NPCs, set pieces, bosses).
+    await game.settleAssets(progress);
+    select.close();
+    game.start();
+  } finally {
+    starting = false;
+    loading.remove();
+  }
+};
 const select = new CharacterSelect(ui, () => game.characterSlots(), {
   play: (slot) => {
-    if (!game.playCharacter(slot)) return;
-    select.close();
-    game.start();
+    const start = game.slotStart(slot);
+    void startWith(
+      () => game.prepareZone(start?.zoneId ?? START_ZONE.id, start?.classId, (done, total) => (loading.textContent = t('game.loading', { done, total }))),
+      () => game.playCharacter(slot),
+    );
   },
   create: (slot, classId, name) => {
-    game.newCharacter(slot, classId, name);
-    select.close();
-    game.start();
+    void startWith(
+      () => game.prepareZone(START_ZONE.id, classId),
+      () => {
+        game.newCharacter(slot, classId, name);
+        return true;
+      },
+    );
   },
   remove: (slot) => game.deleteCharacter(slot),
   portraitUrl: (classId) => game.renderer.assets.iconUrl(`icon.portrait_${classId}`, import.meta.env.BASE_URL),
