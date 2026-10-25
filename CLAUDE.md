@@ -22,8 +22,9 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
   publish (`dist-artifact/artifact-page.html`)
 - `npm run e2e -- --scenario <boot|portrait|tooltip|instance|zone|landscape> --out <dir>` headless
   browser checks with screenshots (`scripts/e2e/README.md`; start `npm run dev` first)
-- Releases: push a tag `vX.Y.Z`; `.github/workflows/release.yml` builds the game and attaches
-  `ashfall-vX.Y.Z-web.zip` to a GitHub release
+- Releases: merge a notes file `docs/releases/vX.Y.Z.md` to main (or push a tag / run the workflow by
+  hand); `.github/workflows/release.yml` builds the game, attaches `ashfall-vX.Y.Z-web.zip` and uses the
+  notes file as the release text. Cloud sessions can't push tags or edit releases, so use the notes file
 
 ## Rules
 

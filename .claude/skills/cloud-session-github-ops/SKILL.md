@@ -7,9 +7,16 @@ description: Git and GitHub operations from a Claude Code cloud session (proxy, 
 
 ## What the environment allows
 
-- **Push branches** through the git proxy; **no tag pushes** (403). Releases: a workflow with
-  `workflow_dispatch` and a `tag` input that creates the tag and the release itself, triggered via the GitHub
-  MCP `actions_run_trigger`; confirm with `get_release_by_tag`.
+- **Push branches** through the git proxy. Blocked (tested): tag pushes, creating a tag ref via the REST API
+  ("Write access to this GitHub API path is not permitted"), and creating or editing releases via REST or
+  `gh release` ("not permitted for this session type"; `gh release edit` also needs GraphQL, which is off).
+  Releases therefore go through a workflow that uses its own `GITHUB_TOKEN`:
+  - best: the workflow also runs on `push` to main with `paths: ['docs/releases/v*.md']`, takes the tag from
+    the changed file name and uses that file as the release body (`body_path`, `overwrite_files: true`).
+    Merging a PR with a new notes file creates the release; editing the file updates it.
+  - or `workflow_dispatch` with a `tag` input, triggered via the GitHub MCP `actions_run_trigger`.
+  Confirm with `get_release_by_tag`. A personal access token in `GH_TOKEN` (environment secret) is the
+  documented way to run `gh release` directly, if the user wants to set one up.
 - **No repo creation** (`create_repository` returns 403): ask the user to create it, then `add_repo` (push access)
   and clone once with a long timeout.
 - **Force pushes can be denied** by the auto-mode classifier: after a PR merge, bring the branch up to date with
