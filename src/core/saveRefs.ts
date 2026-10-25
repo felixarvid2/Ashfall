@@ -126,8 +126,9 @@ export function runSaveApply(target: SaveApplier, data: SaveData): SaveApplyResu
   let previous: SaveData | null = null;
   try {
     previous = target.snapshot();
-  } catch {
+  } catch (err) {
     // A world that cannot snapshot cannot be restored either.
+    console.warn('[ashfall] no snapshot to fall back on before applying a save', err);
   }
   try {
     target.apply(data);
@@ -138,8 +139,9 @@ export function runSaveApply(target: SaveApplier, data: SaveData): SaveApplyResu
       try {
         target.apply(previous);
         restored = true;
-      } catch {
+      } catch (err) {
         // Still broken: stay suppressed.
+        console.error('[ashfall] restoring the previous world failed', err);
       }
     }
     return { ok: false, error, restored };

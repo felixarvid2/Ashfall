@@ -153,7 +153,7 @@ export class GameRenderer {
     const size = arena.halfSize * 2 + 40;
     const groundDef = arena.ground;
     // Open air in the ground (The Core's abyss and bridges): a smoothed mask the ground shader discards by.
-    const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+    const grid = caveGrid(arena);
     const caves = (arena as { caves?: CaveDef }).caves;
     const cutField: CutField | null = grid && caves && (grid.air || grid.bridges) ? blurCut(grid, cutCells(grid, caves)) : null;
     let cutTex: THREE.DataTexture | null = null;

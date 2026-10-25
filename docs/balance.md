@@ -26,7 +26,7 @@ Three tools, all using the real combat systems:
 | Build | Time to L10 | Deaths |
 |---|---|---|
 | Bastion · Seismic Shock | 7:23 / 7:33 | 0 / 0 |
-| Bastion · Furnace Cleave | 10:24 / 11:13 | 0 / 0 |
+| Bastion · Furnace Cleave | 8:51 / 8:46 | 0 / 0 |
 | Bastion · Strike tank | 10:20 / 9:52 | 2 / 1 |
 | Spectre · Sniper | 11:03 / 11:45 | 0 / 0 |
 | Spectre · Trapper | 12:19 / 11:48 | 2 / 0 |
@@ -97,9 +97,13 @@ than in the playthroughs, and melee looks stronger; use `--pack 5` to see the ar
   change the bot went from 11 / 7 deaths to 3 / 3 (15:42 / 14:54); once melee plans stopped shooting the
   starter dart from where they stood (the bot would cast Quick Shot at a drone 11 m away for a minute without
   moving), deaths fell to 0 / 0 and the time to 12:43 / 15:08. Drone bolts: 10,658 energy damage taken to 2,648.
-- **Bastion**: Piston Jab arc 50 to 90, Furnace Cleave arc 170 to 200 (Cleave 11:19 / 12:08 to 10:24 / 11:13;
-  the single-dummy L15 row stays 346). Orbital Strike 9 to 16x weapon damage (3.7 % of the shockwave build to
-  8.8 %); Heat Vent 2 + 0.10 x Heat (was 1 + 0.04 x Heat), cooldown 10 s (the vent build 601 to 744).
+- **Bastion**: Piston Jab arc 50 to 90, Furnace Cleave arc 170 to 200 and range 3.4 to 3.9 (Cleave 11:19 / 12:08
+  to 10:24 / 11:13 with the arc, 8:51 / 8:46 with the range, seeds c / d 8:26 / 9:37; the single-dummy L15 row stays
+  346 because the dummy ignores reach). Orbital Strike 9 to 16x weapon damage (3.7 % of the shockwave build to
+  8.8 %); Heat Vent 2 + 0.15 x Heat (was 1 + 0.04 x Heat), cooldown 10 s (the vent build 601 to 816).
+- **Lightbearer** (G007, G009): Vigil +2 % life, Consecrated Mail +4 % armor, Sacred Oath +4 % damage against
+  corrupted enemies. Devout no longer adds 15 % Devotion gain and Piety is +3 % per rank (was +5 %): the level 30
+  healer's average Devotion 78 to 59 (target 60) while the level 1-10 plans are unchanged (Healer 12:49 / 11:17).
 - **Xenomant**: Symbiote's x1.25 also names Parasite Link (a ranged tether): +10 % to +25 % on the melee build.
   Disease: Spore Dart poison 0.22 to 0.3, Spore Burst hit 0.6 to 1.0 and cloud 0.42 to 0.44, Pandemic x1.3 to
   x1.9 on Poisoned enemies (the key passive carries most of it, so the level 1-10 bot stays at 6:39-7:18).

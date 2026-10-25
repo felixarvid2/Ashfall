@@ -165,8 +165,9 @@ export function decodeRevealed(zone: ZoneRuntime, data: string): void {
   try {
     const s = atob(data);
     for (let i = 0; i < zone.revealed.length; i++) zone.revealed[i] = (s.charCodeAt(i >> 3) >> (i & 7)) & 1;
-  } catch {
-    // Corrupt or empty: start unrevealed.
+  } catch (err) {
+    // Corrupt: start unrevealed.
+    console.warn('[ashfall] the saved map reveal is unreadable', err);
   }
 }
 

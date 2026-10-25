@@ -100,8 +100,9 @@ export function installGlobalErrorHandlers(
       first = false;
       try {
         handlers.onFirstError();
-      } catch {
+      } catch (saveErr) {
         // The save itself failed: the overlay below is still worth showing.
+        console.error('[ashfall] saving after an error failed', saveErr);
       }
     }
     if (tracker.record(err)) handlers.onFatal(err);

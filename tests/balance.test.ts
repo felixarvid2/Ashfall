@@ -49,6 +49,8 @@ describe('percentage passives (G009)', () => {
     ['spectre', 'p.survival_instinct', 'maxLife'],
     ['xenomant', 'p.thick_hide', 'armor'],
     ['xenomant', 'p.cell_division', 'maxLife'],
+    ['lightbearer', 'p.consecrated_mail', 'armor'],
+    ['lightbearer', 'p.vigil', 'maxLife'],
   ];
   it.each(cases)('%s %s at rank 1 is worth at least 1.5 %% of the level 30 base', (classId, node, stat) => {
     const cls = classDef(classId);
@@ -62,22 +64,36 @@ describe('percentage passives (G009)', () => {
   });
 });
 
+describe('Lightbearer passives and Devotion (G007, G009)', () => {
+  it('G009: Sacred Oath is +4 % damage against corrupted enemies, no longer a flat +4 Intelligence', () => {
+    const node = tree('lightbearer').nodes.find((n) => n.id === 'p.sacred_oath');
+    expect(node && 'effects' in node ? node.effects : undefined).toEqual([{ kind: 'damage', value: 0.04, multiplicative: false, when: 'corrupted' }]);
+  });
+
+  it('G007: the level 30 healer keeps its Devotion average near 60 (it was 78)', () => {
+    const r = simulate(build('(Lightbearer) healer'), 60);
+    expect(r.avgHeat).toBeLessThanOrEqual(62);
+    expect(r.avgHeat).toBeGreaterThanOrEqual(40);
+  });
+});
+
 describe('class balance pass (G012-G016)', () => {
   it('G012: the Spectre resists energy like the Lightbearer and Phase Shift protects for 0.4 s', () => {
     expect(classDef('spectre').resist.energy).toBe(0.2);
     expect((skill('spectre.phase_shift').effect as { invulnerable: number }).invulnerable).toBe(0.4);
   });
 
-  it('G013: Piston Jab and Furnace Cleave cover a wider arc', () => {
+  it('G013: Piston Jab and Furnace Cleave cover a wider arc and the Cleave reaches further', () => {
     expect((skill('bastion.piston_jab').effect as { arcDeg: number }).arcDeg).toBe(90);
     expect((skill('bastion.furnace_cleave').effect as { arcDeg: number }).arcDeg).toBe(200);
+    expect((skill('bastion.furnace_cleave').effect as { range: number }).range).toBe(3.9);
   });
 
-  it('G014: Orbital Strike is at least 8 % of the shockwave build and the vent build keeps pace', () => {
+  it('G014: Orbital Strike is at least 8 % of the shockwave build and the vent build reaches 800', () => {
     const b = build('(Bastion) shockwave');
     const noOrbital = { ...without(b, 'n.orbital_strike'), rotation: b.rotation.filter((r) => !r.skill.includes('orbital')) };
     expect(dps(b) / dps(b, noOrbital) - 1).toBeGreaterThanOrEqual(0.08);
-    expect(dps(build('Reactor Core vent'))).toBeGreaterThanOrEqual(700);
+    expect(dps(build('Reactor Core vent'))).toBeGreaterThanOrEqual(800);
   });
 
   it('G015: Symbiote adds at least 20 % to the melee Xenomant, Parasite Link included', () => {

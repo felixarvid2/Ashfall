@@ -14,14 +14,14 @@ Base resistances: Bastion energy 10 %, Spectre energy 20 % (was 10 %: drone bolt
 build took, see decisions.md 2026-10-25), Xenomant energy 5 %, Lightbearer energy 20 %.
 
 The percentage passives (`maxLifePct`, `armorPct`: Reinforced Plating, Vital Systems, Kevlar Weave, Survival
-Instinct, Cell Division, Thick Hide) scale with the whole build; flat +15 armor was noise from level 15 on.
+Instinct, Cell Division, Thick Hide, and the Lightbearer's Vigil +2 % life and Consecrated Mail +4 % armor) scale with the whole build; flat +15 armor was noise from level 15 on.
 
 ## Bastion skills (changed in the balance pass)
 | Skill | Branch | What changed |
 |---|---|---|
 | Piston Jab | Basic | arc 50 to 90 degrees, so packs that surround you are still hit |
-| Furnace Cleave | Core | arc 170 to 200 degrees (the 360 degree Molten modifier keeps its penalty) |
-| Heat Vent | Mastery | 2 + 0.10 x Heat times weapon damage (was 1 + 0.04 x Heat), CD 10 s |
+| Furnace Cleave | Core | arc 170 to 200 degrees and range 3.4 to 3.9 m (the 360 degree Molten modifier keeps its penalty) |
+| Heat Vent | Mastery | 2 + 0.15 x Heat times weapon damage (was 1 + 0.04 x Heat), CD 10 s |
 | Orbital Strike | Ultimate | 16x weapon damage (was 9x), CD 50 s; about 9 % of a shockwave build's damage |
 
 ## Spectre skills

@@ -675,8 +675,6 @@ export function shaftScaling(floor: number): { packs: number; champion: number; 
 }
 
 /** Where instances are built: far outside every zone. */
-export const DEEP_MINES_INSTANCES = ['shaft_13', 'crystal_labyrinth', 'sunken_drill', 'archive', 'burial_chamber', 'dm_bunker'];
-
 export const INSTANCE_ORIGIN = { x: 2000, z: 0 };
 /** Room grid cell (m); walls run along the cell edges. */
 export const ROOM_CELL = 26;

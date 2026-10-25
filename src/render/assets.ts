@@ -204,6 +204,7 @@ export class AssetLibrary {
     try {
       return await load(url);
     } catch {
+      // Retried once; the second failure is logged below.
       await new Promise((r) => setTimeout(r, this.options.retryDelayMs ?? 1000));
       try {
         return await load(url);

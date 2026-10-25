@@ -31,6 +31,40 @@ export interface EnemyBarInfo {
   affixes?: { id: string; name: string }[];
 }
 
+/**
+ * A list of reusable objects for per-frame scratch data: `reset()` at the start of a frame, then `next()` hands out the
+ * same objects again (one is built only when a frame needs more than any before it). The caller overwrites every field.
+ */
+export class FramePool<T> {
+  private readonly items: T[] = [];
+  private used = 0;
+
+  constructor(private readonly make: () => T) {}
+
+  reset(): void {
+    this.used = 0;
+  }
+
+  next(): T {
+    return (this.items[this.used++] ??= this.make());
+  }
+
+  /** Objects ever built (tests). */
+  get capacity(): number {
+    return this.items.length;
+  }
+}
+
+/** A blank info for `FramePool`; the filler sets every field. */
+export const newBarInfo = (): EnemyBarInfo => ({ id: 0, x: 0, y: 0, z: 0, dist: 0, frac: 1, tier: 'normal' });
+
+/** Gives a pooled info the elite's affix chips, rebuilding the list only when they differ from last frame's. */
+export function setInfoAffixes(info: EnemyBarInfo, ids: readonly string[], nameOf: (id: string) => string): void {
+  const have = info.affixes;
+  if (have && have.length === ids.length && have.every((a, i) => a.id === ids[i])) return;
+  info.affixes = ids.map((id) => ({ id, name: nameOf(id) }));
+}
+
 export const BAR_RANGE = 16;
 /** Seconds a bar stays after the last hit, the last `BAR_FADE` of them fading out. */
 export const BAR_HOLD = 3;

@@ -152,8 +152,6 @@ export const WORLD_BOSSES: readonly WorldBossDef[] = [
   },
 ];
 
-export const WORLD_BOSS_DEFS: ReadonlyMap<string, WorldBossDef> = new Map(WORLD_BOSSES.map((b) => [b.id, b]));
-
 /** The enemy bodies: existing large models, scaled up (the boss spawn adds another ×1.3). */
 export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
   {

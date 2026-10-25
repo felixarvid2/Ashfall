@@ -10,6 +10,7 @@ export function getPref(key: string): string | null {
   try {
     return globalThis.localStorage.getItem(key);
   } catch {
+    // Storage blocked: a preference reads as unset.
     return null;
   }
 }
@@ -20,6 +21,7 @@ export function setPref(key: string, value: string): boolean {
     globalThis.localStorage.setItem(key, value);
     return true;
   } catch {
+    // Storage blocked or full: the preference is not kept.
     return false;
   }
 }
@@ -30,6 +32,7 @@ export function prefsBlocked(): boolean {
     void globalThis.localStorage.length;
     return false;
   } catch {
+    // Reading storage throws when it is blocked.
     return true;
   }
 }
@@ -41,6 +44,7 @@ export function getJsonPref<T>(key: string, fallback: T): T {
   try {
     return JSON.parse(raw) as T;
   } catch {
+    // Not JSON (an old or hand-edited value): use the fallback.
     return fallback;
   }
 }

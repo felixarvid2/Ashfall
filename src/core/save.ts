@@ -206,6 +206,7 @@ export function parseSaveDetailed(json: string): { data: SaveData; fromVersion: 
   try {
     raw = JSON.parse(json);
   } catch {
+    // Reported as a SaveError, which the callers handle.
     throw new SaveError('invalid JSON');
   }
   const migrated = migrate(raw);
@@ -317,7 +318,8 @@ export class SaveStore {
       stamps.sort((a, b) => b - a);
       for (const old of stamps.slice(QUARANTINE_KEEP)) this.storage.removeItem(stem + old);
       return true;
-    } catch {
+    } catch (err) {
+      console.warn('[ashfall] keeping a copy of an unreadable save failed', err);
       return false;
     }
   }
@@ -336,6 +338,7 @@ export function safeLocalStorage(): Storage | undefined {
     storage.removeItem(probe);
     return storage;
   } catch {
+    // Storage blocked or full (private mode): saving is unavailable, which the callers handle.
     return undefined;
   }
 }

@@ -256,6 +256,7 @@ export class AudioEngine {
     try {
       ctx = new AudioContext({ latencyHint: 'interactive' });
     } catch {
+      // No Web Audio here (or blocked): the game plays silently.
       return;
     }
     this.ctx = ctx;
@@ -385,7 +386,8 @@ export class AudioEngine {
         const res = await fetch(this.url(file));
         if (!res.ok) throw new Error(String(res.status));
         this.buffers.set(file, await ctx.decodeAudioData(await res.arrayBuffer()));
-      } catch {
+      } catch (err) {
+        console.warn(`[audio] ${file} failed to load`, err);
         this.failed.add(file);
       }
     })();

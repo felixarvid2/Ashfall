@@ -126,8 +126,9 @@ export class GameLoop {
     this.errorStamps.push(now);
     try {
       guard.onError(err);
-    } catch {
+    } catch (reportErr) {
       // The reporter must not take the loop down with it.
+      console.error('[ashfall] the error reporter failed', reportErr);
     }
     if (this.errorStamps.length >= (guard.maxErrors ?? 5)) {
       this.stop();

@@ -56,10 +56,11 @@ export interface CaveGrid {
 
 export const CAVE_CELL = 2;
 
-interface CaveSource {
+/** What `caveGrid` reads: any zone or arena definition (an arena without roads or hubs rasterises just its caves). */
+export interface CaveSource {
   halfSize: number;
-  roads: Road[];
-  hubs: { x: number; z: number; radius: number }[];
+  roads?: Road[];
+  hubs?: { x: number; z: number; radius: number }[];
   caves?: CaveDef;
 }
 
@@ -104,7 +105,7 @@ export function caveGrid(def: CaveSource): CaveGrid | null {
       }
     }
   };
-  for (const road of def.roads) {
+  for (const road of def.roads ?? []) {
     for (let k = 0; k < road.points.length - 1; k++) {
       const [ax, az] = road.points[k]!;
       const [bx, bz] = road.points[k + 1]!;
@@ -112,7 +113,7 @@ export function caveGrid(def: CaveSource): CaveGrid | null {
     }
   }
   for (const c of def.caves.caverns) circle(c.x, c.z, c.radius);
-  for (const h of def.hubs) circle(h.x, h.z, h.radius + 4);
+  for (const h of def.hubs ?? []) circle(h.x, h.z, h.radius + 4);
   const grid: CaveGrid = { cell, n, half, data };
   // Melt pools: carved out of whatever was painted.
   for (const h of def.caves.holes ?? []) circle(h.x, h.z, h.radius, 0);

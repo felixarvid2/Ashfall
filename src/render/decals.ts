@@ -54,7 +54,7 @@ export function buildDecals(root: THREE.Object3D, arena: ArenaDef): void {
   const set = SETS[arena.id];
   if (!set) return;
   const rng = new Rng(`decals:${arena.id}`);
-  const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+  const grid = caveGrid(arena);
   const lim = arena.halfSize - 4;
   const blocked = (x: number, z: number) =>
     Math.abs(x) > lim ||

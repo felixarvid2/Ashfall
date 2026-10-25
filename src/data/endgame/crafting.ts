@@ -5,7 +5,6 @@
 import type { StatKey } from '../loot/schemas';
 
 export type RecipeGroup = 'offense' | 'defense' | 'utility' | 'mobility';
-export const RECIPE_GROUPS: readonly RecipeGroup[] = ['offense', 'defense', 'utility', 'mobility'];
 
 /** One affix a recipe can add. Values are the range at item power 100, scaled like normal affixes. */
 export interface RecipeOption {
@@ -85,8 +84,6 @@ export const MASTERWORK = {
 
 /** Lumen Dust from salvaging items of these rarities (the material comes from legendaries and uniques). */
 export const SALVAGE_DUST: Partial<Record<string, number>> = { legendary: 2, unique: 3, mythic: 5 };
-
-export const MATERIAL_IDS = ['lumen_dust', 'rift_shard'] as const;
 
 // ---- Codex of Power ----------------------------------------------------------------------------
 

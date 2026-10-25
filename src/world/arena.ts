@@ -44,7 +44,7 @@ export function scatterInstances(arena: ArenaDef, index: number): ScatterInstanc
   const out: ScatterInstance[] = [];
   const clear = 3;
   // Underground: scatter only on open ground (rock is drawn solid).
-  const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+  const grid = caveGrid(arena);
   const zone = arena as ArenaDef & { roads?: Road[]; hubs?: HubDef[]; env?: EnvFeature[] };
   const pick = spotPicker(zone, def, rng);
   const lim = arena.halfSize - 1;

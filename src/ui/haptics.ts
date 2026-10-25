@@ -73,13 +73,9 @@ export function setHaptics(on: boolean): void {
     try {
       navigator.vibrate?.(0);
     } catch {
-      // ignore
+      // Vibration refused (no user gesture yet, or unsupported): intentional, nothing to report.
     }
   }
-}
-
-export function hapticsEnabled(): boolean {
-  return enabled;
 }
 
 function now(): number {
@@ -111,7 +107,7 @@ export function buzz(pattern: number | number[]): void {
   try {
     navigator.vibrate(pattern);
   } catch {
-    // ignore
+    // Vibration refused (no user gesture yet, or unsupported): intentional, nothing to report.
   }
 }
 

@@ -82,7 +82,7 @@ import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from './systems/sk
 import { statusSystem } from './systems/status';
 import { enemyNear } from './systems/targeting';
 import { DamageNumbers } from './ui/damageNumbers';
-import { EnemyBars, ELITE_RANGE, type EnemyBarInfo } from './ui/enemyBars';
+import { EnemyBars, ELITE_RANGE, FramePool, newBarInfo, setInfoAffixes, type EnemyBarInfo } from './ui/enemyBars';
 import { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
 import { bestLoadout, sortGrid, type EquipMove, type SortMode } from './ui/inventoryLogic';
@@ -268,6 +268,9 @@ export class Game {
   /** Enemy infos reused every frame (bars, plates, minimap blips). */
   private readonly enemyInfos: EnemyBarInfo[] = [];
   private readonly blipBuf: MapBlip[] = [];
+  /** The enemies' bar infos and minimap blips are reused every frame, not allocated (T017). */
+  private readonly infoPool = new FramePool<EnemyBarInfo>(newBarInfo);
+  private readonly blipPool = new FramePool<MapBlip>(() => ({ x: 0, z: 0, kind: 'normal' }));
   private readonly featureBuf: MapFeature[] = [];
   /** Quest markers, computed once per frame and shared by the minimap and the tracker arrow. */
   private frameQuestMarkers: ReturnType<typeof questMarkers> = [];
@@ -315,6 +318,7 @@ export class Game {
     try {
       return !!this.storage?.getItem('ashfall.settings');
     } catch {
+      // Storage blocked: no stored settings.
       return false;
     }
   }
@@ -909,7 +913,8 @@ export class Game {
     try {
       const data = this.saves.read(slotKey(slot));
       return data ? { classId: data.character.classId, zoneId: hasZone(data.world.zone) ? data.world.zone : START_ZONE.id } : null;
-    } catch {
+    } catch (err) {
+      console.warn('[ashfall] the saved character could not be read', err);
       return null;
     }
   }
@@ -1188,7 +1193,8 @@ export class Game {
     try {
       const written = this.saves.write(slotKey(this.slot), this.snapshot());
       result = written.ok ? account : written;
-    } catch {
+    } catch (err) {
+      console.error('[ashfall] autosave threw', err);
       result = { ok: false, reason: 'unknown' };
     }
     if (result.ok) {
@@ -1569,6 +1575,8 @@ export class Game {
     infos.length = 0;
     const blips = this.blipBuf;
     blips.length = 0;
+    this.infoPool.reset();
+    this.blipPool.reset();
     const exposure = this.zone?.storm.exposure ?? 0;
     for (const e of this.world.query(EnemyAI, Health, Transform)) {
       if (this.world.has(e, Dead)) continue;
@@ -1579,19 +1587,24 @@ export class Game {
       if (dist > 45) continue;
       const elite = this.world.get(e, Elite);
       const boss = this.world.has(e, Boss);
-      blips.push({ x: tr.x, z: tr.z, kind: boss ? 'boss' : elite ? (elite.kind === 'champion' ? 'champion' : 'rare') : 'normal' });
+      const blip = this.blipPool.next();
+      blip.x = tr.x;
+      blip.z = tr.z;
+      blip.kind = boss ? 'boss' : elite ? (elite.kind === 'champion' ? 'champion' : 'rare') : 'normal';
+      blips.push(blip);
       if (dist > ELITE_RANGE) continue;
       const scale = this.world.get(e, Renderable)?.scale ?? 1;
-      const info: EnemyBarInfo = {
-        id: e,
-        x: tr.x,
-        y: tr.y + (elite ? 2.6 : 2.1) * scale,
-        z: tr.z,
-        dist,
-        frac: hp.max > 0 ? hp.current / hp.max : 1,
-        tier: boss ? 'boss' : (elite?.kind ?? 'normal'),
-        targeted: e === this.hudTarget,
-      };
+      const info = this.infoPool.next();
+      info.id = e;
+      info.x = tr.x;
+      info.y = tr.y + (elite ? 2.6 : 2.1) * scale;
+      info.z = tr.z;
+      info.dist = dist;
+      info.frac = hp.max > 0 ? hp.current / hp.max : 1;
+      info.tier = boss ? 'boss' : (elite?.kind ?? 'normal');
+      info.targeted = e === this.hudTarget;
+      // (Affixes stay from the last frame on this slot: only elites read them, and they re-check them.)
+      info.name = info.color = undefined;
       if (elite) {
         // Ash Storms hide name plates until enemies are close; the target frame already names the phone's target.
         if (dist > ELITE_RANGE - 18 * exposure || (e === this.hudTarget && this.hud.portrait)) continue;
@@ -1599,7 +1612,7 @@ export class Game {
         const ai = this.world.get(e, EnemyAI);
         info.name = dn ? (dn.literal ? dn.key : t(dn.key)) : `${t('elites.champion')} ${t(`enemies.${ai?.defId ?? ''}`)}`;
         info.color = ELITE_COLORS[elite.kind];
-        info.affixes = elite.affixes.map((a) => ({ id: a, name: t(`elites.affixes.${a}`) }));
+        setInfoAffixes(info, elite.affixes, (a) => t(`elites.affixes.${a}`));
       }
       infos.push(info);
     }
@@ -2926,7 +2939,8 @@ export class Game {
       const result = this.saves.write(slotKey(this.slot), this.snapshot());
       if (!result.ok) this.toasts.show(t(`save.autosaveFailed.${result.reason}`), 'error', 8000);
       else if (!quiet) this.toasts.show(t('save.saved'));
-    } catch {
+    } catch (err) {
+      console.error('[ashfall] saving threw', err);
       this.toasts.show(t('save.storageUnavailable'), 'error');
     }
   }
