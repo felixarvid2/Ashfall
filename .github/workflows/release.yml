@@ -1,10 +1,16 @@
 name: Release
 
-# Push a tag like v1.0.0 (or run by hand with a tag name) to build the game and publish a GitHub
-# release with the playable web build as a zip.
+# Build the game and publish a GitHub release with the playable web build as a zip. Three ways in:
+#  - merge a release-notes file docs/releases/vX.Y.Z.md to main (creates or updates release vX.Y.Z;
+#    the only way that needs no tag push or Actions UI, e.g. from a Claude Code cloud session),
+#  - push a tag like v1.0.0,
+#  - run it by hand (workflow_dispatch) with a tag name.
+# The release body is docs/releases/<tag>.md when that file exists.
 on:
   push:
     tags: ['v*']
+    branches: [main]
+    paths: ['docs/releases/v*.md']
   workflow_dispatch:
     inputs:
       tag:
@@ -17,10 +23,23 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pick the tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+          else
+            # A push to main that changed docs/releases/v*.md: release the newest changed notes file.
+            FILE=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- 'docs/releases/v*.md' | sort -V | tail -1)
+            TAG=$(basename "$FILE" .md)
+          fi
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then echo "Bad tag: '$TAG'"; exit 1; fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -45,11 +64,17 @@ jobs:
           game shows touch controls.
           TXT
           (cd dist && zip -qr "../ashfall-${TAG}-web.zip" .)
+      - name: Release notes
+        run: |
+          {
+            echo "Playable web build of Ashfall. Unzip \`ashfall-${TAG}-web.zip\` and serve the folder"
+            echo "with any static web server (see HOW-TO-PLAY.txt inside), e.g. \`npx serve .\`."
+            if [ -f "docs/releases/${TAG}.md" ]; then echo; cat "docs/releases/${TAG}.md"; fi
+          } > release-notes.md
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
           name: Ashfall ${{ env.TAG }}
           files: ashfall-${{ env.TAG }}-web.zip
-          body: |
-            Playable web build of Ashfall. Unzip `ashfall-${{ env.TAG }}-web.zip` and serve the folder
-            with any static web server (see HOW-TO-PLAY.txt inside), e.g. `npx serve .`.
+          body_path: release-notes.md
+          overwrite_files: true
