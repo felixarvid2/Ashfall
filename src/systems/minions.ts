@@ -240,6 +240,7 @@ function attack(world: World, ctx: GameContext, e: Entity, ai: MinionAI, tr: Tra
         coefficient: ai.coefficient,
         damageType: ai.damageType,
         knockback: 0,
+        corruptedMul: 1,
         applies: ai.applies,
         hitstopMs: 0,
         shake: 0,

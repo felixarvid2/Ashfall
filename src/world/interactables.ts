@@ -387,6 +387,7 @@ function breakDestructible(world: World, e: Entity, fuse: number, ctx?: GameCont
 
 const BLAST_IMPACT: Impact = {
   coefficient: 1,
+  corruptedMul: 1,
   damageType: 'heat',
   knockback: 2.5,
   applies: [],

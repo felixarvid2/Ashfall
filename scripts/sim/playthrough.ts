@@ -476,6 +476,11 @@ function reach(effect: import('../../src/data/schemas').SkillEffect): number {
     case 'tether':
       return effect.maxRange;
     case 'orbital':
+    case 'guardian':
       return effect.range;
+    case 'allyArea':
+      return effect.enemyImpact?.radius ?? 99;
+    case 'sanctum':
+      return effect.center === 'self' ? effect.radius : effect.maxRange;
   }
 }
