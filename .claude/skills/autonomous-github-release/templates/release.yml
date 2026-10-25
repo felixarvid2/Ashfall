@@ -1,0 +1,68 @@
+name: Release
+
+# Build the project and publish a GitHub release. Three ways in:
+#  - merge a notes file docs/releases/vX.Y.Z.md to main (creates or updates release vX.Y.Z; works from
+#    sessions that can't push tags or call the releases API),
+#  - push a tag like v1.0.0,
+#  - run it by hand (workflow_dispatch) with a tag name.
+# The release body is docs/releases/<tag>.md when that file exists.
+on:
+  push:
+    tags: ['v*']
+    branches: [main] # your default branch
+    paths: ['docs/releases/v*.md']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (e.g. v1.0.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pick the tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+          else
+            # A push to main that changed docs/releases/v*.md: release the newest changed notes file.
+            FILE=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- 'docs/releases/v*.md' | sort -V | tail -1)
+            TAG=$(basename "$FILE" .md)
+          fi
+          if ! echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then echo "Bad tag: '$TAG'"; exit 1; fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      # ---- Project-specific: install, test, build and package. Example for a Node project: ----
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Package
+        run: (cd dist && zip -qr "../project-${TAG}.zip" .)
+      # ---- end of project-specific steps ----
+
+      - name: Release notes
+        run: |
+          {
+            echo "Download \`project-${TAG}.zip\` below."
+            if [ -f "docs/releases/${TAG}.md" ]; then echo; cat "docs/releases/${TAG}.md"; fi
+          } > release-notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: ${{ github.event.repository.name }} ${{ env.TAG }}
+          files: project-${{ env.TAG }}.zip
+          body_path: release-notes.md
+          overwrite_files: true

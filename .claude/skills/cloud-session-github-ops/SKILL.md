@@ -15,7 +15,7 @@ description: Git and GitHub operations from a Claude Code cloud session (proxy, 
     the changed file name and uses that file as the release body (`body_path`, `overwrite_files: true`).
     Merging a PR with a new notes file creates the release; editing the file updates it.
   - or `workflow_dispatch` with a `tag` input, triggered via the GitHub MCP `actions_run_trigger`.
-  Confirm with `get_release_by_tag`. A personal access token in `GH_TOKEN` (environment secret) is the
+  Confirm with `get_release_by_tag`. The full procedure is the `autonomous-github-release` skill. A personal access token in `GH_TOKEN` (environment secret) is the
   documented way to run `gh release` directly, if the user wants to set one up.
 - **No repo creation** (`create_repository` returns 403): ask the user to create it, then `add_repo` (push access)
   and clone once with a long timeout.

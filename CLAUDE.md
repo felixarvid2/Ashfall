@@ -69,5 +69,5 @@ the reading, running and writing and return short reports.
 Project skills live in `.claude/skills/` (copies of the general ones are in felixarvid2/claude-skills):
 `ashfall-region-pipeline` (how a region or phase is built), `parallel-subagent-builds`,
 `claude-artifact-game-publish`, `playwright-webgl-testing`, `mobile-portrait-game-ui`,
-`free-game-asset-pipeline` and `cloud-session-github-ops`. Third-party UI skills (licences and sources in
+`free-game-asset-pipeline`, `cloud-session-github-ops` and `autonomous-github-release` (cutting a release). Third-party UI skills (licences and sources in
 their folders): `game-ui-ux` and `threejs-game-ui-designer`.
