@@ -326,6 +326,7 @@
     "world_hollow_engine": "Hollow Engine",
     "named": {
       "lena": "Lena Reyes",
+      "fireproof_man": "The Fireproof Man",
       "rook": "Rook",
       "hold_warden": "The Hold Warden",
       "vos": "Sergeant Vos",
@@ -2856,6 +2857,11 @@
       "title": "Followed you below",
       "greeting": "Burned one monster. Happy to help you put down the man who made them."
     },
+    "whisper_voice": {
+      "name": "The Whisper",
+      "title": "Heard in the Elder Halls",
+      "greeting": "Closer. I have been saying your name for a long time, and I would like to say it once to your face."
+    },
     "vasquez": {
       "name": "Teo Vasquez",
       "title": "Mining Station Aurum",
@@ -3952,7 +3958,7 @@
         "steps": {
           "0": "Follow the footprints across the slag",
           "1": "Follow them further",
-          "2": "Follow them to where they stop",
+          "2": "Face whoever waits where the prints stop",
           "3": "Open what he left behind"
         },
         "done": "Whoever walks through fire here left you a gift — and a mystery."
@@ -3961,8 +3967,8 @@
         "title": "The Gardener",
         "summary": "One crop row in the outer domes is perfectly tended. Weeded. Watered. Nobody in Lab 9 knows who does it.",
         "steps": {
-          "0": "Follow the fresh footprints",
-          "1": "Follow them further",
+          "0": "Find the outer waystation the gardener walks past",
+          "1": "Follow the fresh footprints",
           "2": "Follow them to the end",
           "3": "Open what the gardener left"
         },
@@ -3974,9 +3980,10 @@
         "steps": {
           "0": "Follow the whisper",
           "1": "Follow it further",
-          "2": "Follow it to its source",
+          "2": "Answer the voice",
           "3": "Open what it guards"
         },
+        "talk2": "There you are. I said your name so often I forgot I was saying it.\nI am not what you are looking for. I only kept it safe. It is in the rock, a few steps on. Take it. It was always yours.",
         "done": "The whisper stops. Something was waiting for you."
       },
       "table_light": {
@@ -3984,7 +3991,7 @@
         "summary": "A lamp burns on a kitchen table in the middle of the Memory Halls. Nobody here has a kitchen.",
         "steps": {
           "0": "Follow the lamplight",
-          "1": "Follow it further",
+          "1": "Hold the middle room while the lamp burns ({n}/{count})",
           "2": "Follow it to the last room",
           "3": "Open what the table holds"
         },

@@ -325,7 +325,8 @@ export const REFINERY_QUESTS: QuestInput[] = [
     steps: [
       { kind: 'reach', ...p(262, -36), radius: 9, marker: false },
       { kind: 'reach', ...p(232, -98), radius: 9, marker: false },
-      { kind: 'reach', ...p(258, -158), radius: 9, marker: false },
+      // C016: whoever walks through the slag is waiting where the prints stop.
+      { kind: 'kill', count: 1, spawn: { enemy: 'slagborn', x: p(258, -158).x, z: p(258, -158).z, name: 'enemies.named.fireproof_man', elite: 'champion' }, marker: false },
       { kind: 'interact', count: 1, objects: [{ id: 'fireproof.cache', x: p(258, -158).x + 3, z: p(258, -158).z + 3, asset: 'prop.supply_chest' }], marker: false },
     ],
     rewards: { xp: 1400, gold: 260, item: 'legendary', restoration: 1 },

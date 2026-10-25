@@ -39,7 +39,11 @@ const BORDERLAND = p(0, -232);
 /** The empty cab's way down the east drift from the crane to the camp road (sq.empty_cab). */
 export const EMPTY_CAB_PATH: [number, number][] = [
   [EAST_MACHINERY.x - 6, EAST_MACHINERY.z + 3],
-  ...[cr(100, -212), cr(72, -236), cr(40, -216), cr(8, -205)],
+  [243, -426],
+  [240, -441],
+  [231, -456],
+  [216, -468],
+  [18, -450],
 ];
 
 /** The Last Camp's people; −z is screen-up. Old friends from every hub, and the two who held the camp. */
@@ -337,7 +341,8 @@ export const CORE_QUESTS: QuestInput[] = [
     level: 45,
     steps: [
       { kind: 'reach', ...p(205, -20), radius: 9, marker: false },
-      { kind: 'reach', ...p(160, 100), radius: 9, marker: false },
+      // C016: the middle room is a hold-out: the memory sends its shades while the lamp burns.
+      { kind: 'kill', count: 6, near: { ...p(160, 100), radius: 70 }, marker: false },
       { kind: 'reach', ...p(262, 100), radius: 9, marker: false },
       { kind: 'interact', count: 1, objects: [{ id: 'table.cache', ...p(270, 140), asset: 'prop.supply_chest' }], marker: false },
     ],

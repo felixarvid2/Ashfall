@@ -339,8 +339,9 @@ export const VAULTS_QUESTS: QuestInput[] = [
     trigger: { object: { id: 'gardener.row', ...GARDEN, asset: 'prop.lumen_growth', scale: 0.3 } },
     level: 24,
     steps: [
+      // C016: the row's keeper walks to the outer waystation first, then out to the far domes.
+      { kind: 'discover', teleporter: 'tp.outer', marker: false },
       { kind: 'reach', ...p(-100, -250), radius: 9, marker: false },
-      { kind: 'reach', ...p(-140, -280), radius: 9, marker: false },
       { kind: 'reach', ...p(-176, -262), radius: 9, marker: false },
       { kind: 'interact', count: 1, objects: [{ id: 'gardener.cache', x: p(-176, -262).x + 3, z: p(-176, -262).z + 3, asset: 'prop.supply_chest' }], marker: false },
     ],

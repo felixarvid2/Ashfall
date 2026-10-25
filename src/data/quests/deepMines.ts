@@ -37,6 +37,8 @@ export const MINES_NPCS: NpcInput[] = [
   // The miners move into Mining Station Aurum once it is reclaimed.
   // Who comes to Station Zero when the ledger was shared (sq.foremans_ledger).
   { id: 'tam', zone: ZONE, asset: 'npc.defector', x: HUB.x - 10, z: HUB.z + 3, facing: 1.2, scale: 0.95, choice: { quest: 'sq.foremans_ledger', option: 'share' } },
+  // Heard before it is seen (my.whisper).
+  { id: 'whisper_voice', zone: ZONE, asset: 'npc.defector', ...p(-102, 298), facing: 1.2, scale: 0.9, questOnly: true },
   { id: 'vasquez', zone: ZONE, asset: 'npc.defector', x: AURUM.x + 7, z: AURUM.z - 4, facing: -1.8, requires: AURUM.id },
 ];
 
@@ -347,7 +349,8 @@ export const MINES_QUESTS: QuestInput[] = [
     steps: [
       { kind: 'reach', ...p(-40, 262), radius: 9, marker: false },
       { kind: 'reach', ...p(-86, 286), radius: 9, marker: false },
-      { kind: 'reach', ...p(-100, 300), radius: 9, marker: false },
+      // C016: the voice has a speaker, hidden in the rock until the trail reaches it.
+      { kind: 'talk', npc: 'whisper_voice', marker: false },
       { kind: 'interact', count: 1, objects: [{ id: 'whisper.cache', ...p(-96, 296), asset: 'prop.supply_chest' }], marker: false },
     ],
     rewards: { xp: 3650, gold: 1100, item: 'legendary', restoration: 1 },
