@@ -41,6 +41,7 @@
 .inv-tool { padding: 2px var(--space-3); letter-spacing: 0.06em; text-transform: uppercase; font-size: var(--fs-small); }
 .inv-tool.on, .inv-chip.on { color: var(--ui-accent); border-color: var(--ui-accent); background: #2a1c10; }
 .inv-tool[hidden] { display: none; }
+.inv-tool:disabled { opacity: 0.45; cursor: default; }
 .inv-chips { display: flex; gap: var(--space-1); min-width: 0; flex: 1 1 100%; overflow-x: auto; scrollbar-width: thin; }
 .inv-chip { flex: none; padding: 2px var(--space-2); font-size: var(--fs-label); border-radius: 999px; }
 #ui.touch-ui .inv-tool, #ui.touch-ui .inv-chip { padding: 4px var(--space-3); font-size: var(--fs-small); min-width: var(--tap-min); }

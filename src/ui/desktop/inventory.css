@@ -5,6 +5,8 @@
 #ui:not(.touch-ui) .inventory-panel .inv-doll { margin-bottom: 2px; }
 #ui:not(.touch-ui) .inventory-panel .inv-toolbar { margin-bottom: 4px; }
 /* B001: "Bag full" lives in the tools row (one 22 px line beside Sort / Select) instead of its own banner line, which pushed the 4th bag row out of the panel. */
+/* Equip best joined Sort / Select / search in that row: tighter buttons keep room for the warning and its Salvage junk button. */
+#ui:not(.touch-ui) .inventory-panel .inv-tools .inv-tool { padding: 2px 7px; letter-spacing: 0.03em; }
 #ui:not(.touch-ui) .inv-banner.full.inline { flex: 1 1 0; min-width: 0; height: 22px; box-sizing: border-box; margin: 0; padding: 0 3px 0 6px; font-size: 12px; white-space: nowrap; overflow: hidden; }
 #ui:not(.touch-ui) .inv-banner.full.inline .inv-banner-text { flex: none; }
 #ui:not(.touch-ui) .inv-banner.full.inline .inv-banner-btn { flex: 0 1 auto; min-width: 0; max-width: none; padding: 0 6px; font-size: 11px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

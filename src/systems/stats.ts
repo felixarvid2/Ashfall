@@ -47,6 +47,26 @@ export function sumItemStats(items: Iterable<Item>): Map<StatKey, number> {
   return totals;
 }
 
+/** What wearing `item` in `slot` changes against the gear in `equipped`: the numbers behind the tooltip arrows. */
+export function compareGear(
+  cls: ClassDef,
+  level: number,
+  item: Item,
+  slot: Slot,
+  equipped: Partial<Record<Slot, Item>>,
+): { stats: { stat: StatKey; delta: number }[]; damagePct: number; life: number } {
+  const before = computePlayerStats(cls, level, equipped);
+  const after = computePlayerStats(cls, level, { ...equipped, [slot]: item });
+  const a = sumItemStats([item]);
+  const b = sumItemStats(equipped[slot] ? [equipped[slot]!] : []);
+  const keys = new Set([...a.keys(), ...b.keys()]);
+  return {
+    stats: [...keys].map((stat) => ({ stat, delta: (a.get(stat) ?? 0) - (b.get(stat) ?? 0) })),
+    damagePct: before.damageEstimate > 0 ? after.damageEstimate / before.damageEstimate - 1 : 0,
+    life: after.maxLife - before.maxLife,
+  };
+}
+
 export interface PlayerStats {
   combat: Omit<CombatStats, 'level' | 'tags'>;
   maxLife: number;

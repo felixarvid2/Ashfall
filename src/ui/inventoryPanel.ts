@@ -52,6 +52,10 @@ export interface InventoryActions {
   /** Salvage every common and magic item. */
   salvageJunk(): void;
   sort(mode: SortMode): void;
+  /** How many upgrades Equip best would make right now. */
+  bestCount(): number;
+  /** Wear the best gear from the bag (one toast, one save). */
+  equipBest(): void;
   socket(crystalIndex: number, target: { grid: number } | { slot: Slot }): void;
   compare(item: Item, slot?: Slot): Comparison | null;
   iconUrl(iconId: string): string | null;
@@ -113,6 +117,7 @@ export class InventoryPanel {
   private readonly toolbar: HTMLDivElement;
   private readonly selectBtn: HTMLButtonElement;
   private readonly sortBtn: HTMLButtonElement;
+  private readonly bestBtn: HTMLButtonElement;
   private readonly sortMenu: HTMLDivElement;
   private readonly chips: HTMLDivElement;
   private readonly banners: HTMLDivElement;
@@ -174,6 +179,8 @@ export class InventoryPanel {
     this.sortMenu.setAttribute('role', 'menu');
     this.selectBtn = button('inv-tool inv-select-btn', t('items.bag.select'), () => this.setSelectMode(!this.selectMode));
     this.selectBtn.dataset.testid = 'inv-select';
+    this.bestBtn = button('inv-tool inv-best-btn', t('items.bag.best'), () => this.actions.equipBest());
+    this.bestBtn.dataset.testid = 'inv-best';
     this.chips = el('div', 'inv-chips');
     this.chips.setAttribute('role', 'group');
     this.chips.setAttribute('aria-label', t('items.bag.filterLabel'));
@@ -212,7 +219,7 @@ export class InventoryPanel {
     searchClose.setAttribute('aria-label', t('items.bag.searchClear'));
     this.searchRow.append(this.searchInput, searchClose);
     const tools = el('div', 'inv-tools');
-    tools.append(this.sortBtn, this.selectBtn, this.searchBtn, this.sortMenu);
+    tools.append(this.sortBtn, this.selectBtn, this.bestBtn, this.searchBtn, this.sortMenu);
     this.tools = tools;
     this.toolbar = el('div', 'inv-toolbar');
     this.toolbar.append(tools, this.chips, this.searchRow);
@@ -366,6 +373,13 @@ export class InventoryPanel {
     this.selectBtn.setAttribute('aria-pressed', String(this.selectMode));
     this.selectBtn.textContent = this.selectMode ? t('items.bag.selectDone') : t('items.bag.select');
     this.selectBtn.hidden = !!this.gridClick;
+    // Equip best: the number of upgrades is counted here, on every data change (this refresh), never on a timer.
+    const upgrades = this.gridClick ? 0 : this.actions.bestCount();
+    this.bestBtn.hidden = !!this.gridClick;
+    this.bestBtn.disabled = upgrades === 0;
+    this.bestBtn.textContent = upgrades > 0 ? t('items.bag.bestCount', { n: upgrades }) : t('items.bag.best');
+    this.bestBtn.title = upgrades === 0 ? t('items.bag.bestNone') : upgrades === 1 ? t('items.bag.bestTitleOne') : t('items.bag.bestTitle', { n: upgrades });
+    this.bestBtn.setAttribute('aria-label', this.bestBtn.title);
     for (const b of this.chips.querySelectorAll<HTMLElement>('.inv-chip')) {
       b.classList.toggle('on', b.dataset.chip === this.filter);
       b.setAttribute('aria-pressed', String(b.dataset.chip === this.filter));
@@ -841,8 +855,10 @@ export class InventoryPanel {
       banner.appendChild(el('span', 'inv-banner-text', t('items.bag.full')));
       if (junk > 0) {
         // Two taps: the first arms the button, the second (within 3 s) runs it.
-        const b = button('inv-banner-btn', t('items.bag.salvageJunk', { gold: junk }), () => undefined);
-        armConfirm(b, { armedLabel: t('items.bag.salvageJunkArmed', { gold: junk }), run: () => this.actions.salvageJunk() });
+        // On desktop the warning shares the tools row with Equip best, so its button gets the short wording.
+        const inline = !document.getElementById('ui')?.classList.contains('touch-ui');
+        const b = button('inv-banner-btn', t(inline ? 'items.bag.salvageJunkShort' : 'items.bag.salvageJunk', { gold: junk }), () => undefined);
+        armConfirm(b, { armedLabel: t(inline ? 'items.bag.salvageJunkArmedShort' : 'items.bag.salvageJunkArmed', { gold: junk }), run: () => this.actions.salvageJunk() });
         b.title = t('items.bag.salvageJunk', { gold: junk });
         banner.appendChild(b);
       }

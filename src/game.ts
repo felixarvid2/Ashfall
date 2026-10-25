@@ -82,7 +82,7 @@ import { DamageNumbers } from './ui/damageNumbers';
 import { EnemyBars, ELITE_RANGE, type EnemyBarInfo } from './ui/enemyBars';
 import { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
-import { sortGrid, type SortMode } from './ui/inventoryLogic';
+import { bestLoadout, sortGrid, type EquipMove, type SortMode } from './ui/inventoryLogic';
 import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
 import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import { MatrixPanel } from './ui/matrixPanel';
@@ -101,7 +101,7 @@ import { slotsFor, type Item, type Slot } from './data/loot/schemas';
 import { generateItem, itemPowerFor, xpToNext } from './systems/loot/generate';
 import { addToGrid, emptyInventory, equipFromGrid, salvage, socketCrystal, targetSlot, unequip } from './systems/loot/inventory';
 import { PICKUP_KEY_RADIUS, grantXp, nextItemUid, pickUp, pickupSystem, rewardSystem, setItemNamer } from './systems/loot/rewards';
-import { computePlayerStats, recomputePlayer, setExtraEffects, sumItemStats } from './systems/stats';
+import { compareGear, recomputePlayer, setExtraEffects } from './systems/stats';
 import * as matrix from './systems/endgame/matrix';
 import { monsterLevel } from './systems/encounter';
 import { canRefund, learn, learnedSkills, pointsSpent, refundCost, refundRank, resetTree, respecCost, tree } from './systems/skillTree';
@@ -497,6 +497,8 @@ export class Game {
           this.afterInventoryChange();
         },
         sort: (mode) => this.sortInventory(mode),
+        bestCount: () => this.bestEquipMoves().length,
+        equipBest: () => this.equipBest(),
         socket: (c, target) => this.socketItem(c, target),
         compare: (item, slot) => this.compare(item, slot),
         marked: () => this.autosave(),
@@ -2483,26 +2485,45 @@ export class Game {
   /** Compare a backpack item with what is equipped in the slot it would go to. */
   private compare(item: Item, forSlot?: Slot): { stats: { stat: import('./data/loot/schemas').StatKey; delta: number }[]; damagePct: number; life: number } | null {
     const inv = this.world.req(this.player, Inventory);
-    const user = this.world.req(this.player, SkillUser);
     const base = BASE_ITEMS.get(item.base);
     if (!base || slotsFor(base.type).length === 0) return null;
     const slot: Slot | null = forSlot && slotsFor(base.type).includes(forSlot)
       ? forSlot
       : slotsFor(base.type).length > 1 ? (targetSlot(inv, item) ?? null) : (slotsFor(base.type)[0] ?? null);
     if (!slot) return null;
-    const current = inv.equipped[slot];
-    const prog = this.world.req(this.player, Progression);
-    const cls = classDef(user.classId);
-    const before = computePlayerStats(cls, prog.level, inv.equipped);
-    const after = computePlayerStats(cls, prog.level, { ...inv.equipped, [slot]: item });
-    const a = sumItemStats([item]);
-    const b = sumItemStats(current ? [current] : []);
-    const keys = new Set([...a.keys(), ...b.keys()]);
-    return {
-      stats: [...keys].map((stat) => ({ stat, delta: (a.get(stat) ?? 0) - (b.get(stat) ?? 0) })),
-      damagePct: before.damageEstimate > 0 ? after.damageEstimate / before.damageEstimate - 1 : 0,
-      life: after.maxLife - before.maxLife,
-    };
+    return this.compareIn(item, slot, inv.equipped);
+  }
+
+  /** What wearing `item` in `slot` changes against the gear in `equipped` (a snapshot, so Equip best can try moves ahead). */
+  private compareIn(item: Item, slot: Slot, equipped: Partial<Record<Slot, Item>>): { stats: { stat: import('./data/loot/schemas').StatKey; delta: number }[]; damagePct: number; life: number } | null {
+    const base = BASE_ITEMS.get(item.base);
+    if (!base || !slotsFor(base.type).includes(slot)) return null;
+    const user = this.world.req(this.player, SkillUser);
+    return compareGear(classDef(user.classId), this.world.req(this.player, Progression).level, item, slot, equipped);
+  }
+
+  /** The upgrades "Equip best" would make now (also the number on its button). */
+  bestEquipMoves(): EquipMove[] {
+    const inv = this.world.req(this.player, Inventory);
+    const user = this.world.req(this.player, SkillUser);
+    return bestLoadout(inv.grid, inv.equipped, user.classId, (item, slot, equipped) => this.compareIn(item, slot, equipped));
+  }
+
+  /** Wear the best gear from the bag in one go: one sound, one save, one toast. */
+  equipBest(): void {
+    const inv = this.world.req(this.player, Inventory);
+    const user = this.world.req(this.player, SkillUser);
+    const moves = this.bestEquipMoves();
+    let done = 0;
+    for (const m of moves) if (equipFromGrid(inv, m.index, user.classId, m.slot).ok) done++;
+    if (done === 0) {
+      this.toasts.show(t('loot.equipBestNone'));
+      return;
+    }
+    audio.play('ui.equip');
+    this.afterInventoryChange();
+    this.autosave();
+    this.toasts.show(t(done === 1 ? 'loot.equipBestOne' : 'loot.equipBestMany', { n: done }));
   }
 
   // ---- Skill tree actions (called by the skill tree panel) ------------------
