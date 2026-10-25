@@ -67,5 +67,5 @@ the reading, running and writing and return short reports.
 
 Project skills live in `.claude/skills/` (copies of the general ones are in felixarvid2/claude-skills):
 `ashfall-region-pipeline` (how a region or phase is built), `parallel-subagent-builds`,
-`claude-artifact-game-publish`, `headless-browser-game-checks`, `mobile-portrait-game-ui`,
+`claude-artifact-game-publish`, `playwright-webgl-testing`, `mobile-portrait-game-ui`,
 `free-game-asset-pipeline` and `cloud-session-github-ops`.
