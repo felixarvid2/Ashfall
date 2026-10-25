@@ -1,7 +1,7 @@
 /* Diablo-comparison UI pass (menus): see docs/ui/diablo-audit-*.md. Desktop-only rules use #ui:not(.touch-ui). */
 
 /* ---- B024: the Ash Harvest tracker and the control hint no longer print over panel titles (desktop) ---- */
-#ui:not(.touch-ui).has-panel :is(.harvest-hud, .hud-hint) { visibility: hidden; }
+#ui:not(.touch-ui).has-panel :is(.harvest-hud, .hud-hint, .minimap) { visibility: hidden; }
 
 /* ---- B043: rows that only matter on a phone (thumb layout, button size, vibration) ---- */
 html:not(.touch-device) .settings-row.touch-only { display: none; }

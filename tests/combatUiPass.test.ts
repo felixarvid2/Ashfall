@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { HitSource } from '../src/core/components';
 import { RIFT_REWARDS } from '../src/data/endgame/rifts';
+import { ELITE_AFFIXES } from '../src/data/elites';
+import { t } from '../src/data/i18n';
 import { BEAM, beamLook } from '../src/render/lootVisuals';
 import { riftCacheYield } from '../src/systems/endgame/rifts';
 import { deathCauseLine } from '../src/ui/deathCause';
@@ -122,12 +124,20 @@ describe('rift reward preview (B050)', () => {
 });
 
 describe('death cause line (A046)', () => {
-  const tr = (key: string, p?: Record<string, string | number>) => (p ? `${key}:${Object.values(p).join('|')}` : key);
+  const known: Record<string, string> = { 'elites.affixes.burning': 'Burning', 'elites.affixes.sporeSpreader': 'Spore Spreader' };
+  const tr = (key: string, p?: Record<string, string | number>) => (p ? `${key}:${Object.values(p).join('|')}` : (known[key] ?? key));
   const base: HitSource = { defId: 'ash_walker', at: 100 };
   it('names the last attacker, champion and affixes', () => {
     expect(deathCauseLine(base, 105, tr)).toBe('hud.slainBy:enemies.ash_walker');
-    expect(deathCauseLine({ ...base, elite: 'champion', affixes: ['burning'] }, 105, tr)).toBe('hud.slainByAffix:elites.champion enemies.ash_walker|elites.affixes.burning');
+    expect(deathCauseLine({ ...base, elite: 'champion', affixes: ['burning'] }, 105, tr)).toBe('hud.slainByAffix:elites.champion enemies.ash_walker|Burning');
     expect(deathCauseLine({ ...base, displayKey: 'Kaal the Hollow', literal: true, elite: 'rare' }, 105, tr)).toBe('hud.slainBy:Kaal the Hollow');
+  });
+  it('prettifies an affix id with no translation instead of showing the raw key', () => {
+    expect(deathCauseLine({ ...base, affixes: ['molten'] }, 105, tr)).toBe('hud.slainByAffix:enemies.ash_walker|Molten');
+    expect(deathCauseLine({ ...base, affixes: ['burning', 'frostBiter'] }, 105, tr)).toBe('hud.slainByAffix:enemies.ash_walker|Burning, Frost Biter');
+  });
+  it('real elite affix ids all have names', () => {
+    for (const id of ELITE_AFFIXES) expect(t(`elites.affixes.${id}`)).not.toBe(`elites.affixes.${id}`);
   });
   it('says nothing for no or stale hits', () => {
     expect(deathCauseLine(undefined, 105, tr)).toBe('');

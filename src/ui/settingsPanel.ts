@@ -70,6 +70,14 @@ export function applyAccessibility(root: Element, s: Pick<Settings, 'colorblind'
   }
 }
 
+/** A synthetic keydown can carry `key` only (no `code`): a letter or digit still names its physical key. */
+function codeFromKey(key: string | undefined): string {
+  if (!key || key.length !== 1) return '';
+  if (/[a-z]/i.test(key)) return `Key${key.toUpperCase()}`;
+  if (/[0-9]/.test(key)) return `Digit${key}`;
+  return '';
+}
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
   if (className) e.className = className;
@@ -342,12 +350,13 @@ export class SettingsPanel {
           this.stopListening?.();
           return true;
         }
-        if (e.repeat || !isBindableKey(e.code)) return true;
-        // A key another action holds: warn first, a second press of the same key swaps it over.
-        const result = rebindKey(this.deps.settings(), action, slot, e.code, pending === e.code);
+        const code = e.code || codeFromKey(e.key);
+        if (e.repeat || !isBindableKey(code)) return true;
+        // A key another action holds (B is the mount key by default): warn first, a second press of the same key swaps it over.
+        const result = rebindKey(this.deps.settings(), action, slot, code, pending === code);
         if (!result.keybindings) {
-          pending = e.code;
-          hint.textContent = t('settings.keyConflict', { key: keyLabel(e.code), action: t(`settings.actions.${result.conflicts[0]!}`) });
+          pending = code;
+          hint.textContent = t('settings.keyConflict', { key: keyLabel(code), action: t(`settings.actions.${result.conflicts[0]!}`) });
           hint.hidden = false;
           return true;
         }

@@ -116,6 +116,9 @@ export class InventoryPanel {
   private readonly sortMenu: HTMLDivElement;
   private readonly chips: HTMLDivElement;
   private readonly banners: HTMLDivElement;
+  private readonly tools: HTMLDivElement;
+  /** Desktop: the bag-full warning sits in the tools row instead of a banner line, so the 4th bag row stays on screen at 720p (B001). */
+  private fullInline: HTMLElement | null = null;
   private readonly selbar: HTMLDivElement;
   /** The equipped item shown beside the hovered one (B005). */
   private readonly tooltipEq: HTMLDivElement;
@@ -210,6 +213,7 @@ export class InventoryPanel {
     this.searchRow.append(this.searchInput, searchClose);
     const tools = el('div', 'inv-tools');
     tools.append(this.sortBtn, this.selectBtn, this.searchBtn, this.sortMenu);
+    this.tools = tools;
     this.toolbar = el('div', 'inv-toolbar');
     this.toolbar.append(tools, this.chips, this.searchRow);
     this.banners = el('div', 'inv-banners');
@@ -829,6 +833,8 @@ export class InventoryPanel {
     const full = used >= inv.grid.length;
     const junkItems = inv.grid.filter((i): i is Item => isJunk(i));
     const junk = junkItems.reduce((sum, i) => sum + salvageValue(i), 0);
+    this.fullInline?.remove();
+    this.fullInline = null;
     if (full) {
       const banner = el('div', 'inv-banner full');
       banner.dataset.testid = 'bag-full';
@@ -837,9 +843,15 @@ export class InventoryPanel {
         // Two taps: the first arms the button, the second (within 3 s) runs it.
         const b = button('inv-banner-btn', t('items.bag.salvageJunk', { gold: junk }), () => undefined);
         armConfirm(b, { armedLabel: t('items.bag.salvageJunkArmed', { gold: junk }), run: () => this.actions.salvageJunk() });
+        b.title = t('items.bag.salvageJunk', { gold: junk });
         banner.appendChild(b);
       }
-      out.push(banner);
+      if (document.getElementById('ui')?.classList.contains('touch-ui')) out.push(banner);
+      else {
+        banner.classList.add('inline');
+        this.tools.after(banner);
+        this.fullInline = banner;
+      }
     }
     this.banners.replaceChildren(...out);
     this.banners.hidden = out.length === 0;

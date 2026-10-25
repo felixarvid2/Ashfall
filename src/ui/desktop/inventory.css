@@ -2,7 +2,12 @@
 
 /* ---- B001/B019: the bag fits at 720p, doll labels and the hint line are readable --------------------------- */
 #ui:not(.touch-ui) .inventory-panel { max-height: calc(100vh - 185px); }
-#ui:not(.touch-ui) .inventory-panel .inv-doll { margin-bottom: 6px; }
+#ui:not(.touch-ui) .inventory-panel .inv-doll { margin-bottom: 2px; }
+#ui:not(.touch-ui) .inventory-panel .inv-toolbar { margin-bottom: 4px; }
+/* B001: "Bag full" lives in the tools row (one 22 px line beside Sort / Select) instead of its own banner line, which pushed the 4th bag row out of the panel. */
+#ui:not(.touch-ui) .inv-banner.full.inline { flex: 1 1 0; min-width: 0; height: 22px; box-sizing: border-box; margin: 0; padding: 0 3px 0 6px; font-size: 12px; white-space: nowrap; overflow: hidden; }
+#ui:not(.touch-ui) .inv-banner.full.inline .inv-banner-text { flex: none; }
+#ui:not(.touch-ui) .inv-banner.full.inline .inv-banner-btn { flex: 0 1 auto; min-width: 0; max-width: none; padding: 0 6px; font-size: 11px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #ui:not(.touch-ui) .inv-cell .slot-label { font-size: 11px; color: #8a8076; }
 #ui:not(.touch-ui) .inv-hint { font-size: 12px; }
 

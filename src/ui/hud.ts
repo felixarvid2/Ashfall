@@ -5,6 +5,7 @@
 import { cssUrl } from './art';
 import { BannerQueue, type BannerItem } from './bannerQueue';
 import { haptic, setLowLife } from './haptics';
+import { HintFade } from './hintFade';
 import { setAffixChips } from './enemyBars';
 import { capStatuses, isExpiring, statusSlots } from './statusTiles';
 import { classDef, skill } from '../data/db';
@@ -381,9 +382,9 @@ export class Hud {
   private lastTargetName = '';
   /** Control hints fade after 20 s of play or the first skill use; the title after 8 s; F1 / ? bring the hints back (A019). */
   private readonly titleEl: HTMLDivElement;
-  private playTime = 0;
-  private hintsSeen = false;
-  private hintShow = 0;
+  private readonly hintFade = new HintFade();
+  /** performance.now() at the last update: the hints run on real time, not the clamped frame time (A019). */
+  private lastHintClock = 0;
   /** Life at the last update, for the hit flash on the vignette (A033). */
   private lastLife = -1;
   private hitTimer = 0;
@@ -420,12 +421,12 @@ export class Hud {
     this.hint.className = 'hud-hint';
     title.append(h1, sub, this.hint);
     this.titleEl = title;
-    this.hintsSeen = readHintsSeen();
-    this.hint.classList.toggle('faded', this.hintsSeen);
+    this.hintFade.seen = readHintsSeen();
+    this.hint.classList.toggle('faded', this.hintFade.hintFaded);
     window.addEventListener('keydown', (e) => {
       if ((e.key === 'F1' || e.key === '?') && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
         if (e.key === 'F1') e.preventDefault();
-        this.hintShow = 12;
+        this.hintFade.recall();
       }
     });
 
@@ -719,16 +720,15 @@ export class Hud {
   }
 
   /** Hints fade after 20 s of play or the first skill use, the title after 8 s; F1 or ? show the hints for 12 s (A019). */
-  private updateHints(state: HudState, dt: number): void {
-    if (!state.dead) this.playTime += dt;
-    if (!this.hintsSeen && (this.playTime > 20 || state.slots.some((s) => s.cooldown > 0))) {
-      this.hintsSeen = true;
-      writeHintsSeen();
-    }
-    this.hintShow = Math.max(0, this.hintShow - dt);
-    const hintFaded = this.hintsSeen && this.hintShow <= 0;
+  private updateHints(state: HudState): void {
+    // Real elapsed time: the loop clamps its frame time to 0.25 s, so a slow renderer would run these timers far too slowly.
+    const now = performance.now();
+    const dt = this.lastHintClock > 0 ? (now - this.lastHintClock) / 1000 : 0;
+    this.lastHintClock = now;
+    if (this.hintFade.step(dt, state.dead, state.slots.some((s) => s.cooldown > 0))) writeHintsSeen();
+    const hintFaded = this.hintFade.hintFaded;
     if (this.hint.classList.contains('faded') !== hintFaded) this.hint.classList.toggle('faded', hintFaded);
-    const titleFaded = this.playTime > 8;
+    const titleFaded = this.hintFade.titleFaded;
     if (this.titleEl.classList.contains('faded') !== titleFaded) this.titleEl.classList.toggle('faded', titleFaded);
   }
 
@@ -747,7 +747,7 @@ export class Hud {
   }
 
   update(state: HudState, dt: number): void {
-    this.updateHints(state, dt);
+    this.updateHints(state);
     this.root.classList.toggle('has-target', !!state.target);
     this.root.classList.toggle('hud-dead', state.dead);
     this.updateHit(state.life.current, state.life.max);
