@@ -242,11 +242,11 @@
     "lightbearer": {
       "censer_strike": {
         "name": "Censer Strike",
-        "desc": "Swing the censer in a wide arc. Corrupted enemies take 25% more damage. Generates Devotion."
+        "desc": "Swing the censer in a wide arc. Corrupted enemies take 20% more damage. Generates Devotion."
       },
       "holy_light": {
         "name": "Holy Light",
-        "desc": "Fire a seeking mote of light. Corrupted enemies take 50% more damage. Generates Devotion."
+        "desc": "Fire a seeking mote of light. Corrupted enemies take 30% more damage. Generates Devotion."
       },
       "heal": {
         "name": "Heal",
@@ -254,7 +254,7 @@
       },
       "magnus_exorcismus": {
         "name": "Magnus Exorcismus",
-        "desc": "Inscribe a holy sigil {aim} that strikes everything inside 6 times over 5 seconds. Corrupted enemies take 80% more damage."
+        "desc": "Inscribe a holy sigil {aim} that strikes everything inside 6 times over 5 seconds. Corrupted enemies take 50% more damage. Two sigils at most; a third replaces the oldest."
       },
       "kyrie_eleison": {
         "name": "Kyrie Eleison",
@@ -262,7 +262,7 @@
       },
       "sanctuary": {
         "name": "Sanctuary",
-        "desc": "Consecrate the ground at your feet for 7 seconds. Allies in it recover 4% life every second; enemies are burned, corrupted ones twice as hard."
+        "desc": "Consecrate the ground at your feet for 7 seconds. Allies in it recover 4% life every second; enemies are burned, corrupted ones 60% harder. One at a time: a new one replaces the old."
       },
       "blessing": {
         "name": "Blessing",
@@ -270,15 +270,15 @@
       },
       "lex_aeterna": {
         "name": "Lex Aeterna",
-        "desc": "Judge the enemies {aimNear}: the next hit each of them takes deals double damage."
+        "desc": "Judge the enemies {aimNear}: for 6 seconds they take 35% more damage from every source."
       },
       "guardian_light": {
         "name": "Guardian Light",
-        "desc": "Summon a light that follows you for 25 seconds (up to 2). It shoots enemies and mends allies near it."
+        "desc": "Summon a light that follows you for 25 seconds (up to 2). It shoots bolts that burst on enemies and mends allies near it."
       },
       "benediction": {
         "name": "Benediction",
-        "desc": "A pillar of light heals allies nearby for 30% of their life and keeps them from dying for 8 seconds. Enemies are struck and stunned."
+        "desc": "A pillar of light heals allies nearby for 30% of their life and saves them from one killing blow within 8 seconds, with 1.5 seconds of invulnerability. Enemies are struck and stunned. Cannot recover in under 30 seconds."
       }
     }
   },
@@ -476,7 +476,7 @@
     "empowered": "Deals more damage and moves faster.",
     "wading": "Movement slowed by 40%.",
     "blessed": "Deals 20% more damage and acts 12% faster.",
-    "lexAeterna": "The next hit deals double damage.",
+    "lexAeterna": "Takes 35% more damage from every source.",
     "benediction": "Takes 20% less damage and survives one killing blow."
   },
   "items": {
@@ -501,7 +501,12 @@
       "scalpel_blade": "Scalpel Blade",
       "censer_mace": "Censer Mace",
       "sun_staff": "Sun Staff",
-      "reliquary_lantern": "Reliquary Lantern"
+      "reliquary_lantern": "Reliquary Lantern",
+      "signal_visor": "Signal Visor",
+      "mesh_vest": "Mesh Vest",
+      "grip_boots": "Grip Boots",
+      "lumen_locket": "Lumen Locket",
+      "signet_band": "Signet Band"
     },
     "types": {
       "helm": "Helm",
@@ -538,7 +543,9 @@
     "crystals": {
       "ember": "Ember Crystal",
       "lumen": "Lumen Crystal",
-      "void": "Void Crystal"
+      "void": "Void Crystal",
+      "frost": "Frost Crystal",
+      "storm": "Storm Crystal"
     },
     "crystalTier": [
       "Chipped",
@@ -669,6 +676,8 @@
     "allAttributes": "All Attributes",
     "maxLife": "Maximum Life",
     "armor": "Armor",
+    "maxLifePct": "Maximum Life",
+    "armorPct": "Armor",
     "resistAll": "All Resistances",
     "resistHeat": "Heat Resistance",
     "resistCold": "Cold Resistance",
@@ -686,6 +695,7 @@
     "damageVsStunned": "Damage to Stunned",
     "damageVsBurning": "Damage to Burning",
     "meleeDamage": "Melee Damage",
+    "rangedDamage": "Ranged Damage",
     "cooldownReduction": "Cooldown Reduction",
     "resourceGen": "Resource Generation",
     "moveSpeed": "Movement Speed",
@@ -1458,7 +1468,7 @@
         },
         "rapid": {
           "name": "Rapid Sigil",
-          "desc": "Magnus Exorcismus strikes with 30% shorter pauses."
+          "desc": "Magnus Exorcismus strikes with 20% shorter pauses."
         }
       },
       "kyrie_eleison": {
@@ -1494,7 +1504,7 @@
       "lex_aeterna": {
         "judgment": {
           "name": "Harsh Judgment",
-          "desc": "Lex Aeterna deals twice as much damage on cast."
+          "desc": "Lex Aeterna lasts 4 seconds longer and its radius grows by 1.5."
         },
         "swift": {
           "name": "Swift Judgment",
@@ -1541,11 +1551,11 @@
       },
       "reinforced_plating": {
         "name": "Reinforced Plating",
-        "desc": "+20 armor per rank."
+        "desc": "+4% armor per rank."
       },
       "vital_systems": {
         "name": "Vital Systems",
-        "desc": "+15 maximum life per rank."
+        "desc": "+2.5% maximum life per rank."
       },
       "servo_actuators": {
         "name": "Servo Actuators",
@@ -1585,11 +1595,11 @@
       },
       "kevlar_weave": {
         "name": "Kevlar Weave",
-        "desc": "+15 armor per rank."
+        "desc": "+4% armor per rank."
       },
       "survival_instinct": {
         "name": "Survival Instinct",
-        "desc": "+12 maximum life per rank."
+        "desc": "+2.5% maximum life per rank."
       },
       "quick_hands": {
         "name": "Quick Hands",
@@ -1617,7 +1627,7 @@
       },
       "cell_division": {
         "name": "Cell Division",
-        "desc": "+12 maximum life per rank."
+        "desc": "+2.5% maximum life per rank."
       },
       "toxicology": {
         "name": "Toxicology",
@@ -1629,7 +1639,7 @@
       },
       "thick_hide": {
         "name": "Thick Hide",
-        "desc": "+15 armor per rank."
+        "desc": "+4% armor per rank."
       },
       "vital_spores": {
         "name": "Vital Spores",
@@ -1731,11 +1741,11 @@
       },
       "pandemic": {
         "name": "Pandemic",
-        "desc": "Deal x30% damage to Poisoned enemies. Spore Burst lasts 50% longer."
+        "desc": "Deal x90% damage to Poisoned enemies. Spore Burst lasts 50% longer."
       },
       "symbiote": {
         "name": "Symbiote",
-        "desc": "Your melee attacks deal x25% damage, Scalpel Slash heals for 6% more, and you take 10% less damage."
+        "desc": "Your melee attacks and Parasite Link deal x25% damage, Scalpel Slash heals for 6% more, and you take 10% less damage."
       },
       "devout": {
         "name": "Devout",
@@ -1743,7 +1753,7 @@
       },
       "zealot": {
         "name": "Zealot",
-        "desc": "Your ranged attacks deal x15% damage, and x25% more to corrupted enemies. Magnus Exorcismus strikes with 20% shorter pauses and Lex Aeterna's cooldown is 25% shorter."
+        "desc": "Your ranged attacks deal x15% damage, and x15% more to corrupted enemies. Magnus Exorcismus strikes with 20% shorter pauses and Lex Aeterna's cooldown is 25% shorter."
       },
       "shepherd": {
         "name": "Shepherd",
@@ -1935,6 +1945,46 @@
     "daybreak": {
       "name": "Daybreak's",
       "desc": "Benediction cooldown is {value} shorter."
+    },
+    "coolant_reserve": {
+      "name": "Coolant Reserve",
+      "desc": "Coolant Flush heals {value} more."
+    },
+    "iron_stride": {
+      "name": "Iron Stride",
+      "desc": "Energy Shield cooldown is {value} shorter."
+    },
+    "mirage": {
+      "name": "Mirage",
+      "desc": "Holo Decoy lasts {value} longer and has {value} more life."
+    },
+    "vanishing": {
+      "name": "Vanishing",
+      "desc": "Smoke Cloak cooldown is {value} shorter."
+    },
+    "harbinger": {
+      "name": "Harbinger's",
+      "desc": "Death Mark cooldown is {value} shorter."
+    },
+    "creeping_mold": {
+      "name": "Creeping Mold",
+      "desc": "Spore Cocoon cooldown is {value} shorter."
+    },
+    "strangler": {
+      "name": "Strangler's",
+      "desc": "Grasping Tendrils have {value} larger radius and deal {value} more damage."
+    },
+    "processional": {
+      "name": "Processional",
+      "desc": "Sanctuary covers {value} more area."
+    },
+    "vestments": {
+      "name": "Vestments",
+      "desc": "Blessing cooldown is {value} shorter."
+    },
+    "thurible": {
+      "name": "Thurible",
+      "desc": "Censer Strike has a {value} wider arc and {value} longer reach."
     }
   },
   "uniques": {
@@ -1987,6 +2037,46 @@
       "name": "Halo of the Penitent",
       "effect": "Sanctuary lasts twice as long and covers 40% more area, but its cooldown is 50% longer.",
       "flavor": "Worn heavy, so the sinner remembers."
+    },
+    "reapers_grip": {
+      "name": "Reaper's Grip",
+      "effect": "Death Mark covers 60% more area and cools down 40% faster, but deals 35% less damage.",
+      "flavor": "Every name on the list. He never ran out of ink."
+    },
+    "signet_of_rot": {
+      "name": "Signet of Rot",
+      "effect": "Corpse Explosion leaves a cloud of poison for 4 seconds, but each blast deals 15% less damage.",
+      "flavor": "Worn by the one who stayed behind to tend the dead."
+    },
+    "sunwheel_pendant": {
+      "name": "Sunwheel Pendant",
+      "effect": "Lex Aeterna judges a 60% wider area, cools down 40% faster and leaves scorching light on the ground for 4 seconds.",
+      "flavor": "Turn it once and the verdict is read twice."
+    },
+    "cinder_collar": {
+      "name": "Cinder Collar",
+      "effect": "Heat Vent reaches 40% further and leaves burning ground for 5 seconds, but takes 30% longer to cool down.",
+      "flavor": "Forged shut around the neck of a furnace foreman. The furnace is still in it."
+    },
+    "aureole_of_the_first_dawn": {
+      "name": "Aureole of the First Dawn",
+      "effect": "Sanctuary lasts 2.5 times as long, covers 60% more area and cools down 75% faster. Cast it again and it moves with you.",
+      "flavor": "The light before the light. It remembers every dawn that did not come."
+    },
+    "the_last_word": {
+      "name": "The Last Word",
+      "effect": "Piercing Shot detonates on every enemy it passes through, reaches 8 further, costs 10 less Focus and deals only 10% less damage.",
+      "flavor": "There is no reply. There was never going to be."
+    },
+    "diadem_of_the_swarm_queen": {
+      "name": "Diadem of the Swarm Queen",
+      "effect": "You can have 6 more minions and raise 2 more with each cast. Your minions have 20% more life.",
+      "flavor": "The hive does not obey. It is simply glad you are here."
+    },
+    "ouroboros_coil": {
+      "name": "Ouroboros Coil",
+      "effect": "Deal x25% damage, 8% cooldown reduction and 5% less damage taken.",
+      "flavor": "It has no beginning, and it will not allow you an end."
     },
     "ashen_heartwood": {
       "name": "Ashen Heartwood",
@@ -3912,10 +4002,10 @@
     },
     "codex": {
       "title": "Codex of Power ({n}/{total})",
-      "hint": "Clear a dungeon for the first time to unlock its aspect for every character. Select a rare or legendary item to imprint one, as often as you like.",
+      "hint": "Clear a dungeon for the first time to unlock its aspects for every character. Select a rare or legendary item to imprint one, as often as you like.",
       "locked": "Locked: clear {dungeon}",
       "lockedTitle": "Locked ({n})",
-      "progress": "{done} of {total} dungeons cleared",
+      "progress": "{done} of {total} aspects unlocked",
       "imprint": "Imprint ({gold} gold)",
       "fits": "Fits this item",
       "cat": { "weapon": "Weapon", "armor": "Armor", "jewelry": "Jewelry" },

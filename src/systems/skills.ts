@@ -50,6 +50,11 @@ export function skillOf(user: SkillUser | undefined, id: string): CompiledSkill 
   return user?.compiled[id] ?? { def: skill(id), rank: 1, bonuses: { additive: [], multiplicative: [] }, hazards: [] };
 }
 
+/** Seconds a skill stays on cooldown after a cast: its cooldown after cooldown reduction, never under its `minCooldown`. */
+export function effectiveCooldown(def: { cooldown: number; minCooldown?: number }, cooldownReduction: number): number {
+  return Math.max(def.minCooldown ?? 0, def.cooldown * (1 - cooldownReduction));
+}
+
 export function skillSystem(world: World, dt: number, ctx: GameContext): void {
   for (const e of world.query(SkillUser, Transform)) {
     const user = world.req(e, SkillUser);
@@ -66,7 +71,8 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       user.potionRecharge -= dt;
       if (user.potionRecharge <= 0) {
         user.potionCharges++;
-        user.potionRecharge = cls.potion.recharge;
+        // Kill credit can overshoot the timer; the surplus counts toward the next charge.
+        user.potionRecharge = Math.max(0.1, cls.potion.recharge + user.potionRecharge);
       }
     }
 
@@ -173,7 +179,7 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       }
       if (resource && def.resourceCost > 0) resource.current -= def.resourceCost;
       // Overclock pylon: no cooldowns while it lasts.
-      user.cooldowns[id] = hasStatus(world, e, 'overclock') ? 0 : def.cooldown * (1 - (world.get(e, CombatStats)?.cooldownReduction ?? 0));
+      user.cooldowns[id] = hasStatus(world, e, 'overclock') ? 0 : effectiveCooldown(def, world.get(e, CombatStats)?.cooldownReduction ?? 0);
       user.cast = { skillId: id, elapsed: 0, fired: false, aimX: user.request.aimX, aimZ: user.request.aimZ };
       user.request = null;
       if (mover) {
@@ -518,7 +524,7 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
       for (const c of corpses) {
         const ct = world.req(c, Transform);
         impactArea(world, ctx, caster, ct.x, ct.z, effect.radius, null, effect, [], bonuses);
-        ctx.events.push({ type: 'vfx', kind: 'corpseBurst', x: ct.x, z: ct.z, radius: effect.radius, facing: 0 });
+        ctx.events.push({ type: 'vfx', kind: 'corpseBurst', x: ct.x, z: ct.z, radius: effect.radius, facing: 0, source: 'skill' });
         spawnHazards(world, caster, ct.x, ct.z, compiled);
         consumeCorpse(world, c);
       }

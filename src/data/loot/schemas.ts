@@ -40,6 +40,8 @@ export const STAT_KEYS = [
   // Defence (flat)
   'maxLife',
   'armor',
+  'maxLifePct',
+  'armorPct',
   'resistAll',
   'resistHeat',
   'resistCold',
@@ -58,6 +60,7 @@ export const STAT_KEYS = [
   'damageVsStunned',
   'damageVsBurning',
   'meleeDamage',
+  'rangedDamage',
   // Utility
   'cooldownReduction',
   'resourceGen',
@@ -80,12 +83,15 @@ export const PERCENT_STATS: ReadonlySet<StatKey> = new Set([
   'damageVsStunned',
   'damageVsBurning',
   'meleeDamage',
+  'rangedDamage',
   'cooldownReduction',
   'resourceGen',
   'moveSpeed',
   'barrierBonus',
   'potionHealing',
   'damageReduction',
+  'maxLifePct',
+  'armorPct',
   'resistAll',
   'resistHeat',
   'resistCold',
@@ -270,6 +276,8 @@ export const UniqueDefSchema = z.object({
   base: z.string(),
   rarity: z.enum(['unique', 'mythic']),
   classes: z.array(z.string()).optional(),
+  /** 'quest': only a quest hands it out; it never drops at random (loot rolls, world boss chests). */
+  source: z.enum(['drop', 'quest']).optional(),
   /** Fixed affixes, rolled within the range (values at item power 100). */
   affixes: z.array(z.object({ stat: StatKeySchema, min: z.number(), max: z.number(), scaling: ScalingSchema })),
   effects: z.array(z.any()),

@@ -4,6 +4,8 @@
  */
 export interface Wind {
   setIntensity(intensity: number, seconds: number): void;
+  /** Silence the generator while the game is paused (and bring it back): a held breath, not a loop that carries on. */
+  setPaused(paused: boolean, seconds: number): void;
   /** Fade out and release. */
   stop(seconds: number): void;
 }
@@ -36,6 +38,8 @@ export function createWind(ctx: AudioContext, destination: AudioNode, fadeIn: nu
 
   const out = ctx.createGain();
   out.gain.value = 0;
+  // After `out`, so a pause does not fight the level ramps.
+  const hold = ctx.createGain();
 
   // Slow gusts: one LFO swings the filter centre, another the level.
   const swell = ctx.createOscillator();
@@ -50,7 +54,7 @@ export function createWind(ctx: AudioContext, destination: AudioNode, fadeIn: nu
   gustDepth.gain.value = 0.05;
   gust.connect(gustDepth).connect(out.gain);
 
-  src.connect(filter).connect(out).connect(destination);
+  src.connect(filter).connect(out).connect(hold).connect(destination);
   src.start();
   swell.start();
   gust.start();
@@ -71,6 +75,9 @@ export function createWind(ctx: AudioContext, destination: AudioNode, fadeIn: nu
       ramp(level, seconds);
       filter.frequency.setTargetAtTime(420 + 520 * x, ctx.currentTime, seconds / 3 + 0.01);
     },
+    setPaused(paused, seconds) {
+      hold.gain.setTargetAtTime(paused ? 0 : 1, ctx.currentTime, Math.max(0.01, seconds) / 3);
+    },
     stop(seconds) {
       ramp(0, seconds);
       setTimeout(() => {
@@ -82,6 +89,7 @@ export function createWind(ctx: AudioContext, destination: AudioNode, fadeIn: nu
           }
         }
         out.disconnect();
+        hold.disconnect();
       }, seconds * 1000 + 120);
     },
   };

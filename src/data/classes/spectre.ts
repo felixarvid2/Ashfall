@@ -7,7 +7,7 @@ export const SPECTRE: z.input<typeof ClassDefSchema> = {
   assetId: 'char.spectre',
   life: 205,
   armor: 45,
-  resist: { heat: 0.05, cold: 0.1, toxic: 0.1, energy: 0.1, void: 0.05 },
+  resist: { heat: 0.05, cold: 0.1, toxic: 0.1, energy: 0.2, void: 0.05 },
   weaponDamage: 5,
   attributes: {
     primary: 'dexterity',

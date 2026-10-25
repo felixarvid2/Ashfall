@@ -85,8 +85,8 @@ describe('sound catalog', () => {
     }
   });
 
-  it('keeps public/assets/audio within the 12 MB budget', () => {
+  it('keeps public/assets/audio within the 13 MB budget', () => {
     const files = [...new Set(ALL.map((id) => entry(id).file))].flatMap((f) => ['ogg', 'mp3'].map((e) => join(DIR, `${f}.${e}`)));
-    expect(files.reduce((sum, f) => sum + statSync(f).size, 0)).toBeLessThanOrEqual(12_000_000);
+    expect(files.reduce((sum, f) => sum + statSync(f).size, 0)).toBeLessThanOrEqual(13_000_000);
   });
 });

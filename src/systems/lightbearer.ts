@@ -94,6 +94,17 @@ export function castAllyArea(world: World, ctx: GameContext, caster: Entity, com
 
 /** Lay consecrated ground at (cx, cz). */
 export function castSanctum(world: World, ctx: GameContext, caster: Entity, compiled: CompiledSkill, effect: SanctumEffect, cx: number, cz: number): void {
+  // At the cap the oldest ground of this skill (the entity made first) is taken away.
+  if (effect.maxConcurrent > 0) {
+    const live = world
+      .query(Sanctum)
+      .filter((o) => {
+        const s = world.req(o, Sanctum);
+        return s.owner === caster && s.skillId === compiled.def.id && s.remaining > 0;
+      })
+      .sort((a, b) => world.req(a, Sanctum).remaining - world.req(b, Sanctum).remaining);
+    for (let i = 0; i < live.length - effect.maxConcurrent + 1; i++) world.destroyDeferred(live[i]!);
+  }
   const e = world.create();
   world.add(e, Transform, makeTransform(cx, 0, cz));
   world.add(e, Sanctum, {
@@ -199,6 +210,7 @@ export function castGuardian(world: World, ctx: GameContext, caster: Entity, com
     skillId: compiled.def.id,
     born: ctx.tick,
     bolt: effect.bolt,
+    explodeRadius: effect.explodeRadius,
     healPulse: effect.healPulse ?? null,
     pulseTimer: effect.healPulse?.interval ?? 0,
   });

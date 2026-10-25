@@ -495,8 +495,8 @@ function complete(world: World, ctx: GameContext, rt: InstanceRuntime, x: number
   signal(ctx, { type: 'objective', id });
   ctx.events.push({ type: 'banner', key: 'instances.complete', params: {}, seconds: 2.6 });
   // The first clear of a dungeon unlocks its aspect in the Codex of Power (docs/endgame.md).
-  const unlocked = rt.def.kind === 'dungeon' ? unlockCodexForDungeon(ctx, rt.def.id) : null;
-  if (unlocked) ctx.events.push({ type: 'interact', kind: 'codex', id: rt.def.id, detail: unlocked });
+  const unlocked = rt.def.kind === 'dungeon' ? unlockCodexForDungeon(ctx, rt.def.id) : [];
+  for (const aspect of unlocked) ctx.events.push({ type: 'interact', kind: 'codex', id: rt.def.id, detail: aspect });
   if (ctx.account) {
     const zoneId = ctx.zone?.def.id ?? 'zone';
     const entry = (ctx.account.restoration[zoneId] ??= { points: [], tiers: 0 });

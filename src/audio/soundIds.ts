@@ -10,6 +10,7 @@ export const SFX_IDS = [
   'hit.toxic',
   'hit.energy',
   'hit.void',
+  'hit.holy',
   'hit.crit',
   'hit.player',
   'miss',
@@ -22,6 +23,9 @@ export const SFX_IDS = [
   'shot.heavy',
   'shot.enemy',
   'melee.swing',
+  // Enemy and minion swings sit lower and noisier than the player's own (F002).
+  'swing.enemy',
+  'swing.minion',
   'melee.slam',
   'explosion.small',
   'explosion.large',
@@ -32,9 +36,18 @@ export const SFX_IDS = [
   'cast.summon',
   'cast.trap',
   'cast.flame',
+  // Lightbearer: the cast, and the soft tick of a ground or guardian light pulsing (F003).
+  'cast.holy',
+  'holy.pulse',
   'heal',
   'overheat',
-  'telegraph',
+  // Attack telegraphs by what is coming (F010): a cone is a quick tick, a circle a low rumble,
+  // a line a rising whine, a charge a sharper rise, and a boss attack a one-beat rising cue.
+  'telegraph.melee',
+  'telegraph.slam',
+  'telegraph.beam',
+  'telegraph.charge',
+  'telegraph.boss',
   'footstep',
   // Progress and world.
   'levelUp',
@@ -66,8 +79,10 @@ export const MUSIC_IDS = [
   'music.refinery_district',
   'music.hydroponic_vaults',
   'music.deep_mines',
+  'music.the_core',
   'music.boss',
   'music.boss_mines',
+  'music.boss_core',
 ] as const;
 
 export type SfxId = (typeof SFX_IDS)[number];
@@ -92,4 +107,6 @@ export interface SoundEntry {
   bus: SoundBus;
   /** Linear gain applied on top of the bus (after the pipeline's loudness normalisation). */
   gain: number;
+  /** Base playback rate (default 1): lets an id reuse another's clips lower or higher (swing.enemy). */
+  rate?: number;
 }

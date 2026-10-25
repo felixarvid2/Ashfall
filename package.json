@@ -14,6 +14,7 @@
     "meshy": "tsx scripts/meshy/cli.ts",
     "sim": "tsx scripts/sim/cli.ts",
     "play": "tsx scripts/sim/play.ts",
+    "balance:check": "BALANCE=1 vitest run tests/balance.test.ts",
     "assets:check": "tsx scripts/assets/check.ts",
     "audio:build": "tsx scripts/audio/build.ts",
     "assets:export": "tsx scripts/assets/exportLibrary.ts",

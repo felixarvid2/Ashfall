@@ -22,7 +22,7 @@ import {
   rerollCost,
   sellPrice,
 } from '../systems/hub/services';
-import { CODEX_ASPECTS, MASTERWORK, RECIPE_DEFS, TEMPERING, type RecipeOption } from '../data/endgame/crafting';
+import { codexEntries, MASTERWORK, RECIPE_DEFS, TEMPERING, type RecipeOption } from '../data/endgame/crafting';
 import {
   canMasterwork,
   canTemper,
@@ -929,7 +929,7 @@ export class ServicePanel {
   /** The Codex of Power (endgame): unlocked aspects first with their imprint buttons, the locked ones folded (P092). */
   private codex(inv: Inventory, item: Item | null): HTMLElement[] {
     const eg = this.actions.endgame();
-    const entries = Object.entries(CODEX_ASPECTS);
+    const entries = codexEntries();
     const open = entries.filter(([, aspect]) => eg.codex.includes(aspect));
     const locked = entries.filter(([, aspect]) => !eg.codex.includes(aspect));
     const out: HTMLElement[] = [div('service-sep', ''), div('service-sub', t('crafting.codex.title', { n: open.length, total: entries.length })), div('service-note', t('crafting.codex.hint')), this.codexFilters(item)];

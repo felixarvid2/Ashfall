@@ -65,8 +65,8 @@ export const SPECTRE_TREE: Tree = {
       effects: [{ kind: 'damage', value: 0.6, multiplicative: true, when: 'stealthed' }] },
     { id: 'm.smoke_cloak.regroup', branch: 'defensive', type: 'modifier', parent: 'e.smoke_cloak', group: 'smoke_cloak',
       effects: [{ kind: 'skillMod', skill: S('smoke_cloak'), mods: [{ op: 'add', field: 'heal', value: 0.15 }] }] },
-    { id: 'p.kevlar_weave', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armor', value: 15 }] },
-    { id: 'p.survival_instinct', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLife', value: 12 }] },
+    { id: 'p.kevlar_weave', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armorPct', value: 0.04 }] },
+    { id: 'p.survival_instinct', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLifePct', value: 0.025 }] },
 
     // ---- Tactical
     skillNode('phase_shift', 'tactical'),

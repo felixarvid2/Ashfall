@@ -638,7 +638,7 @@ function rusher(
       ctx.events.push({ type: 'vfx', kind: 'enemySlash', x: tr.x, z: tr.z, radius: atk.range, facing: tr.facing, arcDeg: atk.arcDeg });
       ai.state = 'recover';
       ai.timer = atk.recovery;
-      ai.cooldown = atk.cooldown;
+      ai.cooldown = Math.max(0, atk.cooldown - telegraphLead(def));
     }
     return;
   }
@@ -656,7 +656,8 @@ function rusher(
   if (dist <= atk.range + playerRadius * 0.5 && ai.cooldown <= 0 && placed) {
     ai.state = 'windup';
     ai.attackSeq++;
-    ai.timer = atk.windup;
+    const lead = telegraphLead(def);
+    ai.timer = atk.windup + lead;
     ai.aimX = ptr.x;
     ai.aimZ = ptr.z;
     tr.facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
@@ -666,12 +667,18 @@ function rusher(
       x: tr.x,
       z: tr.z,
       shape: { kind: 'cone', radius: atk.range + playerRadius, arcDeg: atk.arcDeg, facing: tr.facing },
-      duration: atk.windup,
+      duration: atk.windup + lead,
       color: '#ff3b2f',
     });
     return;
   }
   closeIn(mover, tr, ptr, mover.speed, atk.range * 0.7);
+}
+
+/** Seconds the red telegraph of a lunge or a flanker's swing shows before its wind-up (G025); the cooldown gives them back, so damage per second is unchanged. */
+export const TELEGRAPH_LEAD = 0.15;
+export function telegraphLead(def: EnemyDef): number {
+  return def.attack.kind === 'lunge' || (def.behavior === 'flanker' && def.attack.kind === 'melee') ? TELEGRAPH_LEAD : 0;
 }
 
 /** Grab and fling the target along the thrower's facing; it lands stunned. */
@@ -785,7 +792,7 @@ function lunger(
     ctx.events.push({ type: 'vfx', kind: 'dodge', x: tr.x, z: tr.z, radius: atk.width, facing: tr.facing });
     ai.state = 'recover';
     ai.timer = atk.recovery + atk.distance / atk.speed;
-    ai.cooldown = atk.cooldown;
+    ai.cooldown = Math.max(0, atk.cooldown - telegraphLead(def));
     return;
   }
   if (ai.state === 'recover') {
@@ -798,11 +805,11 @@ function lunger(
   if (dist <= atk.range && ai.cooldown <= 0) {
     ai.state = 'windup';
     ai.attackSeq++;
-    ai.timer = atk.windup;
+    ai.timer = atk.windup + telegraphLead(def);
     ai.aimX = ptr.x;
     ai.aimZ = ptr.z;
     tr.facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
-    ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'line', length: atk.distance, width: atk.width, facing: tr.facing }, duration: atk.windup, color: '#ffb03a' });
+    ctx.events.push({ type: 'telegraph', owner: e, x: tr.x, z: tr.z, shape: { kind: 'line', length: atk.distance, width: atk.width, facing: tr.facing }, duration: atk.windup + telegraphLead(def), color: '#ffb03a', cue: 'charge' });
     return;
   }
   // Between lunges it keeps a little distance, circling, so the next dash has room.

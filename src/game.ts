@@ -88,13 +88,13 @@ import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
-import { playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
+import { dropHitstopMs, playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
-import { soundsForEvent } from './audio/eventSounds';
-import { FOOTSTEP_VOLUME, FootstepClock } from './audio/footsteps';
+import { soundsForEvents } from './audio/eventSounds';
+import { FootstepClock, footstepPlay } from './audio/footsteps';
 import { MusicController } from './audio/music';
 import { installUiSounds } from './audio/uiSounds';
-import { MENU_SCENE, type AudioScene } from './data/audio';
+import { MENU_SCENE, surfaceOf, type AudioScene } from './data/audio';
 import { SoundUi } from './ui/soundPanel';
 import { PROGRESSION, BASE_ITEMS } from './data/loot/db';
 import { slotsFor, type Item, type Slot } from './data/loot/schemas';
@@ -202,6 +202,8 @@ const TARGET_MEMORY = 4;
 /** Touch: the target frame lingers 8 s after the last hit, and as long as the enemy is within TARGET_NEAR metres. */
 const TARGET_MEMORY_TOUCH = 8;
 const TARGET_NEAR = 12;
+/** Enemies hunting the player this close (metres) count toward the combat music. */
+const THREAT_RANGE = 28;
 /** Menus do not pause the game while a live enemy is this close (metres). */
 const PAUSE_ENEMY_RANGE = 12;
 /** ?nav in the address bar starts with the wayfinding overlay on (it can also be ticked in the debug panel). */
@@ -1244,11 +1246,12 @@ export class Game {
 
   private handleEvents(events: GameEvent[]): void {
     this.renderer.handleEvents(events);
+    // Sounds are chosen for the whole frame at once (a kill plays its death sound only; Lightbearer's blows ring).
+    for (const cue of soundsForEvents(events)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
     for (const event of events) {
       this.damageNumbers.handle(event);
       this.enemyBars.handle(event);
       this.hapticFor(event);
-      for (const cue of soundsForEvent(event)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
       switch (event.type) {
         case 'hitstop':
           this.hitstop = Math.max(this.hitstop, event.ms / 1000);
@@ -1268,6 +1271,11 @@ export class Game {
           break;
         case 'loot':
           playDropSound(event.rarity);
+          // The best drops land with a short freeze.
+          if (dropHitstopMs(event.rarity) > 0) {
+            this.hitstop = Math.max(this.hitstop, dropHitstopMs(event.rarity) / 1000);
+            this.loop.timeScale = 0;
+          }
           if (rarityRank(event.rarity) >= rarityRank('legendary')) this.mapUi.addPip(event.x, event.z, 5000);
           break;
         case 'pickup':
@@ -1596,7 +1604,7 @@ export class Game {
   private restockVendor(): void {
     const user = this.world.req(this.player, SkillUser);
     const level = this.world.req(this.player, Progression).level;
-    this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`), tierMods(this.ctx));
+    this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`), tierMods(this.ctx), this.ctx.zone?.def.key);
     this.vendorRestockAt = this.ctx.time + VENDOR.refreshSeconds;
     this.vendorBuyback = [];
   }
@@ -1867,11 +1875,28 @@ export class Game {
       bossEngaged,
       playerDead: this.world.has(this.player, Dead),
       storm: inInstance ? 0 : (zone?.storm.exposure ?? 0),
+      ...this.threatInputs(),
     };
+  }
+
+  /** For the combat layer: enemies hunting the player within earshot, and the player's life. */
+  private threatInputs(): Pick<AudioScene, 'aggroCount' | 'healthFraction'> {
+    const health = this.world.get(this.player, Health);
+    const healthFraction = health && health.max > 0 ? health.current / health.max : 1;
+    const tr = this.playerTransform;
+    let aggroCount = 0;
+    for (const e of this.world.query(EnemyAI, Transform)) {
+      if (!this.world.req(e, EnemyAI).aggro || this.world.has(e, Dead)) continue;
+      const et = this.world.req(e, Transform);
+      if (Math.hypot(et.x - tr.x, et.z - tr.z) <= THREAT_RANGE) aggroCount++;
+    }
+    return { aggroCount, healthFraction };
   }
 
   /** Per frame: music and ambience follow the scene, and the player's footsteps keep time. */
   private updateAudio(px: number, pz: number, dt: number): void {
+    // The Escape menu freezes the world: the music and ambience drop and dull with it (they come back on resume).
+    this.music.setPaused(this.pauseMenu.pausing);
     this.music.update(this.audioScene(), dt);
     const moved = dt > 0 ? Math.hypot(px - this.lastFoot.x, pz - this.lastFoot.z) / dt : 0;
     this.lastFoot.x = px;
@@ -1879,7 +1904,7 @@ export class Game {
     const p = this.player;
     const walking = !this.world.has(p, Dead) && !this.world.has(p, Mounted) && !this.world.has(p, ForcedMove) && !this.fading;
     // A jump of many metres in one frame is a teleport or zone change, not a stride.
-    if (this.footsteps.update(dt, walking && moved < 25 ? moved : 0)) audio.play('footstep', { volume: FOOTSTEP_VOLUME });
+    if (this.footsteps.update(dt, walking && moved < 25 ? moved : 0)) audio.play('footstep', footstepPlay(surfaceOf(this.zone?.def.id ?? '')));
   }
 
   /** Audio state for the ?debug API: format, sprite, music, voices and the last sounds played. */

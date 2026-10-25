@@ -50,6 +50,10 @@ export interface Build {
   uniques?: string[];
   /** Legendary aspects as [item slot, aspect id, value]. */
   aspects?: [Slot, string, number][];
+  /** Enemy id of the dummy. Default `spore_carrier` (a lumen enemy, so it counts as corrupted); use a human such as `security_trooper` for a neutral target. */
+  dummy?: string;
+  /** Number of dummies. 1 = single target; more stand on a 2.2 m ring around the first and their damage is summed. */
+  pack?: number;
   /** Emulate a pack fight for corpse builds: a colonist dies next to the dummy this often. */
   corpsesPerMinute?: number;
 }
@@ -104,7 +108,14 @@ function makeContext(seed: string): GameContext {
   };
 }
 
-export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
+export interface SimOptions {
+  /** Overrides `build.dummy`. */
+  dummy?: string;
+  /** Overrides `build.pack`. */
+  pack?: number;
+}
+
+export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimOptions = {}): SimResult {
   const world = new World();
   const ctx = makeContext(seed);
   const classId = build.classId ?? 'bastion';
@@ -137,13 +148,21 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
   recomputePlayer(world, player);
   for (const id of bar) if (!user.compiled[id]) throw new Error(`${build.name}: ${id} is not learned`);
 
-  const dummy = spawnEnemy(world, 'spore_carrier', 0, dist, { level: build.level });
-  const life = world.req(dummy, Health);
-  life.max = life.current = 1e12;
-  world.req(dummy, Collider).mass = 1e9;
-  // A neutral target: plain armor, no elemental resistances, so classes compare fairly.
-  Object.assign(world.req(dummy, CombatStats), { armor: 30, resist: {} });
-
+  const dummyId = options.dummy ?? build.dummy ?? 'spore_carrier';
+  const packSize = Math.max(1, Math.round(options.pack ?? build.pack ?? 1));
+  // Dummy 0 is the target the rotation aims at; the rest ring it at 2.2 m.
+  const dummies: { id: number; x: number; z: number }[] = [];
+  for (let k = 0; k < packSize; k++) {
+    const a = ((k - 1) / Math.max(1, packSize - 1)) * Math.PI * 2;
+    const x = k === 0 ? 0 : Math.sin(a) * 2.2;
+    const z = dist + (k === 0 ? 0 : Math.cos(a) * 2.2);
+    const id = spawnEnemy(world, dummyId, x, z, { level: build.level });
+    world.req(id, Health).max = world.req(id, Health).current = 1e12;
+    world.req(id, Collider).mass = 1e9;
+    // A neutral target: plain armor, no elemental resistances, so classes compare fairly.
+    Object.assign(world.req(id, CombatStats), { armor: 30, resist: {} });
+    dummies.push({ id, x, z });
+  }
   const casts: Record<string, number> = {};
   const resource = world.req(player, Resource);
   let overheatedTicks = 0;
@@ -163,9 +182,11 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
       tr.x = 0;
       tr.z = 0;
     }
-    const dtr = world.req(dummy, Transform);
-    dtr.x = 0;
-    dtr.z = dist;
+    for (const d of dummies) {
+      const dtr = world.req(d.id, Transform);
+      dtr.x = d.x;
+      dtr.z = d.z;
+    }
     if (!user.cast && !user.request && !world.has(player, ForcedMove)) {
       const pick = build.rotation.find((r) => {
         const c = user.compiled[r.skill];
@@ -192,7 +213,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim'): SimResult {
   }
   return {
     name: build.name,
-    dps: (1e12 - life.current) / seconds,
+    dps: dummies.reduce((sum, d) => sum + (1e12 - world.req(d.id, Health).current), 0) / seconds,
     casts,
     overheated: overheatedTicks / ticks,
     avgHeat: heatSum / ticks,

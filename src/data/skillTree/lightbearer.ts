@@ -46,7 +46,7 @@ export const LIGHTBEARER_TREE: Tree = {
     { id: 'm.magnus_exorcismus.unending', branch: 'core', type: 'modifier', parent: 'e.magnus_exorcismus', group: 'magnus_exorcismus',
       effects: [{ kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'duration', value: 0.5 }] }] },
     { id: 'm.magnus_exorcismus.rapid', branch: 'core', type: 'modifier', parent: 'e.magnus_exorcismus', group: 'magnus_exorcismus',
-      effects: [{ kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'interval', value: -0.3 }] }] },
+      effects: [{ kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'interval', value: -0.2 }] }] },
     { id: 'p.piety', branch: 'core', type: 'passive', effects: [{ kind: 'stat', stat: 'resourceGen', value: 0.05 }] },
     { id: 'p.sacred_flame', branch: 'core', type: 'passive', effects: [{ kind: 'damage', value: 0.05, when: 'ranged' }] },
 
@@ -80,7 +80,7 @@ export const LIGHTBEARER_TREE: Tree = {
     { id: 'e.lex_aeterna', branch: 'tactical', type: 'enhancement', parent: 'n.lex_aeterna',
       effects: [{ kind: 'skillMod', skill: L('lex_aeterna'), mods: [{ op: 'mul', field: 'radius', value: 0.25 }] }] },
     { id: 'm.lex_aeterna.judgment', branch: 'tactical', type: 'modifier', parent: 'e.lex_aeterna', group: 'lex_aeterna',
-      effects: [{ kind: 'skillMod', skill: L('lex_aeterna'), mods: [{ op: 'mul', field: 'coefficient', value: 1 }] }] },
+      effects: [{ kind: 'skillMod', skill: L('lex_aeterna'), mods: [{ op: 'add', field: 'radius', value: 1.5 }, { op: 'addApply', apply: { status: 'lexAeterna', duration: 10 } }] }] },
     { id: 'm.lex_aeterna.swift', branch: 'tactical', type: 'modifier', parent: 'e.lex_aeterna', group: 'lex_aeterna',
       effects: [{ kind: 'skillMod', skill: L('lex_aeterna'), mods: [{ op: 'mul', field: 'cooldown', value: -0.4 }] }] },
     { id: 'p.hymnal', branch: 'tactical', type: 'passive', effects: [{ kind: 'stat', stat: 'cooldownReduction', value: 0.03 }] },
@@ -118,7 +118,7 @@ export const LIGHTBEARER_TREE: Tree = {
     { id: 'k.zealot', branch: 'key', type: 'keyPassive',
       effects: [
         { kind: 'damage', value: 0.15, multiplicative: true, when: 'ranged' },
-        { kind: 'damage', value: 0.25, multiplicative: true, when: 'corrupted' },
+        { kind: 'damage', value: 0.15, multiplicative: true, when: 'corrupted' },
         { kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'interval', value: -0.2 }] },
         { kind: 'skillMod', skill: L('lex_aeterna'), mods: [{ op: 'mul', field: 'cooldown', value: -0.25 }] },
       ] },

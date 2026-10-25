@@ -516,3 +516,52 @@ or enhancement is kept while an enhancement or modifier still hangs on it; and a
 would drop below its branch's unlock total. It costs 20 % of the full respec price (`REFUND_COST_SHARE`) behind a
 confirm sheet, so it is a small tax on trying a build, not a replacement for the full Reset. Touch has no refund
 action yet.
+
+### 2026-10-25 — Lightbearer balance pass (G001-G008)
+Measured with `npm run sim`, a corrupted and a neutral (`security_trooper`) dummy, and `npm run play`. Numbers are
+the L30 exorcist (`k.zealot`, Rapid, Radiant, Litany) on the corrupted dummy unless stated.
+- **Stacking is capped, not the passives.** Magnus Exorcismus: pulse interval floor 0.35 s after all modifiers
+  (`SANCTUM_MIN_INTERVAL` in the compiler), at most two live sigils per owner (`maxConcurrent`), Rapid -30 % to
+  -20 %, Litany 0.15-0.30 to 0.08-0.15. The full aspect build went from 2,703 to 1,223 DPS; Rapid is worth +20 %
+  (was +47 %). Sanctuary: one zone per owner (a recast replaces it) and duration bonuses stop at 2.5x (17.5 s).
+- **Benediction is a save, not a state.** The first lethal blow leaves 1 life, spends the status and gives 1.5 s of
+  invulnerability; the skill has `minCooldown: 30` that no reduction goes under (was 9 s with the aspect).
+- **Lex Aeterna became "Judged".** +35 % damage taken from every source for 6 s, not consumed (the consumed
+  double made the exorcist 6.5 % slower to cast it). Burst 0.3 to 0.8; Harsh Judgment is +1.5 radius and +4 s.
+- **Less corrupted dependence, more base damage.** corruptedMul: Censer 1.25 to 1.2, Holy Light 1.5 to 1.3, Magnus
+  1.8 to 1.5, Sanctuary 2.0 to 1.6, guardian bolt 1.5 to 1.3; Zealot's corrupted bonus 25 % to 15 %. Magnus base
+  stays 0.6 (not the proposed 0.78) and Censer rises 0.9 to 1.15: the bot exorcist fell below the 7-minute band
+  with 0.78, and the melee Shepherd plan needed the Censer to come under 13 minutes. neutral/corrupted DPS ratio:
+  exorcist 0.47 to 0.61, healer 0.22 to 0.42. `light` was not added to the corrupted families (owner's call).
+- **Holy Light is a basic.** 0.45 to 0.6 (recovery 0.18 to 0.14, about 2.3 coefficient per second). Healer L10
+  (bot, seeds a/b/c) 23:26/16:16 to 12:49/11:17/10:53; Shepherd 16:15/13:38 to 12:51/11:45/13:15.
+- **Heal costs real Devotion.** Cost 25 to 35, cooldown 1.5 to 2.5 s, Holy Light +5 to +3 Devotion, Censer +6 to
+  +4; its corrupted burst 1.8 to 2.2 to keep the healer's damage. Heal casts per minute 42 to 27; average Devotion
+  72 to 33 in the L10 row but only 82 to 76 for the L30 healer (target 60 not met: basics keep it near the cap).
+  Not met: the L10 healer sim row is 100, not 135.
+- **Guardian Light is worth a cast.** Bolt 0.4 to 0.7, shots every 0.8 s, bolts burst in 1.5 m. L30 shepherd 220 to
+  425 single target; L15 sim row 118 to 185.
+
+### 2026-10-25 — Balance pass for Bastion, Spectre and Xenomant (G009-G017, G025)
+Measured with `npm run sim` (new `--dummy`, `--pack`, `--filter` and ten L30 builds) and `npm run play`; the table is
+in `docs/balance.md`. Real decisions:
+- **Percentage passives.** `maxLifePct` and `armorPct` (stat keys, applied after the flat sum) replace the flat +12-20
+  life/armor nodes of Bastion, Spectre and Xenomant: +2.5 % life, +4 % armor per rank. The Lightbearer's flat
+  nodes (`p.vigil`, `p.consecrated_mail`, `p.sacred_oath`) were left to its own pass.
+- **Spectre survives drones by resisting them.** Energy resistance 10 to 20 % (the Lightbearer's value) and Phase
+  Shift protects for 0.4 s. The larger part of the Blades' deaths turned out to be the bot: a melee plan kept
+  casting its ranged starter at drones 11 m away and never closed in. Melee plans now only fire projectile
+  skills within 4 m. Blades deaths 11 / 7 to 0 / 0, L10 16:45 / 15:35 to 12:43 / 15:08. The Blades keep a
+  15:30 ceiling in the band test (the others 14:00): the bot's seeds vary by two minutes for them.
+- **Bastion coverage, not damage.** Piston Jab arc 90 and Furnace Cleave arc 200 so packs that surround you are
+  still hit (Cleave 11:19 / 12:08 to 10:24 / 11:13; target 10:30 met on one seed). Orbital Strike 16x (8.8 % of
+  the shockwave build) and Heat Vent 2 + 0.10 x Heat every 10 s (vent build 601 to 744, the 800 goal is not
+  reached: the build's weakness is the Reactor Core key, not the vent).
+- **Disease is lifted by its key passive.** Raising Spore Dart's hit or the cloud also speeds up level 1-10 (the
+  bot dropped under the 6:30 floor), so single-target disease went 390 to 502 through Pandemic (x1.3 to x1.9 on
+  Poisoned), a Spore Burst hit of 1.0 and Spore Dart poison 0.3. Symbiote names Parasite Link (+10 % to +25 %).
+- **Potions refill on kills:** 0.75 s per kill (elite 3, boss 8), surplus carries. The 18 s timer stays for
+  a player who does not fight.
+- **No 0.3 s unavoidable hits.** Melee, cone and lunge wind-ups are at least 0.4 s (`MIN_WINDUP`, `quick: true`
+  on a def exempts it); hounds 0.35 to 0.45, swarms and motes 0.3 to 0.4. Flankers and lunges telegraph 0.15 s
+  earlier (`TELEGRAPH_LEAD`) and their cooldown is 0.15 s shorter, so the swing rate does not change.

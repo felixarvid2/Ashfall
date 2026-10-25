@@ -3,7 +3,7 @@
  * back. Loot, pickup and gold keep their synthesised sounds (`lootSounds.ts`), and notices and UI
  * actions are played where the UI handles them, so those events map to nothing here.
  */
-import type { GameEvent, VfxKind } from '../core/events';
+import type { GameEvent, TelegraphCue, TelegraphShape, VfxKind } from '../core/events';
 import type { SfxId } from './soundIds';
 
 export interface SoundCue {
@@ -20,8 +20,9 @@ export interface SoundCue {
  */
 export const VFX_SOUNDS = {
   slash: 'melee.swing',
-  enemySlash: 'melee.swing',
-  minionSlash: 'melee.swing',
+  // Enemy and minion swings are other, lower clips than the player's, so they are told apart (F002).
+  enemySlash: 'swing.enemy',
+  minionSlash: 'swing.minion',
   slam: 'melee.slam',
   leapLand: 'melee.slam',
   shockwave: 'melee.slam',
@@ -48,10 +49,12 @@ export const VFX_SOUNDS = {
   smoke: 'cast.tech',
   flash: 'explosion.small',
   heal: 'heal',
-  // Lightbearer: the cast chimes like a heal; pulses of ground and guardian lights are silent.
-  holy: 'heal',
-  holyRing: null,
+  // Lightbearer: a bell and shimmer for the cast, a soft tick (rate-limited in the engine) for each pulse of
+  // a sanctuary or a guardian light, and a glassy `hit.holy` for the blows landing with them (see soundsForEvents).
+  holy: 'cast.holy',
+  holyRing: 'holy.pulse',
   sporePulse: 'cast.bio',
+  // Only the Corpse Explosion skill sounds; an enemy's burst dies with its own death sound (see `soundsForEvent`).
   corpseBurst: 'cast.bio',
   // Falling dust is dressing; the cave-in itself is a `slam`.
   dust: null,
@@ -62,6 +65,20 @@ const LARGE_EXPLOSION_RADIUS = 4;
 
 function explosionSound(radius: number): SfxId {
   return radius >= LARGE_EXPLOSION_RADIUS ? 'explosion.large' : 'explosion.small';
+}
+
+/** The warning sound for a telegraph: by what is coming (cone: a swing, circle: a slam or blast, line: a beam). */
+export function telegraphSound(shape: TelegraphShape, cue?: TelegraphCue): SfxId {
+  if (cue === 'boss') return 'telegraph.boss';
+  if (cue === 'charge') return 'telegraph.charge';
+  switch (shape.kind) {
+    case 'cone':
+      return 'telegraph.melee';
+    case 'line':
+      return 'telegraph.beam';
+    default:
+      return 'telegraph.slam';
+  }
 }
 
 /** Boss phase and intro banners; other banners (objectives, storms, events) stay silent. */
@@ -90,11 +107,13 @@ export function soundsForEvent(event: GameEvent): SoundCue[] {
     case 'vfx': {
       const sound = VFX_SOUNDS[event.kind];
       if (sound === null) return [];
+      // An enemy's corpse burst is followed by its death sound: two bursts at once would read as a skill cast.
+      if (event.kind === 'corpseBurst' && event.source !== 'skill') return [];
       const id = event.kind === 'explosion' ? explosionSound(event.radius) : sound;
       return [{ id, x: event.x, z: event.z }];
     }
     case 'telegraph':
-      return [{ id: 'telegraph', x: event.x, z: event.z }];
+      return [{ id: telegraphSound(event.shape, event.cue), x: event.x, z: event.z }];
     case 'overheat':
       return [{ id: 'overheat' }];
     case 'levelUp':
@@ -129,4 +148,39 @@ export function soundsForEvent(event: GameEvent): SoundCue[] {
       // heal (the heal vfx covers it), status, hitstop, shake, xp, loot, pickup, notice, hub.
       return [];
   }
+}
+
+/** A blow this close to a holy pulse or cast is Lightbearer's (metres beyond the effect's radius). */
+const HOLY_REACH = 1.5;
+
+/**
+ * The sounds of a whole frame of events. Same as `soundsForEvent` for each, with two things only the whole
+ * batch can tell:
+ *  - energy blows that land inside a holy cast or pulse of the same frame are `hit.holy` (Lightbearer's
+ *    impacts are all energy, so they would otherwise share the one zap with every other energy skill);
+ *  - an enemy that dies this frame does not also play the hit sound of the blow that killed it (a
+ *    critical blow keeps its `hit.crit`): the death sound is the only kill sound.
+ */
+export function soundsForEvents(events: readonly GameEvent[]): SoundCue[] {
+  const dying = new Set<unknown>();
+  const holy: { x: number; z: number; r: number }[] = [];
+  for (const e of events) {
+    if (e.type === 'death' && !e.isPlayer && e.family !== undefined) dying.add(e.target);
+    else if (e.type === 'vfx' && (e.kind === 'holy' || e.kind === 'holyRing')) holy.push({ x: e.x, z: e.z, r: e.radius + HOLY_REACH });
+  }
+  const cues: SoundCue[] = [];
+  for (const e of events) {
+    if (e.type !== 'damage' || e.toPlayer) {
+      cues.push(...soundsForEvent(e));
+      continue;
+    }
+    const own = soundsForEvent(e);
+    const killing = dying.has(e.target);
+    const isHoly = e.damageType === 'energy' && holy.some((h) => Math.hypot(e.x - h.x, e.z - h.z) <= h.r);
+    for (const cue of own) {
+      if (cue.id === 'hit.crit') cues.push(cue);
+      else if (!killing) cues.push(isHoly ? { ...cue, id: 'hit.holy' } : cue);
+    }
+  }
+  return cues;
 }

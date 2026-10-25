@@ -5,6 +5,7 @@
 import { CHOIR } from '../data/core';
 import { PYLON_EFFECTS } from '../data/interactables';
 import {
+  AccountBonuses,
   Blast,
   Boss,
   Collider,
@@ -36,7 +37,7 @@ import {
 } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
-import { STATUS_DEFS, enemyDef } from '../data/db';
+import { STATUS_DEFS, classDef, enemyDef } from '../data/db';
 import { CORRUPTED_FAMILIES, type Bonus, type Condition, type DamageType, type StatusApply, type StatusId } from '../data/schemas';
 import { computeHit, computeOutgoing, computeTaken, type TargetState } from './damage';
 import { signal } from './quests';
@@ -335,8 +336,15 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
     effects.list = effects.list.filter((s) => s.id !== 'barrier' || s.amount > 0.01);
   }
 
-  // Benediction: a lethal blow leaves the holder on 1 life instead.
-  if (remaining >= health.current && hasCheatDeath(world, target)) remaining = Math.max(0, health.current - 1);
+  // Benediction: the first lethal blow leaves the holder on 1 life, spends the blessing and grants a moment of invulnerability.
+  if (remaining >= health.current && hasCheatDeath(world, target)) {
+    remaining = Math.max(0, health.current - 1);
+    removeStatuses(world, target, (s) => {
+      const def = STATUS_DEFS[s.id];
+      return def.kind === 'buff' && def.cheatDeath === true;
+    });
+    world.add(target, Invulnerable, { remaining: CHEAT_DEATH_INVULNERABLE });
+  }
   if (!(isPlayer && ctx.debug.godMode)) health.current -= remaining;
   if (isPlayer && opts.source !== undefined && remaining > 0) health.lastHitSource = hitSourceOf(world, opts.source, ctx.time) ?? health.lastHitSource;
   markInCombat(world, target);
@@ -369,6 +377,24 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
   }
   return remaining + absorbed;
 }
+
+/**
+ * Seconds a kill takes off the current potion recharge (G017): a flat 18 s timer rewarded slow, safe play and starved
+ * fast clears. Elites (champion, rare, named) and bosses count for more.
+ */
+export const POTION_KILL_CREDIT = { kill: 0.75, elite: 3, boss: 8 };
+
+function creditPotions(world: World, target: Entity): void {
+  const seconds = world.has(target, Boss) ? POTION_KILL_CREDIT.boss : world.has(target, Elite) ? POTION_KILL_CREDIT.elite : POTION_KILL_CREDIT.kill;
+  for (const e of world.query(SkillUser, PlayerControlled)) {
+    const user = world.req(e, SkillUser);
+    const max = classDef(user.classId).potion.charges + (world.get(e, AccountBonuses)?.potionCharges ?? 0);
+    if (user.potionCharges < max) user.potionRecharge -= seconds;
+  }
+}
+
+/** Seconds of invulnerability after Benediction stops a lethal blow. */
+export const CHEAT_DEATH_INVULNERABLE = 1.5;
 
 function hasCheatDeath(world: World, e: Entity): boolean {
   return world.get(e, StatusEffects)?.list.some((s) => {
@@ -694,6 +720,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
     }
     eliteDeath(world, ctx, target);
     harvestOnDeath(world, ctx, target);
+    creditPotions(world, target);
     ctx.stats.kills++;
     if (tr) {
       const quest = world.get(target, QuestTag)?.quest;

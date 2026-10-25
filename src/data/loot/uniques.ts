@@ -68,6 +68,7 @@ export const UNIQUES: Unique[] = [
     id: 'heart_of_lumen',
     base: 'signal_pendant',
     rarity: 'mythic',
+    classes: ['bastion'],
     affixes: [
       { stat: 'damage', min: 0.12, max: 0.16, scaling: 'sqrt' },
       { stat: 'allAttributes', min: 8, max: 12, scaling: 'linear' },
@@ -208,12 +209,188 @@ export const UNIQUES: Unique[] = [
       },
     ],
   },
+  // ---- Content pass (C004/C005): gloves, ring and amulet uniques, and a mythic for every class.
+  {
+    // Death Mark covers a much wider area and returns sooner, but hits softer.
+    id: 'reapers_grip',
+    base: 'servo_gauntlets',
+    rarity: 'unique',
+    classes: ['spectre'],
+    affixes: [
+      { stat: 'critChance', min: 0.03, max: 0.05, scaling: 'none' },
+      { stat: 'dexterity', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'damageVsVulnerable', min: 0.12, max: 0.18, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'spectre.death_mark',
+        mods: [{ op: 'mul', field: 'radius', value: 0.6 }, { op: 'mul', field: 'cooldown', value: -0.4 }, { op: 'mul', field: 'coefficient', value: -0.35 }],
+      },
+    ],
+  },
+  {
+    // Corpse Explosion leaves a cloud of poison where the corpses burst, but each blast is weaker.
+    id: 'signet_of_rot',
+    base: 'conduit_ring',
+    rarity: 'unique',
+    classes: ['xenomant'],
+    affixes: [
+      { stat: 'intelligence', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'resistToxic', min: 0.08, max: 0.12, scaling: 'sqrt' },
+      { stat: 'critDamage', min: 0.1, max: 0.16, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'xenomant.corpse_explosion',
+        mods: [{ op: 'hazard', radius: 3.2, duration: 4, status: 'poisoned', dpsCoefficient: 0.6 }, { op: 'mul', field: 'coefficient', value: -0.15 }],
+      },
+    ],
+  },
+  {
+    // Lex Aeterna judges a wider area, comes back sooner and leaves scorching light on the ground.
+    id: 'sunwheel_pendant',
+    base: 'signal_pendant',
+    rarity: 'unique',
+    classes: ['lightbearer'],
+    affixes: [
+      { stat: 'intelligence', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'resourceGen', min: 0.06, max: 0.1, scaling: 'none' },
+      { stat: 'cooldownReduction', min: 0.04, max: 0.07, scaling: 'none' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'lightbearer.lex_aeterna',
+        mods: [
+          { op: 'mul', field: 'radius', value: 0.6 },
+          { op: 'mul', field: 'cooldown', value: -0.4 },
+          { op: 'hazard', radius: 3.5, duration: 4, status: 'burning', dpsCoefficient: 0.4 },
+        ],
+      },
+    ],
+  },
+  {
+    // Heat Vent scorches the ground it erupts on and reaches further, but takes longer to recover.
+    id: 'cinder_collar',
+    base: 'signal_pendant',
+    rarity: 'unique',
+    classes: ['bastion'],
+    affixes: [
+      { stat: 'maxLife', min: 25, max: 35, scaling: 'linear' },
+      { stat: 'resistHeat', min: 0.1, max: 0.15, scaling: 'sqrt' },
+      { stat: 'damageVsBurning', min: 0.15, max: 0.22, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'bastion.heat_vent',
+        mods: [
+          { op: 'mul', field: 'radius', value: 0.4 },
+          { op: 'mul', field: 'cooldown', value: 0.3 },
+          { op: 'hazard', radius: 5.5, duration: 5, status: 'burning', dpsCoefficient: 0.5 },
+        ],
+      },
+    ],
+  },
+  {
+    // Mythic: Sanctuary almost never goes down, lasts as long as it can and grows; recast it and it moves with you.
+    id: 'aureole_of_the_first_dawn',
+    base: 'combat_helm',
+    rarity: 'mythic',
+    classes: ['lightbearer'],
+    affixes: [
+      { stat: 'maxLife', min: 40, max: 55, scaling: 'linear' },
+      { stat: 'intelligence', min: 12, max: 18, scaling: 'linear' },
+      { stat: 'barrierBonus', min: 0.1, max: 0.15, scaling: 'sqrt' },
+      { stat: 'cooldownReduction', min: 0.06, max: 0.1, scaling: 'none' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'lightbearer.sanctuary',
+        mods: [
+          { op: 'mul', field: 'duration', value: 1.5 },
+          { op: 'mul', field: 'radius', value: 0.6 },
+          { op: 'mul', field: 'cooldown', value: -0.75 },
+        ],
+      },
+    ],
+  },
+  {
+    // Mythic: the Widowmaker's blast without its price, from farther away and for less Focus.
+    id: 'the_last_word',
+    base: 'marksman_rifle',
+    rarity: 'mythic',
+    classes: ['spectre'],
+    affixes: [
+      { stat: 'critDamage', min: 0.25, max: 0.35, scaling: 'sqrt' },
+      { stat: 'dexterity', min: 12, max: 18, scaling: 'linear' },
+      { stat: 'damageVsElite', min: 0.18, max: 0.26, scaling: 'sqrt' },
+      { stat: 'critChance', min: 0.04, max: 0.06, scaling: 'none' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'spectre.piercing_shot',
+        mods: [
+          { op: 'set', field: 'explodeRadius', value: 2.6 },
+          { op: 'mul', field: 'coefficient', value: -0.1 },
+          { op: 'add', field: 'maxRange', value: 8 },
+          { op: 'add', field: 'resourceCost', value: -10 },
+        ],
+      },
+    ],
+  },
+  {
+    // Mythic: the Hive's crown without the frailty: a far bigger horde that dies no easier.
+    id: 'diadem_of_the_swarm_queen',
+    base: 'combat_helm',
+    rarity: 'mythic',
+    classes: ['xenomant'],
+    affixes: [
+      { stat: 'maxLife', min: 40, max: 55, scaling: 'linear' },
+      { stat: 'intelligence', min: 12, max: 18, scaling: 'linear' },
+      { stat: 'cooldownReduction', min: 0.07, max: 0.11, scaling: 'none' },
+      { stat: 'resistAll', min: 0.06, max: 0.09, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'xenomant.raise_corpse',
+        mods: [
+          { op: 'add', field: 'maxMinions', value: 6 },
+          { op: 'add', field: 'count', value: 2 },
+          { op: 'mul', field: 'lifeFraction', value: 0.2 },
+        ],
+      },
+    ],
+  },
+  {
+    // Mythic for every class: a loop that feeds on itself.
+    id: 'ouroboros_coil',
+    base: 'conduit_ring',
+    rarity: 'mythic',
+    affixes: [
+      { stat: 'damage', min: 0.1, max: 0.14, scaling: 'sqrt' },
+      { stat: 'allAttributes', min: 6, max: 9, scaling: 'linear' },
+      { stat: 'critChance', min: 0.03, max: 0.05, scaling: 'none' },
+      { stat: 'lifeOnKill', min: 8, max: 12, scaling: 'linear' },
+    ],
+    effects: [
+      { kind: 'damage', value: 0.25, multiplicative: true },
+      { kind: 'stat', stat: 'cooldownReduction', value: 0.08 },
+      { kind: 'stat', stat: 'damageReduction', value: 0.05 },
+    ],
+  },
   // ---- Hydroponic Vaults: the Mother Tree choice (any class) ----
   {
     // Burned: the tree's charred heartwood, still warm.
     id: 'ashen_heartwood',
     base: 'signal_pendant',
     rarity: 'unique',
+    source: 'quest',
     affixes: [
       { stat: 'damageVsBurning', min: 0.2, max: 0.28, scaling: 'sqrt' },
       { stat: 'resistHeat', min: 0.08, max: 0.12, scaling: 'sqrt' },
@@ -226,6 +403,7 @@ export const UNIQUES: Unique[] = [
     id: 'seed_of_accord',
     base: 'conduit_ring',
     rarity: 'unique',
+    source: 'quest',
     affixes: [
       { stat: 'resistToxic', min: 0.12, max: 0.16, scaling: 'sqrt' },
       { stat: 'potionHealing', min: 0.15, max: 0.2, scaling: 'none' },

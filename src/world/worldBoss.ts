@@ -154,7 +154,7 @@ function spawn(world: World, ctx: GameContext, rt: WorldBossRuntime, event: Worl
 
 /** The unique that can drop for a class: the class's own and the classless ones, never mythics. */
 export function worldBossUniques(classId: string): string[] {
-  return [...UNIQUE_DEFS.values()].filter((u) => u.rarity === 'unique' && (!u.classes || u.classes.includes(classId))).map((u) => u.id);
+  return [...UNIQUE_DEFS.values()].filter((u) => u.rarity === 'unique' && u.source !== 'quest' && (!u.classes || u.classes.includes(classId))).map((u) => u.id);
 }
 
 /**

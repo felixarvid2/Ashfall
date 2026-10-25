@@ -117,9 +117,9 @@ describe('The Core zone', () => {
     }
   });
 
-  it('plays the Mines music with the hum, until a fitting track exists', () => {
+  it('plays its own drone-and-choir track over the hum', () => {
     const play = (over: Partial<AudioScene>): AudioScene => ({ ...MENU_SCENE, phase: 'play', zoneId: 'zone.the_core', ...over });
-    expect(pickMusic(play({}))).toBe('music.deep_mines');
+    expect(pickMusic(play({}))).toBe('music.the_core');
     expect(pickMusic(play({ inHub: true }))).toBe('music.hub');
     expect(pickAmbience(play({}))).toBe('amb.hum');
   });

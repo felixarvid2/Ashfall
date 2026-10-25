@@ -269,7 +269,7 @@ function attack(world: World, ctx: GameContext, e: Entity, ai: MinionAI, tr: Tra
             lifeSteal: 0,
           },
       pierce: 0,
-      explodeRadius: 0,
+      explodeRadius: guardian?.explodeRadius ?? 0,
       gain: 0,
       hit: [],
       color,

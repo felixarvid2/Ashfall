@@ -37,6 +37,22 @@ export const CRYSTALS: z.input<typeof CrystalDefSchema>[] = [
     armor: { stat: 'damageReduction', values: [0.01, 0.015, 0.02] },
     jewelry: { stat: 'resistVoid', values: [0.08, 0.12, 0.16] },
   },
+  {
+    id: 'frost',
+    icon: 'icon.crystal_void',
+    color: '#6ad8ff',
+    weapon: { stat: 'damageVsStunned', values: [0.08, 0.12, 0.16] },
+    armor: { stat: 'armor', values: [12, 22, 36] },
+    jewelry: { stat: 'resistCold', values: [0.08, 0.12, 0.16] },
+  },
+  {
+    id: 'storm',
+    icon: 'icon.crystal_lumen',
+    color: '#ffe14a',
+    weapon: { stat: 'attackSpeed', values: [0.02, 0.03, 0.04] },
+    armor: { stat: 'barrierBonus', values: [0.04, 0.06, 0.09] },
+    jewelry: { stat: 'resistEnergy', values: [0.08, 0.12, 0.16] },
+  },
 ];
 
 export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
@@ -98,13 +114,13 @@ export const DROP_TABLES: z.input<typeof DropTableSchema>[] = [
   { id: 'dt.rare_elite', itemChance: 1, extraItems: 2, goldChance: 1, gold: [8, 14], crystalChance: 0.2, rarityBias: { rare: 3, legendary: 3, unique: 2 }, minRarity: 'magic', xp: 120 },
   // Open-world containers: supply crates along the roads, locked chests (keycard) and bunker caches.
   { id: 'dt.supply_crate', itemChance: 0.7, goldChance: 1, gold: [3, 8], crystalChance: 0.06, rarityBias: { magic: 1.5 }, xp: 0 },
-  { id: 'dt.locked_chest', itemChance: 1, extraItems: 2, goldChance: 1, gold: [12, 24], crystalChance: 0.35, rarityBias: { rare: 3, legendary: 2.5 }, minRarity: 'magic', xp: 0 },
+  { id: 'dt.locked_chest', itemChance: 1, extraItems: 2, goldChance: 1, gold: [12, 24], crystalChance: 0.35, rarityBias: { rare: 3, legendary: 2.5, unique: 1.5 }, minRarity: 'magic', xp: 0 },
   // Bosses and their caches: lots of loot, a guaranteed legendary comes on top (first kill).
   { id: 'dt.boss', itemChance: 1, extraItems: 3, goldChance: 1, gold: [30, 60], crystalChance: 0.6, rarityBias: { rare: 3, legendary: 4, unique: 3 }, minRarity: 'magic', xp: 400 },
-  { id: 'dt.dungeon_cache', itemChance: 1, extraItems: 2, goldChance: 1, gold: [20, 40], crystalChance: 0.4, rarityBias: { rare: 3, legendary: 3 }, minRarity: 'magic', xp: 0 },
+  { id: 'dt.dungeon_cache', itemChance: 1, extraItems: 2, goldChance: 1, gold: [20, 40], crystalChance: 0.4, rarityBias: { rare: 3, legendary: 3, unique: 1.5 }, minRarity: 'magic', xp: 0 },
   { id: 'dt.event_bronze', itemChance: 0.8, goldChance: 1, gold: [8, 14], crystalChance: 0.1, rarityBias: { magic: 2 }, xp: 0 },
   { id: 'dt.event_silver', itemChance: 1, extraItems: 1, goldChance: 1, gold: [14, 24], crystalChance: 0.2, rarityBias: { rare: 2 }, minRarity: 'magic', xp: 0 },
-  { id: 'dt.event_gold', itemChance: 1, extraItems: 2, goldChance: 1, gold: [24, 40], crystalChance: 0.35, rarityBias: { rare: 3, legendary: 3 }, minRarity: 'magic', xp: 0 },
+  { id: 'dt.event_gold', itemChance: 1, extraItems: 2, goldChance: 1, gold: [24, 40], crystalChance: 0.35, rarityBias: { rare: 3, legendary: 3, unique: 1.5 }, minRarity: 'magic', xp: 0 },
   // Quest rewards: only the guaranteed item of the quest's rarity (gold and XP are paid directly).
   { id: 'dt.quest_reward', itemChance: 0, goldChance: 0, gold: [0, 0], crystalChance: 0, xp: 0 },
   // Reward cache that drops when a wave is cleared.

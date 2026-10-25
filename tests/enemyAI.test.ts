@@ -15,7 +15,9 @@ import { SpatialHash } from '../src/core/spatial';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
 import { deathSystem } from '../src/systems/death';
 import { encounterSystem } from '../src/systems/encounter';
-import { enemyAISystem } from '../src/systems/enemyAI';
+import { TELEGRAPH_LEAD, enemyAISystem } from '../src/systems/enemyAI';
+import { ENEMY_DEFS, enemyDef } from '../src/data/db';
+import { MIN_WINDUP } from '../src/data/schemas';
 import { movementSystem } from '../src/systems/movement';
 import { hazardSystem, projectileSystem } from '../src/systems/projectiles';
 import { statusSystem } from '../src/systems/status';
@@ -228,5 +230,28 @@ describe('wave encounter', () => {
       expect(Math.abs(tr.x)).toBeLessThanOrEqual(40);
       expect(Math.abs(tr.z)).toBeLessThanOrEqual(40);
     }
+  });
+});
+
+describe('fast wind-ups (G025)', () => {
+  it('every melee, cone and lunge wind-up leaves a dodge time to answer, unless the enemy is marked quick', () => {
+    for (const def of ENEMY_DEFS.values()) {
+      const a = def.attack;
+      if (a.kind !== 'melee' && a.kind !== 'cone' && a.kind !== 'lunge') continue;
+      if (def.quick) continue;
+      expect(a.windup, def.id).toBeGreaterThanOrEqual(MIN_WINDUP);
+    }
+  });
+
+  it('a hound telegraphs 0.15 s before its 0.45 s wind-up; its cooldown pays the lead back, so it still swings every 1.55 s', () => {
+    const { world, ctx } = setup();
+    const hound = spawnEnemy(world, 'spore_hound', 1.6, 0, { aggro: true });
+    const ai = world.req(hound, EnemyAI);
+    for (let i = 0; i < 120 && ai.state !== 'windup'; i++) run(world, ctx, SYSTEMS, 1);
+    expect(ai.state).toBe('windup');
+    const warning = ctx.events.drain().find((ev) => ev.type === 'telegraph');
+    expect(warning && 'duration' in warning ? warning.duration : 0).toBeCloseTo(0.6, 5);
+    const atk = enemyDef('spore_hound').attack;
+    expect(atk.kind === 'melee' ? atk.windup + atk.cooldown : 0).toBeCloseTo(0.35 + 1.2, 5); // swing every 1.55 s, as before;
   });
 });

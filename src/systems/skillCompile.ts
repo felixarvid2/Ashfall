@@ -138,6 +138,9 @@ function appliesOf(def: SkillDef, status: StatusApply['status']): StatusApply[] 
   }
 }
 
+/** Shortest time between two pulses of a sanctum, whatever the modifiers add up to. */
+export const SANCTUM_MIN_INTERVAL = 0.35;
+
 export function compileSkill(id: string, rank: number, mods: SkillMod[]): CompiledSkill {
   const base = SKILLS.get(id);
   if (!base) throw new Error(`Unknown skill ${id}`);
@@ -192,6 +195,11 @@ export function compileSkill(id: string, rank: number, mods: SkillMod[]): Compil
     let v = (acc.get() + (adds.get(f) ?? 0)) * (1 + (muls.get(f) ?? 0));
     if (sets.has(f)) v = sets.get(f)!;
     acc.set(v);
+  }
+  // Consecrated ground: pulses never come faster than SANCTUM_MIN_INTERVAL, and its duration has a skill-level cap.
+  if (def.effect.kind === 'sanctum') {
+    def.effect.interval = Math.max(SANCTUM_MIN_INTERVAL, def.effect.interval);
+    if (def.effect.maxDuration > 0) def.effect.duration = Math.min(def.effect.duration, def.effect.maxDuration);
   }
 
   // Ranks: damage and support values grow with rank.

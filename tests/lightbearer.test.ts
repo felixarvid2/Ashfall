@@ -6,6 +6,7 @@ import {
   Faction,
   Guardian,
   Health,
+  Invulnerable,
   MinionAI,
   Mover,
   Resource,
@@ -19,10 +20,10 @@ import {
 import { World, type Entity } from '../src/core/ecs';
 import type { GameContext } from '../src/core/context';
 import { ENEMY_DEFS, SKILLS, enemyDef } from '../src/data/db';
-import { compileSkill } from '../src/systems/skillCompile';
+import { SANCTUM_MIN_INTERVAL, compileSkill } from '../src/systems/skillCompile';
 import { fieldAccess } from '../src/systems/skillCompile';
 import { SKILL_FIELDS } from '../src/data/effects';
-import { applyAllyStatus, applyDamage, applyStatus, dealHit, hasStatus, healAlly, kill } from '../src/systems/combat';
+import { CHEAT_DEATH_INVULNERABLE, applyAllyStatus, applyDamage, applyStatus, dealHit, hasStatus, healAlly, kill } from '../src/systems/combat';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
 import { deathSystem } from '../src/systems/death';
 import { guardianSystem, guardiansOf, sanctumSystem } from '../src/systems/lightbearer';
@@ -30,7 +31,7 @@ import { minionSystem, minionsOf } from '../src/systems/minions';
 import { movementSystem } from '../src/systems/movement';
 import { projectileSystem, summonSystem } from '../src/systems/projectiles';
 import { resourceSystem } from '../src/systems/resource';
-import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from '../src/systems/skills';
+import { delayedStrikeSystem, effectiveCooldown, forcedMoveSystem, skillSystem } from '../src/systems/skills';
 import { statusSystem } from '../src/systems/status';
 import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
 import { learnSkills, makeCtx, run, type SystemFn } from './helpers';
@@ -126,9 +127,9 @@ describe('Heal (allyArea)', () => {
     r.current = 60;
     world.req(player, Health).current = world.req(player, Health).max; // nothing to heal: no Devotion back
     cast(world, ctx, player, 0, 0, 5, 20);
-    // 25 cost, plus a little idle regeneration.
-    expect(r.current).toBeLessThan(60 - 25 + 3);
-    expect(r.current).toBeGreaterThanOrEqual(60 - 25);
+    // 35 cost, plus a little idle regeneration.
+    expect(r.current).toBeLessThan(60 - 35 + 3);
+    expect(r.current).toBeGreaterThanOrEqual(60 - 35);
   });
 });
 
@@ -178,16 +179,32 @@ describe('Kyrie Eleison and Blessing', () => {
 });
 
 describe('Lex Aeterna', () => {
-  it('the first direct hit deals double damage and uses the mark up', () => {
+  it('judged enemies take 1.35x from every hit for 6 s and the judgment is not used up', () => {
     const { world, ctx, player } = setup(['lightbearer.lex_aeterna']);
     const enemy = tough(world, spawnEnemy(world, 'infected_colonist', 0, 6));
+    const spec = { ...HIT, coefficient: 1, damageType: 'energy' as const };
+    const plain = dealHit(world, ctx, player, enemy, spec)!;
     cast(world, ctx, player, 0, 0, 6, 20);
     expect(hasStatus(world, enemy, 'lexAeterna')).toBe(true);
-    const spec = { ...HIT, coefficient: 1, damageType: 'energy' as const };
-    const doubled = dealHit(world, ctx, player, enemy, spec)!;
+    for (let i = 0; i < 3; i++) {
+      expect(dealHit(world, ctx, player, enemy, spec)! / plain).toBeCloseTo(1.35, 2);
+      expect(hasStatus(world, enemy, 'lexAeterna')).toBe(true);
+    }
+    run(world, ctx, [statusSystem], 60 * 6);
     expect(hasStatus(world, enemy, 'lexAeterna')).toBe(false);
-    const normal = dealHit(world, ctx, player, enemy, spec)!;
-    expect(doubled / normal).toBeCloseTo(2, 2);
+    expect(dealHit(world, ctx, player, enemy, spec)! / plain).toBeCloseTo(1, 2);
+  });
+
+  it('Harsh Judgment widens the burst by 1.5 and lasts 4 s longer', () => {
+    const base = SKILLS.get('lightbearer.lex_aeterna')!.effect;
+    const judged = compileSkill('lightbearer.lex_aeterna', 1, [
+      { op: 'add', field: 'radius', value: 1.5 },
+      { op: 'addApply', apply: { status: 'lexAeterna', duration: 10 } },
+    ]).def.effect;
+    if (base.kind !== 'cursorBurst' || judged.kind !== 'cursorBurst') throw new Error('Lex Aeterna is a cursor burst');
+    expect(judged.radius).toBeCloseTo(base.radius + 1.5, 5);
+    expect(Math.max(...judged.applies.map((a) => a.duration))).toBe(10);
+    expect(base.coefficient).toBeGreaterThanOrEqual(0.8);
   });
 
   it('is not used up by damage-over-time ticks', () => {
@@ -225,16 +242,34 @@ describe('Benediction', () => {
     expect(hp(world, enemy)).toBeLessThan(10000);
   });
 
-  it('a lethal blow leaves the holder on 1 life, and only while it lasts', () => {
+  const lethal = { crit: false, damageType: 'physical', dot: false, sourceTeam: 'enemy' } as const;
+
+  it('stops one lethal blow, is spent by it, and a second blow after the grace kills', () => {
     const { world, ctx, player } = setup([]);
     const life = world.req(player, Health);
     applyStatus(world, ctx, player, { status: 'benediction', duration: 8 }, { team: 'player', level: 1 });
-    applyDamage(world, ctx, player, 1e6, { crit: false, damageType: 'physical', dot: false, sourceTeam: 'enemy' });
+    applyDamage(world, ctx, player, 1e6, lethal);
     expect(life.current).toBe(1);
     expect(world.has(player, Dead)).toBe(false);
-    // And everything else is reduced by a fifth.
-    life.current = life.max;
+    expect(hasStatus(world, player, 'benediction')).toBe(false); // spent
+    expect(world.has(player, Invulnerable)).toBe(true);
+    // 1.5 s of invulnerability: another blow does nothing...
+    expect(applyDamage(world, ctx, player, 1e6, lethal)).toBeNull();
+    expect(world.has(player, Dead)).toBe(false);
+    // ...and after it the second lethal blow kills, though the 8 s had not run out.
+    run(world, ctx, [statusSystem], Math.ceil(60 * CHEAT_DEATH_INVULNERABLE) + 5);
+    expect(world.has(player, Invulnerable)).toBe(false);
+    applyDamage(world, ctx, player, 1e6, lethal);
+    expect(world.has(player, Dead)).toBe(true);
+  });
+
+  it('takes a fifth less from ordinary blows, and only while it lasts', () => {
+    const { world, ctx, player } = setup([]);
+    const life = world.req(player, Health);
+    applyStatus(world, ctx, player, { status: 'benediction', duration: 8 }, { team: 'player', level: 1 });
     expect(applyDamage(world, ctx, player, 100, { crit: false, damageType: 'physical', dot: false, sourceTeam: 'enemy' })).toBeCloseTo(80, 5);
+    life.current = life.max;
+    expect(hasStatus(world, player, 'benediction')).toBe(true);
     run(world, ctx, [statusSystem], 60 * 9);
     expect(hasStatus(world, player, 'benediction')).toBe(false);
     applyDamage(world, ctx, player, 1e6, { crit: false, damageType: 'physical', dot: false, sourceTeam: 'enemy' });
@@ -261,7 +296,7 @@ describe('Sanctum (Magnus Exorcismus, Sanctuary)', () => {
     const sanctum = world.query(Sanctum)[0]!;
     expect(world.req(sanctum, Transform).x).toBeCloseTo(8, 3);
     expect(pulses(world, ctx, 60 * 6)).toBe(6);
-    expect(hp(world, inside)).toBeLessThan(10000 - 100);
+    expect(hp(world, inside)).toBeLessThan(10000 - 50);
     expect(hp(world, outside)).toBe(10000);
     expect(world.query(Sanctum)).toHaveLength(0); // gone after fading
   });
@@ -425,8 +460,8 @@ describe('Devotion', () => {
     const life = world.req(player, Health);
     life.current = life.max * 0.5;
     cast(world, ctx, player, 0, 0, 5, 20);
-    // -25 cost, +0.5 per percent of max life healed (15 %).
-    expect(r.current).toBeCloseTo(50 - 25 + 15 * 0.5, 3);
+    // -35 cost, +0.5 per percent of max life healed (15 %).
+    expect(r.current).toBeCloseTo(50 - 35 + 15 * 0.5, 3);
   });
 });
 
@@ -454,10 +489,12 @@ describe('corruptedMul', () => {
     cast(world, ctx, player, 0, 0, 3, 20);
     const dealtInfected = 10000 - hp(world, infected);
     expect(dealtInfected).toBeGreaterThan(0);
-    // The same swing on a machine with the same armour and resistances would deal 1/1.25 as much.
+    // The same swing on a machine with the same armour and resistances would deal 1/1.2 as much.
     const probe = tough(world, spawnEnemy(world, 'infected_colonist', 30, 30));
-    const plain = dealHit(world, ctx, player, probe, { ...HIT, coefficient: 0.9, damageType: 'physical' })!;
-    expect(dealtInfected / plain).toBeCloseTo(1.25, 1);
+    const censer = SKILLS.get('lightbearer.censer_strike')!.effect;
+    const censerCoefficient = censer.kind === 'meleeArc' ? censer.coefficient : 0;
+    const plain = dealHit(world, ctx, player, probe, { ...HIT, coefficient: censerCoefficient, damageType: 'physical' })!;
+    expect(dealtInfected / plain).toBeCloseTo(1.2, 1);
   });
 });
 
@@ -529,5 +566,129 @@ describe('skill support for the tree', () => {
     world.req(friend, Health).current = 100;
     healAlly(world, ctx, player, friend, 50);
     expect(r.current).toBeCloseTo(12.5 * 1.2, 5);
+  });
+});
+
+describe('balance pass (G001-G008)', () => {
+  const effectOf = (id: string, mods: Parameters<typeof compileSkill>[2] = []) => compileSkill(id, 1, mods).def.effect;
+
+  it('Magnus Exorcismus never pulses faster than the floor, however many interval mods stack', () => {
+    const e = effectOf('lightbearer.magnus_exorcismus', [
+      { op: 'mul', field: 'interval', value: -0.2 },
+      { op: 'mul', field: 'interval', value: -0.3 },
+      { op: 'mul', field: 'interval', value: -0.3 },
+    ]);
+    expect(e.kind === 'sanctum' && e.interval).toBeGreaterThanOrEqual(SANCTUM_MIN_INTERVAL);
+    expect(e.kind === 'sanctum' && e.interval).toBe(SANCTUM_MIN_INTERVAL);
+    // The Rapid node plus the zealot passive alone leave it above the floor, and still faster than the base.
+    const rapid = effectOf('lightbearer.magnus_exorcismus', [{ op: 'mul', field: 'interval', value: -0.4 }]);
+    expect(rapid.kind === 'sanctum' && rapid.interval).toBeCloseTo(0.48, 5);
+  });
+
+  it('keeps two Magnus sigils at most: the third cast removes the oldest', () => {
+    const { world, ctx, player } = setup(['lightbearer.magnus_exorcismus']);
+    const user = world.req(player, SkillUser);
+    const born: Entity[] = [];
+    for (let i = 0; i < 4; i++) {
+      world.req(player, Resource).current = 100;
+      user.cooldowns['lightbearer.magnus_exorcismus'] = 0;
+      cast(world, ctx, player, 0, 4 + i, 0, 45); // four casts in three seconds
+      born.push(...world.query(Sanctum).filter((e) => !born.includes(e)));
+      expect(world.query(Sanctum).length).toBeLessThanOrEqual(2);
+    }
+    const live = world.query(Sanctum).filter((e) => world.req(e, Sanctum).remaining > 0);
+    expect(live).toHaveLength(2);
+    expect(live).not.toContain(born[0]);
+  });
+
+  it('a second Sanctuary replaces the first: one zone, and the same healing per second', () => {
+    const { world, ctx, player } = setup(['lightbearer.sanctuary']);
+    const friend = ally(world, 3, 0, 1000);
+    world.req(friend, Health).current = 100;
+    const user = world.req(player, SkillUser);
+    cast(world, ctx, player, 0, 0, 5, 40);
+    user.cooldowns['lightbearer.sanctuary'] = 0;
+    cast(world, ctx, player, 0, 0, 5, 40);
+    expect(world.query(Sanctum)).toHaveLength(1);
+    const before = hp(world, friend);
+    let pulsesSeen = 0;
+    const sanctum = world.query(Sanctum)[0]!;
+    const start = world.req(sanctum, Sanctum).pulses;
+    run(world, ctx, SYSTEMS, 60 * 3);
+    pulsesSeen = world.req(sanctum, Sanctum).pulses - start;
+    expect(hp(world, friend) - before).toBeCloseTo(pulsesSeen * 1000 * 0.04, 0); // one zone's worth, not two
+  });
+
+  it('Sanctuary duration bonuses (Halo, enhancement, Hallowed) stop at 2.5x', () => {
+    const e = effectOf('lightbearer.sanctuary', [
+      { op: 'mul', field: 'duration', value: 1 },
+      { op: 'mul', field: 'duration', value: 0.3 },
+      { op: 'mul', field: 'duration', value: 0.4 },
+    ]);
+    expect(e.kind === 'sanctum' && e.duration).toBeLessThanOrEqual(17.5);
+    expect(e.kind === 'sanctum' && e.duration).toBeCloseTo(17.5, 5);
+    const plain = effectOf('lightbearer.sanctuary', [{ op: 'mul', field: 'duration', value: 0.3 }]);
+    expect(plain.kind === 'sanctum' && plain.duration).toBeCloseTo(9.1, 5); // below the cap: untouched
+  });
+
+  it('Benediction cannot come back sooner than 30 s, whatever the reductions', () => {
+    const c = compileSkill('lightbearer.benediction', 1, [{ op: 'mul', field: 'cooldown', value: -0.7 }]).def;
+    expect(c.cooldown).toBeCloseTo(18, 5);
+    expect(effectiveCooldown(c, 0.5)).toBeGreaterThanOrEqual(30);
+    // And the cooldown a real cast starts is the floored one.
+    const { world, ctx, player } = setup(['lightbearer.benediction']);
+    world.req(player, CombatStats).cooldownReduction = 0.5;
+    cast(world, ctx, player, 0, 0, 5, 30);
+    expect(world.req(player, SkillUser).cooldowns['lightbearer.benediction']).toBeGreaterThan(28);
+    // Unreduced skills are unchanged.
+    expect(effectiveCooldown({ cooldown: 14 }, 0.5)).toBeCloseTo(7, 5);
+  });
+
+  it('Lightbearer damage keeps a base: the corrupted bonus is under 2x on every skill', () => {
+    const muls: number[] = [];
+    for (const [id, def] of SKILLS) {
+      if (!id.startsWith('lightbearer.')) continue;
+      const e = def.effect;
+      if (e.kind === 'meleeArc' || e.kind === 'projectile') muls.push(e.corruptedMul);
+      if (e.kind === 'sanctum' && e.impact) muls.push(e.impact.corruptedMul);
+      if (e.kind === 'guardian') muls.push(e.bolt.corruptedMul);
+    }
+    expect(Math.max(...muls)).toBeLessThanOrEqual(1.6);
+  });
+
+  it('Holy Light is a real basic attack', () => {
+    const hl = SKILLS.get('lightbearer.holy_light')!;
+    const e = hl.effect;
+    if (e.kind !== 'projectile') throw new Error('Holy Light is a projectile');
+    const perSecond = e.coefficient / (hl.castTime + hl.recovery);
+    expect(perSecond).toBeGreaterThanOrEqual(2.2);
+    expect(perSecond).toBeLessThan(2.71); // still under Quick Shot
+    expect(e.homing).toBeDefined();
+  });
+
+  it('Heal costs enough that it is not free sustain', () => {
+    const heal = SKILLS.get('lightbearer.heal')!;
+    expect(heal.resourceCost).toBe(35);
+    expect(heal.cooldown).toBe(2.5);
+    const gain = (id: string) => SKILLS.get(id)!.resourceGain;
+    expect(gain('lightbearer.holy_light')).toBe(3);
+    expect(gain('lightbearer.censer_strike')).toBe(4);
+  });
+
+  it('Guardian Light bolts burst in 1.5 m and hit a group', () => {
+    const g = effectOf('lightbearer.guardian_light');
+    expect(g.kind === 'guardian' && g.explodeRadius).toBe(1.5);
+    expect(g.kind === 'guardian' && g.bolt.coefficient).toBeCloseTo(0.7, 5);
+    expect(g.kind === 'guardian' && g.attackCooldown).toBeCloseTo(0.8, 5);
+    const { world, ctx, player } = setup(['lightbearer.guardian_light']);
+    world.req(player, Resource).current = 100;
+    cast(world, ctx, player, 0, 0, 5, 70);
+    const target = tough(world, spawnEnemy(world, 'infected_colonist', 6, 0));
+    const neighbour = tough(world, spawnEnemy(world, 'infected_colonist', 6.8, 0.8));
+    const far = tough(world, spawnEnemy(world, 'infected_colonist', 6, 9));
+    run(world, ctx, SYSTEMS, 240);
+    expect(hp(world, target)).toBeLessThan(10000);
+    expect(hp(world, neighbour)).toBeLessThan(10000); // splash
+    expect(hp(world, far)).toBe(10000);
   });
 });
