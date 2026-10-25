@@ -4,6 +4,7 @@
 import { CombatStats, Faction, Hazard, Transform, makeTransform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
+import type { GameEvent } from '../core/events';
 import type { Impact, StatusApply } from '../data/schemas';
 import { dealHit, heal } from './combat';
 import { angleDelta } from './movement';
@@ -94,4 +95,96 @@ export function spawnHazards(world: World, caster: Entity, x: number, z: number,
       attackerLevel: stats?.level ?? 1,
     });
   }
+}
+
+// ---- Hit feel (F001, F009): extra freeze and shake for hits taken, crits and kills ----------------------------
+
+/** Tuning for the extra feel on top of a skill's own `hitstopMs` / `shake` (docs/improvements/feel.md F001, F009). */
+export const FEEL = {
+  /** A hit taken below this share of max life gives no shake. */
+  hitTakenMinShare: 0.02,
+  /** Shake trauma per share of max life lost, capped at `hitTakenMaxTrauma`. */
+  hitTakenTrauma: 0.8,
+  hitTakenMaxTrauma: 0.35,
+  /** A hit taken above this share of max life also freezes the game briefly. */
+  hitTakenStopShare: 0.15,
+  hitTakenStopMs: 40,
+  /** A crit lengthens the freeze (a light weapon's 10-15 ms is raised to `critMinBaseMs` first) and shakes a little. */
+  critMul: 1.6,
+  critMinBaseMs: 20,
+  critMaxMs: 120,
+  critShake: 0.08,
+  /** The killing blow holds a little longer. */
+  killExtraMs: 20,
+  /** Elite and boss kills: a heavy shake and a short slow-motion beat (real seconds at `slowmoScale`). */
+  bigKillTrauma: 0.35,
+  slowmoSeconds: 0.25,
+  slowmoScale: 0.25,
+} as const;
+
+export interface FrameFeel {
+  /** Freeze to apply this frame (ms); 0 when the frame's own events ask for none. */
+  hitstopMs: number;
+  /** Extra camera trauma on top of the frame's own `shake` events. */
+  trauma: number;
+  /** Slow-motion beat in real seconds (0 = none). */
+  slowmoS: number;
+}
+
+/** Freeze after a crit: 1.6x the skill's own value (at least 1.6 x 20 ms), never more than 120 ms. */
+export function critHitstop(baseMs: number): number {
+  return Math.min(FEEL.critMaxMs, Math.max(baseMs, FEEL.critMinBaseMs) * FEEL.critMul);
+}
+
+/** Shake trauma and freeze (ms) for a hit that took `amount` of `maxLife` from the player. */
+export function hitTakenFeel(amount: number, maxLife: number): { trauma: number; hitstopMs: number } {
+  if (!(maxLife > 0) || !(amount > 0)) return { trauma: 0, hitstopMs: 0 };
+  const share = amount / maxLife;
+  return {
+    trauma: share < FEEL.hitTakenMinShare ? 0 : Math.min(FEEL.hitTakenMaxTrauma, FEEL.hitTakenTrauma * share),
+    hitstopMs: share > FEEL.hitTakenStopShare ? FEEL.hitTakenStopMs : 0,
+  };
+}
+
+/**
+ * What one frame of events adds to the feel. Pure: `maxLife` is the player's life, `weightOf` says whether a dying
+ * entity was an elite or a boss. The caller applies `hitstopMs` as a floor (max with its own freeze) and `trauma`
+ * through the camera (which honours the screen-shake setting).
+ */
+export function frameFeel(events: readonly GameEvent[], maxLife: number, weightOf: (e: Entity) => 'elite' | 'boss' | null = () => null): FrameFeel {
+  let baseStop = 0;
+  let crit = false;
+  let kill = false;
+  let big = false;
+  let takenTrauma = 0;
+  let takenStop = 0;
+  for (const ev of events) {
+    switch (ev.type) {
+      case 'hitstop':
+        baseStop = Math.max(baseStop, ev.ms);
+        break;
+      case 'damage':
+        if (ev.dot) break;
+        if (ev.toPlayer) {
+          const f = hitTakenFeel(ev.amount, maxLife);
+          takenTrauma += f.trauma;
+          takenStop = Math.max(takenStop, f.hitstopMs);
+        } else if (ev.crit && ev.amount + ev.absorbed > 0) crit = true;
+        break;
+      case 'death':
+        if (ev.isPlayer || ev.family === undefined) break;
+        kill = true;
+        if (weightOf(ev.target) !== null) big = true;
+        break;
+      default:
+        break;
+    }
+  }
+  let hitstopMs = baseStop;
+  if (crit) hitstopMs = critHitstop(baseStop);
+  if (kill) hitstopMs = Math.min(FEEL.critMaxMs, hitstopMs + FEEL.killExtraMs);
+  hitstopMs = Math.max(hitstopMs, takenStop);
+  // A frame with no freeze of its own and no crit/kill/hit taken stays at 0 (a floor, not a replacement).
+  const trauma = Math.min(1, takenTrauma + (crit ? FEEL.critShake : 0) + (big ? FEEL.bigKillTrauma : 0));
+  return { hitstopMs, trauma, slowmoS: big ? FEEL.slowmoSeconds : 0 };
 }

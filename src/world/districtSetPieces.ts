@@ -9,6 +9,7 @@ import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { HubDef } from '../data/zones/zoneTypes';
 import { CATHEDRAL, DELTA } from '../data/zones/refineryDistrict';
+import { strongholdLifeMul } from '../data/bosses';
 import { resetBoss, spawnBoss } from '../systems/boss';
 import { monsterLevel } from '../systems/encounter';
 import { signal } from '../systems/quests';
@@ -134,7 +135,7 @@ function delta(world: World, dt: number, ctx: GameContext, zone: ZoneRuntime, sp
         enemy: 'brother_ash',
         name: 'enemies.named.brother_ash',
         level,
-        lifeMul: 1 + 0.12 * (level - 1),
+        lifeMul: strongholdLifeMul(level),
         damageMul: 1,
         affixes: ['shielded'],
         script: 'brother_ash',

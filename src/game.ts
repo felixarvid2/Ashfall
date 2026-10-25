@@ -43,6 +43,7 @@ import { Rng, randomSeed } from './core/rng';
 import {
   CHARACTER_SLOTS,
   SAVE_VERSION,
+  NewerSaveError,
   SaveError,
   SaveStore,
   parseSave,
@@ -51,6 +52,7 @@ import {
   serializeSave,
   slotKey,
   type SaveData,
+  type SaveWriteResult,
 } from './core/save';
 import { SpatialHash } from './core/spatial';
 import { STATUS_DEFS, classDef, skill } from './data/db';
@@ -65,7 +67,7 @@ import { navigationSystem } from './systems/navigation';
 import { UNDERGROUND, litFloodlights, rockSystem, undergroundState, undergroundSystem } from './world/underground';
 import { bridgeSystem, gravitySystem } from './world/theCore';
 import { isAlive, kill } from './systems/combat';
-import { deathSystem } from './systems/death';
+import { applyDeathPenalty, deathSystem } from './systems/death';
 import { encounterSystem, startNextWave } from './systems/encounter';
 import { enemyAISystem } from './systems/enemyAI';
 import { guardianSystem, sanctumSystem } from './systems/lightbearer';
@@ -113,7 +115,8 @@ import { playerStatuses } from './ui/statusTiles';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
-import { loadAccount, relicEffects, saveAccount } from './core/account';
+import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount } from './core/account';
+import { runSaveApply, sanitizeSave } from './core/saveRefs';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { deathCauseLine } from './ui/deathCause';
 import { bossPhaseTicks, keyLabel } from './ui/hud';
@@ -219,6 +222,12 @@ export class Game {
   private readonly scheduler = new Scheduler<GameContext>();
   private readonly saves: SaveStore;
   private readonly storage = safeLocalStorage();
+  /** The shared account as read at start-up; `recovered` means a bad blob was backed up and rebuilt. */
+  private readonly loadedAccount = loadAccount(this.storage);
+  /** Set after a load that failed half-way: autosave stays off until a load succeeds or a new game starts. */
+  private autosaveSuppressed = false;
+  /** Consecutive autosaves that could not write (storage full or blocked). */
+  private autosaveFailures = 0;
   private readonly hud: Hud;
   /** Black overlay faded in while a zone loads. */
   private readonly fade: HTMLDivElement;
@@ -333,7 +342,7 @@ export class Game {
       zoneLevels: START_ZONE.levels,
       zone: createZoneRuntime(START_ZONE),
       zones: new Map(),
-      account: loadAccount(this.storage),
+      account: this.loadedAccount.account,
       quests: createQuestRuntime(),
     };
     setItemNamer((baseId) => t(`items.bases.${baseId}`));
@@ -391,6 +400,9 @@ export class Game {
     setHaptics(this.settings.haptics);
     this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0);
     this.toasts = new Toasts(uiRoot);
+    if (this.loadedAccount.recovered) {
+      this.toasts.show(t(this.loadedAccount.reason === 'newer' ? 'save.accountNewer' : 'save.accountRecovered'), 'error', 12000);
+    }
     // The endgame status rows (rift timer, world boss, Ash Harvest) share one column; style.css positions it.
     const endgameStack = document.createElement('div');
     endgameStack.className = 'endgame-stack';
@@ -880,6 +892,8 @@ export class Game {
 
   start(): void {
     this.playing = true;
+    // The player chose a character after the recovery notice: the rebuilt account may be saved now.
+    if (this.ctx.account) acknowledgeAccountRecovery(this.ctx.account);
     this.loop.start();
     window.addEventListener('beforeunload', () => this.autosave());
     document.addEventListener('visibilitychange', () => {
@@ -890,7 +904,7 @@ export class Game {
   // ---- Characters -------------------------------------------------------------
 
   /** What is in each character slot, for the select screen. */
-  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null; corrupt?: boolean }[] {
+  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null; corrupt?: boolean; newer?: boolean }[] {
     return Array.from({ length: CHARACTER_SLOTS }, (_, index) => {
       try {
         const data = this.saves.read(slotKey(index));
@@ -906,8 +920,8 @@ export class Game {
             gear: meanItemPower(Object.values(data.inventory?.equipped ?? {}).filter((i): i is NonNullable<typeof i> => !!i)),
           },
         };
-      } catch {
-        return { index, character: null, corrupt: true };
+      } catch (err) {
+        return { index, character: null, corrupt: true, ...(err instanceof NewerSaveError ? { newer: true } : {}) };
       }
     });
   }
@@ -920,6 +934,9 @@ export class Game {
     this.ctx.endgame = SaveDataSchema.shape.endgame.parse(undefined);
     setQuestState(this.ctx.quests!, { active: {}, done: {}, tracked: null });
     this.enterZone(START_ZONE.id, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
+    // A slot that failed to parse (damaged, or from a newer build) is copied aside before it is overwritten.
+    this.saves.quarantineIfUnreadable(slotKey(slot));
+    this.autosaveSuppressed = false;
     this.slot = slot;
     this.characterName = name;
     const inv = this.world.req(this.player, Inventory);
@@ -937,6 +954,7 @@ export class Game {
   }
 
   deleteCharacter(slot: number): void {
+    this.saves.quarantineIfUnreadable(slotKey(slot));
     this.saves.remove(slotKey(slot));
   }
 
@@ -1084,14 +1102,28 @@ export class Game {
     }, ZONE_FADE * 1000);
   }
 
+  /** Last-chance save for the crash and context-loss handlers (src/bootGuard.ts). */
+  saveNow(): void {
+    this.autosave();
+  }
+
   private autosave(): void {
-    if (this.ctx.account) saveAccount(this.storage, this.ctx.account);
-    if (this.slot === null || this.world.has(this.player, Dead)) return;
+    const account = this.ctx.account ? saveAccount(this.storage, this.ctx.account) : ({ ok: true } as const);
+    if (this.slot === null || this.autosaveSuppressed || this.world.has(this.player, Dead)) return;
+    let result: SaveWriteResult;
     try {
-      this.saves.write(slotKey(this.slot), this.snapshot());
+      result = account.ok ? this.saves.write(slotKey(this.slot), this.snapshot()) : account;
     } catch {
-      // Storage full or blocked: the manual save shows the error.
+      result = { ok: false, reason: 'unknown' };
     }
+    if (result.ok) {
+      if (this.autosaveFailures > 0) this.toasts.show(t('save.autosaveRecovered'));
+      this.autosaveFailures = 0;
+      return;
+    }
+    // Autosave is the only save most players trigger: say so, once, then again every few failed tries.
+    if (this.autosaveFailures % 5 === 0) this.toasts.show(t(`save.autosaveFailed.${result.reason}`), 'error', 30000);
+    this.autosaveFailures += 1;
   }
 
   setGraphics(quality: Settings['graphics']): void {
@@ -2077,6 +2109,9 @@ export class Game {
       w.add(p, Invulnerable, { remaining: 2 });
       return;
     }
+    // The death toll (G018): a little gold and half the potion charges.
+    const lost = applyDeathPenalty(w, p);
+    if (lost.gold > 0 || lost.potions > 0) this.toasts.show(t('death.penalty', { gold: lost.gold, potions: lost.potions }));
     // Back at the nearest discovered teleporter (docs/world-and-gameplay.md §13).
     const tr = this.playerTransform;
     // Inside a dungeon you come back at its entrance; bosses reset (docs/world-and-gameplay.md §13).
@@ -2666,8 +2701,9 @@ export class Game {
   save(quiet = false): void {
     if (this.slot === null) return;
     try {
-      this.saves.write(slotKey(this.slot), this.snapshot());
-      if (!quiet) this.toasts.show(t('save.saved'));
+      const result = this.saves.write(slotKey(this.slot), this.snapshot());
+      if (!result.ok) this.toasts.show(t(`save.autosaveFailed.${result.reason}`), 'error', 8000);
+      else if (!quiet) this.toasts.show(t('save.saved'));
     } catch {
       this.toasts.show(t('save.storageUnavailable'), 'error');
     }
@@ -2681,7 +2717,7 @@ export class Game {
         this.toasts.show(t('save.noSave'), 'error');
         return false;
       }
-      this.applySave(data);
+      if (!this.applyChecked(data, this.slot)) return false;
       this.toasts.show(t('save.loaded'));
       return true;
     } catch (err) {
@@ -2691,8 +2727,31 @@ export class Game {
     }
   }
 
+  /**
+   * Applies a parsed save: unknown ids are removed first (and the original kept as a backup), and if
+   * any step throws the previous state is put back. When that is not possible autosave stays off so a
+   * half-applied world is never written over the slot. Returns false when the save was not applied.
+   */
+  private applyChecked(parsed: SaveData, slot: number | null): boolean {
+    const { data, dropped } = sanitizeSave(parsed);
+    if (dropped.length > 0 && slot !== null) this.saves.keepOriginal(slotKey(slot), 'dropped');
+    const outcome = runSaveApply(
+      { apply: (d) => this.applySave(d), snapshot: () => (this.playing ? this.snapshot() : null) },
+      data,
+    );
+    if (!outcome.ok) {
+      console.error('[ashfall] applying a save failed', outcome.error);
+      this.autosaveSuppressed = !outcome.restored;
+      this.toasts.show(t(outcome.restored ? 'save.restoreFailed' : 'save.loadHalfApplied'), 'error', 6000);
+      return false;
+    }
+    this.autosaveSuppressed = false;
+    if (dropped.length > 0) this.toasts.show(t('save.droppedRefs', { count: dropped.length }), 'info', 5000);
+    return true;
+  }
+
   exportSave(): void {
-    const blob = new Blob([serializeSave(this.snapshot())], { type: 'application/json' });
+    const blob = new Blob([serializeSave(this.snapshot(), true)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2704,7 +2763,7 @@ export class Game {
 
   importSave(json: string): void {
     try {
-      this.applySave(parseSave(json));
+      if (!this.applyChecked(parseSave(json), null)) return;
       this.toasts.show(t('save.imported'));
     } catch (err) {
       const reason = err instanceof SaveError ? err.message : String(err);

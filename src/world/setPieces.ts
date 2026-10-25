@@ -9,6 +9,7 @@ import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { HubDef } from '../data/zones/zoneTypes';
 import { CINDER_SCALE } from '../data/zones/cinderFlats';
+import { strongholdLifeMul } from '../data/bosses';
 import { spawnBoss, resetBoss } from '../systems/boss';
 import { applyStatus } from '../systems/combat';
 import { signal } from '../systems/quests';
@@ -164,7 +165,7 @@ function sierra(world: World, dt: number, ctx: GameContext, zone: ZoneRuntime, p
         enemy: 'commandant_hale',
         name: 'enemies.named.hale',
         level,
-        lifeMul: 1 + 0.12 * (level - 1),
+        lifeMul: strongholdLifeMul(level),
         damageMul: 1,
         affixes: ['shielded'],
         script: 'hale',

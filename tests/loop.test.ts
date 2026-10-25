@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GameLoop } from '../src/core/loop';
 
 describe('GameLoop', () => {
@@ -36,5 +36,57 @@ describe('GameLoop', () => {
     const before = ticks;
     loop.step(0.5);
     expect(ticks).toBe(before);
+  });
+});
+
+describe('GameLoop guard', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const guarded = (update: () => void, maxErrors = 5) => {
+    let t = 0;
+    const seen: unknown[] = [];
+    const fatal: unknown[] = [];
+    const renders: number[] = [];
+    const loop = new GameLoop({ update, render: () => renders.push(1) }, 60);
+    loop.guard = { onError: (e) => seen.push(e), onFatal: (e) => fatal.push(e), maxErrors, now: () => t };
+    return { loop, seen, fatal, renders, advance: (ms: number) => (t += ms) };
+  };
+
+  it('lets exceptions propagate when no guard is set', () => {
+    const loop = new GameLoop({ update: () => { throw new Error('boom'); }, render: () => {} }, 60);
+    expect(() => loop.step(1 / 60)).toThrow('boom');
+  });
+
+  it('reports a throwing update, keeps going, and trips after five in a window', () => {
+    const { loop, seen, fatal, advance } = guarded(() => { throw new Error('tick'); });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+    for (let i = 0; i < 4; i++) {
+      loop.step(1 / 60);
+      advance(100);
+    }
+    expect(seen).toHaveLength(4);
+    expect(fatal).toHaveLength(0);
+    loop.step(1 / 60);
+    expect(seen).toHaveLength(5);
+    expect(fatal).toHaveLength(1);
+  });
+
+  it('does not trip when the errors are spread out', () => {
+    const { loop, fatal, advance } = guarded(() => { throw new Error('rare'); });
+    for (let i = 0; i < 10; i++) {
+      loop.step(1 / 60);
+      advance(600);
+    }
+    expect(fatal).toHaveLength(0);
+  });
+
+  it('still renders after a failed tick is skipped only when the update succeeded', () => {
+    let fail = true;
+    const { loop, renders } = guarded(() => { if (fail) throw new Error('once'); });
+    loop.step(1 / 60);
+    expect(renders).toHaveLength(0);
+    fail = false;
+    loop.step(1 / 60);
+    expect(renders).toHaveLength(1);
   });
 });

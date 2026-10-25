@@ -5,7 +5,7 @@
  *  - rename animation clips to game states (idle, run, attack, …)
  *  - resize textures and convert them to WebP
  *  - meshopt-compress geometry
- *  - LOD files for static assets
+ *  - LOD files for static assets (geometry and material parameters only; textures come from the base model)
  * Output goes to public/assets/<folder>/<name>.glb and the manifest is updated.
  */
 import { existsSync, mkdirSync, statSync } from 'node:fs';
@@ -31,6 +31,15 @@ export function outputPath(entry: AssetEntry, suffix = ''): { rel: string; abs: 
   const name = entry.id.split('.').slice(1).join('_');
   const rel = `${FOLDERS[entry.category]}/${name}${suffix}.glb`;
   return { rel, abs: resolve(PUBLIC_ASSETS_DIR, rel) };
+}
+
+/**
+ * Drops every texture from a document, keeping geometry and material parameters (colour factors,
+ * roughness, normal scale). LOD files are written this way: the game points their materials at the
+ * base model's textures, so the identical image bytes are not stored and decoded again per LOD (T002).
+ */
+export function stripTextures(doc: Document): void {
+  for (const texture of doc.getRoot().listTextures()) texture.dispose();
 }
 
 export function countTriangles(doc: Document): number {
@@ -212,6 +221,8 @@ export async function optimizeAssets(manifest: AssetManifest, entries: AssetEntr
         const lodDoc = await nodeIO.readBinary(await nodeIO.writeBinary(doc));
         lodDoc.setLogger(new Logger(Logger.Verbosity.WARN));
         await simplifyTo(lodDoc, Math.max(100, Math.round(countTriangles(doc) * ratio)));
+        // No textures in LODs: AssetLibrary shares the base model's after loading.
+        stripTextures(lodDoc);
         await lodDoc.transform(prune(), meshopt({ encoder: MeshoptEncoder }));
         const out = outputPath(entry, `_lod${i + 1}`);
         mkdirSync(dirname(out.abs), { recursive: true });

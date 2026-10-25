@@ -108,3 +108,22 @@ than in the playthroughs, and melee looks stronger; use `--pack 5` to see the ar
 - **Fast wind-ups**: hounds and swarms wait at least 0.40-0.45 s before they bite, and lunges and flankers show their
   red telegraph 0.15 s before the wind-up (their cooldown is shorter by the same amount, so damage per second is
   unchanged).
+
+## Progression pass (G018-G024, C011)
+- **Death toll (G018):** respawning after a campaign death (open world and dungeons; not Rifts or the Endless Shaft,
+  which end the run) costs 5 % of carried gold (at most 40 x level) and half the potion charges (rounded down, at
+  least 1 if any were left). No durability, no XP loss, nothing lost that a few kills do not return.
+- **Kill-XP fall-off (G019):** above the zone's top level a kill gives `max(0.1, 1 - 0.3 x levels over)` of its XP
+  (0.7 at +1, 0.4 at +2, 0.1 from +3). Not applied under World Tier 2+ or in Rifts, where monsters follow the
+  player. Quest XP is untouched. `killXp(table, level, { playerLevel, zoneMaxLevel })`.
+- **Quest XP (G020):** Deep Mines x0.52 (156,800 to 81,550; 80 % of the 102,086 XP the band needs), the Core x0.38
+  (312,600 to 118,800; 81 % of 147,525). Relative values between quests kept (rounded to 50).
+- **Ranged share (G021):** weighted open-world pack members that shoot: Refinery 0.2 % to 13.6 %, Vaults 0.2 % to
+  13.4 %, Mines 2.0 % to 12.6 % (Cinder Flats 9.3 %, Core 20.3 % unchanged). Security drones, governor drones and a few
+  troopers join 15 templates (`src/data/packs.ts`); no enemy definitions were changed.
+- **Strongholds (G022):** life x(1 + 0.035 x (level - 1)) (was 0.12). Stronghold life against the zone boss at the
+  region's top level: Hale 5,995 to 3,790 (0.72 to 0.45 of The First), Brother Ash 18,847 to 9,567 (1.18 to 0.60 of
+  Vire), Gamma Bloom 72,451 to 32,587 (2.16 to 0.97 of the Warden), Holm 77,441 to 32,244 (1.61 to 0.67 of Kade).
+- **Elites (G023):** rare life x(4 + 0.05 x level) and damage x(1.5 + 0.01 x level); champion life x(2 + 0.02 x level);
+  rares get 5 affixes from level 30. A level-45 rare: life x6.25 (was x4), damage x1.95 (was x1.5).
+- **Rift damage (G024):** see docs/endgame.md; rift 40 damage x4.0 instead of x10.3.

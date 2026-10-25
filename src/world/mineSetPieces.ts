@@ -10,6 +10,7 @@ import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { HubDef } from '../data/zones/zoneTypes';
 import { AURUM, DEEP_MINES, DRILL_CONTROL } from '../data/zones/deepMines';
+import { strongholdLifeMul } from '../data/bosses';
 import { resetBoss, spawnBoss } from '../systems/boss';
 import { applyStatus } from '../systems/combat';
 import { monsterLevel } from '../systems/encounter';
@@ -144,7 +145,7 @@ function aurum(world: World, dt: number, ctx: GameContext, zone: ZoneRuntime, sp
         enemy: 'security_chief_holm',
         name: 'enemies.named.holm',
         level,
-        lifeMul: 1 + 0.12 * (level - 1),
+        lifeMul: strongholdLifeMul(level),
         damageMul: 1,
         affixes: ['shielded'],
         script: 'holm',

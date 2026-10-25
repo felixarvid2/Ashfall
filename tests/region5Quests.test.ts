@@ -22,11 +22,11 @@ const text = (id: string) => {
 };
 
 describe('The Core quests', () => {
-  it('has 6 main quests, 8 side quests and a mystery', () => {
+  it('has 6 main quests, 9 side quests (one a choice, C015) and a mystery', () => {
     expect(coreQuests.filter((q) => q.kind === 'main').map((q) => q.id)).toEqual([
       'mq.core_bore', 'mq.last_camp', 'mq.bridges_of_light', 'mq.what_lumen_remembers', 'mq.elevator_base', 'mq.one_who_remembers',
     ]);
-    expect(coreQuests.filter((q) => q.kind === 'side')).toHaveLength(8);
+    expect(coreQuests.filter((q) => q.kind === 'side' && !q.repeatable)).toHaveLength(9);
     expect(coreQuests.filter((q) => q.kind === 'mystery')).toHaveLength(1);
   });
 

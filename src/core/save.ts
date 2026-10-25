@@ -170,6 +170,8 @@ export const MIGRATIONS: Record<number, Migration> = {
 };
 
 export class SaveError extends Error {}
+/** The save was written by a newer build: it is not corrupt, and must not be overwritten by this one. */
+export class NewerSaveError extends SaveError {}
 
 /** Bring raw parsed JSON up to `target` version by running migrations in order. */
 export function migrate(
@@ -185,7 +187,7 @@ export function migrate(
     throw new SaveError('missing version');
   }
   let version: number = data.version;
-  if (version > target) throw new SaveError(`save is from a newer version (${version})`);
+  if (version > target) throw new NewerSaveError(`save is from a newer version (${version})`);
   while (version < target) {
     const step = migrations[version];
     if (!step) throw new SaveError(`no migration from version ${version}`);
@@ -198,8 +200,8 @@ export function migrate(
   return data;
 }
 
-/** Parse + migrate + validate. Throws SaveError with a readable reason. */
-export function parseSave(json: string): SaveData {
+/** Parse + migrate + validate, also reporting the version the raw save was written at. */
+export function parseSaveDetailed(json: string): { data: SaveData; fromVersion: number } {
   let raw: unknown;
   try {
     raw = JSON.parse(json);
@@ -212,12 +214,33 @@ export function parseSave(json: string): SaveData {
     const issue = result.error.issues[0];
     throw new SaveError(issue ? `${issue.path.join('.') || 'root'}: ${issue.message}` : 'invalid save');
   }
-  return result.data;
+  // migrate() has checked that the raw value is an object with an integer version.
+  return { data: result.data, fromVersion: (raw as RawSave).version as number };
 }
 
-export function serializeSave(data: SaveData): string {
-  return JSON.stringify(SaveDataSchema.parse(data), null, 2);
+/** Parse + migrate + validate. Throws SaveError with a readable reason. */
+export function parseSave(json: string): SaveData {
+  return parseSaveDetailed(json).data;
 }
+
+/** Compact JSON (about 38 % smaller); pass `pretty` only for the exported file, which people read and edit. */
+export function serializeSave(data: SaveData, pretty = false): string {
+  return JSON.stringify(SaveDataSchema.parse(data), null, pretty ? 2 : undefined);
+}
+
+export type SaveWriteFailure = 'quota' | 'blocked' | 'unknown';
+export type SaveWriteResult = { ok: true } | { ok: false; reason: SaveWriteFailure };
+
+/** Maps what `setItem` threw to a reason the player can act on. */
+export function writeFailureReason(err: unknown): SaveWriteFailure {
+  const name = typeof err === 'object' && err !== null ? String((err as { name?: unknown }).name ?? '') : '';
+  if (name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED') return 'quota';
+  if (name === 'SecurityError') return 'blocked';
+  return 'unknown';
+}
+
+/** How many `.corrupt.*` copies of a slot are kept. */
+const QUARANTINE_KEEP = 2;
 
 /** Thin wrapper over a Storage so the browser storage can be swapped in tests. */
 export class SaveStore {
@@ -230,16 +253,73 @@ export class SaveStore {
     return this.storage !== undefined;
   }
 
-  write(slot: string, data: SaveData): void {
-    if (!this.storage) throw new SaveError('storage unavailable');
-    this.storage.setItem(this.prefix + slot, serializeSave(data));
+  /** Never throws: a full or blocked storage comes back as `{ ok: false, reason }`. */
+  write(slot: string, data: SaveData): SaveWriteResult {
+    if (!this.storage) return { ok: false, reason: 'blocked' };
+    try {
+      this.storage.setItem(this.prefix + slot, serializeSave(data));
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, reason: writeFailureReason(err) };
+    }
   }
 
-  /** Returns null when the slot is empty. Throws SaveError when it is corrupt. */
+  /**
+   * Returns null when the slot is empty. Throws SaveError when it is corrupt (NewerSaveError when it
+   * comes from a newer build). A save that had to be migrated keeps its original as `<slot>.v<N>.bak`.
+   */
   read(slot: string): SaveData | null {
     const json = this.storage?.getItem(this.prefix + slot);
     if (json == null) return null;
-    return parseSave(json);
+    const { data, fromVersion } = parseSaveDetailed(json);
+    if (fromVersion < SAVE_VERSION) this.keepOriginal(slot, `v${fromVersion}`, json);
+    return data;
+  }
+
+  /** The raw string in a slot, for backups. */
+  raw(slot: string): string | null {
+    return this.storage?.getItem(this.prefix + slot) ?? null;
+  }
+
+  /** Writes `<slot>.<tag>.bak` once (an existing backup is never replaced). Best effort. */
+  keepOriginal(slot: string, tag: string, json: string | null = this.raw(slot)): void {
+    if (!this.storage || json == null) return;
+    const key = `${this.prefix}${slot}.${tag}.bak`;
+    try {
+      if (this.storage.getItem(key) == null) this.storage.setItem(key, json);
+    } catch {
+      // No room for a backup: the save itself is more important.
+    }
+  }
+
+  /**
+   * Before a slot that fails to parse (corrupt, or newer than this build) is overwritten or deleted,
+   * copies its raw string to `<slot>.corrupt.<timestamp>` and keeps the last two copies.
+   * Returns true when a copy was made.
+   */
+  quarantineIfUnreadable(slot: string, now: number = Date.now()): boolean {
+    const json = this.raw(slot);
+    if (!this.storage || json == null) return false;
+    try {
+      parseSaveDetailed(json);
+      return false;
+    } catch {
+      // unreadable: fall through and keep a copy
+    }
+    const stem = `${this.prefix}${slot}.corrupt.`;
+    try {
+      this.storage.setItem(stem + now, json);
+      const stamps: number[] = [];
+      for (let i = 0; i < this.storage.length; i++) {
+        const key = this.storage.key(i);
+        if (key?.startsWith(stem)) stamps.push(Number(key.slice(stem.length)));
+      }
+      stamps.sort((a, b) => b - a);
+      for (const old of stamps.slice(QUARANTINE_KEEP)) this.storage.removeItem(stem + old);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   remove(slot: string): void {

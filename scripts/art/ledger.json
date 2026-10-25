@@ -1,6 +1,6 @@
 {
-  "spent": 1.9600000000000015,
-  "images": 239,
+  "spent": 2.2240000000000015,
+  "images": 272,
   "tries": {
     "textures/mine_rock": 1,
     "bosses/governor_kade": 1,
@@ -211,7 +211,40 @@
     "aspects/radiant": 1,
     "aspects/fervent": 1,
     "aspects/daybreak": 1,
-    "menu/lightbearer": 1
+    "menu/lightbearer": 1,
+    "items/signal_visor_1": 1,
+    "items/signal_visor_2": 1,
+    "items/signal_visor_3": 1,
+    "items/mesh_vest_1": 1,
+    "items/mesh_vest_2": 1,
+    "items/mesh_vest_3": 1,
+    "items/grip_boots_1": 1,
+    "items/grip_boots_2": 1,
+    "items/grip_boots_3": 1,
+    "items/lumen_locket_1": 1,
+    "items/lumen_locket_2": 1,
+    "items/lumen_locket_3": 1,
+    "items/signet_band_1": 1,
+    "items/signet_band_2": 1,
+    "items/signet_band_3": 1,
+    "items/unique_reapers_grip": 1,
+    "items/unique_signet_of_rot": 1,
+    "items/unique_sunwheel_pendant": 1,
+    "items/unique_cinder_collar": 1,
+    "items/unique_aureole_of_the_first_dawn": 1,
+    "items/unique_the_last_word": 1,
+    "items/unique_diadem_of_the_swarm_queen": 1,
+    "items/unique_ouroboros_coil": 1,
+    "aspects/coolant_reserve": 1,
+    "aspects/iron_stride": 1,
+    "aspects/mirage": 1,
+    "aspects/vanishing": 1,
+    "aspects/harbinger": 1,
+    "aspects/creeping_mold": 1,
+    "aspects/strangler": 1,
+    "aspects/processional": 1,
+    "aspects/vestments": 1,
+    "aspects/thurible": 1
   },
   "log": [
     {
@@ -1408,6 +1441,171 @@
       "key": "menu/lightbearer",
       "cost": 0.008,
       "at": "2026-10-25T06:23:11.349Z"
+    },
+    {
+      "key": "items/signal_visor_2",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:18.827Z"
+    },
+    {
+      "key": "items/signal_visor_3",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:18.859Z"
+    },
+    {
+      "key": "items/mesh_vest_1",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:18.947Z"
+    },
+    {
+      "key": "items/signal_visor_1",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:20.666Z"
+    },
+    {
+      "key": "items/grip_boots_1",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:22.148Z"
+    },
+    {
+      "key": "items/mesh_vest_2",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:22.345Z"
+    },
+    {
+      "key": "items/mesh_vest_3",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:22.369Z"
+    },
+    {
+      "key": "items/grip_boots_2",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:25.112Z"
+    },
+    {
+      "key": "items/grip_boots_3",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:25.428Z"
+    },
+    {
+      "key": "items/lumen_locket_1",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:25.590Z"
+    },
+    {
+      "key": "items/lumen_locket_2",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:27.422Z"
+    },
+    {
+      "key": "items/lumen_locket_3",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:28.178Z"
+    },
+    {
+      "key": "items/signet_band_1",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:28.537Z"
+    },
+    {
+      "key": "items/signet_band_2",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:28.699Z"
+    },
+    {
+      "key": "items/signet_band_3",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:31.394Z"
+    },
+    {
+      "key": "items/unique_reapers_grip",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:31.644Z"
+    },
+    {
+      "key": "items/unique_signet_of_rot",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:31.718Z"
+    },
+    {
+      "key": "items/unique_sunwheel_pendant",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:34.486Z"
+    },
+    {
+      "key": "items/unique_cinder_collar",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:36.901Z"
+    },
+    {
+      "key": "items/unique_aureole_of_the_first_dawn",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:37.691Z"
+    },
+    {
+      "key": "items/unique_the_last_word",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:38.529Z"
+    },
+    {
+      "key": "items/unique_diadem_of_the_swarm_queen",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:40.820Z"
+    },
+    {
+      "key": "items/unique_ouroboros_coil",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:41.622Z"
+    },
+    {
+      "key": "aspects/coolant_reserve",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:44.015Z"
+    },
+    {
+      "key": "aspects/iron_stride",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:44.736Z"
+    },
+    {
+      "key": "aspects/mirage",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:47.137Z"
+    },
+    {
+      "key": "aspects/vanishing",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:47.609Z"
+    },
+    {
+      "key": "aspects/harbinger",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:50.341Z"
+    },
+    {
+      "key": "aspects/creeping_mold",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:50.457Z"
+    },
+    {
+      "key": "aspects/processional",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:53.310Z"
+    },
+    {
+      "key": "aspects/strangler",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:53.437Z"
+    },
+    {
+      "key": "aspects/vestments",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:56.447Z"
+    },
+    {
+      "key": "aspects/thurible",
+      "cost": 0.008,
+      "at": "2026-10-25T13:39:56.595Z"
     }
   ]
 }

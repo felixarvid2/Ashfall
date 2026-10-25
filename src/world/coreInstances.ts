@@ -55,7 +55,7 @@ export function bestShaftFloor(found: ReadonlySet<string>): number {
 /** Elite affixes for a shaft floor: the usual count plus the floor's extras. */
 export function shaftAffixes(rng: Rng, kind: 'champion' | 'rare', level: number, extra: number): EliteAffix[] {
   const base = kind === 'rare' ? rareAffixCount(level) : rng.chance(0.5) ? 2 : 1;
-  return rollAffixes(rng, base + extra);
+  return rollAffixes(rng, base + extra, level);
 }
 
 function interactable(world: World, poi: string, kind: Interactable['kind'], x: number, z: number, asset: string, scale: number, glow?: string): Entity {

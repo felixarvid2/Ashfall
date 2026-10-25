@@ -16,6 +16,7 @@
     "play": "tsx scripts/sim/play.ts",
     "balance:check": "BALANCE=1 vitest run tests/balance.test.ts",
     "assets:check": "tsx scripts/assets/check.ts",
+    "assets:strip-lods": "tsx scripts/assets/stripLodTextures.ts",
     "audio:build": "tsx scripts/audio/build.ts",
     "assets:export": "tsx scripts/assets/exportLibrary.ts",
     "assets:third-party": "NODE_USE_ENV_PROXY=1 tsx scripts/assets/thirdParty.ts",

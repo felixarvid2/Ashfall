@@ -29,6 +29,7 @@ import {
   riftItemPower,
   riftOpenLevel,
   riftProgress,
+  riftDamageScale,
   riftScale,
   riftsUnlocked,
   tickRift,
@@ -145,13 +146,18 @@ describe('Deep Rifts: levels', () => {
 });
 
 describe('Deep Rifts: scaling', () => {
-  it('life and damage grow 6 % per level', () => {
+  it('life grows 6 % per level and damage 3.5 % (G024)', () => {
     expect(riftScale(0)).toBe(1);
     expect(riftScale(10)).toBeCloseTo(1.06 ** 10, 10);
     expect(riftScale(100)).toBeCloseTo(1.06 ** 100, 6);
+    expect(riftDamageScale(0)).toBe(1);
+    expect(riftDamageScale(40)).toBeCloseTo(1.035 ** 40, 10);
+    expect(riftDamageScale(40)).toBeGreaterThan(3.5);
+    expect(riftDamageScale(40)).toBeLessThan(4.5);
+    expect(riftScale(40)).toBeCloseTo(10.286, 2);
   });
 
-  it('every enemy is level 50, scaled by 1.06 ^ rift level on top (same seed, same crowd)', () => {
+  it('every enemy is level 50, scaled by 1.06 ^ rift level on top (damage 1.035 ^ rift level; same seed, same crowd)', () => {
     const total = (g: Rift) => {
       wakeAll(g);
       let life = 0;
@@ -168,7 +174,7 @@ describe('Deep Rifts: scaling', () => {
     expect(a.n).toBeGreaterThan(40);
     expect(b.n).toBe(a.n);
     expect(b.life / a.life).toBeCloseTo(1.06 ** 20, 6);
-    expect(b.dmg / a.dmg).toBeCloseTo(1.06 ** 20, 6);
+    expect(b.dmg / a.dmg).toBeCloseTo(1.035 ** 20, 6);
   });
 
   it('World Tier modifiers do not apply inside a rift', () => {
@@ -193,12 +199,12 @@ describe('Deep Rifts: scaling', () => {
     expect(RIFT_PACKS.length).toBeGreaterThan(20);
   });
 
-  it('item power: the level-50 baseline plus 2 per level, capped at 540', () => {
+  it('item power: the level-50 baseline plus 2 per level, growing to rift 100 (C011)', () => {
     expect(riftItemPower(1)).toBe(RIFT_REWARDS.itemPower.base + 2);
     expect(riftItemPower(40)).toBe(RIFT_REWARDS.itemPower.base + 80);
-    expect(riftItemPower(100)).toBe(540);
+    expect(riftItemPower(100)).toBe(RIFT_REWARDS.itemPower.base + 200);
     expect(riftItemPower(65)).toBe(540);
-    expect(riftItemPower(64)).toBeLessThan(540);
+    expect(riftItemPower(100)).toBeGreaterThan(riftItemPower(65));
   });
 });
 
@@ -451,12 +457,33 @@ describe('Deep Rifts: a clear', () => {
     const req = g.ctx.rewards.find((r) => r.rarity === 'legendary')!;
     expect(req).toBeDefined();
     expect(req.count).toBe(RIFT_REWARDS.legendaries.base + Math.floor(70 / RIFT_REWARDS.legendaries.perLevels));
-    expect(req.itemPower).toBe(540);
+    expect(req.itemPower).toBe(RIFT_REWARDS.itemPower.base + 2 * 70);
     expect(g.ctx.endgame!.materials['rift_shard']).toBe(Math.round(RIFT_REWARDS.shards.base + RIFT_REWARDS.shards.perLevel * 70));
     // Opened once.
     expect(g.world.req(cache, Interactable).used).toBe(true);
     expect(instanceInteract(g.world, g.ctx, cache, g.world.req(cache, Interactable))).toBe(false);
     expect(g.ctx.rewards.filter((r) => r.rarity === 'legendary')).toHaveLength(1);
+  });
+
+  it('a deep cache can hold an extra unique (rarely a mythic); a shallow one rarely does (C011)', () => {
+    const count = (level: number) => {
+      const g = inRift(level);
+      clearRift(g);
+      let extras = 0;
+      for (let i = 0; i < 300; i++) {
+        g.ctx.rewards = [];
+        const got = openRiftCache(g.world, g.ctx, g.rift, { x: 0, z: 0 }, new Rng(`u${level}-${i}`));
+        const asked = g.ctx.rewards.filter((r) => r.rarity === 'unique' || r.rarity === 'mythic');
+        expect(asked).toHaveLength(got.extra ? 1 : 0);
+        if (got.extra) {
+          extras++;
+          expect(asked[0]!.itemPower).toBe(riftItemPower(level));
+        }
+      }
+      return extras;
+    };
+    expect(count(100)).toBeGreaterThan(90);
+    expect(count(1)).toBeLessThan(40);
   });
 
   it('a recipe drops now and then, from the crafting recipes, never one the character already knows while others remain', () => {

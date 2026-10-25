@@ -30,6 +30,7 @@ import type { QuestDef, QuestStep } from '../data/quests/schema';
 import { monsterLevel } from './encounter';
 import { tierMods } from './endgame/tiers';
 import { grantXp } from './loot/rewards';
+import { grantMaterial } from './endgame/crafting';
 import { makeElite } from '../world/zone';
 import { spawnEnemy } from '../world/spawn';
 
@@ -162,6 +163,8 @@ function advance(world: World, ctx: GameContext, id: string): void {
     rt.active.delete(id);
     rt.done.set(id, st.choice ?? '');
     payReward(world, ctx, def.rewards);
+    if (def.rewards.dust > 0) grantMaterial(ctx, 'lumen_dust', def.rewards.dust);
+    if (def.rewards.shards > 0) grantMaterial(ctx, 'rift_shard', def.rewards.shards);
     if (ctx.account && def.rewards.restoration > 0) {
       const zoneId = def.zone;
       const entry = (ctx.account.restoration[zoneId] ??= { points: [], tiers: 0 });
@@ -313,8 +316,22 @@ export function rebuildQuestWorld(world: World, ctx: GameContext): void {
   if (!rt) return;
   rt.spawned.clear();
   rt.triggers.clear();
+  if (ctx.zone) resetBounties(rt, ctx.zone.def.id);
   spawnQuestWorld(world, ctx);
   for (const id of [...rt.active.keys()]) if (rt.active.has(id)) enterStep(world, ctx, id);
+}
+
+/** Entering a region again brings its finished bounties back (C013); ones still in progress are kept. */
+export function resetBounties(rt: QuestRuntime, zoneId: string): string[] {
+  const reset: string[] = [];
+  for (const id of [...rt.done.keys()]) {
+    const def = QUESTS.get(id);
+    if (def?.repeatable && def.zone === zoneId) {
+      rt.done.delete(id);
+      reset.push(id);
+    }
+  }
+  return reset;
 }
 
 function refreshTriggers(world: World, ctx: GameContext): void {

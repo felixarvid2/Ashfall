@@ -5,7 +5,7 @@
  */
 import { t } from '../data/i18n';
 import { RIFT, RIFT_REWARDS } from '../data/endgame/rifts';
-import { riftCacheYield, riftItemPower, riftScale, type RiftPhase, type RiftResult } from '../systems/endgame/rifts';
+import { riftCacheYield, riftDamageScale, riftItemPower, riftScale, type RiftPhase, type RiftResult } from '../systems/endgame/rifts';
 import { buzz, haptic } from './haptics';
 import { GLYPH_MAX_LEVEL } from '../data/endgame/matrix';
 import { glyphUpgradeChance } from '../systems/endgame/matrix';
@@ -146,11 +146,12 @@ export class RiftPanel {
 
     // What the level changes, as chips (the long sentence stays as the tooltip).
     const effects = el('div', 'rift-effects');
-    effects.title = t('rifts.effects', { mul: riftScale(this.level).toFixed(2), power: riftItemPower(this.level) });
+    effects.title = t('rifts.effects', { mul: riftScale(this.level).toFixed(2), dmg: riftDamageScale(this.level).toFixed(2), power: riftItemPower(this.level) });
     // The cache's shard and legendary yield change with the level, like life and item power (B050).
     const yieldNow = riftCacheYield(this.level);
     effects.append(
       el('span', 'rift-chip', t('rifts.chipLife', { mul: riftScale(this.level).toFixed(2) })),
+      el('span', 'rift-chip', t('rifts.chipDamage', { mul: riftDamageScale(this.level).toFixed(2) })),
       el('span', 'rift-chip', t('rifts.chipPower', { power: riftItemPower(this.level) })),
       Object.assign(el('span', 'rift-chip', t('rifts.chipShards', { n: yieldNow.shards })), { title: t('rifts.cacheHint') }),
       el('span', 'rift-chip', t('rifts.chipLegendaries', { n: yieldNow.legendaries })),

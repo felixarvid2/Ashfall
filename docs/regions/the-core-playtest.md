@@ -20,7 +20,7 @@ line (the Core is open cavern, not winding tunnels, so the mines' 35 % does not 
 | Enemies | 12 regular types in the roster, 6 returning (50 %); the open world uses 10 of them, 5 Absorbed and the Choir (16 kinds); returning types are ≈ 66 % of the ≈ 1 600 enemies the packs spawn | 40–60 % returning (§4) |
 | Average walking time between fights on the roads | ≈ 8.0 s | 5–8 s in dangerous areas |
 | Legendary-or-better items in one playthrough | 29–37 (mean 33.6; 6 guaranteed + 4 quest legendaries) | — |
-| Quests | 15: 6 main, 8 side, 1 mystery; ≈ 312 600 XP in all (main ≈ 208 500, side ≈ 90 100) | — |
+| Quests | 15: 6 main, 8 side, 1 mystery; ≈ 118 800 XP in all after the G020 pass (was ≈ 312 600; 81 % of the 147 525 XP levels 40-49 need) | — |
 | Deaths | not measured for levels 40–50 (the bot plays levels 1–10 in the test arena) | — |
 | Stuck spots (POIs, teleporters, NPCs, quest objects inside collision) | none; every POI, teleporter, pack and quest step is on open ground and reachable from the bore while the bridges are on (tests) | none |
 | Meshy credits for Region 5 | **0** — 37 earlier assets in the layout; the new enemies come from free CC0 libraries (docs/credits.md) | 0 |

@@ -16,6 +16,7 @@ export interface SlotSummary {
   /** null = empty slot. */
   character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null;
   corrupt?: boolean;
+  newer?: boolean;
 }
 
 /** Mean item power of the equipped items, rounded; undefined when nothing is worn (B049). */
@@ -189,7 +190,7 @@ export class CharacterSelect {
       plus.textContent = '+';
       const label = document.createElement('div');
       label.className = 'char-slot-name';
-      label.textContent = slot.corrupt ? t('select.corrupt') : t('select.new');
+      label.textContent = slot.corrupt ? t(slot.newer ? 'select.newer' : 'select.corrupt') : t('select.new');
       card.append(plus, label);
       card.addEventListener('click', () => this.showClassPicker(slot.index));
       return card;

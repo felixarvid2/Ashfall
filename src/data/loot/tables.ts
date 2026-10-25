@@ -145,6 +145,8 @@ export const PROGRESSION: z.input<typeof ProgressionSchema> = {
   enemyLifePerLevel: 0.18,
   enemyDamagePerLevel: 0.12,
   xpPerEnemyLevel: 0.1,
+  xpFalloffPerLevel: 0.3,
+  xpFalloffFloor: 0.1,
   rarityWeights: { common: 55, magic: 32, rare: 11, legendary: 1.6, unique: 0.3, mythic: 0.01 },
   ownClassShare: 0.85,
   inventorySize: 40,

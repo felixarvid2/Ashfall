@@ -24,8 +24,10 @@ export type RiftPhase = 'running' | 'guardian' | 'cleared' | 'failed';
 export interface RiftState {
   /** Rift level 1..100. */
   level: number;
-  /** Life and damage multiplier: 1.06 ^ level. */
+  /** Life multiplier: 1.06 ^ level. */
   mul: number;
+  /** Damage multiplier: 1.035 ^ level (G024). */
+  dmgMul: number;
   /** Seconds spent inside. */
   elapsed: number;
   /** Progress points from kills (RIFT.need fills the bar). */
@@ -67,9 +69,23 @@ export interface RiftResult {
 
 // ---- Levels and scaling ---------------------------------------------------------------
 
-/** Life and damage multiplier for a rift level. */
+/** Life multiplier for a rift level. */
 export function riftScale(level: number): number {
   return Math.pow(RIFT.perLevel, Math.max(0, level));
+}
+
+/** Damage multiplier for a rift level: grows slower than life (G024). */
+export function riftDamageScale(level: number): number {
+  return Math.pow(RIFT.damagePerLevel, Math.max(0, level));
+}
+
+/** Chances of the cache's extra unique, and of that item being a mythic (C011). */
+export function riftExtraChances(level: number): { unique: number; mythic: number } {
+  const { uniqueChance, mythicChance } = RIFT_REWARDS;
+  return {
+    unique: Math.min(1, uniqueChance.base + uniqueChance.perLevel * level),
+    mythic: Math.min(1, Math.max(0, level - mythicChance.from) * mythicChance.perLevel),
+  };
 }
 
 /** Item power of the cache's items: the level-50 baseline plus 2 per level, capped. */
@@ -102,6 +118,7 @@ export function createRift(level: number): RiftState {
   return {
     level: lv,
     mul: riftScale(lv),
+    dmgMul: riftDamageScale(lv),
     elapsed: 0,
     points: 0,
     phase: 'running',
@@ -148,7 +165,7 @@ function scaleEnemies(world: World, r: RiftState): void {
     const h = world.req(e, Health);
     h.max *= r.mul;
     h.current = h.max;
-    stats.weaponDamage *= r.mul;
+    stats.weaponDamage *= r.dmgMul;
   }
 }
 
@@ -181,7 +198,7 @@ export function spawnGuardian(world: World, ctx: GameContext, rt: RiftHost, r: R
     ...g,
     level: RIFT.monsterLevel,
     lifeMul: g.lifeMul * RIFT.guardianLife * r.mul,
-    damageMul: g.damageMul * RIFT.guardianDamage * r.mul,
+    damageMul: g.damageMul * RIFT.guardianDamage * r.dmgMul,
     arena: { x: c.x, z: c.z, radius: ROOM_CELL / 2 - 1 },
   });
   world.req(boss, CombatStats).tags.push('rift', 'guardian');
@@ -322,7 +339,7 @@ export function riftGlyphAttempt(ctx: GameContext, r: RiftState, glyphId: string
 }
 
 /** Opening the cache: legendaries at the rift's item power, Rift Shards, and a chance at a recipe. */
-export function openRiftCache(world: World, ctx: GameContext, r: RiftState, at: { x: number; z: number }, rng: Rng): { legendaries: number; shards: number; recipe: string | null } {
+export function openRiftCache(world: World, ctx: GameContext, r: RiftState, at: { x: number; z: number }, rng: Rng): { legendaries: number; shards: number; recipe: string | null; extra: 'unique' | 'mythic' | null } {
   r.cacheOpened = true;
   const { legendaries, shards } = riftCacheYield(r.level);
   ctx.rewards.push({ table: 'dt.dungeon_cache', level: RIFT.monsterLevel, x: at.x, z: at.z, xp: false, rarity: 'legendary', count: legendaries, itemPower: riftItemPower(r.level) });
@@ -335,8 +352,12 @@ export function openRiftCache(world: World, ctx: GameContext, r: RiftState, at: 
     const id = rng.pick(pool);
     if (grantRecipe(ctx, id)) recipe = id;
   }
+  // C011: one extra unique, rarely a mythic, so levels past 40 keep a goal. Rolled last: the recipe roll above is unchanged.
+  const chances = riftExtraChances(r.level);
+  const extra = rng.chance(chances.mythic) ? 'mythic' : rng.chance(chances.unique) ? 'unique' : null;
+  if (extra) ctx.rewards.push({ table: 'dt.dungeon_cache', level: RIFT.monsterLevel, x: at.x, z: at.z, xp: false, rarity: extra, count: 1, itemPower: riftItemPower(r.level) });
   void world;
-  return { legendaries, shards, recipe };
+  return { legendaries, shards, recipe, extra };
 }
 
 // ---- Entering -------------------------------------------------------------------------

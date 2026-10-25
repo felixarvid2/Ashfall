@@ -565,3 +565,23 @@ in `docs/balance.md`. Real decisions:
 - **No 0.3 s unavoidable hits.** Melee, cone and lunge wind-ups are at least 0.4 s (`MIN_WINDUP`, `quick: true`
   on a def exempts it); hounds 0.35 to 0.45, swarms and motes 0.3 to 0.4. Flankers and lunges telegraph 0.15 s
   earlier (`TELEGRAPH_LEAD`) and their cooldown is 0.15 s shorter, so the swing rate does not change.
+
+### 2026-10-25 — Progression pass: death toll, XP fall-off, strongholds, elites, rifts (G018-G024, C011)
+- **A small death toll.** Dying in the campaign (open world and dungeons) costs 5 % of carried gold (at most
+  40 x level) and halves the potion charges (rounded down, never below 1 while any were left); a toast says so.
+  No durability (the world-and-gameplay design sketched repairs at the blacksmith, which the game never built) and
+  no XP loss: a toll that a few kills return, so a boss retry is not a punishment spiral. Rifts and the Endless
+  Shaft already end the run, so they are exempt. Save version unchanged: nothing new is stored. Revisit if players
+  find deaths free; the next step would be a repair cost, not a bigger toll.
+- **Overlevelling is slow, not blocked.** Above the zone's top level kill XP falls by 30 % per level (floor 10 %).
+  Completionists no longer arrive at the next region 10 levels ahead. Quest XP does not fall off, and World Tier 2+
+  (monsters follow the player) and Rifts are exempt. Mines and Core quest XP was cut (x0.52, x0.38) to about 80 % of
+  what their levels need, so the story fills a band without overflowing it.
+- **Regions 2-4 shoot back.** Drones and troopers join 15 pack templates until 12-14 % of spawns are ranged
+  (they were 0-2 %), reusing existing enemies. Welder and botanist keep their attacks.
+- **The stronghold is the warm-up.** Stronghold bosses get 3.5 % life per level, not 12 %, so each is 0.45-0.97x
+  of its zone boss; the zone boss stays the high point.
+- **Elites grow with the region** (rare life 4 + 0.05 x level, damage 1.5 + 0.01 x level, champion life
+  2 + 0.02 x level, five rare affixes from level 30) and **Rift damage grows slower than life** (1.035 against
+  1.06 per level) so rift 40 hits x4 like a World Tier 4 enemy would, not x10. Rift cache item power now grows to
+  rift 100 and the cache can hold a unique, rarely a mythic, giving a goal past rift 40.

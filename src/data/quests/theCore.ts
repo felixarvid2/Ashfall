@@ -42,6 +42,8 @@ const BORDERLAND = p(0, -232);
 export const CORE_NPCS: NpcInput[] = [
   // The camp's own.
   { id: 'maren', zone: ZONE, asset: 'npc.technician', x: HUB.x + 4, z: HUB.z + 3, facing: 2.4 },
+  // Who comes to the camp when the letters were kept (sq.last_letters).
+  { id: 'wren', zone: ZONE, asset: 'npc.technician', x: HUB.x - 8, z: HUB.z + 6, facing: 1.4, scale: 0.94, choice: { quest: 'sq.last_letters', option: 'keep' } },
   { id: 'idris', zone: ZONE, asset: 'npc.defector', x: HUB.x - 2, z: HUB.z - 9, facing: 0.4, scale: 0.94 },
   // Who came down the bore behind you, one from each hub.
   { id: 'hekla_core', zone: ZONE, asset: 'npc.blacksmith', x: HUB.x + 9, z: HUB.z - 1, facing: -2.2, service: 'blacksmith' },
@@ -65,7 +67,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'kill', count: 8, near: { x: BORDERLAND.x, z: BORDERLAND.z, radius: 100 } },
       { kind: 'reach', ...p(0, -205), radius: 16 },
     ],
-    rewards: { xp: 23000, gold: 2700, item: 'rare', restoration: 1 },
+    rewards: { xp: 8750, gold: 2700, item: 'rare', restoration: 1 },
   },
   {
     id: 'mq.last_camp',
@@ -79,7 +81,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'reach', x: HUB.x, z: HUB.z + 10, radius: 16 },
       { kind: 'talk', npc: 'maren' },
     ],
-    rewards: { xp: 24500, gold: 2800, restoration: 1 },
+    rewards: { xp: 9300, gold: 2800, restoration: 1 },
   },
   {
     id: 'mq.bridges_of_light',
@@ -104,7 +106,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'reach', x: island('g7').x, z: island('g7').z, radius: 14 },
       { kind: 'talk', npc: 'maren' },
     ],
-    rewards: { xp: 30000, gold: 3300, item: 'rare', restoration: 1 },
+    rewards: { xp: 11400, gold: 3300, item: 'rare', restoration: 1 },
   },
   {
     id: 'mq.what_lumen_remembers',
@@ -130,7 +132,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'objective', id: 'dungeon.core_memory_of_ember', ...EMBER },
       { kind: 'talk', npc: 'idris' },
     ],
-    rewards: { xp: 34000, gold: 3700, item: 'rare', restoration: 1 },
+    rewards: { xp: 12900, gold: 3700, item: 'rare', restoration: 1 },
   },
   {
     id: 'mq.elevator_base',
@@ -144,7 +146,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'objective', id: ELEVATOR_BASE.id, x: ELEVATOR_BASE.x, z: ELEVATOR_BASE.z },
       { kind: 'talk', npc: 'maren' },
     ],
-    rewards: { xp: 41000, gold: 4400, item: 'legendary', restoration: 1 },
+    rewards: { xp: 15600, gold: 4400, item: 'legendary', restoration: 1 },
   },
   {
     id: 'mq.one_who_remembers',
@@ -159,7 +161,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'reach', x: LUMEN_HEART.x, z: LUMEN_HEART.z - 20, radius: 26 },
       { kind: 'objective', id: LUMEN_HEART.id, x: LUMEN_HEART.x, z: LUMEN_HEART.z },
     ],
-    rewards: { xp: 56000, gold: 6000, item: 'legendary', restoration: 2 },
+    rewards: { xp: 21300, gold: 6000, item: 'legendary', restoration: 2 },
   },
 
   // ---- Side quests ---------------------------------------------------------------
@@ -177,7 +179,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'danner.tags', x: ASH.x + 5, z: ASH.z + 4, asset: 'prop.echo_relic', scale: 0.3 }] },
       { kind: 'talk', npc: 'hekla_core' },
     ],
-    rewards: { xp: 11500, gold: 1250, item: 'rare', restoration: 1 },
+    rewards: { xp: 4350, gold: 1250, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.pyre_song',
@@ -192,7 +194,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'lenn.hymnal', x: FIRE.x + 4, z: FIRE.z - 5, asset: 'prop.echo_relic', scale: 0.3 }] },
       { kind: 'talk', npc: 'gus_core' },
     ],
-    rewards: { xp: 11800, gold: 1280, item: 'rare', restoration: 1 },
+    rewards: { xp: 4500, gold: 1280, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.empty_cab',
@@ -207,7 +209,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'rhee.controls', x: EAST_MACHINERY.x - 5, z: EAST_MACHINERY.z + 3, asset: 'prop.control_terminal', scale: 0.9 }] },
       { kind: 'talk', npc: 'gus_core' },
     ],
-    rewards: { xp: 8800, gold: 980, item: 'rare', restoration: 1 },
+    rewards: { xp: 3350, gold: 980, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.last_samples',
@@ -222,7 +224,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'halvorsen.notes', x: JUNGLE.x + 5, z: JUNGLE.z - 4, asset: 'prop.echo_relic', scale: 0.3 }] },
       { kind: 'talk', npc: 'dace_core' },
     ],
-    rewards: { xp: 12200, gold: 1320, item: 'rare', restoration: 1 },
+    rewards: { xp: 4650, gold: 1320, item: 'rare', restoration: 1 },
   },
   {
     id: 'sq.fifth_lamp',
@@ -237,7 +239,37 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'interact', count: 1, objects: [{ id: 'ostrow.lamp', x: DARK.x + 4, z: DARK.z + 5, asset: 'prop.emergency_light', scale: 0.6 }] },
       { kind: 'talk', npc: 'brask_core' },
     ],
-    rewards: { xp: 11600, gold: 1260, item: 'rare', restoration: 1 },
+    rewards: { xp: 4400, gold: 1260, item: 'rare', restoration: 1 },
+  },
+  // A choice (C015): the letters the Absorbed left in the Ember memory. 'keep' brings a scribe to the camp.
+  {
+    id: 'sq.last_letters',
+    zone: ZONE,
+    kind: 'side',
+    giver: 'idris',
+    after: ['mq.last_camp'],
+    level: 43,
+    steps: [
+      { kind: 'reach', ...EMBER, radius: 16 },
+      {
+        kind: 'interact',
+        count: 3,
+        objects: [
+          { id: 'letter.a', x: EMBER.x - 6, z: EMBER.z + 4, asset: 'prop.echo_relic', scale: 0.3 },
+          { id: 'letter.b', x: EMBER.x + 5, z: EMBER.z - 6, asset: 'prop.echo_relic', scale: 0.3 },
+          { id: 'letter.c', x: EMBER.x + 2, z: EMBER.z + 8, asset: 'prop.echo_relic', scale: 0.3 },
+        ],
+      },
+      {
+        kind: 'choice',
+        npc: 'idris',
+        options: [
+          { id: 'burn', gold: 1500, xp: 2800 },
+          { id: 'keep', item: 'rare', xp: 1800 },
+        ],
+      },
+    ],
+    rewards: { xp: 2000, gold: 400, restoration: 1 },
   },
   // The three Memory Mirrors.
   {
@@ -253,7 +285,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'objective', id: 'core.mirror.2', ...p(-285, 70) },
       { kind: 'talk', npc: 'idris' },
     ],
-    rewards: { xp: 15500, gold: 1700, item: 'legendary', restoration: 1 },
+    rewards: { xp: 5900, gold: 1700, item: 'legendary', restoration: 1 },
   },
   // The Endless Shaft.
   {
@@ -268,7 +300,7 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'objective', id: ENDLESS_SHAFT_DEPTH, ...SHAFT_MOUTH },
       { kind: 'talk', npc: 'brask_core' },
     ],
-    rewards: { xp: 10500, gold: 1150, item: 'rare', restoration: 1 },
+    rewards: { xp: 4000, gold: 1150, item: 'rare', restoration: 1 },
   },
   // The camp's own errand.
   {
@@ -279,7 +311,7 @@ export const CORE_QUESTS: QuestInput[] = [
     after: ['mq.last_camp'],
     level: 41,
     steps: [{ kind: 'interact', count: 3, ids: ['core.tower.0', 'core.tower.1', 'core.tower.2'] }, { kind: 'talk', npc: 'maren' }],
-    rewards: { xp: 8200, gold: 920, restoration: 1 },
+    rewards: { xp: 3100, gold: 920, restoration: 1 },
   },
 
   // ---- Mystery -----------------------------------------------------------------------
@@ -296,6 +328,6 @@ export const CORE_QUESTS: QuestInput[] = [
       { kind: 'reach', ...p(262, 100), radius: 9, marker: false },
       { kind: 'interact', count: 1, objects: [{ id: 'table.cache', ...p(270, 140), asset: 'prop.supply_chest' }], marker: false },
     ],
-    rewards: { xp: 14000, gold: 2000, item: 'legendary', restoration: 1 },
+    rewards: { xp: 5300, gold: 2000, item: 'legendary', restoration: 1 },
   },
 ];

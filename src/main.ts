@@ -20,6 +20,7 @@ import { t } from './data/i18n';
 import { CharacterSelect } from './ui/characterSelect';
 import { registerFonts } from './ui/fonts';
 import { audio } from './audio/engine';
+import { guardStartup, installRuntimeGuards } from './bootGuard';
 
 registerFonts();
 // Listen for the first click or key press while the game loads, so the title music can start with it.
@@ -36,12 +37,13 @@ const canvas = document.querySelector<HTMLCanvasElement>('#game');
 const ui = document.querySelector<HTMLElement>('#ui');
 if (!canvas || !ui) throw new Error('Missing #game canvas or #ui root');
 
-const game = new Game(canvas, ui);
+const game = guardStartup(ui, () => new Game(canvas, ui));
 const loading = document.createElement('div');
 loading.className = 'loading-screen';
 loading.textContent = t('game.loading', { done: 0, total: '…' });
 ui.appendChild(loading);
-await game.loadAssets((done, total) => (loading.textContent = t('game.loading', { done, total })));
+await guardStartup(ui, () => game.loadAssets((done, total) => (loading.textContent = t('game.loading', { done, total }))));
+installRuntimeGuards(game, canvas, ui);
 loading.remove();
 
 // Debug handle for the console and automated smoke tests (dev builds or ?debug).

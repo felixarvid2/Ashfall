@@ -4,6 +4,25 @@
     "subtitle": "Kharos IV — one year after the fall",
     "loading": "Loading assets… {done}/{total}"
   },
+  "error": {
+    "reload": "Reload",
+    "webgl": {
+      "title": "Graphics unavailable",
+      "message": "This browser or device could not start WebGL, which the game needs. Try another browser, turn on hardware acceleration, or restart the device."
+    },
+    "startup": {
+      "title": "The game could not start",
+      "message": "Something went wrong while loading. Reloading the page usually fixes it. Your saved characters are not affected."
+    },
+    "contextLost": {
+      "title": "Graphics context lost",
+      "message": "The graphics driver stopped the game's display, often after the tab was in the background. Your progress was saved. Trying to restore it; reload if nothing happens."
+    },
+    "crash": {
+      "title": "Something went wrong",
+      "message": "The game hit an error it could not recover from. Your progress was saved if possible. Reload to continue."
+    }
+  },
   "hud": {
     "bossIntro": "Boss",
     "regionNumber": "Region {n}",
@@ -49,7 +68,18 @@
     "imported": "Save imported",
     "importFailed": "Could not import save: {reason}",
     "loadFailed": "Could not load save: {reason}",
-    "storageUnavailable": "Browser storage is unavailable"
+    "storageUnavailable": "Browser storage is unavailable",
+    "autosaveFailed": {
+      "quota": "Cannot save: storage full. Use Export save.",
+      "blocked": "Cannot save: browser storage is blocked. Use Export save.",
+      "unknown": "Cannot save. Use Export save."
+    },
+    "autosaveRecovered": "Saving works again",
+    "droppedRefs": "{count} item or skill entries from an older version were removed from this save",
+    "restoreFailed": "Could not load the save. Your game was put back and the slot was left untouched.",
+    "loadHalfApplied": "Could not load the save. Autosave is off until you load again or start a new game.",
+    "accountRecovered": "Your shared account data could not be read. A backup was kept; progress is saved again once you start playing.",
+    "accountNewer": "Your shared account data is from a newer version of the game and will not be overwritten. Account progress is not saved in this version."
   },
   "debug": {
     "title": "Debug",
@@ -330,7 +360,12 @@
       "shade_warden": "Shade of the Warden",
       "shade_kade": "Shade of Governor Kade",
       "lumen": "Lumen, The One Who Remembers",
-      "old_ears": "Old Ears"
+      "old_ears": "Old Ears",
+      "bt_sergeant": "Sergeant Mose",
+      "bt_slagborn": "The Born of Slag",
+      "bt_cocoon": "The Cocoon Warden",
+      "bt_crusher": "The Lake Crusher",
+      "bt_sentinel": "The Dark Sentinel"
     },
     "lumen": "Lumen",
     "brood_mother": "Brood Mother",
@@ -2093,6 +2128,7 @@
     "title": "Choose your character",
     "new": "New character",
     "corrupt": "Damaged save – create a new character",
+    "newer": "Saved by a newer version – kept safe",
     "delete": "Delete character",
     "deleteConfirm": "Delete {name} for good?",
     "deleteTitle": "Delete character?",
@@ -2815,6 +2851,16 @@
       "name": "Foreman Hana Brask",
       "title": "From Station Zero",
       "greeting": "Zero has a night shift now. This hole is mine to worry about. Watch your lamp."
+    },
+    "tam": {
+      "name": "Foreman Tam's Daughter",
+      "title": "Station Zero",
+      "greeting": "They read his name out in the hub. I never thought I would hear it again. I will stay and keep the lamps."
+    },
+    "wren": {
+      "name": "Wren the Scribe",
+      "title": "The Last Camp",
+      "greeting": "I copy what the letters say, in case the paper goes. Someone, up there, should be able to read this."
     }
   },
   "quests": {
@@ -3798,6 +3844,46 @@
         "offer": "Three signal towers stand in the Core: one in the Borderland, one in the Gardens, one in the Halls. They're old, but the transmitters work if you give them a kick and a power cell.\nSwitch them on. I want the whole Core to hear us say we're still here.\nWhat it does with the signal, I haven't thought about yet.",
         "talk1": "Three tones on the band. And then, for the first time in a month, something answered. Not the walls. Static, and then a voice, very far away: Station Zero is listening.\nThey're up there. We're not alone.\nTake this. You've earned more than I have to give.",
         "done": "The band hums with three small voices. One of them is yours."
+      },
+      "foremans_ledger": {
+        "title": "The Foreman's Ledger",
+        "summary": "Gerd hears the old foreman's ledger lies in the caves, with a list of who was owed pay and who was left below.",
+        "steps": {
+          "0": "Search the caves for the foreman's ledger",
+          "1": "Take the ledger",
+          "2": "Decide what to do with the ledger"
+        },
+        "offer": "Foreman Tam kept a ledger. Every man on his shift, every wage owed, every name he left behind when the tunnel went.\nIt is in the caves, where he fell. Bring it to me. What we do with it after, that is for you to say.",
+        "done": "The ledger is no longer a secret.",
+        "choice2": {
+          "prompt": "Every name he left behind. And the wages: forty years of it, in his handwriting.\nWe can read it out in the hub, and let the families of the crew know. Or you keep it, and let the old debts lie.",
+          "share": "Read it out in the hub.",
+          "keep": "Keep the ledger. Let the dead lie."
+        },
+        "result": {
+          "share": "Gerd reads the names aloud by the forge. By evening, someone is standing at the edge of the hub who was waiting a long time to hear one.",
+          "keep": "Gerd looks at the ledger a long moment, then nods. You take it, and what is written in it stays with you."
+        }
+      },
+      "last_letters": {
+        "title": "The Last Letters",
+        "summary": "Idris wants the letters that the Absorbed left in the Ember memory, written to people who are not here to read them.",
+        "steps": {
+          "0": "Go to the Ember memory",
+          "1": "Gather the letters",
+          "2": "Decide what to do with the letters"
+        },
+        "offer": "The Ember memory is full of paper. Letters, by the look of them, written by people who never got to send them.\nBring them to me. I will not read them without you. And then you decide: burn them, or keep them.",
+        "done": "The letters are not in the Core any more.",
+        "choice2": {
+          "prompt": "Three letters, and each one is addressed to someone who is still alive up there.\nIf we burn them, they die at the end, with no one to read them. If we keep them, someone has to carry them out. That someone will be remembered, and so will the weight.",
+          "burn": "Burn them. Let the dead keep their words.",
+          "keep": "Keep them. Someone should read them."
+        },
+        "result": {
+          "burn": "Idris burns the letters in a tin cup. The smoke goes up the shaft, as it should.",
+          "keep": "Idris wraps the letters in cloth and ties them with cord. The next morning a scribe is at the camp, asking for ink."
+        }
       }
     },
     "my": {
@@ -3855,6 +3941,183 @@
           "3": "Open what the table holds"
         },
         "done": "Someone set the table for you. The lamp goes out when you leave."
+      }
+    },
+    "bt": {
+      "cf_drones": {
+        "title": "Bounty: Rusted Wings",
+        "summary": "Hekla pays for security drone scrap; the roads are full of it.",
+        "steps": {
+          "0": "Destroy security drones",
+          "1": "Return to Hekla"
+        },
+        "offer": "The drones still fly their loops. Every one I get back in pieces is a week of parts.\nTen of them. Bring me what is left and I will pay the board price.",
+        "talk1": "Ten wrecks. Good. They can have the sky back once I have stripped them.\nThe board stays open. Come back when they have built more.",
+        "done": "The roads are quieter. For a day."
+      },
+      "cf_salvage": {
+        "title": "Bounty: Convoy Leavings",
+        "summary": "Benny wants the last crates from the broken convoy, and the hounds off them.",
+        "steps": {
+          "0": "Go to the convoy wreck",
+          "1": "Open the supply crates",
+          "2": "Drive off the spore hounds",
+          "3": "Return to Benny"
+        },
+        "offer": "There are still crates out at the convoy. Something always finds them first.\nOpen what you can, and put down the hounds that come sniffing. I will cook you something that stays down.",
+        "talk3": "Tins, rope, one jar of pickles nobody can explain. A good haul.\nHere. Your share, and a bit more for the bites.",
+        "done": "Another pantry shelf filled."
+      },
+      "cf_sergeant": {
+        "title": "Bounty: The Deserter's Squad",
+        "summary": "Pell tracks an old sergeant who still gives orders to nobody.",
+        "steps": {
+          "0": "Hunt the sergeant on the Ash Road",
+          "1": "Return to Pell"
+        },
+        "offer": "A sergeant on the Ash Road. Still drilling his men, and they are not men any more.\nThe board has his name. End the drill, and take his tags back to me.",
+        "talk1": "His tags. Another name I can cross off.\nThere is always another one. The Flats keep making them.",
+        "done": "One more voice that will not give orders."
+      },
+      "rd_smelters": {
+        "title": "Bounty: Cold Furnaces",
+        "summary": "Gus wants the Smelters put out before they burn the supply road.",
+        "steps": {
+          "0": "Put down Smelters",
+          "1": "Return to Gus"
+        },
+        "offer": "They walk the stacks like they still have a shift. Ten of them have to go cold.\nThe kitchen runs on what comes down that road. Do this and I will make it worth the soot.",
+        "talk1": "Ten furnaces out. The air tastes less like pennies already.\nTake it. And come back when they light up again.",
+        "done": "The stacks smoke a little less."
+      },
+      "rd_belts": {
+        "title": "Bounty: The Conveyor Cache",
+        "summary": "Ines needs the fuel drums at the rail cache, and the Welders cleared from it.",
+        "steps": {
+          "0": "Go to the cache",
+          "1": "Collect the fuel drums",
+          "2": "Kill the Welders guarding the line",
+          "3": "Return to Ines"
+        },
+        "offer": "A fuel cache at the end of the conveyors. Welders sit on it like hens.\nGet the drums out and break the Welders. I can make good use of both.",
+        "talk3": "Drums sealed, torches cold. You have done this before.\nThe forge thanks you. Take your cut.",
+        "done": "The forge runs another week."
+      },
+      "rd_slagborn": {
+        "title": "Bounty: Born of Slag",
+        "summary": "Mara has a reading on something huge and wet in the old den.",
+        "steps": {
+          "0": "Hunt the slagborn in its den",
+          "1": "Return to Mara"
+        },
+        "offer": "My gauges say something is growing in the slag den. Tall, hot, and hungry.\nI would like it not to finish growing. Kill it and tell me what it was.",
+        "talk1": "It was slag with a grudge. That is all it ever was.\nGood. My readings are flat again. Your fee.",
+        "done": "The den goes quiet and cools."
+      },
+      "hv_botanists": {
+        "title": "Bounty: Pruning the Staff",
+        "summary": "Quill wants the mutated botanists cut back before they tend the wrong gardens.",
+        "steps": {
+          "0": "Kill mutated botanists",
+          "1": "Return to Quill"
+        },
+        "offer": "They still prune and water. Only now the flowers have teeth.\nEight of them, and I will count it as gardening done in the old staff's honour.",
+        "talk1": "Eight, and none of them said sorry. Good.\nThe garden is a little safer. I will pay for that.",
+        "done": "A few less hands tending the wrong things."
+      },
+      "hv_seeds": {
+        "title": "Bounty: Seed Bank Run",
+        "summary": "Brann wants seed cases from the bank, and the weavers off the vines.",
+        "steps": {
+          "0": "Go to the seed bank",
+          "1": "Open the seed cases",
+          "2": "Cut down Vine Weavers",
+          "3": "Return to Brann"
+        },
+        "offer": "The old seed bank holds metal I can use and cases I can crack. The vines cover it.\nGo, open the cases, and cut down every weaver that wakes. I will pay by the crate.",
+        "talk3": "Nothing in there grew wrong. A rare mercy.\nHere, as promised. Do not hold the vines against yourself.",
+        "done": "The vines wait. They always wait."
+      },
+      "hv_warden": {
+        "title": "Bounty: The Cocoon Warden",
+        "summary": "Dace picks up a signal from a warden that guards the nest and will not be reasoned with.",
+        "steps": {
+          "0": "Hunt the cocoon warden at the nest",
+          "1": "Return to Dace"
+        },
+        "offer": "Something in the nest keeps calling the swarm back. I traced it to a warden in a cocoon of its own.\nSilence it. The vaults need quiet more than they need me.",
+        "talk1": "The signal stopped halfway through a word. I will not wonder which one.\nThe fee is yours.",
+        "done": "The nest is quiet. For now."
+      },
+      "dm_burrowers": {
+        "title": "Bounty: Under the Floor",
+        "summary": "Oona hears things tunnelling beneath the kitchen floor.",
+        "steps": {
+          "0": "Kill burrowers",
+          "1": "Return to Oona"
+        },
+        "offer": "Every night the floor hums. Something is tunnelling under my pots.\nEight burrowers, dead, and I will sleep. That is the whole bounty.",
+        "talk1": "Quiet underfoot. I can hear my own spoon again.\nTake this. Do not tell the others where I hide it.",
+        "done": "The kitchen floor stays still."
+      },
+      "dm_ore": {
+        "title": "Bounty: The Cut Face",
+        "summary": "Gerd needs ore from the abandoned workings and the walkers cleared out of the way.",
+        "steps": {
+          "0": "Go to the old workings",
+          "1": "Open the ore cases",
+          "2": "Break the Crystal Walkers",
+          "3": "Return to Gerd"
+        },
+        "offer": "There are ore cases in the old workings. Crystal Walkers have taken up residence.\nBreak them and bring the cases. Good metal does not wait.",
+        "talk3": "Clean ore. Nobody gets this from a dead seam.\nYour share. The forge is warm tonight because of you.",
+        "done": "The forge sings another night."
+      },
+      "dm_crusher": {
+        "title": "Bounty: The Lake Crusher",
+        "summary": "Nils charts an ore crusher that has taken the lake shore for its own.",
+        "steps": {
+          "0": "Hunt the ore crusher by the lake",
+          "1": "Return to Nils"
+        },
+        "offer": "An ore crusher has walked out of the shaft and settled on the lake shore.\nIt does not crush ore any more. Take it down before it learns what else breaks.",
+        "talk1": "A relief. My surveys can cross that shore again.\nHere is the fee. It is well earned.",
+        "done": "The lake shore is clear."
+      },
+      "core_drones": {
+        "title": "Bounty: Dim the Lamps",
+        "summary": "Gus wants the shade drones that circle the camp's edge cut down.",
+        "steps": {
+          "0": "Destroy shade drones",
+          "1": "Return to Gus"
+        },
+        "offer": "They circle the camp at the edge of the light. They look at us. I do not like being looked at.\nTen of them, and I will feed you well for a month.",
+        "talk1": "Ten fewer eyes in the dark. Good.\nI do not ask what watches next. Take your pay.",
+        "done": "The dark has fewer eyes."
+      },
+      "core_cache": {
+        "title": "Bounty: Borderland Stores",
+        "summary": "Hekla wants the stores left at the borderland, and the hounds that guard them.",
+        "steps": {
+          "0": "Go to the borderland",
+          "1": "Open the stores",
+          "2": "Put down shade hounds",
+          "3": "Return to Hekla"
+        },
+        "offer": "There are old stores at the borderland. Metal I can forge, if I can get to it.\nThe hounds will not let you. Open the stores, and answer the hounds.",
+        "talk3": "Good metal, and still warm from the walk. Well done.\nThis is for you. The forge never forgets.",
+        "done": "The forge has more to work with."
+      },
+      "core_sentinel": {
+        "title": "Bounty: The Dark Sentinel",
+        "summary": "Dace reads a sentinel standing in the dark halls and not moving.",
+        "steps": {
+          "0": "Hunt the sentinel in the dark halls",
+          "1": "Return to Dace"
+        },
+        "offer": "A sentinel stands in the dark halls and does not move. That is what worries me.\nSomething is making it patient. Make it finish.",
+        "talk1": "It fell. Patient to the end.\nI will mark the halls clear. The fee is yours.",
+        "done": "The dark halls hold one less patient thing."
       }
     }
   },
@@ -4105,7 +4368,9 @@
       "vampiric": "Vampiric",
       "fast": "Fast",
       "freezing": "Freezing",
-      "mirroring": "Mirroring"
+      "mirroring": "Mirroring",
+      "forceWall": "Force Wall",
+      "laserGrid": "Laser Grid"
     },
     "names": {
       "first": "Kaal|Vesh|Morrow|Grell|Oskar|Ruta|Dain|Hessa|Brakk|Ilya|Tamsin|Corvo|Neve|Saul|Petra|Joss",
@@ -4617,6 +4882,9 @@
       "c9": "Thank you for playing."
     }
   },
+  "death": {
+    "penalty": "Death toll: gold -{gold}, potion charges -{potions}."
+  },
   "rifts": {
     "title": "Deep Rift",
     "locked": "The obelisk is dormant. Defeat Lumen to wake it.",
@@ -4625,13 +4893,14 @@
     "best": "Best: Rift {level}, cleared in {time}",
     "noBest": "No rift cleared yet.",
     "open": "Open levels: 1 to {max}. A clear with more than half the time left opens two new levels.",
-    "effects": "Enemies have ×{mul} life and damage. Cache items: item power {power}.",
+    "effects": "Enemies have ×{mul} life and ×{dmg} damage. Cache items: item power {power}.",
     "enter": "Enter Rift {level}",
     "enterTimed": "Enter Rift {level} \u00b7 {time}",
     "quickBest": "Best cleared",
     "quickHighest": "Highest open",
     "quickEasier": "Easier \u22125",
     "chipLife": "Life \u00d7{mul}",
+    "chipDamage": "Damage \u00d7{mul}",
     "chipPower": "Item power {power}",
     "chipShards": "Rift Shards {n}",
     "chipLegendaries": "Legendaries {n}",

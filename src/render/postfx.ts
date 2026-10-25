@@ -16,6 +16,9 @@ const GradeShader = {
     vignette: { value: 0.32 },
     saturation: { value: 0.82 },
     tint: { value: new THREE.Color('#e6ecf5') },
+    // Death: the picture drains toward grey (F014). Level-up: a brief warm glow from the middle (F017).
+    deathDesat: { value: 0 },
+    levelGlow: { value: 0 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -26,12 +29,16 @@ const GradeShader = {
     uniform float vignette;
     uniform float saturation;
     uniform vec3 tint;
+    uniform float deathDesat;
+    uniform float levelGlow;
     varying vec2 vUv;
     void main() {
       vec4 c = texture2D(tDiffuse, vUv);
       float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
       c.rgb = mix(vec3(l), c.rgb, saturation) * tint;
+      c.rgb = mix(c.rgb, vec3(dot(c.rgb, vec3(0.2126, 0.7152, 0.0722))), deathDesat);
       vec2 d = vUv - 0.5;
+      c.rgb += vec3(1.0, 0.8, 0.4) * levelGlow * (1.0 - smoothstep(0.0, 0.6, length(d)));
       c.rgb *= 1.0 - vignette * smoothstep(0.25, 0.85, dot(d, d) * 2.2);
       gl_FragColor = c;
     }
@@ -65,6 +72,16 @@ export class PostFx {
   setGrade(saturation = 0.82, tint = '#e6ecf5'): void {
     this.grade.uniforms.saturation!.value = saturation;
     (this.grade.uniforms.tint!.value as THREE.Color).set(tint);
+  }
+
+  /** `amount` 0..1: drain the colour (the death screen, F014). */
+  setDeathDesat(amount: number): void {
+    this.grade.uniforms.deathDesat!.value = amount;
+  }
+
+  /** `amount` 0..1: a warm glow from the centre of the picture (level-up, F017). */
+  setLevelGlow(amount: number): void {
+    this.grade.uniforms.levelGlow!.value = amount;
   }
 
   setQuality(quality: GraphicsQuality): void {

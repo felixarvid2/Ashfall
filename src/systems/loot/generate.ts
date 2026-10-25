@@ -294,7 +294,18 @@ export function xpToNext(level: number): number {
   return Math.round(PROGRESSION.xpBase * Math.pow(level, PROGRESSION.xpExponent));
 }
 
-/** XP for killing an enemy: drop-table XP scaled by its level. */
-export function killXp(table: DropTable, enemyLevel: number): number {
-  return Math.round(table.xp * (1 + PROGRESSION.xpPerEnemyLevel * (enemyLevel - 1)));
+/**
+ * Kill XP multiplier for a character above the zone's level cap (G019): 1 at or below the cap, then
+ * `1 - falloffPerLevel x levels over`, never under `falloffFloor`.
+ */
+export function xpFalloff(playerLevel: number, zoneMaxLevel: number): number {
+  const over = playerLevel - zoneMaxLevel;
+  if (!(over > 0)) return 1;
+  return Math.max(PROGRESSION.xpFalloffFloor, 1 - PROGRESSION.xpFalloffPerLevel * over);
+}
+
+/** XP for killing an enemy: drop-table XP scaled by its level (and by `xpFalloff` when the caller passes the zone's cap). */
+export function killXp(table: DropTable, enemyLevel: number, over?: { playerLevel: number; zoneMaxLevel: number }): number {
+  const fall = over ? xpFalloff(over.playerLevel, over.zoneMaxLevel) : 1;
+  return Math.round(table.xp * (1 + PROGRESSION.xpPerEnemyLevel * (enemyLevel - 1)) * fall);
 }

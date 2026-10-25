@@ -60,6 +60,12 @@ const BASES: Record<string, string> = {
   mag_boots: 'heavy magnetic boots with thick soles',
   signal_pendant: 'a pendant on a chain with a small signal emitter',
   conduit_ring: 'a thick metal ring with an energy conduit groove',
+  // Second tier (item power 150+), content pass C007.
+  signal_visor: 'a slim helmet with a wide glowing visor band and a small antenna array on the brow',
+  mesh_vest: 'a light flexible armour vest of woven metal mesh over a padded undersuit',
+  grip_boots: 'light climbing boots with spiked grip soles and tight ankle straps',
+  lumen_locket: 'an oval metal locket on a chain, hinged open to show a small glowing green crystal inside',
+  signet_band: 'a flat engraved signet ring with a square sigil face',
 };
 const TIERS = [
   'battered salvaged scrap, scratched dull metal, rust, makeshift repairs',
@@ -82,6 +88,14 @@ const UNIQUES: Record<string, string> = {
   halo_of_the_penitent: 'a heavy brass halo crest mounted on a pale ceramic hood-helm, the ring hovering behind it glowing soft gold, scratched and humbled',
   ashen_heartwood: 'a pendant of charred heartwood with a glowing ember at its core',
   seed_of_accord: 'a ring holding a living green seed sprouting a tiny leaf, soft golden light',
+  reapers_grip: 'a pair of black servo gauntlets with long hooked fingertips and a pale skull-shaped mark glowing red on each back plate',
+  signet_of_rot: 'a corroded ring with a swollen green gem that is bursting with sickly toxic spores',
+  sunwheel_pendant: 'a heavy brass pendant shaped like a spoked sun wheel, glowing gold-white, hanging on a chain',
+  cinder_collar: 'a heavy blackened steel collar amulet with venting slits and glowing orange embers inside',
+  aureole_of_the_first_dawn: 'a pale ceramic helmet crowned by a huge blazing golden halo ring that throws long rays of dawn light, mythic and radiant',
+  the_last_word: 'a long white-and-black marksman rifle with a blood-red glowing scope and a single engraved rune on the barrel, mythic and radiant',
+  diadem_of_the_swarm_queen: 'a large chitin crown helmet with curved mandible horns and a cluster of glowing green eyes, mythic and radiant',
+  ouroboros_coil: 'a ring shaped like a coiled mechanical serpent biting its own tail, glowing energy flowing around the loop, mythic and radiant',
 };
 const uniques: ArtSpec[] = Object.entries(UNIQUES).map(([id, what]) => ({
   key: `items/unique_${id}`,
@@ -112,6 +126,11 @@ const ASPECTS: Record<string, string> = {
   verdict: 'a golden eye above a balance scale', sentinel: 'a small floating lantern light with a shield of rays',
   radiant: 'a bright sunburst with straight rays', fervent: 'a lit candle flame inside a burning heart',
   daybreak: 'a sun rising over a horizon with a pillar of light',
+  coolant_reserve: 'a coolant canister spraying a cloud of cold vapour', iron_stride: 'a heavy armoured greave stepping with a shield glow',
+  mirage: 'a shimmering hologram double of a figure', vanishing: 'a figure dissolving into a drifting smoke cloud',
+  harbinger: 'a skull-marked crosshair with a death mark sigil', creeping_mold: 'a cocoon covered in creeping green mould',
+  strangler: 'grasping thorny tendrils reaching up from the ground', processional: 'a line of glowing footprints along a ring of holy ground',
+  vestments: 'a folded ceremonial robe with a glowing gold hem', thurible: 'a swinging incense censer trailing glowing smoke',
 };
 const aspects: ArtSpec[] = Object.entries(ASPECTS).map(([id, what]) => ({
   key: `aspects/${id}`,
