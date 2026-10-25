@@ -2,7 +2,8 @@
   "game": {
     "title": "Ashfall",
     "subtitle": "Kharos IV — one year after the fall",
-    "loading": "Loading assets… {done}/{total}"
+    "loading": "Loading assets… {done}/{total}",
+    "modelFailed": "A character model failed to load; a stand-in is shown. Reloading the page may fix it."
   },
   "error": {
     "reload": "Reload",
@@ -88,6 +89,7 @@
     "entities": "Entities",
     "drawCalls": "Draw calls",
     "triangles": "Triangles",
+    "assetsFailed": "Failed model files",
     "position": "Position",
     "seed": "Seed",
     "tick": "Tick",

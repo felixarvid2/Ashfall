@@ -12,6 +12,8 @@ export interface DebugInfo {
   enemies: number;
   wave: number;
   kills: number;
+  /** Model files that failed to load (after a retry); their models are placeholders or lack a LOD. */
+  assetsFailed: number;
 }
 
 export interface DebugActions {
@@ -68,7 +70,7 @@ export class DevTools {
     const h2 = document.createElement('h2');
     h2.textContent = t('debug.title');
     const dl = document.createElement('dl');
-    for (const key of ['fps', 'frameTime', 'entities', 'enemies', 'wave', 'kills', 'drawCalls', 'triangles', 'position', 'seed', 'tick']) {
+    for (const key of ['fps', 'frameTime', 'entities', 'enemies', 'wave', 'kills', 'drawCalls', 'triangles', 'position', 'seed', 'tick', 'assetsFailed']) {
       const dt = document.createElement('dt');
       dt.textContent = t(`debug.${key}`);
       const dd = document.createElement('dd');
@@ -224,6 +226,7 @@ export class DevTools {
       this.set('enemies', d.enemies);
       this.set('wave', d.wave);
       this.set('kills', d.kills);
+      this.set('assetsFailed', d.assetsFailed);
     }
     this.frames = 0;
     this.elapsed = 0;

@@ -1012,10 +1012,10 @@ export class GameRenderer {
       this.vfx.handle(event);
       if (event.type === 'damage' && !event.dot && !this.reduceFlashing) this.flashes.set(event.target, 0.1);
       // Every landed non-DoT hit on an enemy recoils, however often the hit animation is throttled (F008).
-      if (event.type === 'damage' && !event.dot && !event.toPlayer && event.amount + event.absorbed > 0) this.recoils.set(event.target, { age: 0, crit: event.crit });
+      if (event.type === 'damage' && !event.dot && !event.toPlayer && event.amount + event.absorbed > 0 && this.objects.has(event.target)) this.recoils.set(event.target, { age: 0, crit: event.crit });
       if (event.type === 'shake' && this.screenShake) this.rig.addTrauma(event.trauma);
       if (event.type === 'levelUp') {
-        const f = this.rig.focusPoint;
+        const f = this.followPos;
         this.vfx.levelBurst(f.x, f.z, this.reduceFlashing);
         if (!this.reduceFlashing) this.levelGlow = 0.15;
       }
@@ -1391,7 +1391,7 @@ export class GameRenderer {
       return;
     }
     obj.scale.set(base * c.xz, base * c.y, base * c.xz);
-    const f = this.rig.focusPoint;
+    const f = this.followPos;
     const dx = obj.position.x - f.x;
     const dz = obj.position.z - f.z;
     const len = Math.hypot(dx, dz);

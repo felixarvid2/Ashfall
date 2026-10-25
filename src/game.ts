@@ -926,6 +926,8 @@ export class Game {
     const def = hasZone(zoneId) ? zoneDef(zoneId) : START_ZONE;
     const ids = [...(classId ? classAssetIds(classId) : []), ...zoneAssetIds(def)];
     await Promise.all([this.renderer.assets.ensure(ids, onProgress), this.renderer.preloadGround([def.ground])]).catch(() => undefined);
+    const own = classId ? classDef(classId).assetId : null;
+    if (own && !this.renderer.assets.hasModel(own)) this.toasts.show(t('game.modelFailed'), 'error', 12000);
   }
 
   /**
@@ -1184,7 +1186,8 @@ export class Game {
     if (this.slot === null || this.autosaveSuppressed || this.world.has(this.player, Dead)) return;
     let result: SaveWriteResult;
     try {
-      result = account.ok ? this.saves.write(slotKey(this.slot), this.snapshot()) : account;
+      const written = this.saves.write(slotKey(this.slot), this.snapshot());
+      result = written.ok ? account : written;
     } catch {
       result = { ok: false, reason: 'unknown' };
     }
@@ -1348,6 +1351,7 @@ export class Game {
       enemies: this.world.query(EnemyAI).filter((e) => !this.world.has(e, Dead)).length,
       wave: this.encounter?.wave ?? 0,
       kills: this.ctx.stats.kills,
+      assetsFailed: this.renderer.assets.failed.length,
     }));
   }
 

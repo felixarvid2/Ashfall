@@ -15,11 +15,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rolldownOptions: {
       output: {
-        // Libraries in their own long-cacheable chunks: they change far less often than the game.
+        // Libraries in their own long-cacheable chunks (they change far less often than the game), the
+        // texts and the content data apart from the code. The meshopt decoder stays its own lazy chunk:
+        // artifact pages never load it. (Panels are still part of the app chunk: they are built at boot.)
         codeSplitting: {
           groups: [
-            { name: 'vendor-three', test: /node_modules[\\/]three[\\/]/, priority: 2 },
-            { name: 'vendor-zod', test: /node_modules[\\/]zod[\\/]/, priority: 2 },
+            { name: 'vendor-three', test: /node_modules[\\/]three[\\/](?!examples[\\/]jsm[\\/]libs[\\/]meshopt)/, priority: 3 },
+            { name: 'vendor-zod', test: /node_modules[\\/]zod[\\/]/, priority: 3 },
+            { name: 'lang', test: /src[\\/]data[\\/]lang[\\/]/, priority: 2 },
+            { name: 'game-data', test: /src[\\/]data[\\/]/, priority: 1 },
+            { name: 'game-ui', test: /src[\\/]ui[\\/].*\.ts$/, priority: 1 },
           ],
         },
       },
