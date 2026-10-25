@@ -1522,6 +1522,100 @@
       }
     },
     {
+      "id": "char.lightbearer",
+      "category": "character",
+      "prompt": "serene sci-fi chaplain hero in long layered pale ivory robes over light ceramic armor plates, brass lantern-censer hanging at the hip, thin glowing gold-white rune lines, hood with a brass halo-like crest, calm face, empty hands, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "serene sci-fi colony chaplain hero, long layered pale ivory and ash-grey robes over light ceramic armor plates, a brass lantern-censer on a chain at the hip, thin glowing gold-white rune lines on the robe and gauntlets, deep hood with a brass halo-like crest behind the head, calm determined face, worn and dusty from an ash world, highly detailed game-ready hero character, clean readable silhouette, standing in a T-pose with arms straight out to the sides, empty hands, full body, neutral background",
+      "targetPolycount": 20000,
+      "heightMeters": 1.8,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "run",
+            "actionId": 673
+          },
+          {
+            "state": "attack",
+            "actionId": 129
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "cast",
+            "actionId": 125
+          },
+          {
+            "state": "cast2",
+            "actionId": 131
+          },
+          {
+            "state": "slam",
+            "actionId": 127
+          },
+          {
+            "state": "dodge",
+            "actionId": 158
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1719d-87c9-728d-b752-1c9f5555a891",
+        "refineTaskId": "01a1719e-0580-7055-9ac2-5b179fddd1e5",
+        "rigTaskId": "01a171a0-df31-746f-b26b-4019d2cf14cc",
+        "animationTaskId": "01a171a1-cb23-754a-a7c3-316b15bd7321",
+        "previewApproved": true,
+        "creditsSpent": 71,
+        "clips": {
+          "idle": "idle",
+          "run": "run",
+          "attack": "attack",
+          "attack2": "attack2",
+          "cast": "cast",
+          "cast2": "cast2",
+          "slam": "slam",
+          "dodge": "dodge",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "characters/lightbearer.glb",
+      "stats": {
+        "triangles": 20214,
+        "bytes": 1132288,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#d8cfb8",
+        "size": [
+          0.7,
+          1.8,
+          0.7
+        ],
+        "showFacing": true,
+        "facingColor": "#ffe9a8"
+      }
+    },
+    {
       "id": "prop.lumen_wrath",
       "category": "prop",
       "prompt": "colossal alien tentacle creature erupting from cracked ground, a cluster of thick writhing tentacles with a central maw, covered in bioluminescent sickly green fungal-crystal growth, glowing green tips, no legs",
