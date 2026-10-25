@@ -56,6 +56,8 @@ export const CONDITIONS = [
   'melee',
   'ranged',
   'marked',
+  // The target is a corrupted enemy (family in CORRUPTED_FAMILIES): the Lightbearer's light burns it.
+  'corrupted',
   // Attacker-side conditions (evaluated on the one dealing damage).
   'highResource',
   'hasBarrier',

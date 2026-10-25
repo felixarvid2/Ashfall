@@ -4,7 +4,7 @@ import { playthrough } from '../scripts/sim/playthrough';
 
 describe('playthrough bot', () => {
   it('every class can level up against real waves', () => {
-    for (const classId of ['bastion', 'spectre', 'xenomant']) {
+    for (const classId of ['bastion', 'spectre', 'xenomant', 'lightbearer']) {
       const plan = PLANS.find((p) => p.classId === classId)!;
       const r = playthrough(plan, { maxMinutes: 4, targetLevel: 3, seed: 'test' });
       expect(r.reached, plan.name).toBeGreaterThanOrEqual(3);

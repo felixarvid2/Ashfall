@@ -232,6 +232,48 @@
         "name": "Wrath of Lumen",
         "desc": "A colossal Lumen creature erupts {aim} for 12 seconds. It draws enemies to itself and slams everything around it."
       }
+    },
+    "lightbearer": {
+      "censer_strike": {
+        "name": "Censer Strike",
+        "desc": "Swing the censer in a wide arc. Corrupted enemies take 25% more damage. Generates Devotion."
+      },
+      "holy_light": {
+        "name": "Holy Light",
+        "desc": "Fire a seeking mote of light. Corrupted enemies take 50% more damage. Generates Devotion."
+      },
+      "heal": {
+        "name": "Heal",
+        "desc": "Heal yourself and allies nearby for 15% of their life. The same light burns corrupted enemies around you."
+      },
+      "magnus_exorcismus": {
+        "name": "Magnus Exorcismus",
+        "desc": "Inscribe a holy sigil {aim} that strikes everything inside 6 times over 5 seconds. Corrupted enemies take 80% more damage."
+      },
+      "kyrie_eleison": {
+        "name": "Kyrie Eleison",
+        "desc": "Shield yourself and allies nearby with a barrier of 25% of their life for 6 seconds. Generates Devotion."
+      },
+      "sanctuary": {
+        "name": "Sanctuary",
+        "desc": "Consecrate the ground at your feet for 7 seconds. Allies in it recover 4% life every second; enemies are burned, corrupted ones twice as hard."
+      },
+      "blessing": {
+        "name": "Blessing",
+        "desc": "Bless yourself and allies nearby for 10 seconds: 20% more damage, 12% faster moves and casts. Removes stuns and slows. Generates Devotion."
+      },
+      "lex_aeterna": {
+        "name": "Lex Aeterna",
+        "desc": "Judge the enemies {aimNear}: the next hit each of them takes deals double damage."
+      },
+      "guardian_light": {
+        "name": "Guardian Light",
+        "desc": "Summon a light that follows you for 25 seconds (up to 2). It shoots enemies and mends allies near it."
+      },
+      "benediction": {
+        "name": "Benediction",
+        "desc": "A pillar of light heals allies nearby for 30% of their life and keeps them from dying for 8 seconds. Enemies are struck and stunned."
+      }
     }
   },
   "enemies": {
@@ -378,7 +420,8 @@
   "resources": {
     "heat": "Heat",
     "focus": "Focus",
-    "biomass": "Biomass"
+    "biomass": "Biomass",
+    "devotion": "Devotion"
   },
   "statuses": {
     "burning": "Burning",
@@ -400,7 +443,10 @@
     "magnet": "Magnet",
     "overclock": "Overclock",
     "empowered": "Empowered",
-    "wading": "Wading"
+    "wading": "Wading",
+    "blessed": "Blessed",
+    "lexAeterna": "Lex Aeterna",
+    "benediction": "Benediction"
   },
   "items": {
     "bases": {
@@ -421,7 +467,10 @@
       "conduit_ring": "Conduit Ring",
       "crystal": "Crystal",
       "twin_pistols": "Twin Pistols",
-      "scalpel_blade": "Scalpel Blade"
+      "scalpel_blade": "Scalpel Blade",
+      "censer_mace": "Censer Mace",
+      "sun_staff": "Sun Staff",
+      "reliquary_lantern": "Reliquary Lantern"
     },
     "types": {
       "helm": "Helm",
@@ -477,7 +526,8 @@
     "classes": {
       "bastion": "Bastion",
       "spectre": "Spectre",
-      "xenomant": "Xenomant"
+      "xenomant": "Xenomant",
+      "lightbearer": "Lightbearer"
     },
     "salvageFor": "Salvage: {gold} gold",
     "equipped": "Equipped",
@@ -693,6 +743,7 @@
       "elite": "against elites",
       "melee": "with melee attacks",
       "ranged": "with ranged attacks",
+      "corrupted": "against corrupted enemies",
       "marked": "against marked enemies",
       "highResource": "while your resource is high",
       "hasBarrier": "while you have a barrier",
@@ -942,6 +993,46 @@
       "wrath_of_lumen": {
         "name": "Enhanced Wrath",
         "desc": "Wrath of Lumen cooldown −20%."
+      },
+      "censer_strike": {
+        "name": "Fervent Swing",
+        "desc": "Censer Strike generates 2 more Devotion."
+      },
+      "holy_light": {
+        "name": "Fervent Light",
+        "desc": "Holy Light generates 2 more Devotion."
+      },
+      "heal": {
+        "name": "Quickened Mercy",
+        "desc": "Heal cooldown −20%."
+      },
+      "magnus_exorcismus": {
+        "name": "Wider Sigil",
+        "desc": "Magnus Exorcismus radius +20%."
+      },
+      "kyrie_eleison": {
+        "name": "Quickened Kyrie",
+        "desc": "Kyrie Eleison cooldown −20%."
+      },
+      "sanctuary": {
+        "name": "Lasting Sanctuary",
+        "desc": "Sanctuary lasts 30% longer."
+      },
+      "blessing": {
+        "name": "Quickened Blessing",
+        "desc": "Blessing cooldown −20%."
+      },
+      "lex_aeterna": {
+        "name": "Wider Judgment",
+        "desc": "Lex Aeterna radius +25%."
+      },
+      "guardian_light": {
+        "name": "Steadfast Light",
+        "desc": "Guardian Light lasts 40% longer."
+      },
+      "benediction": {
+        "name": "Swift Benediction",
+        "desc": "Benediction cooldown −20%."
       }
     },
     "m": {
@@ -1244,6 +1335,106 @@
           "name": "Frenzy",
           "desc": "Wrath of Lumen slams 35% more often."
         }
+      },
+      "censer_strike": {
+        "sweeping": {
+          "name": "Sweeping Censer",
+          "desc": "Censer Strike hits a 200 degree arc and reaches 0.5 m farther, but deals 10% less damage."
+        },
+        "sundering": {
+          "name": "Sundering Censer",
+          "desc": "Censer Strike makes enemies Vulnerable for 3 seconds."
+        }
+      },
+      "holy_light": {
+        "twin_motes": {
+          "name": "Twin Motes",
+          "desc": "Holy Light fires two motes in a spread, each dealing 30% less damage."
+        },
+        "radiant_mote": {
+          "name": "Radiant Mote",
+          "desc": "Holy Light bursts on impact, hitting everything nearby, but deals 15% less damage."
+        }
+      },
+      "heal": {
+        "mending": {
+          "name": "Deep Mending",
+          "desc": "Heal restores 23% of life instead of 15%."
+        },
+        "smiting": {
+          "name": "Smiting Light",
+          "desc": "Heal deals 60% more damage to corrupted enemies and costs 5 less Devotion."
+        }
+      },
+      "magnus_exorcismus": {
+        "unending": {
+          "name": "Unending Sigil",
+          "desc": "Magnus Exorcismus lasts 50% longer."
+        },
+        "rapid": {
+          "name": "Rapid Sigil",
+          "desc": "Magnus Exorcismus strikes with 30% shorter pauses."
+        }
+      },
+      "kyrie_eleison": {
+        "radiant_ward": {
+          "name": "Radiant Ward",
+          "desc": "Kyrie Eleison's barrier is 40% stronger."
+        },
+        "sanctified": {
+          "name": "Sanctified Ward",
+          "desc": "Kyrie Eleison also blesses allies for 5 seconds."
+        }
+      },
+      "sanctuary": {
+        "hallowed": {
+          "name": "Hallowed Ground",
+          "desc": "Sanctuary covers 40% more area."
+        },
+        "tireless": {
+          "name": "Tireless Prayer",
+          "desc": "Sanctuary pulses 30% faster."
+        }
+      },
+      "blessing": {
+        "far_reaching": {
+          "name": "Far-Reaching Blessing",
+          "desc": "Blessing reaches 40% farther and generates 10 more Devotion."
+        },
+        "warding": {
+          "name": "Warding Blessing",
+          "desc": "Blessing also grants a barrier of 10% of life for 5 seconds."
+        }
+      },
+      "lex_aeterna": {
+        "judgment": {
+          "name": "Harsh Judgment",
+          "desc": "Lex Aeterna deals twice as much damage on cast."
+        },
+        "swift": {
+          "name": "Swift Judgment",
+          "desc": "Lex Aeterna cooldown −40%."
+        }
+      },
+      "guardian_light": {
+        "bulwark": {
+          "name": "Bulwark Light",
+          "desc": "Guardian Lights have 75% more life."
+        },
+        "vigilant": {
+          "name": "Vigilant Light",
+          "desc": "Guardian Lights shoot 35% faster."
+        }
+      },
+      "benediction": {
+        "miracle": {
+          "name": "Miracle",
+          "desc": "Benediction heals 50% of life instead of 30% and reaches 25% farther."
+        },
+        "afterglow": {
+          "name": "Afterglow",
+          "desc": "Benediction also blesses allies for 10 seconds, and its cooldown is 20% shorter."
+        }
       }
     },
     "p": {
@@ -1378,6 +1569,50 @@
       "overgrowth": {
         "name": "Overgrowth",
         "desc": "+4% damage per rank."
+      },
+      "fervor": {
+        "name": "Fervor",
+        "desc": "+4% damage per rank."
+      },
+      "vigil": {
+        "name": "Vigil",
+        "desc": "+12 maximum life per rank."
+      },
+      "piety": {
+        "name": "Piety",
+        "desc": "+5% Devotion generation per rank."
+      },
+      "sacred_flame": {
+        "name": "Sacred Flame",
+        "desc": "+5% ranged damage per rank."
+      },
+      "warding_light": {
+        "name": "Warding Light",
+        "desc": "+8% barrier strength per rank."
+      },
+      "consecrated_mail": {
+        "name": "Consecrated Mail",
+        "desc": "+15 armor per rank."
+      },
+      "hymnal": {
+        "name": "Hymnal",
+        "desc": "+3% cooldown reduction per rank."
+      },
+      "discernment": {
+        "name": "Discernment",
+        "desc": "+6% damage to Elites per rank."
+      },
+      "martyrdom": {
+        "name": "Martyrdom",
+        "desc": "+2% damage reduction per rank."
+      },
+      "sacred_oath": {
+        "name": "Sacred Oath",
+        "desc": "+4 intelligence per rank."
+      },
+      "radiance": {
+        "name": "Radiance",
+        "desc": "+4% damage per rank."
       }
     },
     "k": {
@@ -1416,6 +1651,18 @@
       "symbiote": {
         "name": "Symbiote",
         "desc": "Your melee attacks deal x25% damage, Scalpel Slash heals for 6% more, and you take 10% less damage."
+      },
+      "devout": {
+        "name": "Devout",
+        "desc": "Heal, Sanctuary and Kyrie Eleison are 35% stronger, and Devotion builds 15% faster."
+      },
+      "zealot": {
+        "name": "Zealot",
+        "desc": "Your ranged attacks deal x15% damage, and x25% more to corrupted enemies. Magnus Exorcismus strikes with 20% shorter pauses and Lex Aeterna's cooldown is 25% shorter."
+      },
+      "shepherd": {
+        "name": "Shepherd",
+        "desc": "You can have one more Guardian Light, with 40% more life, 25% longer life and 15% faster shots. Blessing reaches 20% farther, and you take 5% less damage."
       }
     },
     "barHintTouch": "Tap an action bar slot, then a learned skill to assign it. Hold a slot to clear it.",
@@ -1567,6 +1814,42 @@
     "ancient_wrath": {
       "name": "Ancient",
       "desc": "Wrath of Lumen lasts {value} seconds longer."
+    },
+    "mercy": {
+      "name": "Merciful",
+      "desc": "Heal restores {value} more life."
+    },
+    "warding": {
+      "name": "Warding",
+      "desc": "Kyrie Eleison's barrier is {value} stronger."
+    },
+    "hallowed": {
+      "name": "Hallowed",
+      "desc": "Sanctuary lasts {value} longer."
+    },
+    "litany": {
+      "name": "Litanist's",
+      "desc": "Magnus Exorcismus strikes with {value} shorter pauses."
+    },
+    "verdict": {
+      "name": "Judge's",
+      "desc": "Lex Aeterna cooldown is {value} shorter."
+    },
+    "sentinel": {
+      "name": "Sentinel's",
+      "desc": "Guardian Lights have {value} more life and last {value} longer."
+    },
+    "radiant": {
+      "name": "Radiant",
+      "desc": "Your ranged attacks deal x{value} damage."
+    },
+    "fervent": {
+      "name": "Fervent",
+      "desc": "While Devotion is high, deal x{value} damage."
+    },
+    "daybreak": {
+      "name": "Daybreak's",
+      "desc": "Benediction cooldown is {value} shorter."
     }
   },
   "uniques": {
@@ -1609,6 +1892,16 @@
       "name": "Crown of the Hive",
       "effect": "You can have 3 more minions and Raise Corpse raises one more, but minions have 30% less life.",
       "flavor": "Every crown needs subjects."
+    },
+    "dawnbringer": {
+      "name": "Dawnbringer",
+      "effect": "Holy Light bursts on impact, burning everything nearby and leaving a patch of burning ground, but deals 20% less damage.",
+      "flavor": "The first sunrise after the ash. He carries it still."
+    },
+    "halo_of_the_penitent": {
+      "name": "Halo of the Penitent",
+      "effect": "Sanctuary lasts twice as long and covers 40% more area, but its cooldown is 50% longer.",
+      "flavor": "Worn heavy, so the sinner remembers."
     },
     "ashen_heartwood": {
       "name": "Ashen Heartwood",
@@ -1654,6 +1947,10 @@
       "xenomant": {
         "tagline": "Scientist who tamed the Lumen",
         "desc": "A former biologist infected with Lumen who can command it. Biomass gathered from the dead raises servants and spreads spores. Forbidden power, with a price."
+      },
+      "lightbearer": {
+        "tagline": "Colony chaplain who kept the lanterns lit",
+        "desc": "A chaplain who carried the old light through the dark. Devotion grows as he mends and shields his allies, and pays for blessings, sigils and a guardian light. The same light burns the corrupted. Maces and sun staves."
       }
     },
     "credits": "Art: Meshy and FLUX (generated) · Props, HDRI and rock: Poly Haven, ambientCG (CC0) · Status and menu icons: Lorc, Delapouite, Carl Olsen – game-icons.net (CC BY 3.0), Kenney (CC0) · Fonts: Rajdhani, Share Tech Mono (OFL)"

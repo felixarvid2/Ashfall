@@ -14,6 +14,9 @@ export interface WeaponMount {
   offset?: [number, number, number];
 }
 
+/** Assets named `procedural.<name>` are built by the renderer instead of loaded (see proceduralWeapon). */
+export const PROCEDURAL_PREFIX = 'procedural.';
+
 export const CLASS_WEAPONS: Record<string, WeaponMount[]> = {
   // Handle through the fist, head tilted up and back over the forearm.
   bastion: [{ asset: 'weapon.hydraulic_hammer', bone: 'RightHand', length: 1.3, grip: 0.15, rot: [2.1, 0, 0] }],
@@ -24,4 +27,6 @@ export const CLASS_WEAPONS: Record<string, WeaponMount[]> = {
   ],
   // Held like a short sword, blade forward and a little down.
   xenomant: [{ asset: 'weapon.scalpel_blade', bone: 'RightHand', length: 0.85, grip: 0.12, rot: [1.3, 0, 0] }],
+  // A brass lantern-censer on a short haft, held like a mace (built in code: no model file).
+  lightbearer: [{ asset: `${PROCEDURAL_PREFIX}censer`, bone: 'RightHand', length: 0.85, grip: 0.14, rot: [1.3, 0, 0] }],
 };

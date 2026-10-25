@@ -210,6 +210,7 @@ html, body {
 .orb-heat .orb-fill { background: radial-gradient(circle at 50% 80%, #ffae3a, #8a3a08); }
 .orb-focus .orb-fill { background: radial-gradient(circle at 50% 80%, #6fe0ff, #0a4a6a); }
 .orb-biomass .orb-fill { background: radial-gradient(circle at 50% 80%, #8aff6a, #1f5a10); }
+.orb-devotion .orb-fill { background: radial-gradient(circle at 50% 80%, #fff3c4, #a8741a); }
 .orb-shield { background: rgba(159, 216, 255, 0.35); border-top: 2px solid rgba(200, 235, 255, 0.8); }
 .orb-glass {
   position: absolute;
@@ -761,7 +762,7 @@ html.touch-device, html.touch-device body {
 #ui.touch-ui .action-bar { inset: 0; left: 0; bottom: 0; transform: none; display: block; }
 #ui.touch-ui .orb { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 12px); width: 66px; height: 66px; }
 #ui.touch-ui .orb-life { left: calc(50% - 74px); }
-#ui.touch-ui .orb-heat, #ui.touch-ui .orb-focus, #ui.touch-ui .orb-biomass { left: calc(50% + 8px); }
+#ui.touch-ui .orb-heat, #ui.touch-ui .orb-focus, #ui.touch-ui .orb-biomass, #ui.touch-ui .orb-devotion { left: calc(50% + 8px); }
 #ui.touch-ui .orb-text { font-size: 0.62em; }
 #ui.touch-ui .bar-middle { position: static; }
 #ui.touch-ui .xp-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; margin: 0; border: none; }
@@ -846,7 +847,7 @@ html.touch-device .hint-mouse { display: none; }
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
 }
 #ui.touch-ui.portrait .orb-life { top: calc(var(--sat) + 8px); height: 16px; }
-#ui.touch-ui.portrait .orb-heat, #ui.touch-ui.portrait .orb-focus, #ui.touch-ui.portrait .orb-biomass { top: calc(var(--sat) + 26px); height: 12px; }
+#ui.touch-ui.portrait .orb-heat, #ui.touch-ui.portrait .orb-focus, #ui.touch-ui.portrait .orb-biomass, #ui.touch-ui.portrait .orb-devotion { top: calc(var(--sat) + 26px); height: 12px; }
 #ui.touch-ui.portrait .orb-fill, #ui.touch-ui.portrait .orb-shield { right: auto; height: 100%; transition: width 0.12s linear; }
 #ui.touch-ui.portrait .orb-fill { width: calc(var(--fill, 0) * 100%); }
 #ui.touch-ui.portrait .orb-shield { width: calc(var(--shield, 0) * 100%); border-top: none; border-right: 2px solid rgba(200, 235, 255, 0.8); }
@@ -854,9 +855,10 @@ html.touch-device .hint-mouse { display: none; }
 #ui.touch-ui.portrait .orb-heat .orb-fill { background: linear-gradient(#ffc04a, #a04a0a); }
 #ui.touch-ui.portrait .orb-focus .orb-fill { background: linear-gradient(#80e8ff, #0e5a7e); }
 #ui.touch-ui.portrait .orb-biomass .orb-fill { background: linear-gradient(#9aff7a, #25701a); }
+#ui.touch-ui.portrait .orb-devotion .orb-fill { background: linear-gradient(#fff3c4, #a8741a); }
 #ui.touch-ui.portrait .orb-glass { border-radius: 0; background: linear-gradient(rgba(255, 255, 255, 0.2), transparent 55%); }
 #ui.touch-ui.portrait .orb-text { font-size: 11px; line-height: 1; }
-#ui.touch-ui.portrait .orb-heat .orb-text, #ui.touch-ui.portrait .orb-focus .orb-text, #ui.touch-ui.portrait .orb-biomass .orb-text { font-size: 9px; }
+#ui.touch-ui.portrait .orb-heat .orb-text, #ui.touch-ui.portrait .orb-focus .orb-text, #ui.touch-ui.portrait .orb-biomass .orb-text, #ui.touch-ui.portrait .orb-devotion .orb-text { font-size: 9px; }
 #ui.touch-ui.portrait .xp-bar { left: calc(var(--sal) + 8px); right: auto; top: calc(var(--sat) + 40px); bottom: auto; width: calc(100% - 140px); height: 3px; border: none; }
 /* Menu: a grid of icon buttons under the bars. */
 #ui.touch-ui.portrait .touch-menu:not([hidden]) {

@@ -12,6 +12,8 @@ const SP = ['spectre'];
 const X = (skill: string) => `spectre.${skill}`;
 const XE = ['xenomant'];
 const Z = (skill: string) => `xenomant.${skill}`;
+const LB = ['lightbearer'];
+const Y = (skill: string) => `lightbearer.${skill}`;
 
 export const ASPECTS: Aspect[] = [
   { id: 'fissure', classes: B, types: ['weapon', 'gloves', 'amulet', 'ring'], min: 0.25, max: 0.45, scaling: 'sqrt',
@@ -83,6 +85,25 @@ export const ASPECTS: Aspect[] = [
     effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'poisoned' }] },
   { id: 'ancient_wrath', classes: XE, types: ['helm', 'amulet'], min: 3, max: 5, scaling: 'none', display: 'flat',
     effects: [{ kind: 'skillMod', skill: Z('wrath_of_lumen'), mods: [{ op: 'add', field: 'duration', value: '$' }] }] },
+  // ---- Lightbearer
+  { id: 'mercy', classes: LB, types: ['weapon', 'amulet', 'offHand'], min: 0.2, max: 0.4, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Y('heal'), mods: [{ op: 'mul', field: 'heal', value: '$' }] }] },
+  { id: 'warding', classes: LB, types: ['chest', 'helm', 'offHand', 'amulet'], min: 0.25, max: 0.5, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Y('kyrie_eleison'), mods: [{ op: 'mul', field: 'barrier', value: '$' }] }] },
+  { id: 'hallowed', classes: LB, types: ['helm', 'ring', 'amulet'], min: 0.2, max: 0.4, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Y('sanctuary'), mods: [{ op: 'mul', field: 'duration', value: '$' }] }] },
+  { id: 'litany', classes: LB, types: ['gloves', 'ring', 'amulet'], min: 0.15, max: 0.3, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Y('magnus_exorcismus'), mods: [{ op: 'mul', field: 'interval', value: '-$' }] }] },
+  { id: 'verdict', classes: LB, types: ['helm', 'amulet'], min: 0.2, max: 0.4, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Y('lex_aeterna'), mods: [{ op: 'mul', field: 'cooldown', value: '-$' }] }] },
+  { id: 'sentinel', classes: LB, types: ['offHand', 'chest', 'amulet'], min: 0.3, max: 0.6, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Y('guardian_light'), mods: [{ op: 'mul', field: 'lifeFraction', value: '$' }, { op: 'mul', field: 'duration', value: '$' }] }] },
+  { id: 'radiant', classes: LB, types: ['weapon', 'ring', 'amulet', 'gloves'], min: 0.1, max: 0.2, scaling: 'sqrt',
+    effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'ranged' }] },
+  { id: 'fervent', classes: LB, types: ['weapon', 'ring', 'amulet', 'helm'], min: 0.12, max: 0.25, scaling: 'sqrt',
+    effects: [{ kind: 'damage', value: '$', multiplicative: true, when: 'highResource' }] },
+  { id: 'daybreak', classes: LB, types: ['helm', 'amulet'], min: 0.15, max: 0.3, scaling: 'none',
+    effects: [{ kind: 'skillMod', skill: Y('benediction'), mods: [{ op: 'mul', field: 'cooldown', value: '-$' }] }] },
   // Generic aspects (any class)
   { id: 'lifeblood', types: ['ring', 'amulet', 'gloves'], min: 6, max: 12, scaling: 'linear', display: 'flat',
     effects: [{ kind: 'stat', stat: 'lifeOnKill', value: '$' }] },

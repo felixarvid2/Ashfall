@@ -2,7 +2,7 @@
  * Builds the effective version of each skill from its data, its rank and every modifier
  * that applies (skill tree, legendary aspects, unique items).
  */
-import { SKILLS } from '../data/db';
+import { SKILLS, STATUS_DEFS } from '../data/db';
 import type { Effect, SkillField, SkillMod } from '../data/effects';
 import { num } from '../data/effects';
 import type { Bonus, SkillDef, StatusApply } from '../data/schemas';
@@ -44,7 +44,11 @@ export function fieldAccess(def: SkillDef, field: SkillField): Getter | null {
     case 'resourceGain':
     case 'castTime':
       return top(field);
-    case 'coefficient':
+    case 'coefficient': {
+      // Lightbearer effects keep their damage in a nested impact.
+      const nested = e.kind === 'sanctum' ? e.impact : e.kind === 'allyArea' ? e.enemyImpact : e.kind === 'guardian' ? e.bolt : undefined;
+      return nested ? onEffect('coefficient', nested as Record<string, unknown>) : onEffect('coefficient');
+    }
     case 'radius':
     case 'range':
     case 'arcDeg':
@@ -67,9 +71,12 @@ export function fieldAccess(def: SkillDef, field: SkillField): Getter | null {
       return e.kind === 'turret' ? onEffect('coefficient', e.slam as Record<string, unknown>) : null;
     case 'slamRadius':
       return e.kind === 'turret' ? onEffect('radius', e.slam as Record<string, unknown>) : null;
+    case 'allyHealFraction':
+      return onEffect(field);
     case 'count':
     case 'ticks':
     case 'maxMinions':
+    case 'maxGuardians':
     case 'pierce': {
       // Counts stay whole numbers (bullets, mines, enemies pierced).
       const acc = onEffect(field);
@@ -83,6 +90,8 @@ export function fieldAccess(def: SkillDef, field: SkillField): Getter | null {
     case 'landingCoefficient':
       return e.kind === 'leap' ? onEffect('coefficient', e.landing as Record<string, unknown>) : null;
     case 'heal':
+      if (e.kind === 'sanctum') return onEffect('allyHealFraction');
+      if (e.kind === 'guardian') return e.healPulse ? onEffect('healFraction', e.healPulse as Record<string, unknown>) : null;
       return onEffect('healFraction');
     case 'barrier': {
       const applies = (e.applies as StatusApply[] | undefined)?.filter((a) => a.status === 'barrier') ?? [];
@@ -100,10 +109,33 @@ export function fieldAccess(def: SkillDef, field: SkillField): Getter | null {
   }
 }
 
-function appliesOf(def: SkillDef): StatusApply[] | null {
-  const e = def.effect as { kind: string; applies?: StatusApply[]; landing?: { applies: StatusApply[] } };
-  if (e.kind === 'leap') return e.landing!.applies;
-  return e.applies ?? null;
+/** Statuses that hurt or hinder: on a skill that has both allies and enemies to affect they go to the enemies. */
+const HOSTILE_KINDS = new Set(['dot', 'slow', 'disable', 'vulnerable', 'mark']);
+
+/** The status list an extra `addApply` joins: by status for the Lightbearer's two-sided effects. */
+function appliesOf(def: SkillDef, status: StatusApply['status']): StatusApply[] | null {
+  const e = def.effect as {
+    kind: string;
+    applies?: StatusApply[];
+    landing?: { applies: StatusApply[] };
+    allyApplies?: StatusApply[];
+    impact?: { applies: StatusApply[] };
+    enemyImpact?: { applies: StatusApply[] };
+    bolt?: { applies: StatusApply[] };
+  };
+  const hostile = HOSTILE_KINDS.has(STATUS_DEFS[status].kind);
+  switch (e.kind) {
+    case 'leap':
+      return e.landing!.applies;
+    case 'sanctum':
+      return hostile ? (e.impact?.applies ?? null) : (e.allyApplies ?? null);
+    case 'allyArea':
+      return hostile ? (e.enemyImpact?.applies ?? null) : (e.applies ?? null);
+    case 'guardian':
+      return e.bolt?.applies ?? null;
+    default:
+      return e.applies ?? null;
+  }
 }
 
 export function compileSkill(id: string, rank: number, mods: SkillMod[]): CompiledSkill {
@@ -129,7 +161,7 @@ export function compileSkill(id: string, rank: number, mods: SkillMod[]): Compil
         sets.set(m.field, num(m.value));
         break;
       case 'addApply': {
-        const list = appliesOf(def);
+        const list = appliesOf(def, m.apply.status);
         if (list) {
           const a = m.apply;
           list.push({

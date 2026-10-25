@@ -13,6 +13,9 @@ import * as THREE from 'three';
 import type { EnemyLook } from '../data/schemas';
 import { FADE_DEATH } from '../data/core';
 
+/** Renderable looks: the enemy variants, plus `halo` (the Lightbearer's guardian lights, a warm gold-white glow). */
+export type Look = EnemyLook | 'halo';
+
 export interface LookSpec {
   /** Surface colour replacing the model's own. */
   color: string;
@@ -29,8 +32,10 @@ export interface LookSpec {
   keepTexture: boolean;
 }
 
-export const LOOKS: Record<EnemyLook, LookSpec> = {
+export const LOOKS: Record<Look, LookSpec> = {
   lumen: { color: '#3b2f7a', emissive: '#6f4dff', rim: '#ffe49a', rimStrength: 1.7, rimPower: 2.4, depthWrite: true, keepTexture: false },
+  // A small sun: pale gold body, warm glow, bright ivory rim.
+  halo: { color: '#fff0b8', emissive: '#ffd36a', rim: '#fffbe8', rimStrength: 1.4, rimPower: 2.2, depthWrite: true, keepTexture: false },
   shade: { color: '#6c5aa6', emissive: '#7c5cff', rim: '#e4d6ff', rimStrength: 1.3, rimPower: 2.0, depthWrite: false, keepTexture: true },
 };
 
@@ -41,7 +46,8 @@ export interface LookState {
 }
 
 /** The look at `time` (s) for one creature; `seed` (its entity id) keeps neighbours out of step. */
-export function lookState(look: EnemyLook, time: number, seed: number): LookState {
+export function lookState(look: Look, time: number, seed: number): LookState {
+  if (look === 'halo') return { opacity: 1, glow: 0.9 + 0.25 * Math.sin(time * 3.1 + seed * 1.7) };
   if (look === 'lumen') {
     // A slow heartbeat: a double pulse every ~2.4 s. Opaque: a translucent body washes out against the pale ground.
     const t = ((time + seed * 0.37) % 2.4) / 2.4;
@@ -86,7 +92,7 @@ export function addFresnel(mat: THREE.MeshStandardMaterial, color: string, stren
  * Repaint a freshly created model: flat colour instead of the model's textures and vertex colours, translucent,
  * with the look's rim. `slots` are the model's own (cloned) materials from `AssetLibrary.create`.
  */
-export function applyLookMaterials(slots: readonly { material: THREE.MeshStandardMaterial }[], look: EnemyLook): void {
+export function applyLookMaterials(slots: readonly { material: THREE.MeshStandardMaterial }[], look: Look): void {
   const spec = LOOKS[look];
   for (const { material: m } of slots) {
     m.color.set(spec.color);

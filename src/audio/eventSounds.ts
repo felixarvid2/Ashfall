@@ -48,6 +48,9 @@ export const VFX_SOUNDS = {
   smoke: 'cast.tech',
   flash: 'explosion.small',
   heal: 'heal',
+  // Lightbearer: the cast chimes like a heal; pulses of ground and guardian lights are silent.
+  holy: 'heal',
+  holyRing: null,
   sporePulse: 'cast.bio',
   corpseBurst: 'cast.bio',
   // Falling dust is dressing; the cave-in itself is a `slam`.

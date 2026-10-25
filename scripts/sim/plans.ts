@@ -113,4 +113,41 @@ export const PLANS: PlayPlan[] = [
       { skill: 'xenomant.scalpel_slash' },
     ],
   },
+  // ---- Lightbearer (Guardian Light needs 14 points, so the L1-10 shepherd is censer, Heal and Blessing)
+  {
+    name: 'Lightbearer · Healer',
+    classId: 'lightbearer',
+    style: 'ranged',
+    learnOrder: ['n.holy_light', 'n.heal', 'e.heal', 'n.heal', 'n.kyrie_eleison', 'p.piety', 'm.heal.mending', 'n.sanctuary', 'p.piety', 'n.heal'],
+    rotation: [
+      { skill: 'lightbearer.kyrie_eleison', lifeBelow: 0.5 },
+      { skill: 'lightbearer.sanctuary', minEnemiesNear: 2 },
+      { skill: 'lightbearer.heal', allyHurtBelow: 0.7 },
+      { skill: 'lightbearer.heal', minEnemiesNear: 2 },
+      { skill: 'lightbearer.holy_light' },
+    ],
+  },
+  {
+    name: 'Lightbearer · Exorcist',
+    classId: 'lightbearer',
+    style: 'ranged',
+    learnOrder: ['n.holy_light', 'n.magnus_exorcismus', 'n.magnus_exorcismus', 'e.magnus_exorcismus', 'n.kyrie_eleison', 'p.sacred_flame', 'p.sacred_flame', 'm.magnus_exorcismus.rapid', 'n.holy_light', 'n.magnus_exorcismus'],
+    rotation: [
+      { skill: 'lightbearer.kyrie_eleison', lifeBelow: 0.5 },
+      { skill: 'lightbearer.magnus_exorcismus', minEnemiesNear: 2 },
+      { skill: 'lightbearer.holy_light' },
+    ],
+  },
+  {
+    name: 'Lightbearer · Shepherd',
+    classId: 'lightbearer',
+    style: 'melee',
+    learnOrder: ['e.censer_strike', 'n.heal', 'e.heal', 'n.heal', 'n.kyrie_eleison', 'p.vigil', 'p.vigil', 'p.fervor', 'n.blessing', 'p.vigil'],
+    rotation: [
+      { skill: 'lightbearer.kyrie_eleison', lifeBelow: 0.5 },
+      { skill: 'lightbearer.heal', allyHurtBelow: 0.6 },
+      { skill: 'lightbearer.blessing', minEnemiesNear: 1 },
+            { skill: 'lightbearer.censer_strike' },
+    ],
+  },
 ];

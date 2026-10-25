@@ -292,6 +292,22 @@ export class SpriteFx {
     this.spawn({ sprite: 'frost_burst_1', x, y: 1.2, z, life: 0.4, size: r * 0.6, size1: r * 1.6, rot: rr(0, TAU), color: '#e8ffff', fadeOut: 0.3 });
   }
 
+  /** Lightbearer: a soft burst of light with a ring racing out and a column rising (`color` tints all of it). */
+  holy(x: number, z: number, r: number, color: string): void {
+    this.spawn({ sprite: 'energy_glow_1', x, y: 1.1, z, life: 0.6, size: r * 0.9, size1: r * 1.5, color, alpha: 0.8, fadeIn: 0.05, fadeOut: 0.5 });
+    this.spawn({ sprite: 'energy_ring', x, y: 0.1, z, life: 0.55, size: r * 0.4, size1: r * 1.8, flat: true, color, fadeIn: 0.03, fadeOut: 0.4 });
+    this.spawn({ sprite: 'lumen_beam', x, y: 5, z, life: 0.6, size: 10, size1: 10, aspect: 0.3, color, alpha: 0.7, fadeIn: 0.08, fadeOut: 0.5 });
+  }
+
+  /** Motes of light drifting up from consecrated ground: called every frame per sanctum. */
+  holyMotes(key: string, x: number, z: number, r: number, color: string, dt: number): void {
+    for (let i = this.due(key, 2 + r, dt); i > 0; i--) {
+      const a = rr(0, TAU);
+      const d = Math.sqrt(rr(0, 1)) * r * 0.9;
+      this.spawn({ sprite: 'energy_glow_0', x: x + Math.sin(a) * d, y: 0.3, z: z + Math.cos(a) * d, vy: rr(0.5, 1), life: 0.9, size: rr(0.5, 0.9), size1: 0.2, color, alpha: 0.8, fadeIn: 0.15, fadeOut: 0.5 });
+    }
+  }
+
   shield(x: number, z: number): void {
     this.spawn({ sprite: 'hex_shield_0', x, y: 1.1, z, life: 0.4, size: 2.2, size1: 2.8, color: '#9fd8ff', alpha: 0.9, fadeIn: 0.1, fadeOut: 0.4 });
   }

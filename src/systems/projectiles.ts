@@ -1,5 +1,5 @@
 /** Projectiles, ground hazards (spore clouds), mines and expiring summons (decoys). */
-import { CombatStats, Dead, EnemyAI, Hazard, PlayerControlled, Projectile, Resource, SkillUser, Summon, Transform, Trap } from '../core/components';
+import { CombatStats, Dead, EnemyAI, Guardian, Hazard, PlayerControlled, Projectile, Resource, SkillUser, Summon, Transform, Trap } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { enemyDef } from '../data/db';
@@ -126,7 +126,9 @@ const angleTo = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 function skillProjectile(world: World, ctx: GameContext, e: Entity, p: Projectile, tr: Transform): boolean {
   const spec = p.skill!;
   if (!world.isAlive(p.owner)) return true;
-  const compiled = skillOf(world.get(p.owner, SkillUser), spec.skillId);
+  // A guardian light's bolts carry its owner's skill modifiers; every other summon's shots use the skill's base data.
+  const guardian = world.get(p.owner, Guardian);
+  const compiled = skillOf(world.get(guardian ? guardian.owner : p.owner, SkillUser), spec.skillId);
   // Shots that reach an explosive barrel set it off and stop.
   if (p.team === 'player' && hitDestructibles(world, tr.x, tr.z, p.radius, ctx) > 0 && spec.pierce <= 0) return true;
   for (const target of livingInCircle(world, ctx, tr.x, tr.z, p.radius, opposingTeam(p.team))) {

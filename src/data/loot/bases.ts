@@ -105,6 +105,40 @@ export const BASES: Base[] = [
     implicits: [{ stat: 'resourceGen', min: 0.08, max: 0.08, scaling: 'none' }],
     maxSockets: 1,
   },
+  // ---- Lightbearer
+  {
+    id: 'censer_mace',
+    type: 'weapon',
+    classes: ['lightbearer'],
+    icon: 'icon.censer_mace',
+    implicits: [
+      { stat: 'weaponDamage', min: 22, max: 27, scaling: 'linear' },
+      { stat: 'maxLife', min: 12, max: 18, scaling: 'linear' },
+    ],
+    maxSockets: 2,
+  },
+  {
+    id: 'sun_staff',
+    type: 'weapon',
+    classes: ['lightbearer'],
+    icon: 'icon.sun_staff',
+    implicits: [
+      { stat: 'weaponDamage', min: 25, max: 31, scaling: 'linear' },
+      { stat: 'resourceGen', min: 0.05, max: 0.05, scaling: 'none' },
+    ],
+    maxSockets: 2,
+  },
+  {
+    id: 'reliquary_lantern',
+    type: 'offHand',
+    classes: ['lightbearer'],
+    icon: 'icon.reliquary_lantern',
+    implicits: [
+      { stat: 'resourceGen', min: 0.06, max: 0.06, scaling: 'none' },
+      { stat: 'maxLife', min: 10, max: 16, scaling: 'linear' },
+    ],
+    maxSockets: 1,
+  },
   // ---- Armour (all classes)
   { id: 'combat_helm', type: 'helm', icon: 'icon.combat_helm', implicits: [armor(16, 22)], maxSockets: 1 },
   { id: 'plated_vest', type: 'chest', icon: 'icon.plated_vest', implicits: [armor(30, 40)], maxSockets: 2 },

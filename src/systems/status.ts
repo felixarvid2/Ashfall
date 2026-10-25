@@ -57,6 +57,8 @@ export function statusSystem(world: World, dt: number, ctx: GameContext): void {
       if (def.kind === 'slow') slow = Math.max(slow, def.slow);
       if (s.id === 'kinetic') haste = 1 + PYLON_EFFECTS.kineticSpeed;
       if (s.id === 'empowered') haste *= 1 + CHOIR.speed;
+      // Data-driven buffs (Blessing).
+      if (def.kind === 'buff' && def.hasteMul !== undefined) haste *= def.hasteMul;
     }
     effects.canAct = canAct;
     const mover = world.get(e, Mover);

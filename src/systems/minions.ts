@@ -7,6 +7,7 @@ import {
   Dead,
   EnemyAI,
   Faction,
+  Guardian,
   Health,
   MinionAI,
   Mover,
@@ -27,6 +28,7 @@ import type { SkillDef } from '../data/schemas';
 import { dealHit, isAlive, kill } from './combat';
 import { hitOne, impactArea } from './impact';
 import { angleDelta } from './movement';
+import { GUARDIAN_GLOW } from './lightbearer';
 import { skillOf } from './skills';
 import { livingInCircle } from './targeting';
 import { SkillUser } from '../core/components';
@@ -58,8 +60,9 @@ export function consumeCorpse(world: World, e: Entity): void {
   dead.removeAfter = Math.min(dead.removeAfter, dead.elapsed + 0.4);
 }
 
+/** Raised minions of an owner (the Raise Corpse cap). Guardian lights are not counted: they have their own cap. */
 export function minionsOf(world: World, owner: Entity): Entity[] {
-  return world.query(MinionAI).filter((e) => world.req(e, MinionAI).owner === owner && !world.has(e, Dead));
+  return world.query(MinionAI).filter((e) => world.req(e, MinionAI).owner === owner && !world.has(e, Dead) && !world.has(e, Guardian));
 }
 
 /** Turn a corpse into a minion for `owner`. */
@@ -171,9 +174,12 @@ export function minionSystem(world: World, dt: number, ctx: GameContext): void {
     }
 
     // Guard the owner: fight the nearest enemy close to them, otherwise follow.
+    // A guardian light never leaves its owner's side: it shoots whatever comes within its own range.
+    const guardian = world.has(e, Guardian);
     let target: Entity | null = null;
     let best = Infinity;
-    for (const enemy of livingInCircle(world, ctx, otr.x, otr.z, GUARD_RADIUS, 'enemy')) {
+    const [seekX, seekZ, seekR] = guardian ? [tr.x, tr.z, ai.attackRange] : [otr.x, otr.z, GUARD_RADIUS];
+    for (const enemy of livingInCircle(world, ctx, seekX, seekZ, seekR, 'enemy')) {
       const et = world.req(enemy, Transform);
       const d = Math.hypot(et.x - tr.x, et.z - tr.z);
       if (d < best) {
@@ -186,6 +192,16 @@ export function minionSystem(world: World, dt: number, ctx: GameContext): void {
       const et = world.req(target, Transform);
       const reach = ai.attackRange + 0.5;
       face(tr, et);
+      if (guardian) {
+        if (best <= reach && ai.cooldown <= 0) {
+          ai.state = 'windup';
+          ai.timer = ai.windup;
+          ai.attackSeq++;
+        } else if (toOwner > 3) {
+          steer(mover, otr.x - tr.x, otr.z - tr.z);
+        }
+        continue;
+      }
       if (best <= reach && ai.cooldown <= 0) {
         ai.state = 'windup';
         ai.timer = ai.windup;
@@ -222,6 +238,8 @@ function attack(world: World, ctx: GameContext, e: Entity, ai: MinionAI, tr: Tra
   const dz = tt.z - tr.z;
   const len = Math.hypot(dx, dz) || 1;
   const speed = 18;
+  const guardian = world.get(e, Guardian);
+  const color = guardian ? GUARDIAN_GLOW : MINION_GLOW;
   const p = world.create();
   world.add(p, Transform, makeTransform(tr.x + (dx / len) * 0.5, Math.max(1, tr.y), tr.z + (dz / len) * 0.5, Math.atan2(dx, dz)));
   world.add(p, Projectile, {
@@ -229,29 +247,32 @@ function attack(world: World, ctx: GameContext, e: Entity, ai: MinionAI, tr: Tra
     vx: (dx / len) * speed,
     vz: (dz / len) * speed,
     radius: 0.3,
-    remaining: 12 / speed,
+    remaining: (guardian ? ai.attackRange + 2 : 12) / speed,
     damage: 0,
     damageType: ai.damageType,
     attackerLevel: world.get(e, CombatStats)?.level ?? 1,
     owner: e,
     skill: {
       skillId: world.req(e, Summon).skillId,
-      impact: {
-        coefficient: ai.coefficient,
-        damageType: ai.damageType,
-        knockback: 0,
-        corruptedMul: 1,
-        applies: ai.applies,
-        hitstopMs: 0,
-        shake: 0,
-        delivery: 'ranged',
-        lifeSteal: 0,
-      },
+      // A guardian's bolt is the skill's own (corruptedMul and all); a raised minion's is plain.
+      impact: guardian
+        ? { ...guardian.bolt, knockback: 0, hitstopMs: 0, shake: 0 }
+        : {
+            coefficient: ai.coefficient,
+            damageType: ai.damageType,
+            knockback: 0,
+            corruptedMul: 1,
+            applies: ai.applies,
+            hitstopMs: 0,
+            shake: 0,
+            delivery: 'ranged',
+            lifeSteal: 0,
+          },
       pierce: 0,
       explodeRadius: 0,
       gain: 0,
       hit: [],
-      color: MINION_GLOW,
+      color,
     },
   });
 }

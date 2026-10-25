@@ -162,6 +162,52 @@ export const UNIQUES: Unique[] = [
       },
     ],
   },
+  {
+    // Holy Light bursts on impact and leaves a patch of burning ground.
+    id: 'dawnbringer',
+    base: 'sun_staff',
+    rarity: 'unique',
+    classes: ['lightbearer'],
+    affixes: [
+      { stat: 'intelligence', min: 10, max: 15, scaling: 'linear' },
+      { stat: 'resourceGen', min: 0.08, max: 0.12, scaling: 'none' },
+      { stat: 'resistEnergy', min: 0.1, max: 0.15, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'lightbearer.holy_light',
+        mods: [
+          { op: 'set', field: 'explodeRadius', value: 2.2 },
+          { op: 'hazard', radius: 2.2, duration: 3, status: 'burning', dpsCoefficient: 0.35 },
+          { op: 'mul', field: 'coefficient', value: -0.2 },
+        ],
+      },
+    ],
+  },
+  {
+    // Sanctuary lasts twice as long and covers more ground, but takes half again as long to return.
+    id: 'halo_of_the_penitent',
+    base: 'combat_helm',
+    rarity: 'unique',
+    classes: ['lightbearer'],
+    affixes: [
+      { stat: 'maxLife', min: 25, max: 35, scaling: 'linear' },
+      { stat: 'intelligence', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'barrierBonus', min: 0.08, max: 0.12, scaling: 'none' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'lightbearer.sanctuary',
+        mods: [
+          { op: 'mul', field: 'duration', value: 1 },
+          { op: 'mul', field: 'radius', value: 0.4 },
+          { op: 'mul', field: 'cooldown', value: 0.5 },
+        ],
+      },
+    ],
+  },
   // ---- Hydroponic Vaults: the Mother Tree choice (any class) ----
   {
     // Burned: the tree's charred heartwood, still warm.

@@ -68,6 +68,7 @@ import { isAlive, kill } from './systems/combat';
 import { deathSystem } from './systems/death';
 import { encounterSystem, startNextWave } from './systems/encounter';
 import { enemyAISystem } from './systems/enemyAI';
+import { guardianSystem, sanctumSystem } from './systems/lightbearer';
 import { minionSystem, tetherSystem, turretSystem } from './systems/minions';
 import { movementSystem } from './systems/movement';
 import { clickableAt, playerControlSystem } from './systems/playerControl';
@@ -353,6 +354,8 @@ export class Game {
       .add('summons', summonSystem)
       .add('tethers', tetherSystem)
       .add('turrets', turretSystem)
+      .add('sanctums', sanctumSystem)
+      .add('guardians', guardianSystem)
       .add('hazards', hazardSystem)
       .add('blasts', blastSystem)
       .add('crystals', crystalSystem)
@@ -946,7 +949,9 @@ export class Game {
     for (const m of this.world.query(MinionAI, Transform)) {
       if (this.world.req(m, MinionAI).owner !== this.player) continue;
       const a = Math.random() * Math.PI * 2;
-      Object.assign(this.world.req(m, Transform), makeTransform(x + Math.sin(a) * 2, 0, z + Math.cos(a) * 2, 0));
+      const tr = this.world.req(m, Transform);
+      // (A hovering guardian light keeps its height.)
+      Object.assign(tr, makeTransform(x + Math.sin(a) * 2, tr.y, z + Math.cos(a) * 2, 0));
     }
     this.closeDialogue();
     this.servicePanel.close();

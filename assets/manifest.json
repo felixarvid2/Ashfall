@@ -4623,6 +4623,220 @@
           0.35
         ]
       }
+    },
+    {
+      "id": "icon.skill_censer_strike",
+      "category": "icon",
+      "prompt": "a brass censer mace swinging in a wide arc trailing gold-white light and glowing embers",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-3070-7708-a175-d4c1173b0e4e",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_censer_strike.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3372
+      }
+    },
+    {
+      "id": "icon.skill_holy_light",
+      "category": "icon",
+      "prompt": "a small seeking mote of bright gold-white light with a soft glowing trail",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-322b-70a7-869e-277ffad81a13",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_holy_light.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 2552
+      }
+    },
+    {
+      "id": "icon.skill_heal",
+      "category": "icon",
+      "prompt": "two cupped hands pouring warm glowing golden healing light",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-31fe-76d7-b1fe-4478d3604d50",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_heal.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3460
+      }
+    },
+    {
+      "id": "icon.skill_magnus_exorcismus",
+      "category": "icon",
+      "prompt": "a glowing golden sigil circle on the ground with rays of light striking down",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-31d3-755a-96b6-5ab663d2faa7",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_magnus_exorcismus.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3446
+      }
+    },
+    {
+      "id": "icon.skill_kyrie_eleison",
+      "category": "icon",
+      "prompt": "a glowing pale-blue and gold shield of light dome around a small flame",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-322c-71ab-a345-c379a3e1451d",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_kyrie_eleison.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3142
+      }
+    },
+    {
+      "id": "icon.skill_sanctuary",
+      "category": "icon",
+      "prompt": "a ring of consecrated ground glowing soft gold with a candle flame in the middle",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-322e-7471-b86e-67924bdef13f",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_sanctuary.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4794
+      }
+    },
+    {
+      "id": "icon.skill_blessing",
+      "category": "icon",
+      "prompt": "an open palm raised with a halo of warm golden light and sparkles",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-5e4b-738d-883e-258aa68f3d4c",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_blessing.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4518
+      }
+    },
+    {
+      "id": "icon.skill_lex_aeterna",
+      "category": "icon",
+      "prompt": "a glowing golden eye above a balance scale with a bright judging ray",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-5e83-739c-84ef-57c501eced7a",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_lex_aeterna.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 3178
+      }
+    },
+    {
+      "id": "icon.skill_guardian_light",
+      "category": "icon",
+      "prompt": "a small floating brass lantern light with a glowing gold-white flame and rays",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-5ed0-7305-aabe-637aa2cd18f9",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_guardian_light.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 2568
+      }
+    },
+    {
+      "id": "icon.skill_benediction",
+      "category": "icon",
+      "prompt": "a tall pillar of gold-white light from the sky with a glowing halo ring and cross",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-5ed1-749c-823e-dcbd45ff9e60",
+        "creditsSpent": 3
+      },
+      "file": "icons/skill_benediction.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 2808
+      }
+    },
+    {
+      "id": "icon.portrait_lightbearer",
+      "category": "icon",
+      "prompt": "serene colony chaplain in a deep pale ivory hood with a brass halo-like crest, calm determined face, thin glowing gold-white rune lines, dust and ash on the cloth",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171b9-5ed5-7567-b1cd-ed582835ff98",
+        "creditsSpent": 3
+      },
+      "file": "icons/portrait_lightbearer.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 15936
+      }
+    },
+    {
+      "id": "icon.censer_mace",
+      "category": "icon",
+      "prompt": "heavy brass mace whose head is a perforated incense censer on a short chain, gold-white light leaking through, ivory cloth on the haft",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "planned",
+      "meshy": {}
+    },
+    {
+      "id": "icon.sun_staff",
+      "category": "icon",
+      "prompt": "tall staff of pale metal topped with a brass sunburst crest holding a glowing gold-white orb",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "planned",
+      "meshy": {}
+    },
+    {
+      "id": "icon.reliquary_lantern",
+      "category": "icon",
+      "prompt": "small hand lantern of brass and glass holding a glowing gold-white flame, hanging chain, engraved ivory trim",
+      "source": "text",
+      "targetPolycount": 1,
+      "status": "planned",
+      "meshy": {}
     }
   ]
 }

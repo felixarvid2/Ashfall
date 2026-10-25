@@ -13,7 +13,7 @@ npm run e2e -- --scenario portrait --out /tmp/shots
 ```
 
 Options: `--scenario <name> --out <dir> [--url http://localhost:5173/] [--viewport 390x844] [--mobile]
-[--class bastion|spectre|xenomant] [--poi <id>] [--zone <id>] [--at <x,z>] [--timeout <seconds, default 300>]`.
+[--class bastion|spectre|xenomant|lightbearer] [--poi <id>] [--zone <id>] [--at <x,z>] [--timeout <seconds, default 300>]`.
 
 Each run starts from an empty save, opens the game with `?debug` (this exposes `window.ashfall`), creates a
 character in slot 0 and waits for the simulation to tick. It prints one JSON line,

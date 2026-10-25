@@ -35,7 +35,7 @@ import {
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, enemyDef } from '../data/db';
-import type { Bonus, Condition, DamageType, StatusApply, StatusId } from '../data/schemas';
+import { CORRUPTED_FAMILIES, type Bonus, type Condition, type DamageType, type StatusApply, type StatusId } from '../data/schemas';
 import { computeHit, computeOutgoing, computeTaken, type TargetState } from './damage';
 import { signal } from './quests';
 import { eliteDeath, onEliteHit } from './elites';
@@ -45,6 +45,18 @@ import { harvestOnDeath } from '../world/harvest';
 
 export function hasStatus(world: World, e: Entity, id: StatusId): boolean {
   return world.get(e, StatusEffects)?.list.some((s) => s.id === id) ?? false;
+}
+
+/** Product of one data-driven buff field (damageMul, hasteMul, damageTakenMul) over a holder's active buff statuses. */
+export function buffMultiplier(world: World, e: Entity, field: 'damageMul' | 'hasteMul' | 'damageTakenMul'): number {
+  const effects = world.get(e, StatusEffects);
+  if (!effects) return 1;
+  let product = 1;
+  for (const s of effects.list) {
+    const def = STATUS_DEFS[s.id];
+    if (def.kind === 'buff' && def[field] !== undefined) product *= def[field]!;
+  }
+  return product;
 }
 
 export function isAlive(world: World, e: Entity): boolean {
@@ -61,6 +73,8 @@ export function conditionsOf(world: World, e: Entity, attackRange: 'melee' | 'ra
     }
   }
   if (world.get(e, CombatStats)?.tags.includes('elite')) set.add('elite');
+  const ai = world.get(e, EnemyAI);
+  if (ai && CORRUPTED_FAMILIES.includes(enemyDef(ai.defId).family)) set.add('corrupted');
   if (attackRange) set.add(attackRange);
   return set;
 }
@@ -82,11 +96,18 @@ export function attackerConditions(world: World, e: Entity): Condition[] {
   return out;
 }
 
-export function targetState(world: World, e: Entity, attackRange: 'melee' | 'ranged' | null): TargetState {
+/**
+ * What the target's own state does to a hit. `direct` is false for damage-over-time ticks: a mark that is
+ * consumed by the first hit (Lex Aeterna) is saved for a direct hit.
+ */
+export function targetState(world: World, e: Entity, attackRange: 'melee' | 'ranged' | null, direct = true): TargetState {
   const stats = world.get(e, CombatStats);
   const vulnDef = STATUS_DEFS.vulnerable;
-  const markDef = STATUS_DEFS.marked;
-  const marked = markDef.kind === 'mark' && hasStatus(world, e, 'marked') ? markDef.damageTakenMultiplier : 1;
+  let marked = 1;
+  for (const s of world.get(e, StatusEffects)?.list ?? []) {
+    const def = STATUS_DEFS[s.id];
+    if (def.kind === 'mark' && (direct || !def.consumeOnHit)) marked *= def.damageTakenMultiplier;
+  }
   const wardDef = STATUS_DEFS.chitin;
   const ward = wardDef.kind === 'ward' && hasStatus(world, e, 'chitin') ? 1 - wardDef.damageReduction : 1;
   return {
@@ -110,6 +131,8 @@ export interface HitSpec {
   fromZ: number;
   applies: readonly StatusApply[];
   range: 'melee' | 'ranged';
+  /** Damage multiplier against corrupted enemies (CORRUPTED_FAMILIES). */
+  corruptedMul?: number;
 }
 
 /** Attacker hits target using the attacker's CombatStats. Returns final damage, or null if no effect. */
@@ -156,6 +179,12 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
       ...(hasStatus(world, attacker, 'overcharge') ? [{ value: PYLON_EFFECTS.overchargeDamage, source: 'pylon' }] : []),
       // The Choir's song.
       ...(hasStatus(world, attacker, 'empowered') ? [{ value: CHOIR.damage, source: 'choir' }] : []),
+      // Data-driven buffs (Blessing).
+      ...buffDamage(world, attacker),
+      // The Lightbearer's light burns corrupted enemies harder.
+      ...(hit.corruptedMul !== undefined && hit.corruptedMul > 1 && targetAi && CORRUPTED_FAMILIES.includes(enemyDef(targetAi.defId).family)
+        ? [{ value: hit.corruptedMul - 1, source: 'corrupted' }]
+        : []),
     ],
   };
   const result = computeHit(input, hit.damageType, { ...state, conditions }, stats.level, ctx.rng);
@@ -174,6 +203,11 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   });
   if (dealt === null) return null;
   if (stealthed) removeStatuses(world, attacker, (st) => st.id === 'stealth');
+  // A mark that the first hit uses up (Lex Aeterna) has now done its work.
+  removeStatuses(world, target, (st) => {
+    const def = STATUS_DEFS[st.id];
+    return def.kind === 'mark' && def.consumeOnHit;
+  });
   onEliteHit(world, ctx, attacker, target, dealt);
   // Chitin thorns: melee attackers take damage back.
   const wardDef = STATUS_DEFS.chitin;
@@ -187,6 +221,12 @@ export function dealHit(world: World, ctx: GameContext, attacker: Entity, target
   if (hit.knockback !== 0 && isAlive(world, target)) applyKnockback(world, target, hit.fromX, hit.fromZ, hit.knockback);
   for (const apply of hit.applies) applyStatus(world, ctx, target, apply, { team, level: stats.level, attacker });
   return dealt;
+}
+
+/** Outgoing-damage bonuses from data-driven buff statuses, as multiplicative bonuses. */
+function buffDamage(world: World, attacker: Entity): Bonus[] {
+  const mul = buffMultiplier(world, attacker, 'damageMul');
+  return mul === 1 ? [] : [{ value: mul - 1, source: 'status' }];
 }
 
 /** Shield Officers' domes cut ranged damage to the enemies inside them. */
@@ -247,7 +287,7 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
   const isPlayer = world.has(target, PlayerControlled);
 
   // Armoured or rooted bosses (the Warden) take less or nothing.
-  let remaining = Math.max(0, amount) * (world.get(target, Boss)?.damageTaken ?? 1);
+  let remaining = Math.max(0, amount) * (world.get(target, Boss)?.damageTaken ?? 1) * buffMultiplier(world, target, 'damageTakenMul');
   const targetAi = world.get(target, EnemyAI);
   if (targetAi && opts.sourceTeam !== 'enemy') {
     const def = enemyDef(targetAi.defId);
@@ -281,6 +321,8 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
     effects.list = effects.list.filter((s) => s.id !== 'barrier' || s.amount > 0.01);
   }
 
+  // Benediction: a lethal blow leaves the holder on 1 life instead.
+  if (remaining >= health.current && hasCheatDeath(world, target)) remaining = Math.max(0, health.current - 1);
   if (!(isPlayer && ctx.debug.godMode)) health.current -= remaining;
   markInCombat(world, target);
   const ai = world.get(target, EnemyAI);
@@ -313,6 +355,13 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
   return remaining + absorbed;
 }
 
+function hasCheatDeath(world: World, e: Entity): boolean {
+  return world.get(e, StatusEffects)?.list.some((s) => {
+    const def = STATUS_DEFS[s.id];
+    return def.kind === 'buff' && def.cheatDeath === true;
+  }) ?? false;
+}
+
 export function heal(world: World, ctx: GameContext, target: Entity, amount: number): number {
   if (!isAlive(world, target)) return 0;
   const health = world.req(target, Health);
@@ -322,6 +371,40 @@ export function heal(world: World, ctx: GameContext, target: Entity, amount: num
   const tr = world.get(target, Transform);
   if (healed > 0 && tr) ctx.events.push({ type: 'heal', target, x: tr.x, y: tr.y + 1.8, z: tr.z, amount: healed });
   return healed;
+}
+
+/**
+ * Skill healing from `healer` (who may be the target): heals, and the healer's Devotion grows by `onHeal` per 1 % of
+ * the target's max life actually healed (overheal does not count). Returns the life healed.
+ */
+export function healAlly(world: World, ctx: GameContext, healer: Entity, target: Entity, amount: number): number {
+  const healed = heal(world, ctx, target, amount);
+  const max = world.get(target, Health)?.max ?? 0;
+  creditDevotion(world, healer, max > 0 ? (healed / max) * 100 : 0);
+  return healed;
+}
+
+/**
+ * Apply a status from `healer` to an ally. A barrier counts for the healer's Devotion by the amount it adds,
+ * like healing does.
+ */
+export function applyAllyStatus(world: World, ctx: GameContext, healer: Entity, target: Entity, apply: StatusApply): void {
+  const team = world.get(healer, Faction)?.team ?? 'player';
+  const level = world.get(healer, CombatStats)?.level ?? 1;
+  const barrierOf = () => (world.get(target, StatusEffects)?.list ?? []).reduce((sum, s) => (s.id === 'barrier' ? sum + s.amount : sum), 0);
+  const before = barrierOf();
+  applyStatus(world, ctx, target, apply, { team, level, attacker: healer });
+  if (STATUS_DEFS[apply.status].kind !== 'barrier') return;
+  const max = world.get(target, Health)?.max ?? 0;
+  creditDevotion(world, healer, max > 0 ? ((barrierOf() - before) / max) * 100 : 0);
+}
+
+/** Devotion: `percent` % of an ally's max life healed or shielded by the healer. */
+function creditDevotion(world: World, healer: Entity, percent: number): void {
+  const resource = world.get(healer, Resource);
+  if (resource && percent > 0 && resource.config.onHeal > 0) {
+    gainResource(resource, percent * resource.config.onHeal * (1 + (world.get(healer, CombatStats)?.resourceGen ?? 0)));
+  }
 }
 
 export function gainResource(resource: Resource, amount: number): void {
@@ -438,7 +521,8 @@ export function applyStatus(world: World, ctx: GameContext, target: Entity, appl
     }
   } else if (def.kind === 'barrier') {
     const max = world.get(target, Health)?.max ?? 0;
-    const bonus = 1 + (world.get(target, CombatStats)?.barrierBonus ?? 0);
+    // A barrier is as strong as its caster's Barrier bonus (your own, when you shield yourself).
+    const bonus = 1 + (world.get(source.attacker ?? target, CombatStats)?.barrierBonus ?? 0);
     instance.amount = ((apply.amount ?? 0) + (apply.lifeFraction ?? 0) * max) * bonus;
   } else {
     // Slows, disables, vulnerable: one instance, longest duration wins.
@@ -637,5 +721,5 @@ function onEnemyDeath(world: World, ctx: GameContext, target: Entity, wasMarked:
 
 /** Resolve a mitigated DoT tick for a target (used by the status system). */
 export function dotTaken(world: World, target: Entity, amount: number, type: DamageType, attackerLevel: number): number {
-  return computeTaken(amount, type, targetState(world, target, null), attackerLevel).final;
+  return computeTaken(amount, type, targetState(world, target, null, false), attackerLevel).final;
 }

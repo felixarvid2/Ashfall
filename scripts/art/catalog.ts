@@ -50,6 +50,9 @@ const BASES: Record<string, string> = {
   scalpel_blade: 'a long surgical scalpel blade weapon with a bio-tech handle',
   bio_focus: 'an organic bio-focus orb in a metal claw holder with fungal tendrils',
   injector_rig: 'a wrist-mounted chemical injector rig with vials',
+  censer_mace: 'a heavy brass mace whose head is a perforated incense censer on a short chain, glowing gold-white light leaking through the holes, ivory cloth wrapped around the haft',
+  sun_staff: 'a tall staff of pale metal topped with a brass sunburst crest holding a glowing gold-white orb',
+  reliquary_lantern: 'a small hand lantern of brass and glass holding a glowing gold-white flame, with a hanging chain and engraved ivory trim',
   combat_helm: 'a sealed combat helmet with a visor',
   plated_vest: 'an armoured plated combat vest',
   servo_gauntlets: 'a pair of servo-assisted armoured gauntlets',
@@ -75,6 +78,8 @@ const UNIQUES: Record<string, string> = {
   echo_holsters: 'a pair of pistols with ghostly afterimages echoing behind them',
   mother_of_spores: 'a bio-focus shaped like a pulsing fungal womb releasing glowing spores',
   crown_of_the_hive: 'an insect-chitin crown helmet with small glowing eyes',
+  dawnbringer: 'a tall staff of white gold and brass crowned with a blazing sunrise orb throwing long rays of golden light',
+  halo_of_the_penitent: 'a heavy brass halo crest mounted on a pale ceramic hood-helm, the ring hovering behind it glowing soft gold, scratched and humbled',
   ashen_heartwood: 'a pendant of charred heartwood with a glowing ember at its core',
   seed_of_accord: 'a ring holding a living green seed sprouting a tiny leaf, soft golden light',
 };
@@ -102,6 +107,11 @@ const ASPECTS: Record<string, string> = {
   detonation: 'a corpse bursting into green fire', carapace: 'insect chitin armour plates', hive: 'a hive with glowing cells',
   virulent: 'a dripping poison drop', ancient_wrath: 'an ancient glowing green eye of wrath', lifeblood: 'a glowing red heart',
   unbroken: 'an unbreakable fortress wall',
+  mercy: 'two cupped hands pouring glowing golden light', warding: 'a glowing golden barrier dome over a small flame',
+  hallowed: 'a ring of holy ground with a glowing sigil circle', litany: 'a glowing rune circle pulsing with rings of light',
+  verdict: 'a golden eye above a balance scale', sentinel: 'a small floating lantern light with a shield of rays',
+  radiant: 'a bright sunburst with straight rays', fervent: 'a lit candle flame inside a burning heart',
+  daybreak: 'a sun rising over a horizon with a pillar of light',
 };
 const aspects: ArtSpec[] = Object.entries(ASPECTS).map(([id, what]) => ({
   key: `aspects/${id}`,
@@ -239,6 +249,7 @@ const paintings: ArtSpec[] = [
   wide('menu/bastion', 'a towering figure in a bulky battered industrial exosuit with hydraulic pistons, a huge sledgehammer resting on the shoulder, glowing orange visor, embers drifting, heroic pose'),
   wide('menu/spectre', 'a stealthy sniper in a dark cloak and a glowing visor crouched on a ruined rooftop with twin pistols, hero shot'),
   wide('menu/xenomant', 'a bio-mancer in organic armour with glowing green fungal tendrils and a scalpel blade, spores swirling around, hero shot'),
+  wide('menu/lightbearer', 'a calm chaplain in pale ivory robes over light ceramic armour with a brass halo crest behind his hood, a glowing lantern-censer swinging on a chain, warm gold-white light pushing back the ash and dark, hero shot'),
 ];
 
 // ---- 1. Mine rock ground texture ------------------------------------------------------------------------
