@@ -1383,7 +1383,7 @@ export class GameRenderer {
       const last = this.lastMarker;
       // Holding the button drags the target along; mark it again only after it has moved and a moment has passed.
       if (!last || (Math.hypot(mt.x - last.x, mt.z - last.z) > 0.6 && this.time - last.at > 0.25)) {
-        this.vfx.moveMarker(mt.x, mt.z);
+        this.vfx.moveMarker(mt.x, mt.z, mt.blocked === true);
         this.lastMarker = { x: mt.x, z: mt.z, at: this.time };
       }
       return;

@@ -601,3 +601,23 @@ in `docs/balance.md`. Real decisions:
 - **Furnace Cleave gets reach, not damage.** Range 3.4 to 3.9 m (L10 10:24 / 11:13 to 8:51 / 8:46; seeds c / d 8:26 /
   9:37). Raising the coefficient to 3.0 gave 10:52 on seed a and 3.3 broke the "+10 % on the L15 row" limit.
 - **Heat Vent** `perResource` 0.10 to 0.15: the L30 vent build 744 to 816.
+
+### 2026-10-25 — Round 3 gameplay (D01-D14)
+- **Halo of the Penitent** keeps its twice-as-long Sanctuary but the cooldown is now twice as long too (x2, was
+  x1.5): uptime 14 s / 40 s = 35 % (was 47 %). A test in `lightbearer.test.ts` pins it.
+- **Zealot stacking was real.** Zealot (+15 % ranged, multiplicative) with Sacred Flame and Radiant on all four slots
+  that take it measured 1,982 DPS (corrupted dummy) against 936 for the plain exorcist, well past the best other
+  L30 build (Bastion 972, mythic 1,100). Radiant became additive and 4-7 % (was multiplicative 10-20 %): the same
+  stack is 1,151 DPS (+23 %, and 791 on a neutral dummy). `balance.test.ts` fails if the stacked build goes above
+  1.1x the best build of another class. The sim has a new "Radiant on 4 slots" build for this.
+- **Daily rift.** The level is seeded from the local date (8 to 28, never above the highest open level), the rooms
+  come from the date too. It pays like a clear (glyph attempts, cache) but does not move the open levels, the best
+  level, the tiers or the class records; its times live in `account.dailyRifts` (last 30 days).
+- **Local records** (`account.riftRecords`, class -> level -> seconds), **feats** (`account.feats`: counters, done
+  times, worn title), the trader's reroll count (`account.vendor`) and the shared materials (`account.materials`)
+  are new account fields with defaults, so the account version stays 1 and old blobs load unchanged (tested).
+- **Trader reroll** costs 60 x (1 + 0.12 x level) x 1.6^(rerolls today); the count restarts on a new local date.
+- **Materials are per character**, so "Deposit all materials" moves them into an account pool and the stash panel
+  offers "Take all materials" to bring them into any character (crafting reads the character's own).
+- **Salvage junk now pays Lumen Dust** for marked legendaries (it paid gold only), and every salvage confirmation
+  names the dust before the player confirms.

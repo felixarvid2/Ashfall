@@ -1,6 +1,7 @@
 name: CI
 
-# Typecheck and unit tests on every pull request. No browser: the e2e scenarios stay a local check.
+# Typecheck, unit tests, the production build, the asset checks and a quick perf budget on every pull request.
+# No browser: the e2e scenarios stay a local check.
 on:
   pull_request:
   workflow_dispatch:
@@ -28,3 +29,9 @@ jobs:
         run: npx tsc --noEmit -p .
       - name: Unit tests
         run: npx vitest run
+      - name: Production build
+        run: npm run build
+      - name: Asset checks (orphans, missing ids, texture size caps)
+        run: npm run assets:check
+      - name: Quick perf budget
+        run: npm run perf:quick

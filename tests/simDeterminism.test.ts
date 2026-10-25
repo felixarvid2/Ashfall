@@ -20,7 +20,8 @@ import { statusSystem } from '../src/systems/status';
 import { spawnArenaProps } from '../src/world/arena';
 import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
 import { createZoneRuntime } from '../src/world/zone';
-import { fakeInput, learnSkills, makeCtx } from './helpers';
+import { equipStarterKit, fighterStep } from '../scripts/sim/fixtures';
+import { learnSkills, makeCtx } from './helpers';
 
 const zoneById = (id: string): ZoneDef => ZONES.find((z) => z.id === id)!;
 const ENEMIES = ['infected_colonist', 'security_drone', 'bloater', 'spore_hound'];
@@ -44,10 +45,11 @@ function stateHash(world: World, ctx: ReturnType<typeof makeCtx>): string {
 
 function runSession(seed: string): string[] {
   const world = new World();
-  const ctx = makeCtx({ rng: new Rng(seed), loot: { rng: new Rng(`${seed}-loot`), seq: 0 }, input: fakeInput(['skill1'], [0]) });
+  const ctx = makeCtx({ rng: new Rng(seed), loot: { rng: new Rng(`${seed}-loot`), seq: 0 } });
   const first = zoneById('zone.hydroponic_vaults');
   const player = spawnPlayer(world, 'bastion', first.hubs[0]!.x, first.hubs[0]!.z);
   learnSkills(world, player);
+  equipStarterKit(world, player, ctx);
   const scheduler = new Scheduler<typeof ctx>()
     .add('spatial', spatialSystem)
     .add('skills', skillSystem)
@@ -70,12 +72,10 @@ function runSession(seed: string): string[] {
     const tr = world.req(player, Transform);
     tr.x = hub.x;
     tr.z = hub.z;
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 6; i++) {
       const r = 6 + (i % 5) * 2;
-      spawnEnemy(world, ENEMIES[i % ENEMIES.length]!, hub.x + Math.cos(i * 2.4) * r, hub.z + Math.sin(i * 2.4) * r, { level: 5 });
+      spawnEnemy(world, ENEMIES[i % ENEMIES.length]!, hub.x + Math.cos(i * 2.4) * r, hub.z + Math.sin(i * 2.4) * r, { level: 1 });
     }
-    // The aim point of the held mouse button: a spot near the hub.
-    ctx.pickGround = () => ({ x: hub.x + 4, z: hub.z + 4 });
   };
 
   const hashes: string[] = [];
@@ -83,6 +83,7 @@ function runSession(seed: string): string[] {
   for (const zone of order) {
     enter(zone);
     for (let k = 0; k < 200; k++) {
+      fighterStep(world, player);
       scheduler.tick(world, 1 / 60, ctx);
       world.flushDestroyed();
       ctx.tick++;
@@ -91,6 +92,7 @@ function runSession(seed: string): string[] {
     hashes.push(stateHash(world, ctx));
   }
   expect(ctx.tick).toBe(600);
+  hashes.push(`kills${ctx.stats.kills}`);
   return hashes;
 }
 
@@ -99,10 +101,10 @@ describe('seeded simulation', () => {
     const a = runSession('det-1');
     const b = runSession('det-1');
     expect(a).toEqual(b);
-    expect(new Set(a).size).toBe(3);
+    expect(new Set(a.slice(0, 3)).size).toBe(3);
   }, 60000);
 
   it('a different seed ends in a different state', () => {
-    expect(runSession('det-2')[2]).not.toBe(runSession('det-1')[2]);
+    expect(runSession('det-2').slice(0, 3)).not.toEqual(runSession('det-1').slice(0, 3));
   }, 60000);
 });

@@ -1,0 +1,21 @@
+/* Gamepad play (round 3): a focus ring distinct from hover while the pad was used last, and the inventory cursor.
+   `html.pad-active` is set by game.ts when the last input came from the pad and cleared on key or mouse input. */
+html.pad-active #ui :focus,
+html.pad-active .confirm-sheet :focus {
+  outline: 2px solid var(--ui-accent, #ffd27a);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 210, 122, 0.22);
+}
+html.pad-active #ui input[type='range']:focus { outline-offset: 4px; }
+/* Mouse and pad coexist: hovering must not hide where the pad focus is, and the ring never covers a text field's caret. */
+html.pad-active #ui input[type='text']:focus { box-shadow: none; }
+.pad-cursor {
+  outline: 2px solid var(--ui-accent, #ffd27a);
+  outline-offset: -2px;
+  box-shadow: 0 0 0 3px rgba(255, 210, 122, 0.3), inset 0 0 12px rgba(255, 210, 122, 0.25);
+  z-index: 1;
+}
+/* A red X where a ground click cannot be reached is drawn in the 3D scene (render/vfx.ts). */
+@media (prefers-reduced-motion: reduce) {
+  html.pad-active #ui :focus { transition: none; }
+}

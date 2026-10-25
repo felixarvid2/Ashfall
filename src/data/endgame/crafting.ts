@@ -115,6 +115,40 @@ export const CODEX_ASPECTS: Readonly<Record<string, readonly string[]>> = {
   core_chamber_of_creation: ['carapace', 'daybreak'],
 };
 
+/** D06: the region (zone key, lang `zones.<key>.name`) each Codex dungeon stands in, so the Codex can say where to go. */
+export const CODEX_DUNGEON_REGION: Readonly<Record<string, string>> = {
+  meridians_hold: 'cinderFlats',
+  bunker_sierra4: 'cinderFlats',
+  drainage_tunnels: 'cinderFlats',
+  smelter_3: 'refineryDistrict',
+  pipe_alleys: 'refineryDistrict',
+  cathedral_crypt: 'refineryDistrict',
+  cold_hall: 'refineryDistrict',
+  seed_bank_depths: 'hydroponicVaults',
+  cocoon_chamber: 'hydroponicVaults',
+  irrigation_system: 'hydroponicVaults',
+  sleeping_lab: 'hydroponicVaults',
+  shaft_13: 'deepMines',
+  crystal_labyrinth: 'deepMines',
+  sunken_drill: 'deepMines',
+  archive: 'deepMines',
+  burial_chamber: 'deepMines',
+  core_memory_of_ember: 'theCore',
+  core_endless_shaft: 'theCore',
+  core_singing_halls: 'theCore',
+  core_chamber_of_creation: 'theCore',
+};
+
+/** D06: the dungeons that still hold locked aspects for this Codex, in table order, with the region and the missing aspects. */
+export function codexMissingDungeons(unlocked: readonly string[]): { dungeon: string; region: string; aspects: string[] }[] {
+  const out: { dungeon: string; region: string; aspects: string[] }[] = [];
+  for (const [dungeon, aspects] of Object.entries(CODEX_ASPECTS)) {
+    const missing = aspects.filter((a) => !unlocked.includes(a));
+    if (missing.length > 0) out.push({ dungeon, region: CODEX_DUNGEON_REGION[dungeon] ?? '', aspects: missing });
+  }
+  return out;
+}
+
 /** Every Codex entry as [dungeon, aspect], in table order (the Codex panel lists these). */
 export function codexEntries(): [string, string][] {
   return Object.entries(CODEX_ASPECTS).flatMap(([dungeon, aspects]) => aspects.map((a): [string, string] => [dungeon, a]));

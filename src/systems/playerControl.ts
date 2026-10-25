@@ -30,6 +30,7 @@ import { skill } from '../data/db';
 import type { SkillDef } from '../data/schemas';
 import type { Action } from '../data/settings';
 import { isAlive } from './combat';
+import { buildGrid, cellOf, findPath, openAt } from './navigation';
 import { enemyNear, nearestOpposing } from './targeting';
 
 const SLOT_KEYS: Action[] = ['skill1', 'skill2', 'skill3', 'skill4'];
@@ -212,7 +213,8 @@ function clickMode(
         else world.add(e, InteractTarget, { target: thing.target });
         world.add(e, MoveTarget, { x: tr.x, z: tr.z });
       } else {
-        world.add(e, MoveTarget, { x: aim.x, z: aim.z });
+        const blocked = fresh && groundUnreachable(world, ctx, e, aim.x, aim.z);
+        world.add(e, MoveTarget, blocked ? { x: aim.x, z: aim.z, blocked } : { x: aim.x, z: aim.z });
       }
     }
   }
@@ -224,6 +226,18 @@ function clickMode(
     mover.vx = 0;
     mover.vz = 0;
   }
+}
+
+/**
+ * A ground click the navigation grid cannot reach (A09): the cell is blocked (rock, wall) or no path leads there. Points
+ * outside the grid window are not judged. Only fresh clicks are checked, so holding the button costs nothing.
+ */
+export function groundUnreachable(world: World, ctx: GameContext, e: Entity, x: number, z: number): boolean {
+  const tr = world.req(e, Transform);
+  const grid = ctx.nav?.grid ?? buildGrid(world, ctx, tr.x, tr.z);
+  if (cellOf(grid, x, z) < 0) return false;
+  if (!openAt(grid, x, z)) return true;
+  return findPath(grid, tr.x, tr.z, x, z) === null;
 }
 
 /** Chase the attack target into reach and hit it; keep attacking only while `holding`. */

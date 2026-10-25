@@ -185,6 +185,8 @@ export class GamepadInput {
       if (wasActive) {
         this.active = -1;
         this.left.x = this.left.y = this.right.x = this.right.y = 0;
+        // Prompts and menu focus go back to the keyboard with the pad gone.
+        this.setDevice('kbm');
       }
       for (const fn of this.connectionListeners) fn('disconnected', name, wasActive);
     }

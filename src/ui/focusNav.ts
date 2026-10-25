@@ -54,6 +54,13 @@ function centre(b: Box): { x: number; y: number } {
   return { x: (b.left + b.right) / 2, y: (b.top + b.bottom) / 2 };
 }
 
+/** Stands for a full screen outside the panel stack (character select) in `topId`. */
+const SCREEN = '@screen';
+const screenRoot = (): HTMLElement | null => {
+  const el = document.querySelector<HTMLElement>('.char-select');
+  return el && el.isConnected && !el.hidden ? el : null;
+};
+
 const FOCUSABLE = 'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [data-nav]';
 /** Skipped when a screen opens: the header close button is never the first thing to land on. */
 const NOT_FIRST = '.panel-close, .panel-help';
@@ -94,10 +101,15 @@ class FocusNav {
     panelStack.onChange((open) => this.onPanels(open));
   }
 
+  /** The screen that owns the pad: the top panel, else the character select screen, else none. */
+  private topId(): string | null {
+    return panelStack.top() ?? (screenRoot() ? SCREEN : null);
+  }
+
   // ---- input --------------------------------------------------------------------------------------
 
   private onButton(index: number): void {
-    if (panelStack.top() === null) return;
+    if (this.topId() === null) return;
     const map: Partial<Record<number, NavButton>> = { [PAD.A]: 'a', [PAD.B]: 'b', [PAD.X]: 'x', [PAD.Y]: 'y', [PAD.LB]: 'lb', [PAD.RB]: 'rb', [PAD.START]: 'start', [PAD.SELECT]: 'select' };
     const button = map[index];
     if (button) this.press(button);
@@ -107,7 +119,7 @@ class FocusNav {
   tick(now: number): void {
     const pad = this.pad;
     if (!pad) return;
-    if (panelStack.top() === null) {
+    if (this.topId() === null) {
       this.heldDir = null;
       this.suppressed = null;
       return;
@@ -143,7 +155,7 @@ class FocusNav {
 
   /** One pad press inside a menu (also called by tests). */
   press(button: NavButton): void {
-    const top = panelStack.top();
+    const top = this.topId();
     if (top === null) return;
     const handler = this.handlers.get(top);
     if (handler?.press?.(button)) return;
@@ -163,10 +175,10 @@ class FocusNav {
         break;
       case 'b':
         if (active instanceof HTMLInputElement && active.type === 'text') active.blur();
-        else panelStack.escape();
+        else if (top !== SCREEN) panelStack.escape();
         break;
       case 'start':
-        panelStack.escape();
+        if (top !== SCREEN) panelStack.escape();
         break;
       case 'select':
         if (top === 'map') panelStack.escape();
@@ -184,6 +196,10 @@ class FocusNav {
 
   /** The elements navigation may use: the top panel, plus the other open main panels when the top one is not a modal. */
   private scope(top: string): HTMLElement[] | null {
+    if (top === SCREEN) {
+      const screen = screenRoot();
+      return screen ? [screen] : null;
+    }
     const p = panelStack.panel(top);
     if (!p) return null;
     const out = [p.el];
@@ -211,7 +227,7 @@ class FocusNav {
 
   private move(scope: HTMLElement[], active: HTMLElement | null, dir: NavDir): void {
     if (!active) {
-      this.focusInitial(panelStack.top()!, scope);
+      this.focusInitial(this.topId()!, scope);
       return;
     }
     if (active instanceof HTMLInputElement && active.type === 'range' && (dir === 'left' || dir === 'right')) {

@@ -43,6 +43,8 @@ export const PlayerControlled = defineComponent<PlayerControlled>('PlayerControl
 export interface MoveTarget {
   x: number;
   z: number;
+  /** A fresh ground click that the navigation grid cannot reach: the marker is a red X (round 3, A09). The hero still walks as far as he can. */
+  blocked?: boolean;
 }
 export const MoveTarget = defineComponent<MoveTarget>('MoveTarget');
 

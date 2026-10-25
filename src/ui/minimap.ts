@@ -117,6 +117,8 @@ export interface MapMarker {
   shape?: 'dot' | 'square' | 'diamond';
   /** Quest markers carry their quest's kind; the legend and hover labels classify by it, not by colour (B09). */
   quest?: QuestMarkerKind;
+  /** Text drawn beside the marker on the full map and shown on hover (the world boss and its timer, D07). */
+  label?: string;
 }
 
 /** The quest kind of a marker; markers without one (dungeon objects, the world boss) are not quest markers. */
@@ -366,6 +368,8 @@ export class MapUi {
   harvest: HarvestView | null = null;
   /** Extra line under the full map (Region Restoration). */
   extraInfo: (zone: ZoneRuntime) => string = () => '';
+  /** D07: the active world boss with its timer and region (empty when none), a chip on the full map whichever region is shown. */
+  bossInfo = '';
 
   constructor(
     parent: HTMLElement,
@@ -741,7 +745,7 @@ export class MapUi {
     this.drawSelected(c, zone, v);
     this.drawFocus(c, zone, v);
     this.refreshLegend(zone, here);
-    const chips = [t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) }), this.extraInfo(zone), this.harvest?.active.zoneId === zone.def.id ? t('harvest.mapRegion') : ''].filter(Boolean);
+    const chips = [t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) }), this.extraInfo(zone), this.bossInfo, this.harvest?.active.zoneId === zone.def.id ? t('harvest.mapRegion') : ''].filter(Boolean);
     this.updateFooter(chips, touchText('map.travel'));
   }
 
@@ -951,8 +955,26 @@ export class MapUi {
       const [sx, sy] = project(v, m.x, m.z);
       // On the minimap, markers outside the circle are pinned to the rim as a triangle pointing at them.
       if (!full) this.rimMark(c, v, sx, sy, m.color, (m.shape ? 6 : 5) * k, m.shape ?? 'dot');
-      else this.mark(c, sx, sy, m.color, (m.shape ? 7 : 6) * k, m.shape ?? 'dot');
+      else {
+        this.mark(c, sx, sy, m.color, (m.shape ? 7 : 6) * k, m.shape ?? 'dot');
+        if (m.label) this.markLabel(c, sx, sy, m.label, k);
+      }
     }
+  }
+
+  /** A short label beside a marker on the full map, on a dark plate so it reads over any ground. */
+  private markLabel(c: CanvasRenderingContext2D, sx: number, sy: number, text: string, k: number): void {
+    c.save();
+    c.font = `${Math.round(12 * k)}px sans-serif`;
+    c.textBaseline = 'middle';
+    const w = c.measureText(text).width;
+    const flip = sx + 12 * k + w > MAP_SIZE;
+    const x = flip ? sx - 12 * k - w : sx + 12 * k;
+    c.fillStyle = 'rgba(0,0,0,0.65)';
+    c.fillRect(x - 3 * k, sy - 8 * k, w + 6 * k, 16 * k);
+    c.fillStyle = '#ffd9b0';
+    c.fillText(text, x, sy);
+    c.restore();
   }
 
   /** A minimap marker; outside the circle it becomes a triangle on the rim that points outward. */
@@ -1157,7 +1179,7 @@ export class MapUi {
     for (const cache of this.harvest?.active.zoneId === def.id ? this.harvest.caches : []) add(cache.x, cache.z, t('map.legend.cache'));
     if (zone === this.zone()) for (const m of this.markers) {
       const kind = markerQuestKind(m);
-      add(m.x, m.z, kind ? t(`map.legend.${QUEST_MARKER_STYLE[kind].legend}`) : m.shape === 'diamond' ? t('map.legend.boss') : t('map.legend.sideQuest'));
+      add(m.x, m.z, m.label ?? (kind ? t(`map.legend.${QUEST_MARKER_STYLE[kind].legend}`) : m.shape === 'diamond' ? t('map.legend.boss') : t('map.legend.sideQuest')));
     }
     return out;
   }

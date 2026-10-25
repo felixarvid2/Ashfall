@@ -15,6 +15,7 @@ import './ui/desktop/combat.css';
 import './ui/desktop/inventory.css';
 import './ui/desktop/services.css';
 import './ui/desktop/menus.css';
+import './ui/desktop/gamepad.css';
 import { Game } from './game';
 import { START_ZONE } from './data/zones';
 import { t } from './data/i18n';

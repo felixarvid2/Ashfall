@@ -22,7 +22,7 @@ import {
   rerollCost,
   sellPrice,
 } from '../systems/hub/services';
-import { codexEntries, MASTERWORK, RECIPE_DEFS, TEMPERING, type RecipeOption } from '../data/endgame/crafting';
+import { CODEX_DUNGEON_REGION, codexEntries, codexMissingDungeons, MASTERWORK, RECIPE_DEFS, TEMPERING, type RecipeOption } from '../data/endgame/crafting';
 import {
   canMasterwork,
   canTemper,
@@ -92,6 +92,13 @@ export interface ServiceActions {
   masterworkRankUp(gridIndex: number): void;
   masterworkReset(gridIndex: number): void;
   codexImprint(aspectId: string, gridIndex: number): void;
+}
+
+/** D06: "Shaft 13 (Deep Mines)" for a Codex dungeon. */
+export function codexDungeonLabel(dungeon: string): string {
+  const region = CODEX_DUNGEON_REGION[dungeon];
+  const name = t(`instances.names.${dungeon}`);
+  return region ? t('crafting.codex.dungeonIn', { dungeon: name, region: t(`zones.${region}.name`) }) : name;
 }
 
 /** Costs from this many gold, and any rare or better item, ask for a second tap (P013). */
@@ -1032,13 +1039,20 @@ export class ServicePanel {
       this.refresh();
     });
     out.push(head, bar);
+    // D06: where to go for what is missing, even while the list is folded.
+    const next = codexMissingDungeons(eg.codex).slice(0, 3);
+    if (next.length > 0) {
+      const hint = div('service-note codex-next', t('crafting.codex.next', { list: next.map((m) => codexDungeonLabel(m.dungeon)).join(', ') }));
+      hint.dataset.testid = 'codex-next';
+      out.push(hint);
+    }
     if (this.codexLockedOpen) {
       for (const [dungeon, aspect] of locked.filter(([, a]) => codexVisible(a, null, false, this.codexCategory))) {
         const row = div('aspect-row codex-row aspect-compact locked', '');
         row.dataset.testid = `codex-${aspect}`;
         const icon = artUrl(`aspects/${aspect}`);
         if (icon) row.append(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
-        row.append(div('aspect-name', t(`aspects.${aspect}.name`)), div('aspect-desc', t('crafting.codex.locked', { dungeon: t(`instances.names.${dungeon}`) })));
+        row.append(div('aspect-name', t(`aspects.${aspect}.name`)), div('aspect-desc', t('crafting.codex.locked', { dungeon: codexDungeonLabel(dungeon) })));
         out.push(row);
       }
     }

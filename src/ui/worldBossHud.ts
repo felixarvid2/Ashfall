@@ -23,6 +23,12 @@ export function worldBossLine(ctx: GameContext): string {
   return t(st.phase === 'warning' ? 'worldBoss.hudWarning' : 'worldBoss.hudAlive', { boss, time: clock(st.secondsLeft), region });
 }
 
+/** D07: the map's label for the boss marker: "The Ashen Colossus 4:12". */
+export function worldBossMapLabel(ctx: GameContext): string {
+  const st = activeWorldBoss(ctx);
+  return st ? `${t(`worldBoss.${st.event.def.id}.name`)} ${clock(st.secondsLeft)}` : '';
+}
+
 /** The short phone form: "The Ashen Colossus  4:12", with the region after a tag only when the player is elsewhere. */
 export function worldBossShortLine(ctx: GameContext): string {
   const st = activeWorldBoss(ctx);
@@ -48,6 +54,8 @@ export class WorldBossHud {
   constructor(
     root: HTMLElement,
     private readonly toast: (message: string) => void,
+    /** D07: the big centred banner for an announcement or an appearance. */
+    private readonly banner?: (message: string) => void,
   ) {
     this.el = document.createElement('div');
     this.el.className = 'worldboss-hud';
@@ -80,8 +88,10 @@ export class WorldBossHud {
       if (st) {
         const boss = t(`worldBoss.${st.event.def.id}.name`);
         const region = t(`zones.${zoneDef(st.event.spot.zone).key}.name`);
-        if (st.phase === 'warning') this.toast(t('worldBoss.warning', { boss, region, minutes: Math.max(1, Math.round(st.secondsLeft / 60)) }));
-        else this.toast(t('worldBoss.appeared', { boss, region }));
+        const message =
+          st.phase === 'warning' ? t('worldBoss.warning', { boss, region, minutes: Math.max(1, Math.round(st.secondsLeft / 60)) }) : t('worldBoss.appeared', { boss, region });
+        this.toast(message);
+        this.banner?.(message);
       } else if (this.seen.startsWith('alive:') && rt.killed !== this.seenIndex) {
         this.toast(t('worldBoss.gone'));
       }

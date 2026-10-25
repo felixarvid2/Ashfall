@@ -12,6 +12,7 @@ import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { Dead, EnemyAI, Health, Inventory, Mover, Progression, SkillUser, Transform } from '../../src/core/components';
 import { emptyAccount, saveAccount } from '../../src/core/account';
+import type { GameContext } from '../../src/core/context';
 import { Scheduler, World, type Entity } from '../../src/core/ecs';
 import { Rng } from '../../src/core/rng';
 import { serializeSave } from '../../src/core/save';
@@ -47,6 +48,18 @@ export interface FixtureSet {
 
 const SAVED_AT = '2026-10-01T12:00:00.000Z';
 const ENEMIES = ['infected_colonist', 'security_drone', 'bloater', 'spore_hound'];
+
+/** The class's starter kit in the bag and equipped, as in the game: without a weapon nothing hurts. */
+export function equipStarterKit(world: World, player: Entity, ctx: GameContext): void {
+  const classId = world.req(player, SkillUser).classId;
+  const inv = world.req(player, Inventory);
+  for (const baseId of classDef(classId).starterKit) {
+    const item = generateItem(ctx.loot.rng, { itemPower: itemPowerFor(1, ctx.loot.rng), classId, uid: nextItemUid(ctx), rarity: 'common', baseId });
+    addToGrid(inv, item);
+    equipFromGrid(inv, inv.grid.indexOf(item), classId);
+  }
+  recomputePlayer(world, player);
+}
 
 /** One tick of a minimal fighter: walk at the nearest living enemy and cast the first bar skill at it. */
 export function fighterStep(world: World, player: Entity): void {
@@ -88,14 +101,7 @@ export function buildFixtures(): FixtureSet {
   const hub = zone.hubs[0]!;
   const player = spawnPlayer(world, 'bastion', hub.x, hub.z);
   learnSkills(world, player);
-  // The starter kit, as in the game: without a weapon nothing hurts.
-  const inv0 = world.req(player, Inventory);
-  for (const baseId of classDef('bastion').starterKit) {
-    const item = generateItem(ctx.loot.rng, { itemPower: itemPowerFor(1, ctx.loot.rng), classId: 'bastion', uid: nextItemUid(ctx), rarity: 'common', baseId });
-    addToGrid(inv0, item);
-    equipFromGrid(inv0, inv0.grid.indexOf(item), 'bastion');
-  }
-  recomputePlayer(world, player);
+  equipStarterKit(world, player, ctx);
   const scheduler = new Scheduler<typeof ctx>()
     .add('spatial', spatialSystem)
     .add('skills', skillSystem)

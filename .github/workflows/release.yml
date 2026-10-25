@@ -45,6 +45,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit -p .
       - run: npx vitest run
       - run: npm run build
       - name: Zip the web build
@@ -64,6 +66,13 @@ jobs:
           game shows touch controls.
           TXT
           (cd dist && zip -qr "../ashfall-${TAG}-web.zip" . -x '*.map')
+      - name: Check the zip has no source maps
+        run: |
+          if unzip -Z1 "ashfall-${TAG}-web.zip" | grep -E '\.map$'; then
+            echo "The release zip contains .map files (listed above)."
+            exit 1
+          fi
+          echo "No .map files in the zip."
       - name: Release notes
         run: |
           {

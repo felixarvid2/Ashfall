@@ -421,7 +421,6 @@ export class SettingsPanel {
   private buildPadList(pad: GamepadInput): HTMLElement {
     const list = el('div', 'key-list pad-list');
     list.dataset.testid = 'pad-list';
-    list.classList.add('touch-hide');
     list.append(el('h3', 'settings-group', t('settings.gamepad')), el('p', 'settings-hint', t('settings.gamepadHint')));
     for (const action of PAD_ACTIONS) list.append(this.padRow(pad, action));
     return list;
@@ -472,19 +471,19 @@ export class SettingsPanel {
           this.refresh();
         });
       let release = listen();
-      // Escape on the keyboard or a click elsewhere gives up.
-      const giveUp = (e: Event) => {
-        if (e instanceof KeyboardEvent ? e.code === 'Escape' : !(e.target as Element | null)?.closest?.('.key-chip')) {
-          if (e instanceof KeyboardEvent) e.stopImmediatePropagation();
-          this.stopListening?.();
-        }
+      // Escape on the keyboard or a click elsewhere gives up (other keys do nothing meanwhile).
+      const releaseKeys = panelStack.captureKeys((e) => {
+        if (e.code === 'Escape') this.stopListening?.();
+        return true;
+      });
+      const away = (ev: Event) => {
+        if (!(ev.target as Element | null)?.closest?.('.key-chip')) this.stopListening?.();
       };
-      window.addEventListener('pointerdown', giveUp, true);
-      window.addEventListener('keydown', giveUp, true);
+      window.addEventListener('pointerdown', away, true);
       this.stopListening = () => {
         release();
-        window.removeEventListener('pointerdown', giveUp, true);
-        window.removeEventListener('keydown', giveUp, true);
+        releaseKeys();
+        window.removeEventListener('pointerdown', away, true);
         this.stopListening = null;
         hint.hidden = true;
         render();

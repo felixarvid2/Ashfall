@@ -56,7 +56,7 @@ import {
 import { SpatialHash } from './core/spatial';
 import { CLASSES, classDef, skill } from './data/db';
 import { setTouchWording, t } from './data/i18n';
-import { loadSettings, resolveKeybindings, saveSettings, type MoveMode, type Settings } from './data/settings';
+import { loadSettings, resolveKeybindings, resolvePadBindings, saveSettings, type MoveMode, type Settings } from './data/settings';
 import { START_ZONE, ZONES, hasZone, zoneDef, zoneOfTeleporter } from './data/zones';
 import { classAssetIds, zoneAssetIds, zoneLaterAssetIds } from './data/assetSets';
 import type { ZoneDef } from './data/zones/zoneTypes';
@@ -120,7 +120,10 @@ import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount, typ
 import { runSaveApply, sanitizeSave } from './core/saveRefs';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { deathCauseLine, deathRecap } from './ui/deathCause';
-import { bossPhaseTicks, keyLabel } from './ui/hud';
+import { bossPhaseTicks } from './ui/hud';
+import { actionLabel, setPromptSource } from './core/inputLabels';
+import { focusNav } from './ui/focusNav';
+import { setRumbleSink } from './ui/haptics';
 import { LORE_XP_PER_LEVEL } from './data/interactables';
 import {
   choose,
@@ -192,7 +195,7 @@ import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveTex
 import { ROOM_CELL } from './data/instances';
 import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPieces';
 import { activeWorldBoss, worldBossMarker, worldBossRuntime, worldBossSystem } from './world/worldBoss';
-import { WorldBossHud } from './ui/worldBossHud';
+import { WorldBossHud, worldBossLine, worldBossMapLabel } from './ui/worldBossHud';
 import { EndgameStack } from './ui/endgameStack';
 import { EdgeArrow, edgeInsets, placeEdgeArrow } from './ui/edgeArrows';
 import { WORLD_BOSS, worldBossPortrait } from './data/endgame/worldBosses';
@@ -362,7 +365,7 @@ export class Game {
     this.renderer.reduceFlashing = this.settings.reduceFlashing;
     this.renderer.setBrightness(this.settings.brightness);
     this.renderer.setQuality(this.settings.graphics);
-    this.input = new Input(canvas, resolveKeybindings(this.settings));
+    this.input = new Input(canvas, resolveKeybindings(this.settings), resolvePadBindings(this.settings));
 
     const seed = randomSeed();
     this.ctx = {
@@ -442,6 +445,7 @@ export class Game {
     setHaptics(this.settings.haptics);
     this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0);
     this.toasts = new Toasts(uiRoot);
+    this.setupGamepad();
     if (this.loadedAccount.recovered) {
       this.toasts.show(t(this.loadedAccount.reason === 'newer' ? 'save.accountNewer' : 'save.accountRecovered'), 'error', 12000);
     }
@@ -449,7 +453,7 @@ export class Game {
     const endgameStack = document.createElement('div');
     endgameStack.className = 'endgame-stack';
     uiRoot.append(endgameStack);
-    this.worldBossHud = new WorldBossHud(endgameStack, (message) => this.toasts.show(message, 'info', 4500));
+    this.worldBossHud = new WorldBossHud(endgameStack, (message) => this.toasts.show(message, 'info', 4500), (message) => this.hud.showBanner(message, 3.5));
     this.harvestHud = new HarvestHud(endgameStack);
     this.hud = new Hud(uiRoot, () => this.respawn());
     this.hud.onOpenSkills = () => this.input.pressAction('skills');
@@ -473,7 +477,7 @@ export class Game {
       apply: () => audio.refresh(),
       save: () => saveSettings(this.storage, this.settings),
       toggleMute: () => this.toggleMute(),
-      muteKey: () => keyLabel(resolveKeybindings(this.settings).toggleMute[0] ?? 'KeyN'),
+      muteKey: () => actionLabel('toggleMute'),
     });
     this.touchControls = new TouchControls(uiRoot, this.input, this.hud.slotElements, this.soundUi.touchEntries(), (message) => this.toasts.show(message, 'info', 3500));
     this.soundUi.refresh();
@@ -931,6 +935,7 @@ export class Game {
       apply: (patch) => this.applySettings(patch),
       soundUi: this.soundUi,
       toggleMute: () => this.toggleMute(),
+      pad: this.input.gamepad,
       resetTips: () => {
         this.coach.reset();
         this.feelUi.resetGuideBanner();
@@ -1319,7 +1324,9 @@ export class Game {
     if (input.wasPressed('toggleDebug')) this.devtools.toggle();
     if (input.wasPressed('quickSave')) this.save();
     if (input.wasPressed('quickLoad')) this.load();
-    if (input.wasPressed('respawn') && this.world.has(this.player, Dead) && !this.hud.respawnLocked) this.respawn();
+    if ((input.wasPressed('respawn') || input.wasPadPressed('pickup')) && this.world.has(this.player, Dead) && !this.hud.respawnLocked) this.respawn();
+    // Start (pad): the pause menu, like Escape with nothing open. Select toggles the map through the `map` action.
+    if (input.wasPadPressed('pause') && this.playing && panelStack.top() === null && this.pauseMenu.canOpen()) panelStack.open('pause');
     if (input.wasPressed('inventory')) this.inventoryPanel.toggle();
     if (input.wasPressed('character')) this.characterPanel.run((p) => p.toggle());
     if (input.wasPressed('skills')) this.skillTreePanel.run((p) => p.toggle());
@@ -1433,7 +1440,8 @@ export class Game {
       ? this.instanceMarkers()
       : this.frameQuestMarkers.map((m) => questMarker(m.x, m.z, questDef(m.quest).kind));
     const worldBoss = worldBossMarker(this.ctx);
-    if (worldBoss) this.mapUi.markers.push({ ...worldBoss, shape: 'diamond' });
+    if (worldBoss) this.mapUi.markers.push({ ...worldBoss, shape: 'diamond', label: worldBossMapLabel(this.ctx) });
+    this.mapUi.bossInfo = worldBossLine(this.ctx);
     const harvest = harvestView(this.ctx);
     this.mapUi.harvest = harvest;
     this.harvestHud.update(harvest, this.ctx.endgame?.ashShards ?? 0, frameDt);
@@ -1486,7 +1494,8 @@ export class Game {
     if (event.type === 'damage' && event.toPlayer && !event.dot) {
       const max = this.world.get(this.player, Health)?.max ?? 0;
       if (max > 0 && event.amount > max * 0.1) haptic('bigHit');
-    } else if (event.type === 'death' && event.isPlayer) haptic('death');
+    } else if (event.type === 'damage' && !event.toPlayer && event.crit && this.world.has(event.target, Boss)) haptic('bigHit');
+    else if (event.type === 'death' && event.isPlayer) haptic('death');
     else if (event.type === 'loot' && (event.rarity === 'legendary' || event.rarity === 'unique' || event.rarity === 'mythic')) haptic('legendary');
   }
 
@@ -2113,7 +2122,7 @@ export class Game {
     // A prompt that cannot be used right now says why instead of the action (A041).
     const blocked =
       target?.kind === 'lockedChest' && (this.ctx.zone?.keycards.size ?? 0) === 0 ? t('interact.blocked.keycard') : target?.kind === 'riftObelisk' && !riftsUnlocked(this.ctx) ? t('interact.blocked.dormant') : null;
-    this.interactPrompt.update(target, this.touchControls.shown ? t('touch.use') : keyLabel(resolveKeybindings(this.settings).pickup[0] ?? 'KeyE'), (x, y, z, out) =>
+    this.interactPrompt.update(target, this.touchControls.shown ? t('touch.use') : actionLabel('pickup'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
       blocked,
     );
@@ -2431,7 +2440,7 @@ export class Game {
       // Everything affecting the player, boons first, above the action bar.
       buffs: playerStatuses(w.get(p, StatusEffects)?.list ?? []),
       exposure: this.ctx.instance ? 0 : sporeExposure(),
-      flares: !this.ctx.instance && this.zone?.def.dark ? { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: keyLabel(resolveKeybindings(this.settings).flare[0] ?? 'F') } : undefined,
+      flares: !this.ctx.instance && this.zone?.def.dark ? { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: actionLabel('flare') } : undefined,
       dead: w.has(p, Dead),
       ...(w.has(p, Dead) ? { deathCause: deathCauseLine(health.lastHitSource, this.ctx.time), deathRecap: deathRecap(health.recentHits, this.ctx.time) } : {}),
       xp: (() => {
@@ -3179,8 +3188,8 @@ export class Game {
     if (patch.reduceFlashing !== undefined) this.renderer.reduceFlashing = patch.reduceFlashing;
     if (patch.reduceFlashing !== undefined) this.mapUi.reduceFlashing = patch.reduceFlashing;
     if (patch.brightness !== undefined) this.renderer.setBrightness(patch.brightness);
-    if (patch.keybindings !== undefined) {
-      this.input.setBindings(resolveKeybindings(this.settings));
+    if (patch.keybindings !== undefined || patch.padBindings !== undefined) {
+      this.input.setBindings(resolveKeybindings(this.settings), resolvePadBindings(this.settings));
       this.refreshHint();
     }
     if (patch.moveMode !== undefined) {
@@ -3223,6 +3232,34 @@ export class Game {
     this.settings.moveMode = mode;
     saveSettings(this.storage, this.settings);
     this.refreshHint();
+  }
+
+  /**
+   * Gamepad (round 3): pad buttons reach `Input` as bound actions, menus take the pad through `focusNav`, the prompts
+   * name pad buttons while the pad was used last, and plugging or unplugging shows a toast (A01-A08).
+   */
+  private setupGamepad(): void {
+    const pad = this.input.gamepad;
+    // A menu owns the pad: its buttons do nothing in the world (and the world sees no held button when it closes).
+    this.input.padBlocked = () => panelStack.top() !== null || !this.playing;
+    setPromptSource({
+      keys: () => resolveKeybindings(this.settings),
+      pad: () => resolvePadBindings(this.settings),
+      padActive: () => pad.lastDevice === 'pad',
+    });
+    focusNav.attach(pad);
+    pad.onDevice((device) => {
+      document.documentElement.classList.toggle('pad-active', device === 'pad');
+      this.refreshHint();
+    });
+    pad.onConnection((event, name, wasActive) => {
+      const short = name.replace(/\s*\(.*$/, '').trim() || t('gamepad.generic');
+      this.toasts.show(t(event === 'connected' ? 'gamepad.connected' : 'gamepad.disconnected', { name: short }), 'info', 2800);
+      // The pad in use went away mid-play: stop the world rather than let the hero stand in a fight.
+      if (event === 'disconnected' && wasActive && this.playing && !this.pauseMenu.pausing) panelStack.open('pause');
+    });
+    setRumbleSink((strong, weak, ms) => pad.rumble(strong, weak, ms));
+    pad.start();
   }
 
   private refreshHint(): void {

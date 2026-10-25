@@ -27,6 +27,11 @@
       "message": "The game hit an error it could not recover from. Your progress was saved if possible. Reload to continue."
     }
   },
+  "gamepad": {
+    "generic": "Controller",
+    "connected": "{name} connected",
+    "disconnected": "{name} disconnected. Game paused."
+  },
   "hud": {
     "bossIntro": "Boss",
     "regionNumber": "Region {n}",
@@ -2760,7 +2765,9 @@
     "danner": {
       "name": "Pvt. Danner",
       "title": "Deserter",
-      "greeting": "Don't shoot. Please. I'm not one of them. Not yet."
+      "greeting": "Don't shoot. Please. I'm not one of them. Not yet.",
+      "greetingLate": "Still no sign of the patrol. The roads went quiet after the first one fell. I am almost starting to believe it.",
+      "greetingEnd": "They say the thing under the world stopped talking. I keep the rifle by the door anyway. Old habit."
     },
     "mara": {
       "name": "Mara Kowal",
@@ -2803,12 +2810,16 @@
     "rhee": {
       "name": "Rhee",
       "title": "Crane operator",
-      "greeting": "Are they gone? Tell me they're gone. I've been up in that cab for nine days."
+      "greeting": "Are they gone? Tell me they're gone. I've been up in that cab for nine days.",
+      "greetingLate": "The furnaces are cooling. Nine days in that cab and I never thought I would miss the noise.",
+      "greetingEnd": "Quiet everywhere now. Whatever was in the machines has gone. I still check the cab before I sleep."
     },
     "lenn": {
       "name": "Brother Lenn",
       "title": "Smelter preacher",
-      "greeting": "You've come to judge me. Good. Somebody should."
+      "greeting": "You've come to judge me. Good. Somebody should.",
+      "greetingLate": "The Choir is silent. I expected to feel forgiven. I only feel tired.",
+      "greetingEnd": "The whole world went quiet and I am still listening for the hymn. Do you think that gets easier?"
     },
     "okafor": {
       "name": "Dr. Amara Okafor",
@@ -2848,12 +2859,16 @@
     "halvorsen": {
       "name": "Dr. Halvorsen",
       "title": "Infected researcher",
-      "greeting": "Don't come closer. I can hear the roots under your feet."
+      "greeting": "Don't come closer. I can hear the roots under your feet.",
+      "greetingLate": "The roots have stopped pressing on the glass. I do not trust it. Quiet is how they start.",
+      "greetingEnd": "No hum, no roots, no voice. If I am cured, nobody told my hands. They still shake."
     },
     "okafor_tree": {
       "name": "Dr. Amara Okafor",
       "title": "At the foot of the Mother Tree",
-      "greeting": "It's still alive. Of course it is. The question is what we do now."
+      "greeting": "It's still alive. Of course it is. The question is what we do now.",
+      "greetingLate": "The Mother Tree is quiet. Whatever you chose, it is done. I am writing it down while it is still raw.",
+      "greetingEnd": "I will teach what happened here, all of it, the choice too. Somebody should know what it cost."
     },
     "brask": {
       "name": "Foreman Hana Brask",
@@ -2886,17 +2901,23 @@
     "okafor_mines": {
       "name": "Dr. Amara Okafor",
       "title": "Followed you below",
-      "greeting": "It's all connected, isn't it? The roots up there reach all the way down here."
+      "greeting": "It's all connected, isn't it? The roots up there reach all the way down here.",
+      "greetingLate": "Station Zero's pumps are running without a tremor now. Somebody will want to know how. I will tell them it was you.",
+      "greetingEnd": "The roots stopped humming when it ended. I still put my ear to the wall some nights."
     },
     "ruiz_mines": {
       "name": "Corporal Ruiz",
       "title": "Followed you below",
-      "greeting": "Burned one monster. Happy to help you put down the man who made them."
+      "greeting": "Burned one monster. Happy to help you put down the man who made them.",
+      "greetingLate": "Governor's gone. Not my war any more, but I will keep the door until the shift changes.",
+      "greetingEnd": "I burned a monster and put down a man. I am done. Mostly. Ask me again tomorrow."
     },
     "whisper_voice": {
       "name": "The Whisper",
       "title": "Heard in the Elder Halls",
-      "greeting": "Closer. I have been saying your name for a long time, and I would like to say it once to your face."
+      "greeting": "Closer. I have been saying your name for a long time, and I would like to say it once to your face.",
+      "greetingLate": "You came back. Good. I was getting used to your footsteps, and I would be sorry to lose them.",
+      "greetingEnd": "Quieter, now. Do you hear? That is what it sounds like when something finally stops asking."
     },
     "vasquez": {
       "name": "Teo Vasquez",
@@ -2947,12 +2968,15 @@
     "tam": {
       "name": "Foreman Tam's Daughter",
       "title": "Station Zero",
-      "greeting": "They read his name out in the hub. I never thought I would hear it again. I will stay and keep the lamps."
+      "greeting": "They read his name out in the hub. I never thought I would hear it again. I will stay and keep the lamps.",
+      "greetingLate": "Dad's ledger is on the wall of the hub, you know. People stop to read it. Nobody laughs.",
+      "greetingEnd": "Everything he wrote is true now. Everyone knows. I think he would have liked that."
     },
     "wren": {
       "name": "Wren the Scribe",
       "title": "The Last Camp",
-      "greeting": "I copy what the letters say, in case the paper goes. Someone, up there, should be able to read this."
+      "greeting": "I copy what the letters say, in case the paper goes. Someone, up there, should be able to read this.",
+      "greetingEnd": "I copied every word you brought me. Somebody, someday, will read it and know how it ended."
     }
   },
   "quests": {
@@ -4421,6 +4445,8 @@
       "title": "Codex of Power ({n}/{total})",
       "hint": "Clear a dungeon for the first time to unlock its aspects for every character. Select a rare or legendary item to imprint one, as often as you like.",
       "locked": "Locked: clear {dungeon}",
+      "dungeonIn": "{dungeon} ({region})",
+      "next": "Aspects still missing. Clear: {list}.",
       "lockedTitle": "Locked ({n})",
       "progress": "{done} of {total} aspects unlocked",
       "imprint": "Imprint ({gold} gold)",
