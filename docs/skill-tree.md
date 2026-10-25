@@ -37,10 +37,14 @@ Key passives: **Reactor Core** (×25 % damage at ≥ 70 % Heat, overheat 0.5 s s
 Tree nodes, aspects and uniques share one small set of effects (`src/data/effects.ts`):
 - `stat` — adds to a character stat (same keys as item affixes).
 - `damage` — global damage bonus, additive or multiplicative, optionally conditional
-  (target: vulnerable, stunned, burning, elite …; attacker: `highResource` ≥ 70 %, `hasBarrier`).
+  (target: vulnerable, stunned, burning, elite, `corrupted` (infected and lumen families) …; attacker:
+  `highResource` ≥ 70 %, `hasBarrier`).
 - `skillMod` — changes one skill: `mul` / `add` / `set` a field (coefficient, radius, range, arc,
   cooldown, cost, gain, knockback, cast time, landing radius/coefficient, barrier, heal), `addApply`
   (extra status), `hazard` (burning/poison ground area), `damage` (bonus for that skill only).
+  Lightbearer adds `maxGuardians` (Guardian Light count) and `allyHealFraction` (sanctum heal per pulse).
+  Nested coefficients (sanctum `impact`, guardian `bolt`, allyArea `enemyImpact`) are reached by the same
+  `mul` / `add` on `coefficient`, so one modifier scales the whole skill.
 - `overheat` — seconds of grace before overheating and a multiplier on overheat damage.
 
 A skill is compiled as `(base + Σadd) × (1 + Σmul)`, then `set` overrides, then rank scaling.

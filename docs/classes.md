@@ -8,6 +8,7 @@ The tree rules, effects vocabulary, aspects and uniques are described in [skill-
 | Bastion | Strength | Heat: built by hitting and being hit, decays out of combat, overheats at max | 220 (+14/lvl) | 60 | 5.5 | heavy melee |
 | Spectre | Dexterity | Focus: +4/s always, +4 per crit, +10 per dodged hit | 170 (+11/lvl) | 30 | 6.2 | ranged, traps, blades |
 | Xenomant | Intelligence | Biomass: +8 when an enemy dies within 14 m, basics +5/+6, rots slowly out of combat | 180 (+12/lvl) | 35 | 5.8 | minions, disease, melee leech |
+| Lightbearer | Intelligence | Devotion: +3/s always, +0.5 per 1 % of an ally's max life healed or shielded (overheal excluded) | 190 (+12/lvl) | 45 | 5.8 | support priest who still deals damage |
 
 ## Spectre skills
 | Skill | Branch | Cost / CD | What it does |
@@ -80,3 +81,60 @@ Ancient. Uniques: **Mother of Spores** (bio-focus: Spore Dart bursts into a spor
 - Poison now stacks to 10; a full stack replaces its weakest instance.
 - Enemy toxic resistance lowered (colonist 30 → 10 %, spore carrier 50 → 25 %) so Xenomant isn't
   crippled in the first zone. The balance simulator uses a neutral dummy (armor 30, no resistances).
+
+## Lightbearer skills
+| Skill | Branch | Cost / CD | What it does |
+|---|---|---|---|
+| Censer Strike | Basic | +6 Devotion | 120° melee arc, 0.9×, corrupted +25 %, knockback |
+| Holy Light | Basic | +5 Devotion | seeking mote (homes at 420°/s within 7 m), 0.45× energy, corrupted +50 % |
+| Heal | Core | 25 Devotion, CD 1.5 | heals you and allies within 8 m for 15 % of their life; 6 m energy burst (1.8×) on corrupted enemies only |
+| Magnus Exorcismus | Core | 35 Devotion, CD 2 | holy sigil at the cursor (12 m), radius 4.5 m, lasts 4.8 s, pulses every 0.8 s (six pulses, the first at once), 0.65× each, corrupted +80 % |
+| Kyrie Eleison | Defensive | +10 Devotion, CD 14 | barrier of 25 % life for 6 s on you and allies within 10 m |
+| Sanctuary | Defensive | CD 20 | 5 m of holy ground for 7 s: allies recover 4 % life each second, enemies take 0.35× each second (corrupted ×2) |
+| Blessing | Tactical | +15 Devotion, CD 16 | 12 m: you and allies get Blessed for 10 s (+20 % damage, 12 % faster moves and casts); removes stuns and slows |
+| Lex Aeterna | Tactical | 10 Devotion, CD 8 | 0.3× burst on enemies at the cursor (3.5 m); each one's next hit deals double damage (Lex Aeterna mark, 6 s) |
+| Guardian Light | Mastery | 20 Devotion, CD 1 | summons a hovering light for 25 s (up to 2) with 40 % of your life; shoots 0.4× every 0.9 s within 11 m (corrupted +50 %); heals 3 % of life every 3 s within 6 m |
+| Benediction | Ultimate | CD 60 | 12 m: heals 30 % of life and cleanses allies, who cannot die for 8 s; enemies within 7 m take 3× and are stunned 1.2 s (corrupted +60 %), knocked back 2 m |
+
+Key passives (choose one):
+- **Devout** (healer): Heal, Kyrie Eleison and Sanctuary are 35 % stronger (heal, barrier, heal), Devotion builds 15 % faster.
+- **Zealot** (exorcist): ranged attacks +15 % damage (multiplicative), +25 % more against corrupted enemies;
+  Magnus Exorcismus pulses 20 % faster; Lex Aeterna's cooldown is 25 % shorter.
+- **Shepherd** (shepherd): one more Guardian Light (2 → 3), with +40 % life, +25 % duration and 15 % faster
+  shots; Blessing reaches 20 % farther; 5 % less damage taken.
+
+Three intended builds:
+- **Healer**: Heal, Sanctuary, Kyrie Eleison, Benediction; Devout.
+- **Exorcist**: Magnus Exorcismus, Lex Aeterna, Holy Light; Zealot.
+- **Shepherd**: Guardian Light, Blessing, Kyrie Eleison; Shepherd.
+
+Aspects: Merciful, Warding, Hallowed, Litanist's, Judge's, Sentinel's, Radiant, Fervent, Daybreak's.
+Uniques: **Dawnbringer** (sun staff: Holy Light bursts on impact, leaves burning ground 3 s, 20 % less
+damage per hit), **Halo of the Penitent** (combat helm: Sanctuary lasts twice as long and covers 40 % more
+area, its cooldown is 50 % longer).
+
+New bases: **Censer Mace** (weapon, 22–27 weapon damage, 12–18 life, 2 sockets), **Sun Staff** (weapon,
+25–31 weapon damage, +5 % Devotion gain, 2 sockets), **Reliquary Lantern** (off-hand, +6 % Devotion gain,
+10–16 life, 1 socket).
+
+## Mechanics added for Lightbearer
+- **allyArea** (`kind: 'allyArea'`): heals, shields or buffs allies in an area around the caster, the caster
+  included. Optional `enemyImpact` strikes enemies in a radius; `corruptedOnly` limits that strike to the
+  corrupted families.
+- **sanctum** (`kind: 'sanctum'`): a ground area that pulses for its duration; the first pulse is immediate.
+  Each pulse heals allies (`allyHealFraction`) and hits enemies with its `impact`.
+- **guardian** (`kind: 'guardian'`): a summoned hovering light with a Guardian marker. It runs `MinionAI` at
+  range, fires its `bolt`, and pulses heals (`healPulse`). It does not count toward Raise Corpse's cap. Its
+  model is the existing `light_mote` with a `halo` look.
+- **Corrupted families** (`infected`, `lumen`, `CORRUPTED_FAMILIES` in `src/data/schemas.ts`) are read through
+  `Impact.corruptedMul` and the `corrupted` condition (target).
+- **Data-driven buff fields** on statuses instead of per-status code: `damageMul`, `hasteMul`,
+  `damageTakenMul` and `cheatDeath`.
+- **Consume-on-hit marks**: the Lex Aeterna mark is used up by the next hit (×2). Damage-over-time ticks do
+  not use it.
+- **Devotion** is fed by `healAlly` and `applyAllyStatus`: the healing or shielding of allies counts for the
+  resource, and `resourceGen` (Devout, Piety, the bases) scales it.
+- **Weapon look**: the censer and staff are drawn procedurally (a lantern-censer), with no separate model.
+- **Effects**: `holy` and `holyRing` vfx, tinted by the skill's `color` (`#fff2b0`, `#ffe9a8`, `#bfe4ff`,
+  `#ffe08a`, `#fff6d8`).
+- **Skill fields** added: `maxGuardians`, `allyHealFraction` (see [skill-tree.md](skill-tree.md)).
