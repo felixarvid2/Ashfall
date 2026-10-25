@@ -68,7 +68,7 @@ export function renderItemTooltip(
   item: Item,
   classId: string,
   opts: {
-    equipped?: boolean;
+    equipped?: boolean | undefined;
     comparison?: Comparison | null;
     /** The sheet pins icon, name, type and power above the scrolling body. */
     noHeader?: boolean;
@@ -78,13 +78,13 @@ export function renderItemTooltip(
      */
     targets?: CompareTarget[];
     /** The target compared first (its delta goes in the header). */
-    defaultSlot?: Slot;
+    defaultSlot?: Slot | undefined;
     /** Print the possible roll range after each affix (B009). */
     ranges?: boolean;
     /** Where the item's aspect stands, as a status line under it (B017). */
-    aspectStatus?: 'codex' | 'cache' | 'new';
+    aspectStatus?: 'codex' | 'cache' | 'new' | undefined;
     /** Extra muted lines at the very end, e.g. key hints (B011/B018). */
-    hints?: string[];
+    hints?: string[] | undefined;
   } = {},
 ): HTMLElement {
   const root = el('div', 'item-tip');
@@ -323,11 +323,11 @@ export interface CompareTarget {
 
 export interface ItemSheetOptions {
   /** The item is worn: no comparison, no salvage line. */
-  equipped?: boolean;
+  equipped?: boolean | undefined;
   /** Where the item could go; empty for crystals and items that are not gear. */
   targets?: CompareTarget[];
   /** The target compared first. */
-  defaultSlot?: Slot;
+  defaultSlot?: Slot | undefined;
   /** Extra lines under the item, e.g. what socketing would add. */
   extra?: HTMLElement[];
 }

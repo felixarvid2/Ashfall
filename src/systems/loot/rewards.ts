@@ -136,7 +136,7 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
     if (req.rarity) {
       for (let n = 0; n < (req.count ?? 1); n++) {
         const itemPower = req.itemPower ?? itemPowerFor(req.level, ctx.loot.rng) + tier.itemPower;
-        drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, nameOf, greaterBonus: tier.greaterChance }));
+        drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, ...(nameOf && { nameOf }), greaterBonus: tier.greaterChance }));
       }
     }
     const unique = req.unique ? UNIQUE_DEFS.get(req.unique) : undefined;

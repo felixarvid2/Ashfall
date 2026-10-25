@@ -26,8 +26,8 @@ export interface EnemyBarInfo {
   /** The enemy the target frame shows. */
   targeted?: boolean;
   /** Elites: the plate's name, its colour and its affixes. */
-  name?: string;
-  color?: string;
+  name?: string | undefined;
+  color?: string | undefined;
   affixes?: { id: string; name: string }[];
 }
 

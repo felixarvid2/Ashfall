@@ -31,7 +31,7 @@ interface TimedFx {
   life: number;
   active: boolean;
   update: (fx: TimedFx, t: number) => void;
-  owner?: Entity;
+  owner?: Entity | undefined;
 }
 
 /** A warning colour that still shows on pale ground: saturated, and no lighter than mid-tone. */
@@ -883,7 +883,7 @@ export class VfxSystem {
           const edge = band !== null ? flat(new THREE.RingGeometry(band, band + 0.02, 64)) : this.ringGeo;
           group.add(new THREE.Mesh(fill, mat), new THREE.Mesh(edge, ringMat));
           group.children.forEach((c) => (c.renderOrder = 3));
-          return { group, materials: [mat, ringMat], geometries: band !== null ? [fill, edge] : undefined };
+          return { group, materials: [mat, ringMat], ...(band !== null && { geometries: [fill, edge] }) };
         });
         fx.life = Infinity;
         fx.update = () => {};

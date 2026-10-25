@@ -67,7 +67,7 @@ export interface GameContext {
   /** Every zone this character has visited, by id (the current one included). */
   zones?: Map<string, ZoneRuntime>;
   /** The dungeon or bunker the player is in, if any. */
-  instance?: import('../world/instance').InstanceRuntime;
+  instance?: import('../world/instance').InstanceRuntime | undefined;
   /** Quest log and the signals systems send it (kills, interactions, objectives). */
   quests?: import('../systems/quests').QuestRuntime;
   /** Account-wide progress (Echo Relics, Restoration); absent in headless sims. */

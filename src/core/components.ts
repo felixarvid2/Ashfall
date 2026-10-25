@@ -114,7 +114,7 @@ export interface CombatStats {
   /** Bonus on top of 1× for crits: 0.5 → crits deal 1.5×. */
   critDamage: number;
   armor: number;
-  resist: Partial<Record<DamageType, number>>;
+  resist: Partial<Record<DamageType, number | undefined>>;
   /** Additive "+x% damage" bonuses — summed into one bucket. */
   additive: Bonus[];
   /** Multiplicative "×x% damage" bonuses — each multiplies separately. */

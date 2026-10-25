@@ -1059,6 +1059,7 @@ export class Game {
       try {
         const data = this.saves.read(slotKey(index));
         if (!data) return { index, character: null };
+        const gear = meanItemPower(Object.values(data.inventory?.equipped ?? {}).filter((i): i is NonNullable<typeof i> => !!i));
         return {
           index,
           character: {
@@ -1067,7 +1068,7 @@ export class Game {
             level: data.progression.level,
             savedAt: data.savedAt,
             ...(hasZone(data.world.zone) && { zoneKey: zoneDef(data.world.zone).key }),
-            ...gearField(meanItemPower(Object.values(data.inventory?.equipped ?? {}).filter((i): i is NonNullable<typeof i> => !!i))),
+            ...(gear !== undefined && { gear }),
           },
         };
       } catch (err) {
@@ -2440,7 +2441,7 @@ export class Game {
       // Everything affecting the player, boons first, above the action bar.
       buffs: playerStatuses(w.get(p, StatusEffects)?.list ?? []),
       exposure: this.ctx.instance ? 0 : sporeExposure(),
-      flares: !this.ctx.instance && this.zone?.def.dark ? { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: actionLabel('flare') } : undefined,
+      ...(!this.ctx.instance && this.zone?.def.dark && { flares: { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: actionLabel('flare') } }),
       dead: w.has(p, Dead),
       ...(w.has(p, Dead) ? { deathCause: deathCauseLine(health.lastHitSource, this.ctx.time), deathRecap: deathRecap(health.recentHits, this.ctx.time) } : {}),
       xp: (() => {

@@ -282,7 +282,7 @@ export function rollDrops(
     if (!rng.chance(table.itemChance)) continue;
     const ip = itemPowerFor(level, rng) + (tier?.itemPower ?? 0);
     const rarity = rollRarity(rng, table.rarityBias, table.minRarity, tier?.rareDrops);
-    items.push(generateItem(rng, { itemPower: ip, classId, uid: nextUid(), rarity, nameOf, greaterBonus: tier?.greaterChance ?? 0 }));
+    items.push(generateItem(rng, { itemPower: ip, classId, uid: nextUid(), rarity, ...(nameOf && { nameOf }), greaterBonus: tier?.greaterChance ?? 0 }));
   }
   if (rng.chance(table.crystalChance)) items.push(generateCrystal(rng, itemPowerFor(level, rng) + (tier?.itemPower ?? 0), nextUid()));
   const gold = rng.chance(table.goldChance) ? Math.round(rng.range(table.gold[0], table.gold[1]) * level) : 0;

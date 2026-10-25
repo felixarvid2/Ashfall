@@ -598,7 +598,7 @@ export class InventoryPanel {
   }
 
   /** Corner badges (P050): item power, upgrade arrow, "new" dot, selection check. */
-  private decorate(cell: HTMLElement, item: Item, o: { power?: boolean; sign?: number; isNew?: boolean; check?: boolean }): void {
+  private decorate(cell: HTMLElement, item: Item, o: { power?: boolean; sign?: number | undefined; isNew?: boolean; check?: boolean | undefined }): void {
     if (o.power && !item.crystal) cell.appendChild(el('span', 'cell-power', String(item.itemPower)));
     if (o.sign) {
       const up = o.sign > 0;
