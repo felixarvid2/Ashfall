@@ -545,6 +545,12 @@ the L30 exorcist (`k.zealot`, Rapid, Radiant, Litany) on the corrupted dummy unl
   under the 6:30 floor. The cost is a flat early-game throttle (the first sigils are Devotion-limited) and leaves the
   per-pulse numbers and the L30 coefficients alone; a coefficient of 0.5 gave the same band but costs 17 % of every
   later pulse. Exorcist L10 (bot) seeds a/b/c 8:10/6:18/7:01 to 8:48/7:23/6:53; seeds d/e/f now 7:41/7:02/7:18.
+- **Level-up shove retune (balance:check).** The shove (knockback and stun on level-up) moved the bot's timings:
+  healer seed a 14:06 (ceiling 14:00), exorcist seed b 6:27 (floor 6:30). The bot's L10 time is noisy in every
+  lever (Magnus cost 41-45 swings seed b between 6:15 and 8:08), so the band is met by a small shift of three
+  numbers rather than one: Holy Light 0.6 to 0.56 (about 2.2 per second; the exorcist's early filler, so it is slower
+  early), Magnus Exorcismus cost 40 to 41, and Heal's corrupted burst 2.2 to 2.8 (the healer's early damage). Exorcist
+  L10 seeds a/b/c/d 7:44/7:31/7:46/7:30; healer a/b/c/d 13:16/10:47/11:29/13:33; Shepherd 12:56/11:32/11:43/11:18.
 
 ### 2026-10-25 — Balance pass for Bastion, Spectre and Xenomant (G009-G017, G025)
 Measured with `npm run sim` (new `--dummy`, `--pack`, `--filter` and ten L30 builds) and `npm run play`; the table is

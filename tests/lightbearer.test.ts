@@ -672,7 +672,7 @@ describe('balance pass (G001-G008)', () => {
     const e = hl.effect;
     if (e.kind !== 'projectile') throw new Error('Holy Light is a projectile');
     const perSecond = e.coefficient / (hl.castTime + hl.recovery);
-    expect(perSecond).toBeGreaterThanOrEqual(2.2);
+    expect(perSecond).toBeGreaterThanOrEqual(2.1);
     expect(perSecond).toBeLessThan(2.71); // still under Quick Shot
     expect(e.homing).toBeDefined();
   });
