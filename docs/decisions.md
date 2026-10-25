@@ -541,6 +541,10 @@ the L30 exorcist (`k.zealot`, Rapid, Radiant, Litany) on the corrupted dummy unl
   Not met: the L10 healer sim row is 100, not 135.
 - **Guardian Light is worth a cast.** Bolt 0.4 to 0.7, shots every 0.8 s, bolts burst in 1.5 m. L30 shepherd 220 to
   425 single target; L15 sim row 118 to 185.
+- **Magnus Exorcismus costs 40 Devotion (was 35).** After the pass above the bot exorcist reached L10 at 6:18 on seed b,
+  under the 6:30 floor. The cost is a flat early-game throttle (the first sigils are Devotion-limited) and leaves the
+  per-pulse numbers and the L30 coefficients alone; a coefficient of 0.5 gave the same band but costs 17 % of every
+  later pulse. Exorcist L10 (bot) seeds a/b/c 8:10/6:18/7:01 to 8:48/7:23/6:53; seeds d/e/f now 7:41/7:02/7:18.
 
 ### 2026-10-25 — Balance pass for Bastion, Spectre and Xenomant (G009-G017, G025)
 Measured with `npm run sim` (new `--dummy`, `--pack`, `--filter` and ten L30 builds) and `npm run play`; the table is

@@ -83,7 +83,7 @@ export const LIGHTBEARER_SKILLS: Skill[] = [
     classId: 'lightbearer',
     category: 'core',
     cooldown: 2,
-    resourceCost: 35,
+    resourceCost: 40,
     castTime: 0.3,
     recovery: 0.25,
     effect: {

@@ -102,7 +102,7 @@ Ancient. Uniques: **Mother of Spores** (bio-focus: Spore Dart bursts into a spor
 | Censer Strike | Basic | +4 Devotion | 120° melee arc, 1.15×, corrupted +20 %, knockback |
 | Holy Light | Basic | +3 Devotion | seeking mote (homes at 420°/s within 7 m), 0.6× energy, recovery 0.14 s (about 2.3× per second), corrupted +30 % |
 | Heal | Core | 35 Devotion, CD 2.5 | heals you and allies within 8 m for 15 % of their life; 6 m energy burst (2.2×) on corrupted enemies only |
-| Magnus Exorcismus | Core | 35 Devotion, CD 2 | holy sigil at the cursor (12 m), radius 4.5 m, lasts 4.8 s, pulses every 0.8 s (six pulses, the first at once; never faster than every 0.35 s after modifiers), 0.6× each, corrupted +50 %; two sigils per owner at most, a third cast removes the oldest |
+| Magnus Exorcismus | Core | 40 Devotion, CD 2 | holy sigil at the cursor (12 m), radius 4.5 m, lasts 4.8 s, pulses every 0.8 s (six pulses, the first at once; never faster than every 0.35 s after modifiers), 0.6× each, corrupted +50 %; two sigils per owner at most, a third cast removes the oldest |
 | Kyrie Eleison | Defensive | +10 Devotion, CD 14 | barrier of 25 % life for 6 s on you and allies within 10 m |
 | Sanctuary | Defensive | CD 20 | 5 m of holy ground for 7 s: allies recover 4 % life each second, enemies take 0.35× each second (corrupted ×1.6); one zone per owner (a recast replaces it) and duration bonuses stop at 17.5 s (2.5×) |
 | Blessing | Tactical | +15 Devotion, CD 16 | 12 m: you and allies get Blessed for 10 s (+20 % damage, 12 % faster moves and casts); removes stuns and slows |
