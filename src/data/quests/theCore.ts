@@ -36,6 +36,11 @@ const EMBER = p(258, 128);
 const SHAFT_MOUTH = p(-134, -196);
 const EAST_MACHINERY = p(128, -184);
 const BORDERLAND = p(0, -232);
+/** The empty cab's way down the east drift from the crane to the camp road (sq.empty_cab). */
+export const EMPTY_CAB_PATH: [number, number][] = [
+  [EAST_MACHINERY.x - 6, EAST_MACHINERY.z + 3],
+  ...[cr(100, -212), cr(72, -236), cr(40, -216), cr(8, -205)],
+];
 
 /** The Last Camp's people; −z is screen-up. Old friends from every hub, and the two who held the camp. */
 export const CORE_NPCS: NpcInput[] = [
@@ -188,9 +193,9 @@ export const CORE_QUESTS: QuestInput[] = [
     after: ['mq.bridges_of_light'],
     level: 44,
     steps: [
-      { kind: 'reach', ...FIRE, radius: 22 },
+      // C014: the song comes out of the Refinery Mirror; Lenn waits in the fire memory behind it.
+      { kind: 'objective', id: 'core.mirror.1', ...p(150, 8) },
       { kind: 'kill', count: 1, spawn: { enemy: 'absorbed_lenn', x: FIRE.x, z: FIRE.z, name: 'enemies.absorbed.lenn.name' } },
-      { kind: 'interact', count: 1, objects: [{ id: 'lenn.hymnal', x: FIRE.x + 4, z: FIRE.z - 5, asset: 'prop.echo_relic', scale: 0.3 }] },
       { kind: 'talk', npc: 'gus_core' },
     ],
     rewards: { xp: 4500, gold: 1280, item: 'rare', restoration: 1 },
@@ -203,9 +208,9 @@ export const CORE_QUESTS: QuestInput[] = [
     after: ['mq.last_camp'],
     level: 41,
     steps: [
-      { kind: 'reach', ...EAST_MACHINERY, radius: 22 },
+      // C014: stop Rhee, then take his empty cab down the east drift to the camp road.
       { kind: 'kill', count: 1, spawn: { enemy: 'absorbed_rhee', x: EAST_MACHINERY.x, z: EAST_MACHINERY.z, name: 'enemies.absorbed.rhee.name' } },
-      { kind: 'interact', count: 1, objects: [{ id: 'rhee.controls', x: EAST_MACHINERY.x - 5, z: EAST_MACHINERY.z + 3, asset: 'prop.control_terminal', scale: 0.9 }] },
+      { kind: 'escort', asset: 'prop.water_tanker', path: EMPTY_CAB_PATH, life: 2600, speed: 3.2 },
       { kind: 'talk', npc: 'gus_core' },
     ],
     rewards: { xp: 3350, gold: 980, item: 'rare', restoration: 1 },
@@ -233,9 +238,18 @@ export const CORE_QUESTS: QuestInput[] = [
     after: ['mq.bridges_of_light'],
     level: 44,
     steps: [
-      { kind: 'reach', ...DARK, radius: 22 },
-      { kind: 'kill', count: 1, spawn: { enemy: 'absorbed_ostrow', x: DARK.x, z: DARK.z, name: 'enemies.absorbed.ostrow.name' } },
-      { kind: 'interact', count: 1, objects: [{ id: 'ostrow.lamp', x: DARK.x + 4, z: DARK.z + 5, asset: 'prop.emergency_light', scale: 0.6 }] },
+      // C014: light four lamps in the dark memory, then hold it: Ostrow comes with a wave of shades.
+      {
+        kind: 'interact',
+        count: 4,
+        objects: [
+          { id: 'ostrow.lamp.a', x: DARK.x - 16, z: DARK.z - 10, asset: 'prop.emergency_light', scale: 0.6 },
+          { id: 'ostrow.lamp.b', x: DARK.x + 14, z: DARK.z - 12, asset: 'prop.emergency_light', scale: 0.6 },
+          { id: 'ostrow.lamp.c', x: DARK.x + 18, z: DARK.z + 10, asset: 'prop.emergency_light', scale: 0.6 },
+          { id: 'ostrow.lamp.d', x: DARK.x - 12, z: DARK.z + 16, asset: 'prop.emergency_light', scale: 0.6 },
+        ],
+      },
+      { kind: 'kill', count: 1, spawn: { enemy: 'absorbed_ostrow', x: DARK.x, z: DARK.z, name: 'enemies.absorbed.ostrow.name', escorts: 4 } },
       { kind: 'talk', npc: 'brask_core' },
     ],
     rewards: { xp: 4400, gold: 1260, item: 'rare', restoration: 1 },

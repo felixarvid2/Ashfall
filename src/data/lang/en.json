@@ -3811,27 +3811,26 @@
         "title": "The Pyre Song",
         "summary": "Brother Lenn sang at the burnings, then against them. Now a singer is heard in the fire memory, off-key.",
         "steps": {
-          "0": "Follow the singing to the fire memory",
-          "1": "Silence Brother Lenn",
-          "2": "Take his hymnal",
-          "3": "Return to Gus Abara"
+          "0": "Clear the Refinery Mirror, where the singing comes from",
+          "1": "Silence Brother Lenn in the fire memory and take his hymnal",
+          "2": "Return to Gus Abara"
         },
-        "offer": "Brother Lenn. The Smelter preacher on Foundry Road. You decided what to do with him. After that he made a decision of his own.\nA runner heard singing from the fire memory, the one in the Halls where the furnaces never go out. A hymn, off-key. It's the old burning song.\nGo and let him stop. A man shouldn't have to sing that forever.",
-        "talk3": "A hymnal with the margins burnt. He sang so he wouldn't hear them, he told me once.\nI hope you gave him quiet. If he's anywhere, I hope it's quiet.\nHere. His share of an old debt. He'd have wanted it spent on something useful.",
+        "offer": "Brother Lenn. The Smelter preacher on Foundry Road. You decided what to do with him. After that he made a decision of his own.\nA runner heard singing from the fire memory, the one in the Halls where the furnaces never go out. A hymn, off-key. It's the old burning song.\nThe song comes from inside the Refinery Mirror, so start there. Then go and let him stop. A man shouldn't have to sing that forever.",
+        "talk2": "A hymnal with the margins burnt. He sang so he wouldn't hear them, he told me once.\nI hope you gave him quiet. If he's anywhere, I hope it's quiet.\nHere. His share of an old debt. He'd have wanted it spent on something useful.",
         "done": "The fire memory is quiet. Somebody had to end the song."
       },
       "empty_cab": {
         "title": "The Empty Cab",
         "summary": "Rhee swore he would never leave his crane. A crane has appeared in the Borderland machinery, and its cab light is on.",
         "steps": {
-          "0": "Reach the crane in the Borderland machinery",
-          "1": "Stop Rhee",
-          "2": "Shut down the crane's controls",
-          "3": "Return to Gus Abara"
+          "0": "Stop Rhee at the crane in the Borderland machinery",
+          "1": "Escort the empty cab down the east drift",
+          "2": "Return to Gus Abara"
         },
-        "offer": "Rhee. Ran the Refinery crane eleven years. Said he'd leave the cab when they pried his fingers off the levers.\nThere's a crane in the Borderland machinery that wasn't there yesterday. The cab light is on. Lumen copies what it loves.\nGo see if the cab's occupied. If it is, you'll know what to do.",
-        "talk3": "Eleven years, and he finally got out of the cab. Just not the way I'd hoped.\nI'll write him down as retired. Crane operators don't get a dinner. Take this instead.",
-        "done": "The cab light goes out. Rhee's shift is over."
+        "offer": "Rhee. Ran the Refinery crane eleven years. Said he'd leave the cab when they pried his fingers off the levers.\nThere's a crane in the Borderland machinery that wasn't there yesterday. The cab light is on. Lumen copies what it loves.\nGo see if the cab's occupied. If it is, you'll know what to do. Then bring the cab down the east drift to the camp road. It only rolls while somebody walks beside it, and Lumen will want it back.",
+        "talk2": "Eleven years, and he finally got out of the cab. Just not the way I'd hoped.\nI'll write him down as retired. Crane operators don't get a dinner. Take this instead.",
+        "done": "The cab light goes out. Rhee's shift is over.",
+        "escortName": "Rhee's Cab"
       },
       "last_samples": {
         "title": "The Last Samples",
@@ -3850,13 +3849,12 @@
         "title": "The Fifth Lamp",
         "summary": "Four lamps hang by the lift at Station Zero, but the survey crew had a fifth. A lamp has been seen swinging in the dark memory.",
         "steps": {
-          "0": "Look for Ostrow in the dark memory",
-          "1": "Lay Ostrow to rest",
-          "2": "Take his lamp",
-          "3": "Return to Foreman Brask"
+          "0": "Light the four lamps in the dark memory ({n}/{count})",
+          "1": "Hold the dark memory and lay Ostrow to rest",
+          "2": "Return to Foreman Brask"
         },
-        "offer": "Four lamps by the lift. You brought them back yourself. What I never told you: the crew had a lead, Ostrow. He stayed on the radio. When the line went quiet I told myself he'd gone up the shaft. I hung four lamps and left a hook empty.\nA runner swears there's a lamp swinging in the dark memory. Swinging like a man walking.\nIf it's him, I'll light the fifth myself.",
-        "talk3": "That's his lamp. Dented where he dropped it the day the quake came.\nI'll hang it on the fifth hook. Every shift change I'll say five names. I'd like to say it's because I'm sentimental. It's because I'm stubborn.",
+        "offer": "Four lamps by the lift. You brought them back yourself. What I never told you: the crew had a lead, Ostrow. He stayed on the radio. When the line went quiet I told myself he'd gone up the shaft. I hung four lamps and left a hook empty.\nA runner swears there's a lamp swinging in the dark memory. Swinging like a man walking.\nThere are four old lamp posts in that memory. Light them, so he can see where he's going. Whatever follows him in will see you too.\nIf it's him, I'll light the fifth myself.",
+        "talk2": "That's his lamp. Dented where he dropped it the day the quake came.\nI'll hang it on the fifth hook. Every shift change I'll say five names. I'd like to say it's because I'm sentimental. It's because I'm stubborn.",
         "done": "The fifth hook holds a lamp. Brask lights it herself."
       },
       "three_mirrors": {
