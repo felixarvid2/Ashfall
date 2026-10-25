@@ -211,7 +211,7 @@ const DECAL = 'seen from directly above, flat top-down view, a single ground dec
 const decal = (key: string, what: string, chroma: 'green' | 'magenta' = 'green', keep?: number): ArtSpec => ({
   key: `decals/${key}`,
   kind: 'decal',
-  keep,
+  ...(keep !== undefined && { keep }),
   prompt: `${what}, ${DECAL} ${chroma === 'green' ? 'pure bright green (#00ff00)' : 'pure bright magenta (#ff00ff)'} background, nothing else, no text, no shadow on the background`,
   w: SQ,
   h: SQ,
@@ -300,4 +300,4 @@ const maps: ArtSpec[] = [
 export const ART: ArtSpec[] = [texture, ...bosses, ...items, ...uniques, ...aspects, ...stats, ...decals, ...vfxExtra, ...paintings, ...maps, ...frames];
 
 /** The extra effect sprites, in the shape the atlas packer expects. */
-export const VFX_EXTRA: SpriteSpec[] = vfxExtra.map((v) => ({ key: v.key.replace('vfx/', ''), prompt: v.prompt, mask: v.mask }));
+export const VFX_EXTRA: SpriteSpec[] = vfxExtra.map((v) => ({ key: v.key.replace('vfx/', ''), prompt: v.prompt, ...(v.mask !== undefined && { mask: v.mask }) }));

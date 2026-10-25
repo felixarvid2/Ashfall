@@ -257,6 +257,10 @@ export interface Knockback {
 export const Knockback = defineComponent<Knockback>('Knockback');
 
 export type AiState = 'idle' | 'chase' | 'windup' | 'recover';
+/**
+ * Runtime slots the AI sets and clears by assignment (`ai.path = undefined`), so the optional ones that are
+ * cleared that way also accept `undefined` explicitly (`delete` would reshape a per-tick object).
+ */
 export interface EnemyAI {
   defId: string;
   state: AiState;
@@ -278,7 +282,7 @@ export interface EnemyAI {
   /** Attack tempo multiplier (boss phases): >1 = faster wind-ups and cooldowns. */
   tempo?: number;
   /** Flamethrower stream: seconds left and time to the next tick. */
-  channel?: number;
+  channel?: number | undefined;
   channelTick?: number;
   /** Front shield: seconds it stays up, and until it can rise again. */
   shieldUp?: number;
@@ -291,7 +295,7 @@ export interface EnemyAI {
   revives?: number;
   reviveCooldown?: number;
   /** The corpse being revived during the wind-up. */
-  reviveTarget?: Entity;
+  reviveTarget?: Entity | undefined;
   // ---- Region 3 behaviours ----
   /** Melee hits that landed (root every Nth). */
   landed?: number;
@@ -305,10 +309,10 @@ export interface EnemyAI {
   reinforceTimer?: number;
   /** Seconds to the next lobbed spore cloud, and the clouds still in the air. */
   cloudTimer?: number;
-  clouds?: { x: number; z: number; t: number }[];
+  clouds?: { x: number; z: number; t: number }[] | undefined;
   // ---- Deep Mines ----
   /** Blind Hound: a noise it is running toward. */
-  investigate?: { x: number; z: number };
+  investigate?: { x: number; z: number } | undefined;
   shieldAllyTimer?: number;
   /** Burrower: underground until it surfaces at the warned spot. */
   burrowed?: boolean;
@@ -325,33 +329,33 @@ export interface EnemyAI {
   domeTimer?: number;
   /** Lumen Giant: its fungi, and when it rises again after falling while they stand. */
   fungi?: Entity[];
-  regrowAt?: number;
+  regrowAt?: number | undefined;
   // ---- The Core ----
   /** Seconds alive (lifespan), and the one-off flags: spoke its line, a blink being prepared. */
   age?: number;
   spoke?: boolean;
   blinkTimer?: number;
-  blinkAt?: { x: number; z: number; t: number; fromX: number; fromZ: number };
+  blinkAt?: { x: number; z: number; t: number; fromX: number; fromZ: number } | undefined;
   /** Things it called in (Absorbed technician's turrets). */
-  spawned?: Entity[];
+  spawned?: Entity[] | undefined;
   /** Seconds to the next Choir pulse. */
   choirTimer?: number;
   // ---- Wayfinding ----
   /** Who it hunted last tick (the navigation system builds a flow field toward each). */
-  chasing?: Entity;
+  chasing?: Entity | undefined;
   /** Where it last saw its target, and when (ctx.time). */
-  lastSeen?: { x: number; z: number; t: number };
+  lastSeen?: { x: number; z: number; t: number } | undefined;
   /** Lost the target: spots still to check, and when it gives up. */
-  search?: { spots: { x: number; z: number }[]; until: number; look: number };
+  search?: { spots: { x: number; z: number }[]; until: number; look: number } | undefined;
   /** When it spotted a target (the "!" above its head). */
   spottedAt?: number;
   /** A* route to a spot that isn't its target, and the goal it was planned for. */
-  path?: { x: number; z: number }[];
+  path?: { x: number; z: number }[] | undefined;
   pathGoal?: { x: number; z: number; t: number };
   /** Stuck check: where a stretch of walking started, how far it meant to go, and a way out. */
-  stuck?: { x: number; z: number; want: number; last: number; escape?: { x: number; z: number; until: number } };
+  stuck?: { x: number; z: number; want: number; last: number; escape?: { x: number; z: number; until: number } | undefined } | undefined;
   /** Where it is heading this tick and why (debug overlay, tests). */
-  intent?: { x: number; z: number; mode: import('../systems/navigation').NavMode };
+  intent?: { x: number; z: number; mode: import('../systems/navigation').NavMode } | undefined;
 }
 export const EnemyAI = defineComponent<EnemyAI>('EnemyAI');
 

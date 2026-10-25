@@ -24,7 +24,7 @@ const SECONDS = 60;
 const NEUTRAL = 'security_trooper';
 
 const clock = (s: number | undefined) => (s === undefined ? 'never' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`);
-const dps = (b: Build, dummy: string | undefined, pack?: number) => simulate(b, SECONDS, 'sim', { dummy, pack }).dps;
+const dps = (b: Build, dummy: string | undefined, pack?: number) => simulate(b, SECONDS, 'sim', { ...(dummy !== undefined && { dummy }), ...(pack !== undefined && { pack }) }).dps;
 const n0 = (v: number) => Math.round(v).toLocaleString('en-US');
 
 export interface BuildRow {
@@ -76,7 +76,7 @@ if (process.argv[1]?.endsWith('balanceReport.ts')) {
     : PLANS.map((plan) => {
         const r = playthrough(plan, { maxMinutes: 20, seed });
         console.log(`${plan.name}: L10 ${clock(r.levelTimes[10])}, ${r.deaths} deaths`);
-        return { name: plan.name, l10: r.levelTimes[10], deaths: r.deaths };
+        return { name: plan.name, ...(r.levelTimes[10] !== undefined && { l10: r.levelTimes[10] }), deaths: r.deaths };
       });
   const rows = buildRows();
   for (const r of rows) console.log(`${r.name}: ${n0(r.corrupted)} / ${n0(r.neutral)} / ${n0(r.pack)}`);

@@ -765,7 +765,7 @@ export class Game {
       derived: this.world.req(this.player, DerivedStats),
       health: this.world.req(this.player, Health),
       resourceMax: this.world.req(this.player, Resource).max,
-      name: this.characterName || undefined,
+      ...(this.characterName && { name: this.characterName }),
       classId: this.world.req(this.player, SkillUser).classId,
       resource: (() => {
         const r = this.world.req(this.player, Resource);
@@ -778,7 +778,7 @@ export class Game {
         return { used: grid.filter((i) => i !== null).length, max: grid.length };
       })(),
       portraitUrl: this.renderer.assets.iconUrl(`icon.portrait_${this.world.req(this.player, SkillUser).classId}`, import.meta.env.BASE_URL),
-      feats: this.ctx.account ? this.featRows(this.ctx.account) : undefined,
+      ...(this.ctx.account && { feats: this.featRows(this.ctx.account) }),
     }), {
         wearTitle: (id) => {
           if (this.ctx.account && setTitle(this.ctx.account, id)) saveAccount(this.storage, this.ctx.account);
@@ -1066,8 +1066,8 @@ export class Game {
             classId: data.character.classId,
             level: data.progression.level,
             savedAt: data.savedAt,
-            zoneKey: hasZone(data.world.zone) ? zoneDef(data.world.zone).key : undefined,
-            gear: meanItemPower(Object.values(data.inventory?.equipped ?? {}).filter((i): i is NonNullable<typeof i> => !!i)),
+            ...(hasZone(data.world.zone) && { zoneKey: zoneDef(data.world.zone).key }),
+            ...gearField(meanItemPower(Object.values(data.inventory?.equipped ?? {}).filter((i): i is NonNullable<typeof i> => !!i))),
           },
         };
       } catch (err) {

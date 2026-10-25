@@ -68,7 +68,7 @@ export class MeshyClient {
         res = await fetch(BASE + path, {
           method,
           headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
-          body: body === undefined ? undefined : JSON.stringify(body),
+          ...(body !== undefined && { body: JSON.stringify(body) }),
         });
       } catch (err) {
         if (attempt >= 5) throw err;
