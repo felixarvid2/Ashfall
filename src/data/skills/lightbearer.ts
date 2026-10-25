@@ -42,7 +42,7 @@ export const LIGHTBEARER_SKILLS: Skill[] = [
       speed: 26,
       maxRange: 15,
       radius: 0.35,
-      coefficient: 0.56,
+      coefficient: 0.52,
       damageType: 'energy',
       delivery: 'ranged',
       corruptedMul: 1.3,
