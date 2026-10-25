@@ -23,6 +23,8 @@ export class PauseMenu {
   private readonly resume: HTMLButtonElement;
   /** Settings was opened from this menu: the game stays paused and the menu comes back afterwards. */
   private held = false;
+  /** Settings has opened since the menu handed over to it (a lazy panel opens a moment after `open`). */
+  private settingsSeen = false;
 
   constructor(parent: HTMLElement, private readonly deps: PauseMenuDeps) {
     this.root = document.createElement('div');
@@ -41,6 +43,7 @@ export class PauseMenu {
     this.resume = button('resume', t('pause.resume'), () => panelStack.close('pause'), true);
     const settings = button('settings', t('pause.settings'), () => {
       this.held = true;
+      this.settingsSeen = panelStack.isOpen('settings');
       panelStack.open('settings');
       panelStack.close('pause');
     });
@@ -54,8 +57,11 @@ export class PauseMenu {
     parent.append(this.root);
     // Settings opened from here closed again: bring the menu back.
     panelStack.onChange((open) => {
-      if (this.held && !open.includes('settings')) {
+      if (!this.held) return;
+      if (open.includes('settings')) this.settingsSeen = true;
+      else if (this.settingsSeen) {
         this.held = false;
+        this.settingsSeen = false;
         panelStack.open('pause');
       }
     });
