@@ -4817,8 +4817,16 @@
       "prompt": "heavy brass mace whose head is a perforated incense censer on a short chain, gold-white light leaking through, ivory cloth on the haft",
       "source": "text",
       "targetPolycount": 1,
-      "status": "planned",
-      "meshy": {}
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171de-2f6d-71bb-8493-73a095804b6b",
+        "creditsSpent": 3
+      },
+      "file": "icons/censer_mace.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 4470
+      }
     },
     {
       "id": "icon.sun_staff",
@@ -4826,8 +4834,16 @@
       "prompt": "tall staff of pale metal topped with a brass sunburst crest holding a glowing gold-white orb",
       "source": "text",
       "targetPolycount": 1,
-      "status": "planned",
-      "meshy": {}
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171de-3126-73cf-b173-9e8fb13caab3",
+        "creditsSpent": 3
+      },
+      "file": "icons/sun_staff.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 2476
+      }
     },
     {
       "id": "icon.reliquary_lantern",
@@ -4835,8 +4851,16 @@
       "prompt": "small hand lantern of brass and glass holding a glowing gold-white flame, hanging chain, engraved ivory trim",
       "source": "text",
       "targetPolycount": 1,
-      "status": "planned",
-      "meshy": {}
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a171de-3131-7555-9235-06b19fad3f83",
+        "creditsSpent": 3
+      },
+      "file": "icons/reliquary_lantern.webp",
+      "stats": {
+        "triangles": 0,
+        "bytes": 5396
+      }
     }
   ]
 }

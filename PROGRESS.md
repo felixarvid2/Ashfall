@@ -271,7 +271,7 @@ Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
   toward Raise Corpse's cap); corrupted families (infected, lumen) burned harder through `corruptedMul` and the
   `corrupted` condition; data-driven buff fields; consume-on-hit Lex Aeterna marks.
 - Assets: Meshy character model (about 71 credits), icons and portrait (33 credits); FLUX item, aspect and menu
-  art ($0.168); the weapon is a procedural lantern-censer. Meshy credits in total: 104 (concept 6, model 30, rig and animations 35, icons and portrait 33).
+  art ($0.168); the weapon is a procedural lantern-censer. Meshy credits: (concept 6, model 30, rig and animations 35, icons and portrait 33, item icons 9; 113 in total).
 - Checks: `npx tsc --noEmit -p .` clean, `npx vitest run` 833/833, `npm run assets:check` clean.
 
 ## How to run
