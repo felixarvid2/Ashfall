@@ -105,6 +105,14 @@ export const SettingsSchema = z.object({
   textScale: z.number().min(0.75).max(2).default(1),
   language: z.string().default('en'),
   keybindings: z.object(actionShape).partial().default({}),
+  /** Accessibility: soften screen flashes, hit flashes and pulsing (docs/ui/diablo-audit-panels.md B044). */
+  reduceFlashing: z.boolean().default(false),
+  /** Accessibility: colour-blind palette for rarity, life/danger and status colours (B044). */
+  colorblind: z.enum(['off', 'protanopia', 'deuteranopia', 'tritanopia']).default('off'),
+  /** Scene brightness multiplier (B045). */
+  brightness: z.number().min(0.6).max(1.5).default(1),
+  /** Ground loot labels shown from this rarity up; lower ones keep only their beam (B046). */
+  lootLabelMin: z.enum(['all', 'magic', 'rare', 'legendary']).default('all'),
   /** Settings saved before the sound system have none: the defaults apply. */
   audio: AudioSettingsSchema.default({ master: 0.8, music: 0.5, sfx: 0.8, ui: 0.6, muted: false }),
 });
