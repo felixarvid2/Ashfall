@@ -68,7 +68,7 @@ export const LIGHTBEARER_SKILLS: Skill[] = [
       healFraction: 0.15,
       enemyImpact: {
         radius: 6,
-        coefficient: 2.4,
+        coefficient: 2.8,
         damageType: 'energy',
         delivery: 'ranged',
         corruptedOnly: true,
@@ -83,7 +83,7 @@ export const LIGHTBEARER_SKILLS: Skill[] = [
     classId: 'lightbearer',
     category: 'core',
     cooldown: 2,
-    resourceCost: 40,
+    resourceCost: 42,
     castTime: 0.3,
     recovery: 0.25,
     effect: {
