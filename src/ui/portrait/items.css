@@ -251,7 +251,7 @@
   .char-credits-btn { margin-top: var(--space-4); }
 
   .char-classes {
-    display: grid; grid-template-columns: repeat(3, minmax(88px, 1fr)); gap: var(--space-2); width: min(420px, 100%);
+    display: grid; grid-template-columns: repeat(4, minmax(72px, 1fr)); gap: var(--space-2); width: min(420px, 100%);
     overflow-x: auto; scroll-snap-type: x mandatory; padding: var(--space-2) 2px;
   }
   .char-class { width: auto; min-height: 0; padding: var(--space-1); scroll-snap-align: center; justify-content: flex-start; transition: border-color 0.15s, translate 0.15s; }

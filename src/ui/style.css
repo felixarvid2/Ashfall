@@ -539,7 +539,7 @@ html, body {
 .char-select h1 { font-size: 3em; letter-spacing: 0.4em; margin: 0; color: #e8c8a0; text-shadow: 0 0 24px rgba(255, 120, 40, 0.4); }
 .char-select-sub { color: var(--ui-muted); letter-spacing: 0.2em; margin-bottom: 4vh; text-transform: uppercase; font-size: 0.85em; }
 .char-select h2 { font-weight: normal; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ui-accent); font-size: 1.1em; text-align: center; }
-.char-select-body { width: min(900px, 100%); }
+.char-select-body { width: min(960px, 100%); }
 .char-slots, .char-classes { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .char-slot, .char-class {
   position: relative;

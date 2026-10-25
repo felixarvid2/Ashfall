@@ -743,9 +743,9 @@ export class VfxSystem {
       fx.group.position.set(tr.x, 0.045, tr.z);
       fx.group.scale.set(s.radius * pulse, 1, s.radius * pulse);
       fx.group.rotation.y = this.time * 0.25;
-      fx.materials[0]!.opacity = 0.16 * fade;
-      fx.materials[1]!.opacity = 0.6 * fade;
-      fx.materials[2]!.opacity = 0.3 * fade;
+      fx.materials[0]!.opacity = 0.07 * fade;
+      fx.materials[1]!.opacity = 0.45 * fade;
+      fx.materials[2]!.opacity = 0.18 * fade;
       if (fade > 0.3) this.sprites.holyMotes(`s${e}`, tr.x, tr.z, s.radius, s.color, dt);
     }
     for (const [e, fx] of this.sanctums) {
