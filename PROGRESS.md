@@ -7,6 +7,7 @@
 **Endgame ✅ built — waiting for your playtest feedback.** Plan and "As built" numbers: docs/endgame.md;
 choices: docs/decisions.md (2026-10-18, endgame).
 - **Diablo UI pass ✅:** 87 of 100 audit items done, 13 partial (rules and deviations in docs/ui/diablo-status.md); save v8 adds item locks and junk marks.
+- **Improvement pass ✅:** 84 of 100 items done, 16 partial, none skipped (gameplay, content, tech and feel specs in docs/improvements/; status and deviations in docs/improvements/status.md).
 - **World Tiers:** defeating Lumen unlocks Veteran (tier 2); Deep Rift 20 and 40 unlock Nightmare and Apocalypse.
   Switch at the Tier Beacon in any hub (out of combat); the tier shows under the region name. Tiers scale enemy life
   and damage, XP, gold, item power, greater-affix chance and unique drops, and also the trader's stock, rerolls and
