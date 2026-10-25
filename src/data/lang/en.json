@@ -2693,24 +2693,32 @@
       "name": "Benny Rusk",
       "title": "Cook · Trader",
       "greeting": "Sit down before you fall down. There's soup. Don't ask what's in it.",
+      "greetingLate": "The Maw is quiet and the road is open. People are walking into Ember who haven't eaten in a week. The soup is going further than it should.",
+      "greetingEnd": "Word came up that it's over. I made soup anyway. Some things you do whatever the news is.",
       "service": "Trade"
     },
     "hekla": {
       "name": "Hekla Strand",
       "title": "Former miner · Blacksmith",
       "greeting": "If it's broken, I can fix it. If it's rotten, I can't. Which is it?",
+      "greetingLate": "Heard the Maw went quiet. Doesn't make a blade any less of a blade. What have you got for me?",
+      "greetingEnd": "They say the light under the world has gone out. My anvil doesn't care either way. Bring it here.",
       "service": "Blacksmith"
     },
     "pell": {
       "name": "Pell Varga",
       "title": "Data engineer · Technician",
       "greeting": "Careful with the cables. Half the outpost runs through this desk.",
+      "greetingLate": "The First is down and the signal is cleaner. Half the static I used to filter was it breathing.",
+      "greetingEnd": "Everything on the band has gone quiet at once. I keep checking the cables. It's the quiet that worries me.",
       "service": "Aspects"
     },
     "tomas": {
       "name": "Tomas Reyes",
       "title": "Survivor",
-      "greeting": "Have you seen a girl out there? Sixteen. Red jacket. Her name is Lena."
+      "greeting": "Have you seen a girl out there? Sixteen. Red jacket. Her name is Lena.",
+      "greetingLate": "The road is safer now. I still look at every red thing on the horizon. I expect I always will.",
+      "greetingEnd": "They say it's finished. I still keep a red jacket by the door. Not for her. For me."
     },
     "danner": {
       "name": "Pvt. Danner",
@@ -2721,29 +2729,39 @@
       "name": "Mara Kowal",
       "title": "Pump engineer · Technician",
       "greeting": "Mind the pipes. If one of them bursts we all learn what minus forty feels like.",
+      "greetingLate": "Vire is gone and the pressure is holding. First time in a year I haven't heard a pipe about to go.",
+      "greetingEnd": "The pumps run steady and nobody is shooting at them. I don't trust it. Keep the bench warm anyway.",
       "service": "Aspects"
     },
     "gus": {
       "name": "Gus Abara",
       "title": "Quartermaster · Trader",
       "greeting": "Everything here was salvaged, bartered or stolen. Prices reflect all three.",
+      "greetingLate": "Vire's dead and the crates are moving again. Prices have dropped. Don't tell the others I said so.",
+      "greetingEnd": "The war's over, they say. Funny. Business is the same. People still want things and still can't afford them.",
       "service": "Trade"
     },
     "ines": {
       "name": "Ines Varro",
       "title": "Machinist · Blacksmith",
       "greeting": "Put it on the bench. If it was made in a refinery, I can make it better.",
+      "greetingLate": "With Vire gone the scrap comes in clean. I can finally work with it. Put it on the bench.",
+      "greetingEnd": "All those machines, and one light underneath turned them off. Steel is still steel. What are you bringing me?",
       "service": "Blacksmith"
     },
     "tobin": {
       "name": "Tobin",
       "title": "Smelter defector",
-      "greeting": "I wore the robe for two years. I can tell you what they believe. I can't tell you why I believed it."
+      "greeting": "I wore the robe for two years. I can tell you what they believe. I can't tell you why I believed it.",
+      "greetingLate": "The robes are coming off all over the Refinery. Some people are lost without them. I could tell them how that goes.",
+      "greetingEnd": "I think I know now what they were praying to. It's quiet. I'm not sure what I feel about that."
     },
     "osei": {
       "name": "Kofi Osei",
       "title": "Delta station engineer",
-      "greeting": "Three weeks locked in the pump room. The cooling's ours again. I owe you more than a thank-you."
+      "greeting": "Three weeks locked in the pump room. The cooling's ours again. I owe you more than a thank-you.",
+      "greetingLate": "The cooling holds, the pumps run, and nobody locks me in. I almost miss the quiet.",
+      "greetingEnd": "The cooling is steady. The whole district hums a little lower, like a held breath ending."
     },
     "rhee": {
       "name": "Rhee",
@@ -2758,27 +2776,37 @@
     "okafor": {
       "name": "Dr. Amara Okafor",
       "title": "Botanist, Lab 9",
-      "greeting": "Mask on, gloves on, and don't touch anything that moves. Welcome to Lab 9."
+      "greeting": "Mask on, gloves on, and don't touch anything that moves. Welcome to Lab 9.",
+      "greetingLate": "The tree has settled. I have cuttings under glass. Mask on, still. Some habits earn their keep.",
+      "greetingEnd": "Everything under the Vaults connects to the Core, and the Core has stopped. Lab 9 is very quiet. I'm writing everything down faster."
     },
     "quill": {
       "name": "Quill",
       "title": "Quartermaster",
-      "greeting": "Filtered water, canned beans, rifle rounds. Everything sealed twice. What do you need?"
+      "greeting": "Filtered water, canned beans, rifle rounds. Everything sealed twice. What do you need?",
+      "greetingLate": "Fresh stock from the domes. Real greens, sealed twice. What do you need?",
+      "greetingEnd": "Orders have dropped to nothing. Nobody stocks for the end of the world once it has ended. Take what you like."
     },
     "brann": {
       "name": "Brann",
       "title": "Blacksmith",
-      "greeting": "Spores get into the joints of everything. Bring it here before it rusts green."
+      "greeting": "Spores get into the joints of everything. Bring it here before it rusts green.",
+      "greetingLate": "The spore rust is slowing. Metal comes back cleaner than it used to. Bring it here.",
+      "greetingEnd": "It's quiet in the forge. Quiet everywhere. I've started missing the noise. Put it on the bench."
     },
     "dace": {
       "name": "Dace",
       "title": "Aspect technician",
-      "greeting": "The filters hum at the same pitch as the aspects. I like it in here."
+      "greeting": "The filters hum at the same pitch as the aspects. I like it in here.",
+      "greetingLate": "The filters hum at a lower pitch since the tree settled. I preferred the old one. I'd never say so to Okafor.",
+      "greetingEnd": "The hum has stopped. The aspects are still there; they just aren't singing. I'm choosing to find that peaceful."
     },
     "ruiz": {
       "name": "Corporal Ruiz",
       "title": "Dome Gamma garrison",
-      "greeting": "Gamma's ours again. Six of us left to hold it. Don't make me say five."
+      "greeting": "Gamma's ours again. Six of us left to hold it. Don't make me say five.",
+      "greetingLate": "Gamma is quiet. I counted at dawn. Still six. I'll take it.",
+      "greetingEnd": "I heard it's over. I'm keeping the watch anyway. Someone should be at the wall when the world remembers it needs one."
     },
     "halvorsen": {
       "name": "Dr. Halvorsen",
@@ -2793,22 +2821,30 @@
     "brask": {
       "name": "Foreman Hana Brask",
       "title": "Elevator Station Zero",
-      "greeting": "Keep your lamp lit and your voice down. Down here, both get noticed."
+      "greeting": "Keep your lamp lit and your voice down. Down here, both get noticed.",
+      "greetingLate": "The governor's gone and the lifts run on time. Don't trust it. Keep your lamp lit.",
+      "greetingEnd": "Station Zero has felt strange since the light went out below us. The lamps are steady and the dark isn't pressing. Keep yours lit anyway."
     },
     "oona": {
       "name": "Oona",
       "title": "Quartermaster",
-      "greeting": "Batteries, flares, ration bars. Pick two. The third costs extra."
+      "greeting": "Batteries, flares, ration bars. Pick two. The third costs extra.",
+      "greetingLate": "The governor is down and the shipments are flowing. Batteries, flares, ration bars. Pick two. The third is cheaper now.",
+      "greetingEnd": "Flares are selling slower. Nobody needs to see in the dark as badly as they used to. Pick two."
     },
     "gerd": {
       "name": "Gerd",
       "title": "Blacksmith",
-      "greeting": "Crystal dust in your joints? Leave it with me. I'll make it sing."
+      "greeting": "Crystal dust in your joints? Leave it with me. I'll make it sing.",
+      "greetingLate": "Kade's drill is silent. The whole mountain feels lighter. Leave your gear with me.",
+      "greetingEnd": "The crystals have stopped singing. I thought I'd be glad. Leave it with me; I'll make it sing myself."
     },
     "nils": {
       "name": "Nils",
       "title": "Aspect technician",
-      "greeting": "The aspects resonate down here. Like they recognise the stone."
+      "greeting": "The aspects resonate down here. Like they recognise the stone.",
+      "greetingLate": "The resonance dropped when the governor fell, like something let go. The aspects are easier now.",
+      "greetingEnd": "There's no resonance at all now. The stone is just stone. I didn't think I would miss it."
     },
     "okafor_mines": {
       "name": "Dr. Amara Okafor",
@@ -2823,40 +2859,48 @@
     "vasquez": {
       "name": "Teo Vasquez",
       "title": "Mining Station Aurum",
-      "greeting": "Aurum's ours again. Ninety-one miners alive. That number only goes one way unless we finish this."
+      "greeting": "Aurum's ours again. Ninety-one miners alive. That number only goes one way unless we finish this.",
+      "greetingLate": "The governor is gone and the number held. Ninety-one. I read it out every shift now.",
+      "greetingEnd": "Ninety-one miners still breathing. Whatever happened below, that number held."
     },
     "maren": {
       "name": "Maren Sól",
       "title": "Elevator engineer · The Last Camp",
-      "greeting": "You're the one who came down the bore. Good. Touch nothing, and if the wall says your name, don't answer."
+      "greeting": "You're the one who came down the bore. Good. Touch nothing, and if the wall says your name, don't answer.",
+      "greetingEnd": "It's quiet. The wall doesn't say anything any more. I keep listening anyway. Habit."
     },
     "idris": {
       "name": "Idris Vale",
       "title": "Listener",
-      "greeting": "Quiet a moment. It's remembering something. It does that when it's lonely."
+      "greeting": "Quiet a moment. It's remembering something. It does that when it's lonely.",
+      "greetingEnd": "It stopped remembering. I had so many questions, and now I have only the pages. Sit with me a moment."
     },
     "hekla_core": {
       "name": "Hekla Strand",
       "title": "Blacksmith · From Outpost Ember",
       "greeting": "Four thousand metres of rock overhead and the anvil still rings true. Put it on the bench.",
+      "greetingEnd": "The anvil still rings true. I wasn't sure it would, after. Put it on the bench.",
       "service": "Blacksmith"
     },
     "gus_core": {
       "name": "Gus Abara",
       "title": "Quartermaster · From the Refinery",
       "greeting": "Salvaged, bartered or stolen. Down here there's a fourth kind: found. Don't ask where.",
+      "greetingEnd": "Salvaged, bartered, stolen, found. Now there's a fifth kind: given. Take it before I change my mind.",
       "service": "Trade"
     },
     "dace_core": {
       "name": "Dace",
       "title": "Aspect technician · From the Vaults",
       "greeting": "The aspects hum at the same pitch as the walls. It's lovely. It's the worst sound I've ever heard.",
+      "greetingEnd": "The hum is gone. It was the worst sound I've ever heard, and I would give a year's rations to hear it once more.",
       "service": "Aspects"
     },
     "brask_core": {
       "name": "Foreman Hana Brask",
       "title": "From Station Zero",
-      "greeting": "Zero has a night shift now. This hole is mine to worry about. Watch your lamp."
+      "greeting": "Zero has a night shift now. This hole is mine to worry about. Watch your lamp.",
+      "greetingEnd": "The shaft is quiet. The night shift stays on anyway. Somebody has to say the names."
     },
     "tam": {
       "name": "Foreman Tam's Daughter",

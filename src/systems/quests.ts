@@ -24,6 +24,7 @@ import {
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import { Rng } from '../core/rng';
+import { hasText } from '../data/i18n';
 import { INTERACT_RADIUS } from '../data/interactables';
 import { NPCS, QUESTS, questDef } from '../data/quests/db';
 import type { QuestDef, QuestStep } from '../data/quests/schema';
@@ -95,6 +96,35 @@ function prerequisitesMet(rt: QuestRuntime, def: QuestDef): boolean {
 /** Quests this NPC can offer right now. */
 export function offeredBy(rt: QuestRuntime, npc: string): QuestDef[] {
   return [...QUESTS.values()].filter((q) => q.giver === npc && !rt.active.has(q.id) && !rt.done.has(q.id) && prerequisitesMet(rt, q));
+}
+
+/** The last main quest of the campaign: Lumen is dealt with. */
+export const CAMPAIGN_END_QUEST = 'mq.one_who_remembers';
+
+/** How far the campaign has gone, for an NPC's greeting (C023). */
+export type GreetingStage = 'first' | 'late' | 'end';
+
+/** The last main quest of each region (its boss): once it is done the region's people talk differently. */
+const REGION_FINALE: ReadonlyMap<string, string> = (() => {
+  const out = new Map<string, string>();
+  for (const q of QUESTS.values()) if (q.kind === 'main') out.set(q.zone, q.id);
+  return out;
+})();
+
+export function greetingStage(rt: QuestRuntime, npc: string): GreetingStage {
+  if (rt.done.has(CAMPAIGN_END_QUEST)) return 'end';
+  const zone = NPCS.get(npc)?.zone;
+  const finale = zone === undefined ? undefined : REGION_FINALE.get(zone);
+  return finale !== undefined && rt.done.has(finale) ? 'late' : 'first';
+}
+
+/** Language key of what this NPC says first: `greetingEnd`, else `greetingLate`, else `greeting`. */
+export function greetingKey(rt: QuestRuntime, npc: string): string {
+  const base = `npcs.${npc}.greeting`;
+  const stage = greetingStage(rt, npc);
+  const wanted = stage === 'end' ? ['End', 'Late'] : stage === 'late' ? ['Late'] : [];
+  for (const suffix of wanted) if (hasText(base + suffix)) return base + suffix;
+  return base;
 }
 
 /** Active quests waiting to talk to (or decide with) this NPC. */

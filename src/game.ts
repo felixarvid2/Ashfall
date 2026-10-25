@@ -126,6 +126,7 @@ import {
   choose,
   completeTalk,
   createQuestRuntime,
+  greetingKey,
   offeredBy,
   questMarkers,
   questSystem,
@@ -1716,7 +1717,7 @@ export class Game {
     const service = NPCS.get(npc)?.service;
     if (service) buttons.push({ label: t(`npcs.${npc}.service`), onClick: () => this.openService(service) });
     buttons.push({ label: t('questUi.goodbye'), onClick: () => this.closeDialogue() });
-    return this.page(npc, t(`npcs.${npc}.greeting`), buttons);
+    return this.page(npc, t(greetingKey(rt, npc)), buttons);
   }
 
   private questOffer(npc: string, id: string): void {
