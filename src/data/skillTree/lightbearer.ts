@@ -47,7 +47,7 @@ export const LIGHTBEARER_TREE: Tree = {
       effects: [{ kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'duration', value: 0.5 }] }] },
     { id: 'm.magnus_exorcismus.rapid', branch: 'core', type: 'modifier', parent: 'e.magnus_exorcismus', group: 'magnus_exorcismus',
       effects: [{ kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'interval', value: -0.2 }] }] },
-    { id: 'p.piety', branch: 'core', type: 'passive', effects: [{ kind: 'stat', stat: 'resourceGen', value: 0.05 }] },
+    { id: 'p.piety', branch: 'core', type: 'passive', effects: [{ kind: 'stat', stat: 'resourceGen', value: 0.03 }] },
     { id: 'p.sacred_flame', branch: 'core', type: 'passive', effects: [{ kind: 'damage', value: 0.05, when: 'ranged' }] },
 
     // ---- Defensive
@@ -113,7 +113,6 @@ export const LIGHTBEARER_TREE: Tree = {
         { kind: 'skillMod', skill: L('heal'), mods: [{ op: 'mul', field: 'heal', value: 0.35 }] },
         { kind: 'skillMod', skill: L('kyrie_eleison'), mods: [{ op: 'mul', field: 'barrier', value: 0.35 }] },
         { kind: 'skillMod', skill: L('sanctuary'), mods: [{ op: 'mul', field: 'heal', value: 0.35 }] },
-        { kind: 'stat', stat: 'resourceGen', value: 0.15 },
       ] },
     { id: 'k.zealot', branch: 'key', type: 'keyPassive',
       effects: [

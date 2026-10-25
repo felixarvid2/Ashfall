@@ -41,6 +41,7 @@ import { hitOne } from '../systems/impact';
 import { PICKUP_KEY_RADIUS, grantXp, nearestGroundItem } from '../systems/loot/rewards';
 import { recomputePlayer } from '../systems/stats';
 import { livingInCircle } from '../systems/targeting';
+import type { ZoneDef } from '../data/zones/zoneTypes';
 import { revealAround, type ZoneRuntime } from './zone';
 import { signal } from '../systems/quests';
 import { instanceInteract } from './instance';
@@ -64,6 +65,25 @@ const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: numb
   riftObelisk: { asset: 'prop.core_column', scale: 0.8, glow: '#b48cff', collider: 0.8 },
   beacon: { asset: 'prop.signal_tower', scale: 0.55, glow: '#ff8a3a', collider: 0.7 },
 };
+
+/**
+ * Models the zone's points of interest, teleporters and the hub extras (account stash, tier beacon, rift obelisk)
+ * show, so the per-zone asset sets can fetch them during the fade (src/data/assetSets.ts).
+ */
+export function interactableAssetIds(zone: Pick<ZoneDef, 'pois' | 'teleporters'>): string[] {
+  const ids = new Set<string>([VISUAL.stash!.asset, VISUAL.beacon!.asset, VISUAL.riftObelisk!.asset]);
+  if (zone.teleporters.length > 0) ids.add(VISUAL.teleporter!.asset);
+  for (const poi of zone.pois) {
+    if (poi.kind === 'crystal') ids.add(CRYSTAL.asset);
+    else if (poi.kind === 'barrel') ids.add('prop.explosive_barrel');
+    else {
+      const feature = poi.kind === 'feature' ? featureOf(poi) : null;
+      const asset = feature ? FEATURES[feature].asset : VISUAL[poi.kind]?.asset;
+      if (asset) ids.add(asset);
+    }
+  }
+  return [...ids];
+}
 
 /** Spawn the zone's interactable objects (once, when the zone loads). */
 export function spawnInteractables(world: World, zone: ZoneRuntime, extras: { poi: string; kind: Interactable['kind']; x: number; z: number }[] = []): void {

@@ -1,6 +1,6 @@
 {
-  "spent": 2.2240000000000015,
-  "images": 272,
+  "spent": 2.2560000000000016,
+  "images": 276,
   "tries": {
     "textures/mine_rock": 1,
     "bosses/governor_kade": 1,
@@ -244,7 +244,11 @@
     "aspects/strangler": 1,
     "aspects/processional": 1,
     "aspects/vestments": 1,
-    "aspects/thurible": 1
+    "aspects/thurible": 1,
+    "items/unique_lodestone_grips": 1,
+    "items/unique_sappers_signet": 1,
+    "items/unique_gravecallers_grasp": 1,
+    "items/unique_vigil_ring": 1
   },
   "log": [
     {
@@ -1606,6 +1610,26 @@
       "key": "aspects/thurible",
       "cost": 0.008,
       "at": "2026-10-25T13:39:56.595Z"
+    },
+    {
+      "key": "items/unique_lodestone_grips",
+      "cost": 0.008,
+      "at": "2026-10-25T19:32:48.663Z"
+    },
+    {
+      "key": "items/unique_gravecallers_grasp",
+      "cost": 0.008,
+      "at": "2026-10-25T19:32:48.798Z"
+    },
+    {
+      "key": "items/unique_sappers_signet",
+      "cost": 0.008,
+      "at": "2026-10-25T19:32:48.819Z"
+    },
+    {
+      "key": "items/unique_vigil_ring",
+      "cost": 0.008,
+      "at": "2026-10-25T19:32:48.888Z"
     }
   ]
 }

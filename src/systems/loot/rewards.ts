@@ -27,7 +27,8 @@ import { heal } from '../combat';
 import { ensureMatrixStarted, grantMatrixXp } from '../endgame/matrix';
 import { scalesToPlayer, tierMods } from '../endgame/tiers';
 import { recomputePlayer } from '../stats';
-import { addToGrid } from './inventory';
+import { addToGrid, freeCells } from './inventory';
+import { MAGNET_ARRIVE, magnetPull } from './magnet';
 import { generateItem, generateUnique, itemPowerFor, killXp, rollDrops, xpToNext } from './generate';
 
 export const GOLD_PICKUP_RADIUS = 1.8;
@@ -176,10 +177,15 @@ export function pickupSystem(world: World, dt: number, ctx: GameContext): void {
   const ptr = world.req(player, Transform);
   const inv = world.req(player, Inventory);
 
+  // The loot magnet (F020): gold and crystals within reach fly in; crystals that arrive go into the backpack.
+  for (const e of magnetPull(world, dt, ptr.x, ptr.z, freeCells(inv) > 0)) pickUp(world, ctx, player, e);
+
   for (const e of world.query(GroundGold, Transform)) {
     const gold = world.req(e, GroundGold);
     const tr = world.req(e, Transform);
-    if (gold.age > 0.4 && Math.hypot(tr.x - ptr.x, tr.z - ptr.z) <= GOLD_PICKUP_RADIUS) {
+    // Flying gold is taken on arrival; gold that never flew (just dropped, or the magnet gave up) at the usual radius.
+    const reach = gold.magnet === undefined ? GOLD_PICKUP_RADIUS : MAGNET_ARRIVE;
+    if (gold.age > 0.4 && Math.hypot(tr.x - ptr.x, tr.z - ptr.z) <= reach) {
       inv.gold += gold.amount;
       ctx.events.push({ type: 'pickup', kind: 'gold', amount: gold.amount });
       world.destroyDeferred(e);

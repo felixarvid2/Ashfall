@@ -469,12 +469,16 @@ export interface GroundItem {
   item: Item;
   /** Seconds since it dropped (for the pop-out animation). */
   age: number;
+  /** Seconds it has been flying to the hero (loot magnet, crystals only); absent when it is not. */
+  magnet?: number;
 }
 export const GroundItem = defineComponent<GroundItem>('GroundItem');
 
 export interface GroundGold {
   amount: number;
   age: number;
+  /** Seconds it has been flying to the hero (loot magnet); absent when it is not. */
+  magnet?: number;
 }
 export const GroundGold = defineComponent<GroundGold>('GroundGold');
 

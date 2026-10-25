@@ -109,6 +109,12 @@ export class World {
     return value;
   }
 
+  /** True when the entity has no component other than `allowed` (it may lack some of them). */
+  hasOnly(e: Entity, ...allowed: ComponentType<unknown>[]): boolean {
+    for (const [type, store] of this.stores) if (store.has(e) && !allowed.includes(type)) return false;
+    return true;
+  }
+
   has(e: Entity, type: ComponentType<unknown>): boolean {
     return this.stores.get(type)?.has(e) ?? false;
   }

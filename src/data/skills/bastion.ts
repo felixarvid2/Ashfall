@@ -124,7 +124,7 @@ export const BASTION_SKILLS: SkillInput[] = [
       kind: 'meleeArc',
       range: 3.4,
       arcDeg: 200,
-      coefficient: 2.7,
+      coefficient: 3.6,
       damageType: 'heat',
       knockback: 1,
       applies: [{ status: 'burning', duration: 4, coefficient: 0.8 }],

@@ -9,8 +9,39 @@
  * per frame) and `signalEvent` (game events); `HintScript` holds the order and is pure, so it is tested alone.
  */
 import { t } from '../data/i18n';
-import { getJsonPref, setJsonPref } from '../core/localPrefs';
+import { getJsonPref, getPref, setJsonPref, setPref } from '../core/localPrefs';
 import type { GameEvent } from '../core/events';
+
+/** What a quest paid, as the first completion toast lists it (F025). Zero amounts are left out. */
+export interface QuestRewardView {
+  xp: number;
+  gold: number;
+  item?: string | undefined;
+  unique?: string | undefined;
+  dust?: number;
+  shards?: number;
+}
+
+/** "320 XP, 90 gold, Rare item, 4 Lumen Dust": the reward summary. `xp` is what was actually paid (World Tier included). */
+export function questRewardSummary(r: QuestRewardView): string {
+  const parts: string[] = [];
+  if (r.xp > 0) parts.push(t('questUi.rewardXp', { xp: r.xp }));
+  if (r.gold > 0) parts.push(t('questUi.rewardGold', { gold: r.gold }));
+  if (r.unique) parts.push(t(`uniques.${r.unique}.name`));
+  else if (r.item) parts.push(t('questUi.rewardItem', { rarity: t(`items.rarity.${r.item}`) }));
+  if ((r.dust ?? 0) > 0) parts.push(`${r.dust} ${t('crafting.materials.lumen_dust')}`);
+  if ((r.shards ?? 0) > 0) parts.push(`${r.shards} ${t('crafting.materials.rift_shard')}`);
+  return parts.join(', ');
+}
+
+const FIRST_QUEST_SEEN = 'ashfall.firstQuestSeen';
+
+/** True the first time it is called on this browser: the first quest completion lists its reward in the toast (F025). */
+export function takeFirstQuestToast(): boolean {
+  if (getPref(FIRST_QUEST_SEEN) === '1') return false;
+  setPref(FIRST_QUEST_SEEN, '1');
+  return true;
+}
 
 type TouchHint = 'move' | 'attack' | 'menu' | 'interact';
 export type DesktopHint = 'click' | 'strike' | 'skill' | 'potion' | 'dodge' | 'loot' | 'bag';

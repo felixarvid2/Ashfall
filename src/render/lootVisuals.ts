@@ -62,7 +62,9 @@ export class LootVisuals {
       const tr = world.req(e, Transform);
       const t = Math.min(1, g.age / POP_TIME);
       const body = obj.children[0]!;
-      body.position.y = 0.08 + Math.sin(t * Math.PI) * 1.1 + (t >= 1 ? Math.sin(this.time * 2 + e) * 0.02 : 0);
+      // A crystal pulled by the loot magnet (F020) rises a little as it flies in.
+      const lift = g.magnet === undefined ? 0 : Math.min(0.5, g.magnet * 2.5);
+      body.position.y = 0.08 + lift + Math.sin(t * Math.PI) * 1.1 + (t >= 1 ? Math.sin(this.time * 2 + e) * 0.02 : 0);
       body.rotation.y = tr.facing + (t < 1 ? t * 8 : 0);
       obj.position.set(tr.x, 0, tr.z);
       const beam = obj.children[1];
@@ -92,7 +94,9 @@ export class LootVisuals {
       const tr = world.req(e, Transform);
       const g = world.req(e, GroundGold);
       const t = Math.min(1, g.age / POP_TIME);
-      mesh.position.set(tr.x, 0.05 + Math.sin(t * Math.PI) * 0.8, tr.z);
+      // Gold pulled by the loot magnet (F020) rises a little as it flies in.
+      const lift = g.magnet === undefined ? 0 : Math.min(0.5, g.magnet * 2.5);
+      mesh.position.set(tr.x, 0.05 + lift + Math.sin(t * Math.PI) * 0.8, tr.z);
       mesh.rotation.y = this.time * 1.5;
     }
     for (const [e, mesh] of this.gold) {

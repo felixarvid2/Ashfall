@@ -112,6 +112,8 @@ export class SkillTreePanel {
   private treeScroll = 0;
   /** The Neural Matrix view (endgame) shown in place of the skill branches. */
   private matrix: MatrixPanel | null = null;
+  /** Builds the matrix on first use: 36 kB of code that only players at the level cap ever open (T005). */
+  private matrixLoader: (() => Promise<MatrixPanel>) | null = null;
   private matrixMode = false;
   /** The learned skill node under the pointer: number keys assign it (B029). Mouse only. */
   private hoverNode: string | null = null;
@@ -172,6 +174,11 @@ export class SkillTreePanel {
     matrix.onBack = () => this.showMatrix(false);
   }
 
+  /** Same, but the matrix is fetched and built the first time its tab is used. */
+  setMatrixLoader(load: () => Promise<MatrixPanel>): void {
+    this.matrixLoader = load;
+  }
+
   get matrixOpen(): boolean {
     return this.open && this.matrixMode;
   }
@@ -193,7 +200,16 @@ export class SkillTreePanel {
 
   /** Switch between the skill tree and the Neural Matrix. */
   showMatrix(on: boolean): void {
-    if (!this.matrix) return;
+    if (!this.matrix) {
+      if (!on || !this.matrixLoader) return;
+      void this.matrixLoader()
+        .then((m) => {
+          this.setMatrix(m);
+          if (this.open) this.showMatrix(true);
+        })
+        .catch((err) => console.warn('Neural Matrix failed to load', err));
+      return;
+    }
     // Coming back from the matrix: the branch list is where it was.
     if (on) this.treeScroll = this.body.querySelector('.tree-scroll')?.scrollTop ?? this.treeScroll;
     this.matrixMode = on;
@@ -245,7 +261,7 @@ export class SkillTreePanel {
     });
     const tools = document.createElement('span');
     tools.className = `tree-tools${this.menuOpen ? ' menu-open' : ''}`;
-    if (v.matrixUnlocked && this.matrix) {
+    if (v.matrixUnlocked && (this.matrix || this.matrixLoader)) {
       const tab = document.createElement('button');
       tab.type = 'button';
       tab.className = 'matrix-tab';
