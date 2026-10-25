@@ -14,8 +14,22 @@ import { artUrl, cssUrl } from './art';
 export interface SlotSummary {
   index: number;
   /** null = empty slot. */
-  character: { name: string; classId: string; level: number; savedAt: string } | null;
+  character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null;
   corrupt?: boolean;
+}
+
+/** Mean item power of the equipped items, rounded; undefined when nothing is worn (B049). */
+export function meanItemPower(items: { itemPower: number }[]): number | undefined {
+  if (items.length === 0) return undefined;
+  return Math.round(items.reduce((sum, i) => sum + i.itemPower, 0) / items.length);
+}
+
+/** The second line of a slot card: "Cinder Flats - Gear 55"; either part may be missing (B049). */
+export function slotDetail(c: { zoneKey?: string; gear?: number }): string {
+  const parts: string[] = [];
+  if (c.zoneKey) parts.push(t(`zones.${c.zoneKey}.name`));
+  if (c.gear !== undefined) parts.push(t('select.gear', { n: c.gear }));
+  return parts.join(' · ');
 }
 
 export interface CharacterSelectActions {
@@ -192,7 +206,16 @@ export class CharacterSelect {
     played.className = 'char-slot-played';
     const when = relativeTime(c.savedAt);
     played.textContent = when ? t('select.lastPlayed', { when }) : '';
-    text.append(name, info, played);
+    const detail = slotDetail(c);
+    if (detail) {
+      const where = document.createElement('div');
+      where.className = 'char-slot-detail';
+      where.dataset.testid = `slot-${slot.index}-detail`;
+      where.textContent = detail;
+      text.append(name, info, where, played);
+    } else {
+      text.append(name, info, played);
+    }
 
     // A 44 px options button in its own column, so a tap near the corner cannot delete or start the game (P040).
     const more = document.createElement('button');

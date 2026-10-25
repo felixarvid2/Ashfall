@@ -11,6 +11,8 @@ export class InteractPrompt {
   private readonly el: HTMLDivElement;
   private readonly screen = { x: 0, y: 0 };
   private current = '';
+  /** Width of the prompt as last shown unblocked: a blocked prompt keeps it and ellipsizes the reason (A041). */
+  private normalWidth = 0;
   /** The last target the prompt popped for, and when it was hidden (a flicker at the edge must not re-pop). */
   private lastTarget = '';
   private hiddenAt = 0;
@@ -34,8 +36,11 @@ export class InteractPrompt {
     }
   }
 
-  /** Show the prompt for an object at (x, z), or hide it with `null`. */
-  update(target: { x: number; z: number; kind: string } | null, keyLabel: string, project: Project): void {
+  /**
+   * Show the prompt for an object at (x, z), or hide it with `null`. `blocked` is the short reason the object cannot
+   * be used right now ("Needs keycard"): the prompt turns red and says it in place of the action (A041).
+   */
+  update(target: { x: number; z: number; kind: string } | null, keyLabel: string, project: Project, blocked: string | null = null): void {
     const touch = this.root.classList.contains('touch-ui');
     // Upright phone: the prompt docks at a fixed spot above the thumbs (world.css) instead of following the object.
     const docked = touch && this.root.classList.contains('portrait');
@@ -44,7 +49,7 @@ export class InteractPrompt {
       this.el.hidden = true;
       return;
     }
-    const text = `${t('interact.prompt', { key: keyLabel, action: t(`interact.actions.${target.kind}`) })}|${touch}`;
+    const text = `${t('interact.prompt', { key: keyLabel, action: t(`interact.actions.${target.kind}`) })}|${touch}|${blocked ?? ''}`;
     if (text !== this.current) {
       this.current = text;
       this.el.replaceChildren();
@@ -55,9 +60,14 @@ export class InteractPrompt {
       else key.textContent = keyLabel;
       const icon = ICONS[target.kind] ? this.iconUrl(ICONS[target.kind]!) : null;
       if (icon) this.el.append(Object.assign(document.createElement('img'), { className: 'interact-icon', src: icon, alt: '' }));
-      this.el.append(key, ` ${t(`interact.actions.${target.kind}`)}`);
+      this.el.append(key, ` ${blocked ?? t(`interact.actions.${target.kind}`)}`);
       this.el.dataset.testid = 'interact-prompt';
+      this.el.classList.toggle('blocked', blocked !== null);
+      this.el.style.maxWidth = blocked !== null && this.normalWidth > 0 ? `${this.normalWidth}px` : '';
+      if (blocked !== null) this.el.title = blocked;
+      else this.el.removeAttribute('title');
     }
+    if (blocked === null && !this.el.hidden && this.el.offsetWidth > 0) this.normalWidth = this.el.offsetWidth;
     // A new target (or the same one after a pause) pops in once, with a short buzz on touch.
     const id = `${target.kind}@${Math.round(target.x)},${Math.round(target.z)}`;
     if (id !== this.lastTarget || (this.el.hidden && performance.now() - this.hiddenAt > 1500)) {

@@ -1,0 +1,175 @@
+/* Diablo-comparison UI pass (hud): see docs/ui/diablo-audit-*.md. Desktop-only rules use #ui:not(.touch-ui). */
+
+/* ==== Action bar, orbs, XP bar, status tiles (A001-A015) ===========================================================
+   Everything here is desktop only (`#ui:not(.touch-ui)`); the touch layouts keep their own rules in portrait/*.css.
+   Nothing changes a size: rings are inset shadows (the slot clips outside glows), badges sit in existing corners.
+   `#ui.reduce-flashing` (settings.reduceFlashing) turns the flashing and pulsing ones into steady looks. */
+
+/* A001: a flash when a cooldown ends. */
+@keyframes d-slot-ready {
+  from { box-shadow: inset 0 0 0 2px #ffd27a, inset 0 0 12px #ffd27a; }
+  to { box-shadow: inset 0 0 0 0 rgba(255, 210, 122, 0), inset 0 0 0 rgba(255, 210, 122, 0); }
+}
+#ui:not(.touch-ui):not(.reduce-flashing) .slot.ready { animation: d-slot-ready 0.35s ease-out 1; }
+
+/* A003: unaffordable skills are desaturated with a red ring; the cost sits in the key row, bottom right. */
+#ui:not(.touch-ui) .slot.no-resource { box-shadow: inset 0 0 0 2px #b8322a; }
+#ui:not(.touch-ui) .slot.no-resource .slot-icon,
+#ui:not(.touch-ui) .slot.no-resource .slot-name { filter: grayscale(0.6); }
+#ui:not(.touch-ui) .slot[data-cost]:not([data-category='potion'])::after {
+  content: attr(data-cost);
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  font-family: var(--ui-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 0 2px #000, 0 0 2px #000;
+}
+
+/* A004: a refused press shakes the slot and flashes the orb's border. */
+@keyframes d-slot-denied {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+#ui:not(.touch-ui) .slot.denied { animation: d-slot-denied 0.12s linear 1; }
+
+/* A005: an empty slot is an outlined socket that opens the Skills panel. */
+#ui:not(.touch-ui) .slot[data-category='empty'] { opacity: 1; background: none; border: 1px dashed #4a4038; cursor: pointer; }
+#ui:not(.touch-ui) .slot[data-category='empty'] .slot-key { opacity: 0.6; }
+
+/* A002: a decimal under 2 s is a little smaller than a whole number. */
+.slot-cd-text.fine { font-size: 1.25em; }
+
+/* A007: the stim pack pulses while life is low, shows its recharge as a sweep and its charges as a corner badge. */
+@keyframes d-potion-urgent {
+  to { box-shadow: inset 0 0 0 2px #9affa8, inset 0 0 14px rgba(120, 255, 140, 0.75); border-color: #9affa8; }
+}
+#ui:not(.touch-ui) .slot.urgent { animation: d-potion-urgent 0.8s ease-in-out infinite alternate; }
+#ui:not(.touch-ui).reduce-flashing .slot.urgent { animation: none; box-shadow: inset 0 0 0 2px #9affa8; border-color: #9affa8; }
+#ui:not(.touch-ui) .slot[data-category='potion']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(rgba(0, 0, 0, 0.72) calc(var(--recharge, 0) * 360deg), transparent 0);
+  pointer-events: none;
+  z-index: 1;
+}
+#ui:not(.touch-ui) .slot[data-badge]::after {
+  content: attr(data-badge);
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 2;
+}
+
+/* A008: the life orb drains with a lagging strip and flashes white on a big hit. */
+#ui:not(.touch-ui) .orb-life .orb-ghost {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--fill, 0) * 100%);
+  background: rgba(255, 110, 90, 0.5);
+  transition: height 0.45s ease-out 0.15s;
+}
+#ui:not(.touch-ui) .orb-life.hit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 2;
+}
+#ui:not(.touch-ui).reduce-flashing .orb-life.hit::after { opacity: 0.2; }
+
+/* A009: resource orbs say what they are (caption above the value) and keep a tinted rim when empty. */
+#ui:not(.touch-ui) .orb:not(.orb-life) .orb-text { flex-direction: column; gap: 1px; }
+#ui:not(.touch-ui) .orb:not(.orb-life) .orb-cap { display: block; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; }
+#ui:not(.touch-ui) .orb-heat:not(.warn) { border-color: rgba(255, 154, 58, 0.5); }
+#ui:not(.touch-ui) .orb-focus { border-color: rgba(111, 224, 255, 0.5); }
+#ui:not(.touch-ui) .orb-biomass { border-color: rgba(138, 255, 106, 0.5); }
+#ui:not(.touch-ui) .orb-devotion { border-color: rgba(232, 200, 106, 0.5); }
+/* The orb's refused-press flash (A004) comes last so it beats the tinted rims. */
+#ui:not(.touch-ui) .orb.denied { border-color: #ff3b2f; }
+
+/* A010: a lighter band along the liquid's surface slides sideways. */
+@keyframes d-orb-surface { to { background-position: 52px 0; } }
+#ui:not(.touch-ui) .orb-fill { overflow: hidden; }
+#ui:not(.touch-ui) .orb-fill::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent) 0 0 / 52px 100% repeat-x;
+  animation: d-orb-surface 3s linear infinite;
+}
+
+/* A011: XP gain flashes the fill; above 90 % the bar glows. */
+#ui:not(.touch-ui) .xp-fill { transition: width 0.2s, background-color 0.25s; }
+#ui:not(.touch-ui):not(.reduce-flashing) .xp-bar.gain .xp-fill { background: #fff3c0; }
+#ui:not(.touch-ui) .xp-bar.near { box-shadow: 0 0 8px #e8c86a; }
+
+/* A012: unspent skill points stand out in the XP text. */
+@keyframes d-sp-pulse { from { opacity: 0.4; } to { opacity: 1; } }
+#ui:not(.touch-ui) .xp-sp { color: #ffd27a; font-size: 11px; font-weight: 700; }
+#ui:not(.touch-ui) .xp-sp::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: #ffd27a;
+  vertical-align: middle;
+  animation: d-sp-pulse 1.2s ease-in-out infinite alternate;
+}
+
+/* B036: learned skills that are not on the action bar: an 8 px accent dot at the right end of the XP bar (the desktop
+   has no Skills menu button). Absolutely placed inside the 13 px bar, so nothing grows; steady, so no reduce-flashing rule. */
+#ui:not(.touch-ui) .xp-bar .skills-dot:not([hidden]) {
+  display: block;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--ui-accent);
+  box-shadow: 0 0 0 1px #000;
+  pointer-events: auto;
+}
+
+/* A013: harm is a second group: a gap and a divider. A014: tiles take the pointer for their tooltip. */
+#ui:not(.touch-ui) .buff { pointer-events: auto; cursor: help; }
+#ui:not(.touch-ui) .buff.group-start { margin-left: 4px; }
+#ui:not(.touch-ui) .buff.group-start::before { content: ''; position: absolute; left: -6px; top: 2px; bottom: 2px; width: 1px; background: #d0402a; }
+
+/* A015: tiles about to run out blink (the rule is global, portrait/hud.css); steady with reduced flashing. */
+#ui.reduce-flashing .buff.expiring { animation: none; opacity: 0.8; }
+
+@media (prefers-reduced-motion: reduce) {
+  #ui:not(.touch-ui) .orb-fill::before,
+  #ui:not(.touch-ui) .xp-sp::before,
+  #ui:not(.touch-ui) .slot.urgent { animation: none; }
+  #ui:not(.touch-ui) .slot.urgent { box-shadow: inset 0 0 0 2px #9affa8; border-color: #9affa8; }
+}
+#ui:not(.touch-ui).reduce-flashing .xp-sp::before { animation: none; }

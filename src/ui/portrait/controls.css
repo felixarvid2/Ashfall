@@ -276,6 +276,20 @@
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7);
 }
 .touch-menu-btn.has-dot .touch-menu-dot { display: block; }
+/* B036: learned skills off the action bar: 6 px accent dot bottom right, out of flow (the button keeps its size). */
+.touch-menu-pip {
+  display: none;
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ui-accent);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+.touch-menu-btn.has-pip .touch-menu-pip { display: block; }
 /* The "more" button: three dots drawn in CSS. */
 .touch-menu-btn[data-testid='touch-menu-more'] .touch-menu-icon {
   width: 22px;

@@ -1,0 +1,82 @@
+/* Diablo-comparison UI pass (combat): see docs/ui/diablo-audit-*.md. Desktop-only rules use #ui:not(.touch-ui). */
+
+/* ---- Damage numbers (A026-A031) ------------------------------------------------------ */
+/* Element colours on every viewport; all clear 4.5:1 on the dark world. */
+#ui {
+  --dmg-fire: #ff9a3a;
+  --dmg-shock: #7fd6ff;
+  --dmg-toxin: #9be86a;
+  --dmg-cold: #b5e3ff;
+  --dmg-void: #d2b4ff;
+}
+.dmg { font-variant-numeric: tabular-nums; }
+#ui .dmg.dmg-el-fire:not(.dmg-crit):not(.dmg-taken) { color: var(--dmg-fire); }
+#ui .dmg.dmg-el-shock:not(.dmg-crit):not(.dmg-taken) { color: var(--dmg-shock); }
+#ui .dmg.dmg-el-toxin:not(.dmg-crit):not(.dmg-taken) { color: var(--dmg-toxin); }
+#ui .dmg.dmg-el-cold:not(.dmg-crit):not(.dmg-taken) { color: var(--dmg-cold); }
+#ui .dmg.dmg-el-void:not(.dmg-crit):not(.dmg-taken) { color: var(--dmg-void); }
+/* Desktop: the size follows the share of the target's life (--dmg-scale, set by damageNumbers.ts); crits keep 1.55x. */
+#ui:not(.touch-ui) .dmg { font-size: calc(1em * var(--dmg-scale, 1.05)); }
+#ui:not(.touch-ui) .dmg-dot { font-size: calc(0.85em * var(--dmg-scale, 1)); }
+#ui:not(.touch-ui) .dmg.dmg-crit { font-size: calc(1.55em * var(--dmg-scale, 1)); text-shadow: 0 0 8px #ff9a00, 0 0 3px #000, 0 1px 2px #000; }
+#ui:not(.touch-ui) .dmg.dmg-taken { font-size: 0.9em; }
+
+/* ---- Ground loot labels (A035-A040, B046) -------------------------------------------- */
+/* Same box as before (92 x 19): only colour, opacity, border colour and order change. */
+/* A035: labels sit under the action bar, orbs, minimap and the left column. */
+#ui:not(.touch-ui) .loot-labels { z-index: 1; }
+#ui:not(.touch-ui) :is(.action-bar, .minimap, .hud-left) { z-index: 2; }
+/* A036: junk fades, rares get a second border line inside the box, legendary+ glow. */
+#ui:not(.touch-ui) .loot-label[data-rarity='common'] { opacity: 0.55; background: rgba(0, 0, 0, 0.6); }
+#ui:not(.touch-ui) .loot-label[data-rarity='rare'] { border-color: currentColor; box-shadow: inset 0 0 0 1px currentColor; }
+#ui:not(.touch-ui) .loot-label:is([data-rarity='legendary'], [data-rarity='unique'], [data-rarity='mythic']) {
+  border-color: currentColor;
+  opacity: 1;
+  text-shadow: 0 0 6px currentColor;
+}
+/* "+N items" chip, in the phone chip's colours. */
+#ui:not(.touch-ui) .loot-label.loot-more { color: #e8dcc8; border-left: 3px solid #8a7a64; background: rgba(40, 32, 22, 0.88); opacity: 1; }
+/* A040: the hovered label comes to the front and brightens; the lower a label is on screen, the later it is in the DOM. */
+#ui:not(.touch-ui) .loot-label:hover { z-index: 5; background: rgba(0, 0, 0, 0.95); filter: brightness(1.25); border-color: currentColor; opacity: 1; }
+/* A039: a legendary drop pulses its border three times (opacity of an overlay only, no size change). */
+@keyframes loot-fresh-pulse { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+.loot-label.loot-fresh::after { content: ''; position: absolute; inset: 0; border: 2px solid currentColor; pointer-events: none; opacity: 0; animation: loot-fresh-pulse 0.4s ease-in-out 3; }
+@media (prefers-reduced-motion: reduce) { .loot-label.loot-fresh::after { animation: none; } }
+#ui.reduce-flashing .loot-label.loot-fresh::after { animation: none; opacity: 0.7; }
+
+/* ---- Interact prompt, blocked (A041) ------------------------------------------------- */
+/* The reason replaces the action on the same line; the width stays that of the normal prompt (set in interactUi.ts). */
+.interact-prompt.blocked { overflow: hidden; text-overflow: ellipsis; color: #d8c8c0; border-color: #6a3a34; box-sizing: border-box; }
+.interact-prompt.blocked .interact-key { border-color: #d9443a; color: #ff8a80; }
+
+/* ---- Quest tracker and log (A018, B040) ---------------------------------------------- */
+.quest-row { position: relative; }
+.quest-step { position: relative; }
+/* A018: a finished step fades out over the new one; the row flashes a gold left border for 1.2 s. No height change. */
+.quest-step-old { position: absolute; inset: 0 0 auto 0; color: #7ad08a; text-decoration: line-through; background: rgba(10, 9, 8, 0.85); animation: quest-step-out 1.2s ease-in forwards; pointer-events: none; }
+@keyframes quest-step-out { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes quest-row-flash { 0%, 60% { border-left-color: #ffd23a; box-shadow: inset 3px 0 0 #ffd23a; } 100% { box-shadow: inset 0 0 0 transparent; } }
+#ui:not(.touch-ui) .quest-row.updated { animation: quest-row-flash 1.2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .quest-step-old { animation: none; opacity: 0; } #ui:not(.touch-ui) .quest-row.updated { animation: none; } }
+#ui.reduce-flashing .quest-step-old { animation: none; opacity: 0; }
+#ui.reduce-flashing:not(.touch-ui) .quest-row.updated { animation: none; border-left-color: #ffd23a; }
+/* B040: small group headings, and trivial quests muted. */
+.quest-log .log-group { margin: 10px 0 2px; font-size: 0.7em; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #8a7e6c; }
+.quest-log .log-group:first-child { margin-top: 2px; }
+.quest-log .log-entry.trivial .quest-title, .quest-log .log-entry.trivial .log-now { color: #6f6659; }
+
+/* ---- Endgame HUD (A048) -------------------------------------------------------------- */
+/* Same bar size; 11 px text, a boss tick at 100 %, a calmer pulse switch, and a darker backing for the harvest row. */
+#ui:not(.touch-ui) .rift-hud-head { font-size: max(11px, 0.8em); }
+#ui:not(.touch-ui) .rift-hud-status { font-size: 11px; }
+#ui:not(.touch-ui) .worldboss-hud, #ui:not(.touch-ui) .harvest-hud { font-size: max(11px, 0.75em); }
+.rift-hud-bar { position: relative; }
+.rift-hud-bar::after { content: ''; position: absolute; top: -2px; bottom: -2px; right: -1px; width: 2px; background: #ffd27a; box-shadow: 0 0 3px #000; pointer-events: none; }
+.rift-hud-time { font-variant-numeric: tabular-nums; }
+.rift-hud-time.low { color: #ff5a3c; text-shadow: 0 0 6px rgba(255, 70, 40, 0.6); }
+#ui.reduce-flashing .rift-hud-time.low { animation: none; }
+#ui:not(.touch-ui) .harvest-hud { background: linear-gradient(90deg, rgba(10, 9, 8, 0.85), transparent); }
+
+/* ---- Death screen cause line (A046): its own paragraph, because the hint paragraph is hidden on desktop ---- */
+#ui .death-screen p.death-cause, #ui:not(.touch-ui) .death-screen p.death-cause { display: block; margin: 4px 0 8px; color: #e8dcc8; letter-spacing: 0.06em; text-align: center; }
+#ui .death-screen p.death-cause[hidden], #ui:not(.touch-ui) .death-screen p.death-cause[hidden] { display: none; }

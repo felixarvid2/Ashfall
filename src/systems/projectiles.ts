@@ -36,7 +36,7 @@ export function projectileSystem(world: World, dt: number, ctx: GameContext): vo
       const hit = livingInCircle(world, ctx, tr.x, tr.z, p.radius, opposingTeam(p.team))[0];
       if (hit !== undefined) {
       const taken = computeTaken(p.damage, p.damageType, targetState(world, hit, 'ranged'), p.attackerLevel).final;
-      const dealt = applyDamage(world, ctx, hit, taken, { crit: false, damageType: p.damageType, dot: false, sourceTeam: p.team });
+      const dealt = applyDamage(world, ctx, hit, taken, { crit: false, damageType: p.damageType, dot: false, sourceTeam: p.team, source: p.owner });
       if (dealt !== null && world.isAlive(p.owner)) onEliteHit(world, ctx, p.owner, hit, dealt);
         ctx.events.push({ type: 'vfx', kind: 'boltHit', x: tr.x, z: tr.z, radius: 0.6, facing: tr.facing });
         world.destroyDeferred(e);

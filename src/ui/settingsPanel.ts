@@ -7,8 +7,22 @@
  * The Sound tab holds the existing volume rows of `SoundUi` (moved in, so the sound work lives in one place).
  */
 import { t } from '../data/i18n';
-import type { Settings } from '../data/settings';
+import {
+  ACTIONS,
+  BRIGHTNESS_RANGE,
+  MAX_KEYS_PER_ACTION,
+  isBindableKey,
+  rebindKey,
+  resetBinding,
+  resolveKeybindings,
+  tabDefaults,
+  type Action,
+  type Settings,
+} from '../data/settings';
+import { armConfirm } from './confirmSheet';
 import { hapticsSupported, haptic } from './haptics';
+import { keyLabel } from './hud';
+import { panelStack } from './panelStack';
 import type { SoundUi } from './soundPanel';
 
 export type SettingsTab = 'sound' | 'display' | 'controls';
@@ -36,6 +50,34 @@ const BUTTON_SIZES: { key: 's' | 'm' | 'l'; scale: number }[] = [
   { key: 'l', scale: 1.2 },
 ];
 
+/** The key list of Settings > Controls, in groups (B042). Every action of the data model appears once. */
+export const KEY_GROUPS: { id: 'movement' | 'combat' | 'panels' | 'system'; actions: Action[] }[] = [
+  { id: 'movement', actions: ['moveUp', 'moveDown', 'moveLeft', 'moveRight', 'dodge', 'forceStand'] },
+  { id: 'combat', actions: ['skill1', 'skill2', 'skill3', 'skill4', 'potion', 'pickup', 'showLabels', 'mount', 'flare', 'respawn'] },
+  { id: 'panels', actions: ['inventory', 'character', 'skills', 'map', 'quests'] },
+  { id: 'system', actions: ['quickSave', 'quickLoad', 'toggleMute', 'toggleDebug'] },
+];
+
+/**
+ * The colour-blind palette is a class and a data attribute on the UI root, so every stylesheet can use it (B044):
+ * `.colorblind[data-colorblind=protanopia|deuteranopia|tritanopia]`. (`.reduce-flashing` is set by `Hud.setReduceFlashing`.)
+ */
+export function applyAccessibility(root: Element, s: Pick<Settings, 'colorblind'>): void {
+  root.classList.toggle('colorblind', s.colorblind !== 'off');
+  if (root instanceof HTMLElement) {
+    if (s.colorblind === 'off') delete root.dataset.colorblind;
+    else root.dataset.colorblind = s.colorblind;
+  }
+}
+
+/** A synthetic keydown can carry `key` only (no `code`): a letter or digit still names its physical key. */
+function codeFromKey(key: string | undefined): string {
+  if (!key || key.length !== 1) return '';
+  if (/[a-z]/i.test(key)) return `Key${key.toUpperCase()}`;
+  if (/[0-9]/.test(key)) return `Digit${key}`;
+  return '';
+}
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
   if (className) e.className = className;
@@ -49,8 +91,12 @@ export class SettingsPanel {
   private readonly pages = new Map<SettingsTab, HTMLDivElement>();
   private current: SettingsTab = 'sound';
   private readonly refreshers: (() => void)[] = [];
+  private readonly host: HTMLElement;
+  /** The key list row that waits for a key press (B042). */
+  private stopListening: (() => void) | null = null;
 
   constructor(parent: HTMLElement, private readonly deps: SettingsDeps) {
+    this.host = parent;
     this.root = el('div', 'settings-panel panel');
     this.root.hidden = true;
     this.root.dataset.testid = 'settings-panel';
@@ -72,6 +118,7 @@ export class SettingsPanel {
     this.pages.set('controls', this.buildControls());
     for (const page of this.pages.values()) this.root.append(page);
     parent.append(this.root);
+    applyAccessibility(parent, this.deps.settings());
     this.select('sound');
   }
 
@@ -94,6 +141,7 @@ export class SettingsPanel {
   }
 
   close(): void {
+    this.stopListening?.();
     this.root.hidden = true;
   }
 
@@ -103,6 +151,7 @@ export class SettingsPanel {
   }
 
   private select(tab: SettingsTab): void {
+    this.stopListening?.();
     this.current = tab;
     for (const [id, b] of this.tabButtons) {
       b.classList.toggle('active', id === tab);
@@ -110,6 +159,12 @@ export class SettingsPanel {
     }
     for (const [id, page] of this.pages) page.hidden = id !== tab;
     this.refresh();
+  }
+
+  /** Changes settings through the game, then updates the accessibility classes on the UI root. */
+  private change(patch: Partial<Settings>): void {
+    this.deps.apply(patch);
+    applyAccessibility(this.host, this.deps.settings());
   }
 
   /** Re-reads every control from the settings. */
@@ -144,7 +199,7 @@ export class SettingsPanel {
     const sizes = this.segmented(
       TEXT_SIZES.map((s) => ({ id: s.key, label: t(`settings.sizes.${s.key}`) })),
       () => TEXT_SIZES.reduce((best, s) => (Math.abs(s.scale - this.deps.settings().textScale) < Math.abs(best.scale - this.deps.settings().textScale) ? s : best)).key,
-      (id) => this.deps.apply({ textScale: TEXT_SIZES.find((s) => s.key === id)!.scale }),
+      (id) => this.change({ textScale: TEXT_SIZES.find((s) => s.key === id)!.scale }),
       'text-size',
     );
     page.append(this.row(t('settings.textSize'), sizes, preview));
@@ -153,38 +208,83 @@ export class SettingsPanel {
     const graphics = this.segmented(
       (['low', 'medium', 'high'] as const).map((g) => ({ id: g, label: t(`settings.graphicsLevels.${g}`) })),
       () => this.deps.settings().graphics,
-      (id) => this.deps.apply({ graphics: id as Settings['graphics'] }),
+      (id) => this.change({ graphics: id as Settings['graphics'] }),
       'graphics',
     );
     this.refreshers.push(() => (hint.textContent = t(`settings.graphicsHint.${this.deps.settings().graphics}`)));
     page.append(this.row(t('settings.graphics'), graphics, hint));
     page.append(
-      this.switchRow(t('settings.screenShake'), undefined, () => this.deps.settings().screenShake, (on) => this.deps.apply({ screenShake: on }), 'shake'),
-      this.switchRow(t('settings.showFps'), undefined, () => this.deps.settings().showFps, (on) => this.deps.apply({ showFps: on }), 'fps'),
+      this.switchRow(t('settings.screenShake'), undefined, () => this.deps.settings().screenShake, (on) => this.change({ screenShake: on }), 'shake'),
+      this.switchRow(t('settings.showFps'), undefined, () => this.deps.settings().showFps, (on) => this.change({ showFps: on }), 'fps'),
     );
     if (hapticsSupported()) {
-      page.append(
-        this.switchRow(t('settings.vibration'), t('settings.vibrationHint'), () => this.deps.settings().haptics, (on) => {
-          this.deps.apply({ haptics: on });
-          if (on) haptic('success');
-        }, 'vibration'),
-      );
+      // Vibration only matters on a phone: `html:not(.touch-device) .touch-only` hides it (B043, menus.css).
+      const vibration = this.switchRow(t('settings.vibration'), t('settings.vibrationHint'), () => this.deps.settings().haptics, (on) => {
+        this.change({ haptics: on });
+        if (on) haptic('success');
+      }, 'vibration');
+      vibration.classList.add('touch-only');
+      page.append(vibration);
     }
     page.append(
-      this.switchRow(t('settings.pauseInMenus'), t('settings.pauseInMenusHint'), () => this.deps.settings().pauseInMenus, (on) => this.deps.apply({ pauseInMenus: on }), 'pause'),
+      this.switchRow(t('settings.pauseInMenus'), t('settings.pauseInMenusHint'), () => this.deps.settings().pauseInMenus, (on) => this.change({ pauseInMenus: on }), 'pause'),
+      this.sliderRow(t('settings.brightness'), t('settings.brightnessHint'), BRIGHTNESS_RANGE, () => this.deps.settings().brightness, (v) => this.change({ brightness: v }), 'brightness'),
+      this.row(
+        t('settings.lootLabels'),
+        this.segmented(
+          (['all', 'magic', 'rare', 'legendary'] as const).map((m) => ({ id: m, label: t(`settings.lootLabelLevels.${m}`) })),
+          () => this.deps.settings().lootLabelMin,
+          (id) => this.change({ lootLabelMin: id as Settings['lootLabelMin'] }),
+          'loot-labels',
+        ),
+        el('p', 'settings-hint', t('settings.lootLabelsHint')),
+      ),
+      el('h3', 'settings-group', t('settings.accessibility')),
+      this.switchRow(t('settings.reduceFlashing'), t('settings.reduceFlashingHint'), () => this.deps.settings().reduceFlashing, (on) => this.change({ reduceFlashing: on }), 'reduce-flashing'),
+      this.row(
+        t('settings.colorblind'),
+        this.segmented(
+          (['off', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((m) => ({ id: m, label: t(`settings.colorblindModes.${m}`) })),
+          () => this.deps.settings().colorblind,
+          (id) => this.change({ colorblind: id as Settings['colorblind'] }),
+          'colorblind',
+        ),
+        el('p', 'settings-hint', t('settings.colorblindHint')),
+      ),
+      this.resetRow('display'),
     );
     return page;
   }
 
   private buildControls(): HTMLDivElement {
     const page = this.page('controls');
+    const thumbLayout = this.row(
+      t('settings.thumbLayout'),
+      this.segmented(
+        (['right', 'left'] as const).map((m) => ({ id: m, label: t(`settings.layouts.${m}`) })),
+        () => this.deps.settings().touchLayout,
+        (id) => this.change({ touchLayout: id as Settings['touchLayout'] }),
+        'layout',
+      ),
+    );
+    const buttonSize = this.row(
+      t('settings.buttonSize'),
+      this.segmented(
+        BUTTON_SIZES.map((s) => ({ id: s.key, label: t(`settings.sizes.${s.key}`) })),
+        () => BUTTON_SIZES.reduce((best, s) => (Math.abs(s.scale - this.deps.settings().buttonScale) < Math.abs(best.scale - this.deps.settings().buttonScale) ? s : best)).key,
+        (id) => this.change({ buttonScale: BUTTON_SIZES.find((s) => s.key === id)!.scale }),
+        'button-size',
+      ),
+    );
+    thumbLayout.classList.add('touch-only');
+    buttonSize.classList.add('touch-only');
     page.append(
       this.row(
         t('settings.touchControls'),
         this.segmented(
           (['auto', 'on', 'off'] as const).map((m) => ({ id: m, label: t(`touch.modes.${m}`) })),
           () => this.deps.settings().touchControls,
-          (id) => this.deps.apply({ touchControls: id as Settings['touchControls'] }),
+          (id) => this.change({ touchControls: id as Settings['touchControls'] }),
           'touch',
         ),
       ),
@@ -193,30 +293,133 @@ export class SettingsPanel {
         this.segmented(
           (['click', 'wasd'] as const).map((m) => ({ id: m, label: t(`settings.moveModes.${m}`) })),
           () => this.deps.settings().moveMode,
-          (id) => this.deps.apply({ moveMode: id as Settings['moveMode'] }),
+          (id) => this.change({ moveMode: id as Settings['moveMode'] }),
           'move',
         ),
       ),
-      this.row(
-        t('settings.thumbLayout'),
-        this.segmented(
-          (['right', 'left'] as const).map((m) => ({ id: m, label: t(`settings.layouts.${m}`) })),
-          () => this.deps.settings().touchLayout,
-          (id) => this.deps.apply({ touchLayout: id as Settings['touchLayout'] }),
-          'layout',
-        ),
-      ),
-      this.row(
-        t('settings.buttonSize'),
-        this.segmented(
-          BUTTON_SIZES.map((s) => ({ id: s.key, label: t(`settings.sizes.${s.key}`) })),
-          () => BUTTON_SIZES.reduce((best, s) => (Math.abs(s.scale - this.deps.settings().buttonScale) < Math.abs(best.scale - this.deps.settings().buttonScale) ? s : best)).key,
-          (id) => this.deps.apply({ buttonScale: BUTTON_SIZES.find((s) => s.key === id)!.scale }),
-          'button-size',
-        ),
-      ),
+      thumbLayout,
+      buttonSize,
+      this.buildKeyList(),
+      this.resetRow('controls'),
     );
     return page;
+  }
+
+  // ---- Key rebinding (B042) -------------------------------------------------------------------
+
+  private buildKeyList(): HTMLElement {
+    const list = el('div', 'key-list');
+    list.dataset.testid = 'key-list';
+    // Keys are for a keyboard: the touch controls hide the list.
+    list.classList.add('touch-hide');
+    list.append(el('h3', 'settings-group', t('settings.keyboard')), el('p', 'settings-hint', t('settings.keyboardHint')));
+    for (const group of KEY_GROUPS) {
+      list.append(el('h4', 'key-group', t(`settings.groups.${group.id}`)));
+      for (const action of group.actions) list.append(this.keyRow(action));
+    }
+    return list;
+  }
+
+  private keyRow(action: Action): HTMLDivElement {
+    const row = el('div', 'key-row');
+    row.dataset.testid = `key-row-${action}`;
+    row.dataset.action = action;
+    const label = el('div', 'key-label', t(`settings.actions.${action}`));
+    const chips = el('div', 'key-chips');
+    const reset = el('button', 'key-reset', '↺');
+    reset.type = 'button';
+    reset.dataset.testid = `key-reset-${action}`;
+    reset.title = t('settings.keyReset');
+    reset.setAttribute('aria-label', `${t('settings.keyReset')}: ${t(`settings.actions.${action}`)}`);
+    reset.addEventListener('click', () => {
+      this.stopListening?.();
+      this.change({ keybindings: resetBinding(this.deps.settings(), action) });
+      this.refresh();
+    });
+    const hint = el('p', 'key-hint');
+    hint.hidden = true;
+    hint.setAttribute('role', 'status');
+
+    const startListening = (slot: number, chip: HTMLButtonElement) => {
+      this.stopListening?.();
+      chip.classList.add('listening');
+      chip.textContent = t('settings.pressKey');
+      let pending: string | null = null;
+      const release = panelStack.captureKeys((e) => {
+        if (e.code === 'Escape') {
+          this.stopListening?.();
+          return true;
+        }
+        const code = e.code || codeFromKey(e.key);
+        if (e.repeat || !isBindableKey(code)) return true;
+        // A key another action holds (B is the mount key by default): warn first, a second press of the same key swaps it over.
+        const result = rebindKey(this.deps.settings(), action, slot, code, pending === code);
+        if (!result.keybindings) {
+          pending = code;
+          hint.textContent = t('settings.keyConflict', { key: keyLabel(code), action: t(`settings.actions.${result.conflicts[0]!}`) });
+          hint.hidden = false;
+          return true;
+        }
+        this.stopListening?.();
+        this.change({ keybindings: result.keybindings });
+        this.refresh();
+        return true;
+      });
+      const away = (ev: Event) => {
+        if (!(ev.target as Element | null)?.closest?.('.key-chip')) this.stopListening?.();
+      };
+      window.addEventListener('pointerdown', away, true);
+      this.stopListening = () => {
+        release();
+        window.removeEventListener('pointerdown', away, true);
+        this.stopListening = null;
+        hint.hidden = true;
+        render();
+      };
+    };
+
+    const render = () => {
+      const keys = resolveKeybindings(this.deps.settings())[action];
+      const buttons: HTMLButtonElement[] = [];
+      const addChip = (slot: number, code: string | null) => {
+        const chip = el('button', code ? 'key-chip' : 'key-chip add', code ? keyLabel(code) : '+');
+        chip.type = 'button';
+        chip.dataset.testid = `key-chip-${action}-${slot}`;
+        chip.setAttribute('aria-label', code ? t('settings.keyChange', { action: t(`settings.actions.${action}`), key: keyLabel(code) }) : t('settings.keyAdd', { action: t(`settings.actions.${action}`) }));
+        chip.addEventListener('click', () => startListening(slot, chip));
+        buttons.push(chip);
+      };
+      keys.forEach((code, i) => addChip(i, code));
+      if (keys.length === 0) addChip(0, null);
+      else if (keys.length < MAX_KEYS_PER_ACTION) addChip(keys.length, null);
+      chips.replaceChildren(...buttons);
+      reset.hidden = !(action in this.deps.settings().keybindings);
+      row.classList.toggle('unbound', keys.length === 0);
+    };
+    this.refreshers.push(render);
+    render();
+    row.append(label, chips, reset, hint);
+    return row;
+  }
+
+  // ---- Reset (B047) ---------------------------------------------------------------------------
+
+  /** "Reset this tab": two taps (armConfirm), then the tab's settings go back to their defaults. */
+  private resetRow(tab: 'display' | 'controls'): HTMLDivElement {
+    const row = el('div', 'settings-row settings-reset-row');
+    const btn = el('button', 'settings-reset', t('settings.resetTab'));
+    btn.type = 'button';
+    btn.dataset.testid = `settings-reset-${tab}`;
+    armConfirm(btn, {
+      armedLabel: t('settings.resetConfirm'),
+      run: () => {
+        this.stopListening?.();
+        this.change(tabDefaults(tab, document.documentElement.classList.contains('touch-device')));
+        this.refresh();
+      },
+    });
+    row.append(btn);
+    return row;
   }
 
   // ---- Controls -------------------------------------------------------------------------------
@@ -256,6 +459,33 @@ export class SettingsPanel {
     this.refreshers.push(sync);
     sync();
     return group;
+  }
+
+  /** A label with a range slider and its value in percent (brightness). */
+  private sliderRow(label: string, hint: string | undefined, range: { min: number; max: number; step: number }, value: () => number, change: (v: number) => void, testid: string): HTMLDivElement {
+    const row = el('div', 'settings-row settings-slider-row');
+    const text = el('div', 'settings-label', label);
+    const input = el('input', 'settings-slider');
+    input.type = 'range';
+    input.min = String(range.min);
+    input.max = String(range.max);
+    input.step = String(range.step);
+    input.dataset.testid = `setting-${testid}`;
+    input.setAttribute('aria-label', label);
+    const out = el('span', 'settings-value');
+    const sync = () => {
+      input.value = String(value());
+      out.textContent = `${Math.round(value() * 100)}%`;
+    };
+    input.addEventListener('input', () => {
+      change(Number(input.value));
+      sync();
+    });
+    this.refreshers.push(sync);
+    sync();
+    row.append(text, input, out);
+    if (hint) row.append(el('p', 'settings-hint', hint));
+    return row;
   }
 
   /** A label with an on/off switch. */

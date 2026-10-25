@@ -58,6 +58,22 @@ const flat = (geometry: THREE.BufferGeometry): THREE.BufferGeometry => {
   return geometry;
 };
 
+/** Seconds before the hit in which a telegraph's outline brightens (A024). */
+export const TELEGRAPH_WARN = 0.3;
+
+/**
+ * Opacity of a telegraph's outline at progress `t` (0..1) of a `life`-second wind-up: it deepens slowly, then
+ * brightens over the last `TELEGRAPH_WARN` seconds so the landing time reads. (The inner fill growing to the edge
+ * is the other half of the cue.)
+ */
+export function telegraphOutlineOpacity(t: number, life: number, bright: boolean): number {
+  const base = bright ? 0.2 + 0.15 * t : 0.12 + 0.12 * t;
+  const peak = bright ? 0.65 : 0.5;
+  const from = life > 0 ? Math.max(0, 1 - TELEGRAPH_WARN / life) : 1;
+  if (t <= from) return base;
+  return base + (peak - base) * Math.min(1, (t - from) / Math.max(1e-6, 1 - from));
+}
+
 export class VfxSystem {
   readonly root = new THREE.Group();
   private readonly pools = new Map<string, TimedFx[]>();
@@ -512,7 +528,7 @@ export class VfxSystem {
       fx.group.scale.set(shape.width, 1, shape.length);
       fx.update = (f, t) => {
         inner.scale.set(1, 1, t);
-        f.materials[0]!.opacity = bright ? 0.2 + 0.15 * t : 0.12 + 0.12 * t;
+        f.materials[0]!.opacity = telegraphOutlineOpacity(t, f.life, bright);
       };
     } else {
       if (shape.kind === 'cone') fx.group.rotation.y = shape.facing + Math.PI;
@@ -520,7 +536,7 @@ export class VfxSystem {
       // Fill grows from the centre: when it reaches the edge, the attack lands.
       fx.update = (f, t) => {
         inner.scale.set(t, 1, t);
-        f.materials[0]!.opacity = bright ? 0.2 + 0.15 * t : 0.12 + 0.12 * t;
+        f.materials[0]!.opacity = telegraphOutlineOpacity(t, f.life, bright);
       };
     }
     fx.update(fx, 0);

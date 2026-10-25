@@ -6,6 +6,7 @@ import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/genera
 import { MASTERWORK } from '../data/endgame/crafting';
 import { effectiveAffixes } from '../systems/endgame/itemMods';
 import { artUrl, itemArtUrl } from './art';
+import { affixRollRange, isHighRoll, powerDelta, powerDeltaText } from './inventoryLogic';
 
 export function formatStat(stat: StatKey, value: number): string {
   const sign = value >= 0 ? '+' : '−';
@@ -64,12 +65,33 @@ export function placeTooltipForPortrait(tooltip: HTMLElement, anchor: DOMRect): 
 export function renderItemTooltip(
   item: Item,
   classId: string,
-  opts: { equipped?: boolean; comparison?: Comparison | null; /** The sheet pins icon, name, type and power above the scrolling body. */ noHeader?: boolean } = {},
+  opts: {
+    equipped?: boolean;
+    comparison?: Comparison | null;
+    /** The sheet pins icon, name, type and power above the scrolling body. */
+    noHeader?: boolean;
+    /**
+     * Desktop hover (B006-B009): every slot the item could go to, with what is worn there. Replaces `comparison`
+     * with one "vs <item>" block per slot, adds the item-power delta to the header and a delta on each affix.
+     */
+    targets?: CompareTarget[];
+    /** The target compared first (its delta goes in the header). */
+    defaultSlot?: Slot;
+    /** Print the possible roll range after each affix (B009). */
+    ranges?: boolean;
+    /** Where the item's aspect stands, as a status line under it (B017). */
+    aspectStatus?: 'codex' | 'cache' | 'new';
+    /** Extra muted lines at the very end, e.g. key hints (B011/B018). */
+    hints?: string[];
+  } = {},
 ): HTMLElement {
   const root = el('div', 'item-tip');
   const rarity = rarityDef(item.rarity);
   root.style.setProperty('--rarity', rarity.color);
   const base = BASE_ITEMS.get(item.base);
+  const targets = opts.equipped ? [] : (opts.targets ?? []);
+  const mainTarget = targets.find((x) => x.slot === opts.defaultSlot) ?? targets[0];
+  const mainWorn = mainTarget?.equipped ? effectiveAffixes(mainTarget.equipped) : null;
 
   if (!opts.noHeader) {
     // The painted icon beside the name, in its rarity's look.
@@ -77,9 +99,24 @@ export function renderItemTooltip(
     if (art) root.appendChild(Object.assign(document.createElement('img'), { src: art, alt: '', className: 'item-tip-icon' }));
     root.appendChild(el('div', 'item-tip-name', itemDisplayName(item)));
     root.appendChild(el('div', 'item-tip-type', itemTypeLine(item)));
-    if (!item.crystal) root.appendChild(el('div', 'item-tip-power', t('items.itemPower', { power: item.itemPower })));
+    if (!item.crystal) {
+      const power = el('div', 'item-tip-power', t('items.itemPower', { power: item.itemPower }));
+      const delta = !opts.equipped && targets.length > 0 ? powerDelta(item, mainTarget?.equipped) : 0;
+      if (delta !== 0) {
+        const chip = el('span', `item-tip-delta ${delta > 0 ? 'up' : 'down'}`, `${delta > 0 ? '▲' : '▼'} ${powerDeltaText(delta)}`);
+        chip.title = t(delta > 0 ? 'items.bag.better' : 'items.bag.worse');
+        power.appendChild(chip);
+      }
+      root.appendChild(power);
+    }
   }
   if (opts.equipped) root.appendChild(el('div', 'item-tip-equipped', t('items.equipped')));
+  if (item.locked) {
+    const flag = el('div', 'item-tip-flag locked', t('items.lockedLine'));
+    flag.prepend(el('span', 'cell-lock'));
+    root.appendChild(flag);
+  }
+  else if (item.junk) root.appendChild(el('div', 'item-tip-flag junk', t('items.junkLine')));
 
   if (item.crystal) {
     const c = CRYSTAL_DEFS.get(item.crystal.id);
@@ -102,14 +139,22 @@ export function renderItemTooltip(
     const affixes = effectiveAffixes(item);
     if (affixes.length) {
       const aff = el('div', 'item-tip-stats');
-      for (const s of affixes) {
+      affixes.forEach((s, i) => {
         const cls = s.tempered ? 'tempered' : s.greater ? 'greater' : '';
         const mark = s.tempered ? '⚒ ' : s.greater ? '◆ ' : '';
         const row = el('div', cls, `${mark}${formatStat(s.stat, s.value)}${s.boosted ? ' ▲' : ''}`);
         if (s.tempered) row.title = t('crafting.tooltip.tempered');
         else if (s.greater) row.title = t('items.greater');
+        if (mainWorn) row.appendChild(affixDeltaMark(s.stat, s.value, mainWorn));
+        const range = opts.ranges && !s.tempered ? affixRollRange(item, i) : null;
+        if (range) {
+          const high = isHighRoll(s.value, range);
+          const r = el('span', `affix-range${high ? ' high' : ''}`, `[${rangeText(s.stat, range.min)}–${rangeText(s.stat, range.max)}]`);
+          r.title = t('items.rollRange', { min: rangeText(s.stat, range.min), max: rangeText(s.stat, range.max) });
+          row.appendChild(r);
+        }
         aff.appendChild(row);
-      }
+      });
       root.appendChild(aff);
     }
     if (item.masterwork) root.appendChild(el('div', 'item-tip-masterwork', t('crafting.tooltip.masterwork', { rank: item.masterwork, max: MASTERWORK.maxRank })));
@@ -118,6 +163,7 @@ export function renderItemTooltip(
       const icon = artUrl(`aspects/${item.aspect.id}`);
       if (icon) asp.prepend(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
       root.appendChild(asp);
+      if (opts.aspectStatus) root.appendChild(el('div', `item-tip-aspect-status${opts.aspectStatus === 'new' ? ' new' : ''}`, t(`items.aspectStatus.${opts.aspectStatus}`)));
     }
     if (item.unique) {
       root.appendChild(el('div', 'item-tip-aspect unique', `✦ ${t(`uniques.${item.unique}.effect`)}`));
@@ -145,10 +191,57 @@ export function renderItemTooltip(
     }
   }
 
-  if (opts.comparison) root.appendChild(renderComparison(opts.comparison));
+  if (targets.length > 0) {
+    // Default target first; a ring is compared with both worn rings (B006).
+    const ordered = mainTarget ? [mainTarget, ...targets.filter((x) => x !== mainTarget)] : targets;
+    for (const x of ordered) if (x.comparison) root.appendChild(renderComparison(x.comparison, targetHeading(x, targets.length > 1)));
+  } else if (opts.comparison) root.appendChild(renderComparison(opts.comparison));
 
   if (!opts.equipped) root.appendChild(el('div', 'item-tip-salvage muted', t('items.salvageFor', { gold: salvageValue(item) })));
+  for (const hint of opts.hints ?? []) root.appendChild(el('div', 'item-tip-hint muted', hint));
   return root;
+}
+
+/** "vs Etched Ring (70)"; with two slots "vs Ring 1: Etched Ring (70)"; an empty slot "vs empty Ring 2" (B006). */
+export function targetHeading(target: CompareTarget, dual: boolean): string {
+  if (!target.equipped) return t('items.compareVsEmpty', { slot: target.label });
+  const name = itemDisplayName(target.equipped);
+  const power = target.equipped.itemPower;
+  return dual ? t('items.compareVsSlot', { slot: target.label, name, power }) : t('items.compareVs', { name, power });
+}
+
+/** A roll bound without sign: "5.0%" or "24". */
+function rangeText(stat: StatKey, value: number): string {
+  const abs = Math.abs(value);
+  return PERCENT_STATS.has(stat) ? `${(abs * 100).toFixed(abs * 100 < 10 ? 1 : 0)}%` : `${Math.round(abs)}`;
+}
+
+/** Muted "(+2.7)" against the worn item's same stat, or an accent dot when the worn item lacks the stat (B008). */
+function affixDeltaMark(stat: StatKey, value: number, worn: { stat: StatKey; value: number }[]): HTMLElement {
+  const same = worn.filter((w) => w.stat === stat);
+  if (same.length === 0) {
+    const dot = el('i', 'affix-new');
+    dot.title = t('items.newStat');
+    dot.setAttribute('role', 'img');
+    dot.setAttribute('aria-label', t('items.newStat'));
+    return dot;
+  }
+  const delta = value - same.reduce((sum, w) => sum + w.value, 0);
+  const pct = PERCENT_STATS.has(stat);
+  if (Math.abs(delta) < (pct ? 0.0005 : 0.5)) return el('span', 'affix-delta', '(=)');
+  const num = pct ? (Math.abs(delta) * 100).toFixed(1) : String(Math.round(Math.abs(delta)));
+  return el('span', `affix-delta ${delta > 0 ? 'up' : 'down'}`, `(${delta > 0 ? '+' : '−'}${num})`);
+}
+
+/** Everything the `/` search looks at: names, type, stats, aspect and unique text (B015). */
+export function itemSearchText(item: Item): string {
+  const parts: string[] = [itemDisplayName(item), item.name, itemTypeLine(item)];
+  if (item.crystal) return parts.join(' ');
+  parts.push(t(`items.bases.${item.base}`));
+  for (const s of [...item.implicits, ...effectiveAffixes(item)]) parts.push(formatStat(s.stat, s.value));
+  if (item.aspect) parts.push(t(`aspects.${item.aspect.id}.name`), aspectText(item.aspect.id, item.aspect.value));
+  if (item.unique) parts.push(t(`uniques.${item.unique}.name`), t(`uniques.${item.unique}.effect`));
+  return parts.join(' ');
 }
 
 function itemTypeLine(item: Item): string {
@@ -156,10 +249,10 @@ function itemTypeLine(item: Item): string {
   return item.crystal ? t('items.types.crystal') : `${t(`items.rarity.${item.rarity}`)} ${base ? t(`items.types.${base.type}`) : ''}`;
 }
 
-/** The "Compared to equipped" block: one line per stat difference. */
-export function renderComparison(comparison: Comparison): HTMLElement {
+/** The comparison block: a heading ("Compared to equipped" or "vs Etched Ring (70)") and one line per stat difference. */
+export function renderComparison(comparison: Comparison, heading?: string): HTMLElement {
   const cmp = el('div', 'item-tip-compare');
-  cmp.appendChild(el('div', 'muted', t('items.compare')));
+  cmp.appendChild(el('div', 'muted item-tip-compare-head', heading ?? t('items.compare')));
   const line = (label: string, delta: number, pct: boolean) => {
     if (Math.abs(delta) < (pct ? 0.0005 : 0.5)) return;
     const up = delta > 0;
@@ -289,7 +382,9 @@ export function renderItemSheet(item: Item, classId: string, opts: ItemSheetOpti
     verdict.replaceChildren();
     if (comparison) {
       const parts = compareVerdict(comparison, item, target?.equipped ?? null);
-      if (parts.length === 0) verdict.appendChild(el('span', 'chip', t('items.sheet.noChange')));
+      const power = item.crystal ? 0 : powerDelta(item, target?.equipped);
+      if (power !== 0) verdict.appendChild(el('span', `chip ${power > 0 ? 'up' : 'down'}`, `${power > 0 ? '▲' : '▼'} ${powerDeltaText(power)} ${t('items.powerShort')}`));
+      else if (parts.length === 0) verdict.appendChild(el('span', 'chip', t('items.sheet.noChange')));
       for (const p of parts) verdict.appendChild(el('span', `chip ${p.up ? 'up' : 'down'}`, p.text));
     }
     verdict.hidden = !comparison;
@@ -303,7 +398,11 @@ export function renderItemSheet(item: Item, classId: string, opts: ItemSheetOpti
           : el('div', 'muted item-sheet-empty', t('items.sheet.nothingEquipped', { slot: target?.label ?? '' })),
       );
     } else if (current === 'changes') {
-      body.push(comparison ? renderComparison(comparison) : el('div', 'muted', t('items.sheet.noChange')));
+      body.push(
+        comparison
+          ? renderComparison(comparison, target ? targetHeading(target, targets.length > 1) : undefined)
+          : el('div', 'muted', t('items.sheet.noChange')),
+      );
     } else {
       body.push(renderItemTooltip(item, classId, { equipped: opts.equipped, noHeader: true }), ...(opts.extra ?? []));
     }

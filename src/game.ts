@@ -79,12 +79,14 @@ import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from './systems/sk
 import { statusSystem } from './systems/status';
 import { enemyNear } from './systems/targeting';
 import { DamageNumbers } from './ui/damageNumbers';
+import { EnemyBars, ELITE_RANGE, type EnemyBarInfo } from './ui/enemyBars';
 import { CharacterPanel } from './ui/characterPanel';
 import { InventoryPanel } from './ui/inventoryPanel';
-import { sortGrid, type SortMode } from './ui/inventoryLogic';
+import { bestLoadout, sortGrid, type EquipMove, type SortMode } from './ui/inventoryLogic';
 import { SkillTreePanel, skillIconId } from './ui/skillTreePanel';
+import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import { MatrixPanel } from './ui/matrixPanel';
-import { LootLabels } from './ui/lootLabels';
+import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
 import { playDropSound, playGoldSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
@@ -99,12 +101,12 @@ import { slotsFor, type Item, type Slot } from './data/loot/schemas';
 import { generateItem, itemPowerFor, xpToNext } from './systems/loot/generate';
 import { addToGrid, emptyInventory, equipFromGrid, salvage, socketCrystal, targetSlot, unequip } from './systems/loot/inventory';
 import { PICKUP_KEY_RADIUS, grantXp, nextItemUid, pickUp, pickupSystem, rewardSystem, setItemNamer } from './systems/loot/rewards';
-import { computePlayerStats, recomputePlayer, setExtraEffects, sumItemStats } from './systems/stats';
+import { compareGear, recomputePlayer, setExtraEffects } from './systems/stats';
 import * as matrix from './systems/endgame/matrix';
 import { monsterLevel } from './systems/encounter';
-import { learn, learnedSkills, pointsSpent, resetTree, respecCost, tree } from './systems/skillTree';
+import { canRefund, learn, learnedSkills, pointsSpent, refundCost, refundRank, resetTree, respecCost, tree } from './systems/skillTree';
 import { DevTools } from './ui/devtools';
-import { MapUi } from './ui/minimap';
+import { MapUi, type MapBlip } from './ui/minimap';
 import { artUrl } from './ui/art';
 import { Hud, type HudState } from './ui/hud';
 import { playerStatuses } from './ui/statusTiles';
@@ -113,6 +115,7 @@ import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
 import { loadAccount, relicEffects, saveAccount } from './core/account';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
+import { deathCauseLine } from './ui/deathCause';
 import { bossPhaseTicks, keyLabel } from './ui/hud';
 import { LORE_XP_PER_LEVEL, PYLONS } from './data/interactables';
 import {
@@ -139,7 +142,7 @@ import { RiftHud, RiftPanel } from './ui/riftPanel';
 import { RIFT, RIFT_ID } from './data/endgame/rifts';
 import { riftObeliskAt } from './data/endgame/riftObelisks';
 import { GLYPH_DEFS } from './data/endgame/matrix';
-import { riftEntryProblem, riftGlyphAttempt, riftHud, riftOpenLevel } from './systems/endgame/rifts';
+import { riftEntryProblem, riftGlyphAttempt, riftHud, riftOpenLevel, riftsUnlocked } from './systems/endgame/rifts';
 import { TIER_BEACONS } from './data/endgame/beacons';
 import { chooseTier, currentTier, monsterLevelCap, playerInCombat, setEnemyScaling, tickPlaytime, tierMods } from './systems/endgame/tiers';
 import {
@@ -151,6 +154,8 @@ import {
   rollVendorStock,
   salvageJunk,
   sell as sellItem,
+  buyBack as buyBackItem,
+  type BuybackEntry,
   stashSlots,
   toStash,
 } from './systems/hub/services';
@@ -163,6 +168,8 @@ import { chooseLumen, lumenCameraFocus } from './world/lumen';
 import { EpilogueScreen } from './ui/epilogue';
 import { panelStack } from './ui/panelStack';
 import { registerGamePanels } from './ui/panelRegistry';
+import { meanItemPower } from './ui/characterSelect';
+import { PauseMenu } from './ui/pauseMenu';
 import { SettingsPanel } from './ui/settingsPanel';
 import { CoachMarks } from './ui/onboarding';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
@@ -171,7 +178,7 @@ import { setPieceSystem, setPiecesOnDeath, syncSetPieces } from './world/setPiec
 import { activeWorldBoss, worldBossMarker, worldBossRuntime, worldBossSystem } from './world/worldBoss';
 import { WorldBossHud } from './ui/worldBossHud';
 import { EndgameStack } from './ui/endgameStack';
-import { EdgeArrow, placeEdgeArrow } from './ui/edgeArrows';
+import { EdgeArrow, edgeInsets, placeEdgeArrow } from './ui/edgeArrows';
 import { WORLD_BOSS, worldBossPortrait } from './data/endgame/worldBosses';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
 import { harvestSystem, harvestView } from './world/harvest';
@@ -229,13 +236,16 @@ export class Game {
   private readonly dialogue: DialoguePanel;
   private readonly epilogue: EpilogueScreen;
   private settingsPanel!: SettingsPanel;
+  private pauseMenu!: PauseMenu;
   private uiRoot!: HTMLElement;
   /** The backpack was opened by a hub service, so closing the service closes it too. */
   private inventoryOpenedByService = false;
   private pauseFrame = 0;
   private menuPausedNow = false;
   private readonly npcPlates: NpcPlates;
-  private readonly elitePlates: NpcPlates;
+  private readonly enemyBars: EnemyBars;
+  /** Enemy infos reused every frame (bars, plates, minimap blips). */
+  private readonly enemyInfos: EnemyBarInfo[] = [];
   private readonly questTracker: QuestTracker;
   private readonly questLog: QuestLog;
   /** NPC the open conversation is with. */
@@ -249,6 +259,8 @@ export class Game {
   /** The enemy the target frame shows (its floating plate is hidden on a phone). */
   private hudTarget: Entity | null = null;
   private vendorStock: (Item | null)[] = [];
+  /** Items sold to the trader since the last restock (B023); memory only. */
+  private vendorBuyback: BuybackEntry[] = [];
   /** Simulated time when the trader restocks (also on level up). */
   private vendorRestockAt = -Infinity;
   private player!: Entity;
@@ -294,6 +306,8 @@ export class Game {
 
     this.renderer = new GameRenderer(canvas);
     this.renderer.screenShake = this.settings.screenShake;
+    this.renderer.reduceFlashing = this.settings.reduceFlashing;
+    this.renderer.setBrightness(this.settings.brightness);
     this.renderer.setQuality(this.settings.graphics);
     this.input = new Input(canvas, resolveKeybindings(this.settings));
 
@@ -382,6 +396,7 @@ export class Game {
     this.worldBossHud = new WorldBossHud(endgameStack, (message) => this.toasts.show(message, 'info', 4500));
     this.harvestHud = new HarvestHud(endgameStack);
     this.hud = new Hud(uiRoot, () => this.respawn());
+    this.hud.onOpenSkills = () => this.input.pressAction('skills');
     // On a phone the stack lives in the HUD's left column (one chip, see portrait/hud.css).
     this.hud.leftColumn.append(endgameStack);
     this.fade = document.createElement('div');
@@ -391,6 +406,7 @@ export class Game {
       uiRoot,
       (e) => this.requestPickup(e),
       (message) => this.toasts.show(message, 'info', 1800),
+      () => this.settings.lootLabelMin,
     );
     this.interactPrompt = new InteractPrompt(
       uiRoot,
@@ -422,7 +438,7 @@ export class Game {
     this.dialogue = new DialoguePanel(uiRoot);
     this.epilogue = new EpilogueScreen(uiRoot);
     this.npcPlates = new NpcPlates(uiRoot, (id) => this.walkToNpc(id));
-    this.elitePlates = new NpcPlates(uiRoot);
+    this.enemyBars = new EnemyBars(uiRoot);
     this.questTracker = new QuestTracker(uiRoot, () => this.input.pressAction('quests'));
     this.questLog = new QuestLog(
       uiRoot,
@@ -440,6 +456,7 @@ export class Game {
         openMap: () => {
           if (!this.mapUi.open) this.input.pressAction('map');
         },
+        playerLevel: () => this.world.get(this.player, Progression)?.level ?? 0,
       },
     );
     this.mapUi = new MapUi(
@@ -480,8 +497,13 @@ export class Game {
           this.afterInventoryChange();
         },
         sort: (mode) => this.sortInventory(mode),
+        bestCount: () => this.bestEquipMoves().length,
+        equipBest: () => this.equipBest(),
         socket: (c, target) => this.socketItem(c, target),
         compare: (item, slot) => this.compare(item, slot),
+        marked: () => this.autosave(),
+        notify: (text) => this.toasts.show(text),
+        codex: () => this.ctx.account?.endgame.codex ?? [],
         iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       },
     );
@@ -491,13 +513,29 @@ export class Game {
       iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       stock: () => this.vendorStock,
       stash: () => stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots),
+      compare: (item) => this.compare(item),
+      buyback: () => this.vendorBuyback,
+      buyBack: (i) => {
+        const r = buyBackItem(this.world.req(this.player, Inventory), this.vendorBuyback, i);
+        if (r.ok) audio.play('ui.coins');
+        this.serviceResult(r);
+      },
+      sortStash: (mode) => {
+        const slots = stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots);
+        slots.splice(0, slots.length, ...sortGrid(slots, mode));
+        saveAccount(this.storage, this.ctx.account!);
+      },
       buy: (i) => {
         const r = buyItem(this.world.req(this.player, Inventory), this.vendorStock, i);
         if (r.ok) audio.play('ui.coins');
         this.serviceResult(r);
       },
       sell: (i) => {
-        const gold = sellItem(this.world.req(this.player, Inventory), i);
+        if (this.world.req(this.player, Inventory).grid[i]?.locked) {
+          this.toasts.show(t('items.bag.lockedToast'));
+          return;
+        }
+        const gold = sellItem(this.world.req(this.player, Inventory), i, this.vendorBuyback);
         if (gold > 0) {
           playGoldSound();
           audio.play('ui.coins');
@@ -638,6 +676,7 @@ export class Game {
         return { kind: r.kind, current: r.current, max: r.max };
       })(),
       gold: this.world.req(this.player, Inventory).gold,
+      gearPower: averageItemPower(Object.values(this.world.req(this.player, Inventory).equipped)),
       bag: (() => {
         const grid = this.world.req(this.player, Inventory).grid;
         return { used: grid.filter((i) => i !== null).length, max: grid.length };
@@ -659,11 +698,14 @@ export class Game {
           respecCost: respecCost(t3, prog.level),
           gold: this.world.req(this.player, Inventory).gold,
           matrixUnlocked: prog.level >= PROGRESSION.maxLevel,
+          matrixPoints: this.ctx.endgame?.matrixPoints ?? 0,
+          refundCost: refundCost(t3, prog.level),
         };
       },
       {
         learn: (id) => this.learnNode(id),
         reset: () => this.resetSkillTree(),
+        refund: (id) => this.refundNode(id),
         assign: (slot, id) => this.assignSlot(slot, id),
         iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       },
@@ -773,6 +815,8 @@ export class Game {
     this.devtools.setMoveMode(this.settings.moveMode);
     this.devtools.setTouchControls(this.settings.touchControls);
     this.refreshHint();
+    this.hud.setReduceFlashing(this.settings.reduceFlashing);
+    this.mapUi.reduceFlashing = this.settings.reduceFlashing;
 
     // Settings panel (sound, display, controls) and the registration of every panel with the stack.
     this.settingsPanel = new SettingsPanel(uiRoot, {
@@ -782,7 +826,17 @@ export class Game {
       toggleMute: () => this.toggleMute(),
     });
     this.soundUi.openSettings = () => this.settingsPanel.toggle('sound');
+    this.pauseMenu = new PauseMenu(uiRoot, {
+      exportSave: () => this.exportSave(),
+      toCharacterSelect: () => {
+        // The save is written; a reload brings the character select screen back with a clean world.
+        this.autosave();
+        location.reload();
+      },
+      canOpen: () => this.playing,
+    });
     registerGamePanels(uiRoot, {
+      pause: this.pauseMenu,
       inventory: this.inventoryPanel,
       character: this.characterPanel,
       skills: this.skillTreePanel,
@@ -834,14 +888,21 @@ export class Game {
   // ---- Characters -------------------------------------------------------------
 
   /** What is in each character slot, for the select screen. */
-  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string } | null; corrupt?: boolean }[] {
+  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null; corrupt?: boolean }[] {
     return Array.from({ length: CHARACTER_SLOTS }, (_, index) => {
       try {
         const data = this.saves.read(slotKey(index));
         if (!data) return { index, character: null };
         return {
           index,
-          character: { name: data.character.name, classId: data.character.classId, level: data.progression.level, savedAt: data.savedAt },
+          character: {
+            name: data.character.name,
+            classId: data.character.classId,
+            level: data.progression.level,
+            savedAt: data.savedAt,
+            zoneKey: hasZone(data.world.zone) ? zoneDef(data.world.zone).key : undefined,
+            gear: meanItemPower(Object.values(data.inventory?.equipped ?? {}).filter((i): i is NonNullable<typeof i> => !!i)),
+          },
         };
       } catch {
         return { index, character: null, corrupt: true };
@@ -1050,7 +1111,7 @@ export class Game {
     if (input.wasPressed('toggleDebug')) this.devtools.toggle();
     if (input.wasPressed('quickSave')) this.save();
     if (input.wasPressed('quickLoad')) this.load();
-    if (input.wasPressed('respawn') && this.world.has(this.player, Dead)) this.respawn();
+    if (input.wasPressed('respawn') && this.world.has(this.player, Dead) && !this.hud.respawnLocked) this.respawn();
     if (input.wasPressed('inventory')) this.inventoryPanel.toggle();
     if (input.wasPressed('character')) this.characterPanel.toggle();
     if (input.wasPressed('skills')) this.skillTreePanel.toggle();
@@ -1126,6 +1187,7 @@ export class Game {
     audio.setListener(px, pz, this.ctx.cameraYaw);
     this.updateAudio(px, pz, frameDt);
     this.damageNumbers.update(frameDt, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
+    this.updateEnemyBars(frameDt, px, pz);
     this.lootLabels.update(this.world, px, pz, this.input.isDown('showLabels'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
     );
@@ -1141,6 +1203,7 @@ export class Game {
     const hudState = this.hudState();
     this.hud.update(hudState, frameDt);
     this.touchControls.sync(hudState.combat ?? false, hudState.xp.skillPoints);
+    this.touchControls.setUnassigned(hudState.unassignedSkills ?? 0);
     this.worldBossHud.update(this.ctx);
     this.riftHudUi.update(this.ctx.instance?.rift ? riftHud(this.ctx.instance.rift) : null);
     this.endgameChip.update(frameDt);
@@ -1183,6 +1246,7 @@ export class Game {
     this.renderer.handleEvents(events);
     for (const event of events) {
       this.damageNumbers.handle(event);
+      this.enemyBars.handle(event);
       this.hapticFor(event);
       for (const cue of soundsForEvent(event)) audio.play(cue.id, cue.x !== undefined && cue.z !== undefined ? { x: cue.x, z: cue.z } : {});
       switch (event.type) {
@@ -1204,6 +1268,7 @@ export class Game {
           break;
         case 'loot':
           playDropSound(event.rarity);
+          if (rarityRank(event.rarity) >= rarityRank('legendary')) this.mapUi.addPip(event.x, event.z, 5000);
           break;
         case 'pickup':
           if (event.kind === 'gold') playGoldSound();
@@ -1226,6 +1291,14 @@ export class Game {
           this.notice('combat.overheat', 'error', false);
           break;
         case 'notice':
+          // Desktop: a refused press for lack of resource shakes the slots and flashes the orb instead of a toast (A004).
+          if (event.key === 'combat.notEnoughResource' && this.hud.denyResource()) {
+            if (this.realTime - (this.lastNotice.get(event.key) ?? -Infinity) >= 1.5) {
+              this.lastNotice.set(event.key, this.realTime);
+              audio.play('ui.error');
+            }
+            break;
+          }
           this.notice(event.key, 'error');
           break;
         case 'discover':
@@ -1317,6 +1390,52 @@ export class Game {
     };
   }
 
+  /**
+   * Life bars over hurt enemies, plates (name, affix chips, bar) over elites, and the minimap's hostile blips
+   * (src/ui/enemyBars.ts): one pass over the enemies near the player.
+   */
+  private updateEnemyBars(dt: number, px: number, pz: number): void {
+    const infos = this.enemyInfos;
+    infos.length = 0;
+    const blips: MapBlip[] = [];
+    const exposure = this.zone?.storm.exposure ?? 0;
+    for (const e of this.world.query(EnemyAI, Health, Transform)) {
+      if (this.world.has(e, Dead)) continue;
+      const hp = this.world.req(e, Health);
+      if (hp.current <= 0) continue;
+      const tr = this.world.req(e, Transform);
+      const dist = Math.hypot(tr.x - px, tr.z - pz);
+      if (dist > 45) continue;
+      const elite = this.world.get(e, Elite);
+      const boss = this.world.has(e, Boss);
+      blips.push({ x: tr.x, z: tr.z, kind: boss ? 'boss' : elite ? (elite.kind === 'champion' ? 'champion' : 'rare') : 'normal' });
+      if (dist > ELITE_RANGE) continue;
+      const scale = this.world.get(e, Renderable)?.scale ?? 1;
+      const info: EnemyBarInfo = {
+        id: e,
+        x: tr.x,
+        y: tr.y + (elite ? 2.6 : 2.1) * scale,
+        z: tr.z,
+        dist,
+        frac: hp.max > 0 ? hp.current / hp.max : 1,
+        tier: boss ? 'boss' : (elite?.kind ?? 'normal'),
+        targeted: e === this.hudTarget,
+      };
+      if (elite) {
+        // Ash Storms hide name plates until enemies are close; the target frame already names the phone's target.
+        if (dist > ELITE_RANGE - 18 * exposure || (e === this.hudTarget && this.hud.portrait)) continue;
+        const dn = this.world.get(e, DisplayName);
+        const ai = this.world.get(e, EnemyAI);
+        info.name = dn ? (dn.literal ? dn.key : t(dn.key)) : `${t('elites.champion')} ${t(`enemies.${ai?.defId ?? ''}`)}`;
+        info.color = ELITE_COLORS[elite.kind];
+        info.affixes = elite.affixes.map((a) => ({ id: a, name: t(`elites.affixes.${a}`) }));
+      }
+      infos.push(info);
+    }
+    this.mapUi.blips = blips;
+    this.enemyBars.update(dt, infos, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
+  }
+
   private updateQuestUi(px: number, pz: number): void {
     const rt = this.ctx.quests;
     if (!rt) return;
@@ -1357,22 +1476,6 @@ export class Game {
       plates.push({ id, x: tr.x, z: tr.z, name: t(`npcs.${id}.name`), marker });
     }
     this.npcPlates.update(plates, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
-    // Elite names float over them (blue champions, yellow rares, named quest targets).
-    const elites: { id: string; x: number; z: number; name: string; marker: ''; color: string; y: number }[] = [];
-    for (const e of this.world.query(Elite, Transform)) {
-      if (this.world.has(e, Dead)) continue;
-      const tr = this.world.req(e, Transform);
-      // Ash Storms hide name plates until enemies are close.
-      if (Math.hypot(tr.x - px, tr.z - pz) > 26 - 16 * (this.zone?.storm.exposure ?? 0)) continue;
-      // The target frame already names the targeted elite (phone: one name at a time).
-      if (e === this.hudTarget && this.hud.portrait) continue;
-      const el = this.world.req(e, Elite);
-      const dn = this.world.get(e, DisplayName);
-      const ai = this.world.get(e, EnemyAI);
-      const name = dn ? (dn.literal ? dn.key : t(dn.key)) : `${t('elites.champion')} ${t(`enemies.${ai?.defId ?? ''}`)}`;
-      elites.push({ id: String(e), x: tr.x, z: tr.z, name, marker: '', color: ELITE_COLORS[el.kind], y: tr.y + 2.6 * (this.world.get(e, Renderable)?.scale ?? 1) });
-    }
-    this.elitePlates.update(elites, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
     // Leaving the hub closes its services.
     if (this.servicePanel.open && !this.zone?.inHub) this.servicePanel.close();
     if (this.tierPanel.open && !this.zone?.inHub) this.tierPanel.close();
@@ -1495,6 +1598,7 @@ export class Game {
     const level = this.world.req(this.player, Progression).level;
     this.vendorStock = rollVendorStock(this.ctx.loot.rng, level, user.classId, () => nextItemUid(this.ctx), (id) => t(`items.bases.${id}`), tierMods(this.ctx));
     this.vendorRestockAt = this.ctx.time + VENDOR.refreshSeconds;
+    this.vendorBuyback = [];
   }
 
   private serviceResult(r: { ok: true } | { ok: false; reason: string }): void {
@@ -1596,8 +1700,12 @@ export class Game {
     const near = this.world.has(this.player, Dead) ? null : nearestInteractable(this.world, px, pz, this.ctx.time);
     // The Endless Shaft's way down is a portal that goes the other way.
     const target = near !== null ? { ...this.world.req(near, Transform), kind: this.world.req(near, Interactable).poi === 'deeper' ? 'deeper' : this.world.req(near, Interactable).kind } : null;
+    // A prompt that cannot be used right now says why instead of the action (A041).
+    const blocked =
+      target?.kind === 'lockedChest' && (this.ctx.zone?.keycards.size ?? 0) === 0 ? t('interact.blocked.keycard') : target?.kind === 'riftObelisk' && !riftsUnlocked(this.ctx) ? t('interact.blocked.dormant') : null;
     this.interactPrompt.update(target, this.touchControls.shown ? t('touch.use') : keyLabel(resolveKeybindings(this.settings).pickup[0] ?? 'KeyE'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
+      blocked,
     );
   }
 
@@ -1861,7 +1969,7 @@ export class Game {
         statuses,
         ...(portrait ? { portrait } : {}),
         ...bossPhaseTicks(w.get(te, Boss)?.script ?? undefined),
-        ...(elite ? { color: ELITE_COLORS[elite.kind], affixes: elite.affixes.map((a) => t(`elites.affixes.${a}`)) } : {}),
+        ...(elite ? { tier: elite.kind, color: ELITE_COLORS[elite.kind], affixes: elite.affixes.map((a) => t(`elites.affixes.${a}`)), affixIds: [...elite.affixes] } : {}),
       };
     }
 
@@ -1898,11 +2006,24 @@ export class Game {
       exposure: this.ctx.instance ? 0 : sporeExposure(),
       flares: !this.ctx.instance && this.zone?.def.dark ? { charges: undergroundState(this.zone).flareCharges, max: UNDERGROUND.flare.charges, key: keyLabel(resolveKeybindings(this.settings).flare[0] ?? 'F') } : undefined,
       dead: w.has(p, Dead),
+      ...(w.has(p, Dead) ? { deathCause: deathCauseLine(health.lastHitSource, this.ctx.time) } : {}),
       xp: (() => {
         const prog = w.req(p, Progression);
         return { level: prog.level, current: prog.xp, next: xpToNext(prog.level), skillPoints: prog.skillPoints };
       })(),
+      unassignedSkills: this.offBarSkills(user),
     };
+  }
+
+  private offBarCount = 0;
+  private offBarAt = -Infinity;
+  /** Learned active skills not on the action bar (B036), recounted four times a second (the tree walk is not per-frame work). */
+  private offBarSkills(user: SkillUser): number {
+    if (this.realTime - this.offBarAt >= 0.25 || this.realTime < this.offBarAt) {
+      this.offBarAt = this.realTime;
+      this.offBarCount = unassignedSkills(tree(user.classId), user.tree, user.slots).length;
+    }
+    return this.offBarCount;
   }
 
   // ---- Player lifecycle -----------------------------------------------------
@@ -2116,10 +2237,6 @@ export class Game {
   /** A boss engaging the player gets its portrait and name swept onto the screen. */
   /** A chevron on the screen edge towards an engaged boss (or the world boss) that is off the visible field (H070). */
   private updateBossArrow(): void {
-    if (!this.touchControls.shown) {
-      this.bossArrow.update(null);
-      return;
-    }
     let boss: Entity | null = null;
     for (const e of this.world.query(Boss, Transform)) {
       if (this.world.req(e, Boss).engaged && !this.world.has(e, Dead)) {
@@ -2139,8 +2256,9 @@ export class Game {
     }
     const w = window.innerWidth;
     const h = window.innerHeight;
-    // In the free band under the hero and above the thumb controls (clear of the top chrome and the left column).
-    this.bossArrow.update(placeEdgeArrow(from, to, { w, h }, { left: 24, right: 24, top: Math.round(h * 0.42), bottom: Math.round(h * 0.42) }));
+    // Touch: the free band under the hero and above the thumb controls (clear of the top chrome and the left column).
+    // Desktop: the whole playfield except the minimap/quest column, the target frame and the action bar (A017).
+    this.bossArrow.update(placeEdgeArrow(from, to, { w, h }, edgeInsets(h, this.touchControls.shown)));
   }
 
   private announceBosses(): void {
@@ -2313,6 +2431,7 @@ export class Game {
 
   salvageItem(index: number): void {
     const inv = this.world.req(this.player, Inventory);
+    if (inv.grid[index]?.locked) return;
     const dust = inv.grid[index] ? grantSalvageDust(this.ctx, inv.grid[index]!) : 0;
     const gold = salvage(inv, index);
     if (gold > 0) this.toasts.show(t('loot.salvaged', { gold }));
@@ -2327,7 +2446,7 @@ export class Game {
     let dust = 0;
     for (const index of indices) {
       const item = inv.grid[index];
-      if (!item) continue;
+      if (!item || item.locked) continue;
       dust += grantSalvageDust(this.ctx, item);
       gold += salvage(inv, index);
     }
@@ -2366,26 +2485,45 @@ export class Game {
   /** Compare a backpack item with what is equipped in the slot it would go to. */
   private compare(item: Item, forSlot?: Slot): { stats: { stat: import('./data/loot/schemas').StatKey; delta: number }[]; damagePct: number; life: number } | null {
     const inv = this.world.req(this.player, Inventory);
-    const user = this.world.req(this.player, SkillUser);
     const base = BASE_ITEMS.get(item.base);
     if (!base || slotsFor(base.type).length === 0) return null;
     const slot: Slot | null = forSlot && slotsFor(base.type).includes(forSlot)
       ? forSlot
       : slotsFor(base.type).length > 1 ? (targetSlot(inv, item) ?? null) : (slotsFor(base.type)[0] ?? null);
     if (!slot) return null;
-    const current = inv.equipped[slot];
-    const prog = this.world.req(this.player, Progression);
-    const cls = classDef(user.classId);
-    const before = computePlayerStats(cls, prog.level, inv.equipped);
-    const after = computePlayerStats(cls, prog.level, { ...inv.equipped, [slot]: item });
-    const a = sumItemStats([item]);
-    const b = sumItemStats(current ? [current] : []);
-    const keys = new Set([...a.keys(), ...b.keys()]);
-    return {
-      stats: [...keys].map((stat) => ({ stat, delta: (a.get(stat) ?? 0) - (b.get(stat) ?? 0) })),
-      damagePct: before.damageEstimate > 0 ? after.damageEstimate / before.damageEstimate - 1 : 0,
-      life: after.maxLife - before.maxLife,
-    };
+    return this.compareIn(item, slot, inv.equipped);
+  }
+
+  /** What wearing `item` in `slot` changes against the gear in `equipped` (a snapshot, so Equip best can try moves ahead). */
+  private compareIn(item: Item, slot: Slot, equipped: Partial<Record<Slot, Item>>): { stats: { stat: import('./data/loot/schemas').StatKey; delta: number }[]; damagePct: number; life: number } | null {
+    const base = BASE_ITEMS.get(item.base);
+    if (!base || !slotsFor(base.type).includes(slot)) return null;
+    const user = this.world.req(this.player, SkillUser);
+    return compareGear(classDef(user.classId), this.world.req(this.player, Progression).level, item, slot, equipped);
+  }
+
+  /** The upgrades "Equip best" would make now (also the number on its button). */
+  bestEquipMoves(): EquipMove[] {
+    const inv = this.world.req(this.player, Inventory);
+    const user = this.world.req(this.player, SkillUser);
+    return bestLoadout(inv.grid, inv.equipped, user.classId, (item, slot, equipped) => this.compareIn(item, slot, equipped));
+  }
+
+  /** Wear the best gear from the bag in one go: one sound, one save, one toast. */
+  equipBest(): void {
+    const inv = this.world.req(this.player, Inventory);
+    const user = this.world.req(this.player, SkillUser);
+    const moves = this.bestEquipMoves();
+    let done = 0;
+    for (const m of moves) if (equipFromGrid(inv, m.index, user.classId, m.slot).ok) done++;
+    if (done === 0) {
+      this.toasts.show(t('loot.equipBestNone'));
+      return;
+    }
+    audio.play('ui.equip');
+    this.afterInventoryChange();
+    this.autosave();
+    this.toasts.show(t(done === 1 ? 'loot.equipBestOne' : 'loot.equipBestMany', { n: done }));
   }
 
   // ---- Skill tree actions (called by the skill tree panel) ------------------
@@ -2451,6 +2589,32 @@ export class Game {
     }
     inv.gold -= cost;
     prog.skillPoints += resetTree(t, user.tree);
+    recomputePlayer(this.world, this.player);
+    user.slots = user.slots.map((s) => (s && user.compiled[s] ? s : null));
+    if (!user.slots.some(Boolean)) user.slots[0] = classDef(user.classId).actionBar[0] ?? null;
+    this.skillTreePanel.refresh();
+    this.inventoryPanel.refresh();
+  }
+
+  /** Take one rank of a learned node back for a little gold (B032). */
+  refundNode(id: string): void {
+    const user = this.world.req(this.player, SkillUser);
+    const prog = this.world.req(this.player, Progression);
+    const inv = this.world.req(this.player, Inventory);
+    const t = tree(user.classId);
+    const cost = refundCost(t, prog.level);
+    const r = canRefund(t, user.tree, id);
+    if (!r.ok) {
+      this.notice(`tree.cannot.refund_${r.reason}`, 'error');
+      return;
+    }
+    if (inv.gold < cost) {
+      this.notice('tree.cannot.gold', 'error');
+      return;
+    }
+    refundRank(t, user.tree, id);
+    inv.gold -= cost;
+    prog.skillPoints++;
     recomputePlayer(this.world, this.player);
     user.slots = user.slots.map((s) => (s && user.compiled[s] ? s : null));
     if (!user.slots.some(Boolean)) user.slots[0] = classDef(user.classId).actionBar[0] ?? null;
@@ -2548,6 +2712,14 @@ export class Game {
     if (patch.screenShake !== undefined) this.renderer.screenShake = patch.screenShake;
     if (patch.showFps !== undefined) this.devtools.setShowFps(patch.showFps);
     if (patch.haptics !== undefined) setHaptics(patch.haptics);
+    if (patch.reduceFlashing !== undefined) this.hud.setReduceFlashing(patch.reduceFlashing);
+    if (patch.reduceFlashing !== undefined) this.renderer.reduceFlashing = patch.reduceFlashing;
+    if (patch.reduceFlashing !== undefined) this.mapUi.reduceFlashing = patch.reduceFlashing;
+    if (patch.brightness !== undefined) this.renderer.setBrightness(patch.brightness);
+    if (patch.keybindings !== undefined) {
+      this.input.setBindings(resolveKeybindings(this.settings));
+      this.refreshHint();
+    }
     if (patch.moveMode !== undefined) {
       this.devtools.setMoveMode(patch.moveMode);
       this.refreshHint();
@@ -2559,6 +2731,12 @@ export class Game {
 
   /** True while a full-screen menu is open, nothing is close by and the setting asks for a pause. */
   private menuPaused(): boolean {
+    // The Escape pause menu (and Settings opened from it) always freezes the world, enemies near or not.
+    if (this.pauseMenu.pausing) {
+      this.menuPausedNow = false;
+      this.uiRoot.classList.add('menu-paused');
+      return true;
+    }
     const open = this.settings.pauseInMenus && this.uiRoot.classList.contains('touch-ui') && this.uiRoot.classList.contains('has-panel') && !this.world.has(this.player, Dead);
     if (!open) {
       this.menuPausedNow = false;

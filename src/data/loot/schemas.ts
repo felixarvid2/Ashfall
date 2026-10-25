@@ -241,6 +241,10 @@ export const ItemSchema = z.object({
   temperCharges: z.number().int().min(0).optional(),
   /** Masterwork upgrades: indices into [...affixes, ...tempered], one per upgrade rank reached (+25 % each). */
   masterworkUp: z.array(z.number().int().min(0)).optional(),
+  /** Locked (favourite): salvage, sell and every "junk" action skip it (UI audit B002). Absent = false. */
+  locked: z.boolean().optional(),
+  /** Marked as junk by the player: counts as junk like common and magic items (B003). Absent = false; never both. */
+  junk: z.boolean().optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;
 

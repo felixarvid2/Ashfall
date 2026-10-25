@@ -54,7 +54,8 @@ export class HarvestHud {
     }
     this.shards.hidden = !showShards;
     // The counter flashes when shards come in.
-    if (this.lastShards >= 0 && shards > this.lastShards) this.gain = 0.6;
+    // (Not with reduce flashing on: `.reduce-flashing` is set on #ui by Hud.setReduceFlashing.)
+    if (this.lastShards >= 0 && shards > this.lastShards && !this.el.closest('.reduce-flashing')) this.gain = 0.6;
     this.lastShards = shards;
     this.gain = Math.max(0, this.gain - dt);
     this.shards.classList.toggle('gain', this.gain > 0);

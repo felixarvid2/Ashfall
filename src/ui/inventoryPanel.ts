@@ -13,9 +13,18 @@ import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/genera
 import {
   FILTER_CHIPS,
   SORT_MODES,
+  aspectStatus,
+  bagFill,
   defaultTargetSlot,
   filterMatches,
+  indexRange,
+  isJunk,
   needsSalvageConfirm,
+  otherSlot,
+  setJunk,
+  setLocked,
+  textMatches,
+  unlockedIndices,
   upgradeSign,
   type FilterChip,
   type SortMode,
@@ -23,6 +32,7 @@ import {
 import {
   formatStat,
   itemDisplayName,
+  itemSearchText,
   placeTooltipForPortrait,
   renderItemSheet,
   renderItemTooltip,
@@ -42,9 +52,19 @@ export interface InventoryActions {
   /** Salvage every common and magic item. */
   salvageJunk(): void;
   sort(mode: SortMode): void;
+  /** How many upgrades Equip best would make right now. */
+  bestCount(): number;
+  /** Wear the best gear from the bag (one toast, one save). */
+  equipBest(): void;
   socket(crystalIndex: number, target: { grid: number } | { slot: Slot }): void;
   compare(item: Item, slot?: Slot): Comparison | null;
   iconUrl(iconId: string): string | null;
+  /** A lock or junk mark changed (save soon). */
+  marked?(): void;
+  /** Short toast ("Locked", "Bag almost full"). */
+  notify?(text: string): void;
+  /** Aspect ids unlocked in the account's Codex of Power (tooltip status line, B017). */
+  codex?(): readonly string[];
 }
 
 const SORT_KEY = 'ashfall.invSort';
@@ -97,10 +117,30 @@ export class InventoryPanel {
   private readonly toolbar: HTMLDivElement;
   private readonly selectBtn: HTMLButtonElement;
   private readonly sortBtn: HTMLButtonElement;
+  private readonly bestBtn: HTMLButtonElement;
   private readonly sortMenu: HTMLDivElement;
   private readonly chips: HTMLDivElement;
   private readonly banners: HTMLDivElement;
+  private readonly tools: HTMLDivElement;
+  /** Desktop: the bag-full warning sits in the tools row instead of a banner line, so the 4th bag row stays on screen at 720p (B001). */
+  private fullInline: HTMLElement | null = null;
   private readonly selbar: HTMLDivElement;
+  /** The equipped item shown beside the hovered one (B005). */
+  private readonly tooltipEq: HTMLDivElement;
+  private readonly helpBtn: HTMLButtonElement;
+  private readonly helpTip: HTMLDivElement;
+  private readonly searchBtn: HTMLButtonElement;
+  private readonly searchRow: HTMLDivElement;
+  private readonly searchInput: HTMLInputElement;
+  private searchQuery = '';
+  /** The item under the mouse, for the L key, the equipped tooltip and the doll highlight. */
+  private hovered: { cell: HTMLElement; item: Item; equipped: boolean; where: Where } | null = null;
+  private shiftDown = false;
+  private lastFill: 'ok' | 'near' | 'full' = 'ok';
+  /** Select mode drag (B016): the mouse is down and cells it enters are added or removed. */
+  private dragMode: 'add' | 'remove' | null = null;
+  private anchor: number | null = null;
+  private suppressClick = false;
   private selectedCrystal: number | null = null;
   /** The cell whose sheet is open (touch). */
   private sheetFor: Where | null = null;
@@ -139,6 +179,8 @@ export class InventoryPanel {
     this.sortMenu.setAttribute('role', 'menu');
     this.selectBtn = button('inv-tool inv-select-btn', t('items.bag.select'), () => this.setSelectMode(!this.selectMode));
     this.selectBtn.dataset.testid = 'inv-select';
+    this.bestBtn = button('inv-tool inv-best-btn', t('items.bag.best'), () => this.actions.equipBest());
+    this.bestBtn.dataset.testid = 'inv-best';
     this.chips = el('div', 'inv-chips');
     this.chips.setAttribute('role', 'group');
     this.chips.setAttribute('aria-label', t('items.bag.filterLabel'));
@@ -150,10 +192,37 @@ export class InventoryPanel {
       b.dataset.chip = chip;
       this.chips.appendChild(b);
     }
+    this.searchBtn = button('inv-tool inv-search-btn', '/', () => this.openSearch());
+    this.searchBtn.title = t('items.bag.search');
+    this.searchBtn.setAttribute('aria-label', t('items.bag.search'));
+    this.searchBtn.dataset.testid = 'inv-search-btn';
+    this.searchRow = el('div', 'inv-search');
+    this.searchRow.hidden = true;
+    this.searchInput = el('input', 'inv-search-input');
+    this.searchInput.type = 'text';
+    this.searchInput.placeholder = t('items.bag.searchPlaceholder');
+    this.searchInput.setAttribute('aria-label', t('items.bag.search'));
+    this.searchInput.dataset.testid = 'inv-search';
+    // Escape ends the search first (panelStack skips Escape from elements marked like this).
+    this.searchInput.dataset.escLocal = '1';
+    this.searchInput.addEventListener('input', () => {
+      this.searchQuery = this.searchInput.value;
+      this.refresh();
+    });
+    this.searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        this.closeSearch();
+      }
+    });
+    const searchClose = button('inv-search-close', '×', () => this.closeSearch());
+    searchClose.setAttribute('aria-label', t('items.bag.searchClear'));
+    this.searchRow.append(this.searchInput, searchClose);
     const tools = el('div', 'inv-tools');
-    tools.append(this.sortBtn, this.selectBtn, this.sortMenu);
+    tools.append(this.sortBtn, this.selectBtn, this.bestBtn, this.searchBtn, this.sortMenu);
+    this.tools = tools;
     this.toolbar = el('div', 'inv-toolbar');
-    this.toolbar.append(tools, this.chips);
+    this.toolbar.append(tools, this.chips, this.searchRow);
     this.banners = el('div', 'inv-banners');
     this.selbar = el('div', 'inv-selbar');
     this.selbar.hidden = true;
@@ -164,8 +233,41 @@ export class InventoryPanel {
     this.root.append(title, this.doll, this.toolbar, this.banners, this.summary, this.grid, this.selbar, hint);
     this.tooltip = el('div', 'item-tooltip');
     this.tooltip.hidden = true;
-    parent.append(this.root, this.tooltip);
+    this.tooltipEq = el('div', 'item-tooltip item-tooltip-equipped');
+    this.tooltipEq.hidden = true;
+    this.helpBtn = button('inv-help', '?', () => undefined);
+    this.helpBtn.setAttribute('aria-label', t('items.bag.help'));
+    this.helpBtn.dataset.testid = 'inv-help';
+    this.helpTip = el('div', 'item-tooltip inv-help-tip');
+    this.helpTip.hidden = true;
+    for (const key of ['equip', 'salvage', 'socket', 'lock', 'junk', 'shift']) this.helpTip.appendChild(el('div', undefined, t(`items.bag.helpLines.${key}`)));
+    const showHelp = () => {
+      if (useSheet()) return;
+      this.helpTip.hidden = false;
+      const rect = this.helpBtn.getBoundingClientRect();
+      const w = this.helpTip.getBoundingClientRect().width;
+      this.helpTip.style.left = `${Math.max(8, rect.right - w)}px`;
+      this.helpTip.style.top = `${rect.bottom + 6}px`;
+    };
+    this.helpBtn.addEventListener('mouseenter', showHelp);
+    this.helpBtn.addEventListener('focus', showHelp);
+    this.helpBtn.addEventListener('mouseleave', () => (this.helpTip.hidden = true));
+    this.helpBtn.addEventListener('blur', () => (this.helpTip.hidden = true));
+    parent.append(this.root, this.tooltip, this.tooltipEq, this.helpTip);
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('keydown', (e) => this.onKey(e, true));
+    document.addEventListener('keyup', (e) => this.onKey(e, false));
+    const endDrag = () => {
+      this.dragMode = null;
+      // The click that follows a mouse-up still has to be ignored; the next task is clear of it.
+      setTimeout(() => (this.suppressClick = false), 0);
+    };
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    window.addEventListener('blur', () => {
+      this.shiftDown = false;
+      endDrag();
+    });
     document.addEventListener('pointerdown', (e) => {
       if (!this.sortMenu.hidden && !(e.target as HTMLElement | null)?.closest('.inv-tools')) this.toggleSortMenu(false);
     });
@@ -187,9 +289,12 @@ export class InventoryPanel {
     this.selectMode = false;
     this.selection.clear();
     this.sheetFor = null;
+    this.hovered = null;
     this.hideTooltip();
     tooltipSheet.hide();
     this.toggleSortMenu(false);
+    this.closeSearch();
+    this.anchor = null;
     if (this.open) {
       // The first time the bag opens, everything in it counts as seen; later arrivals get the "new" dot.
       if (!this.baselined) {
@@ -209,6 +314,7 @@ export class InventoryPanel {
     if (this.selectMode === on) return;
     this.selectMode = on;
     this.selection.clear();
+    this.anchor = null;
     this.selectedCrystal = null;
     if (on) tooltipSheet.hide();
     this.refresh();
@@ -237,13 +343,20 @@ export class InventoryPanel {
   }
 
   refresh(): void {
+    // The "almost full" toast fires from pickups too, so the bag fill is watched even while the panel is closed (B014).
+    const bag = this.getInventory();
+    const bagUsed = bag.grid.filter((i) => i !== null).length;
+    const fillNow = bagFill(bagUsed, bag.grid.length);
+    if (fillNow === 'near' && this.lastFill === 'ok') this.actions.notify?.(t('items.bag.nearFull'));
+    this.lastFill = fillNow;
     if (!this.open) return;
-    const inv = this.getInventory();
+    const inv = bag;
     const classId = this.getClassId();
-    const used = inv.grid.filter((i) => i !== null).length;
+    const used = bagUsed;
     this.goldText.textContent = t('ui.gold', { gold: inv.gold.toLocaleString('en-US') });
     this.countText.textContent = t('items.bag.count', { used, max: inv.grid.length });
-    this.countText.classList.toggle('full', used >= inv.grid.length);
+    this.countText.classList.toggle('full', fillNow === 'full');
+    this.countText.classList.toggle('near', fillNow === 'near');
     // Gold and capacity sit in the shared header when the panel stack gave the panel one and the screen is wide
     // enough for the title to stay on one line; on a very narrow screen they get their own line above the grid.
     const extra = this.root.querySelector('.panel-header-extra');
@@ -251,6 +364,8 @@ export class InventoryPanel {
     const inHeader = !!extra && window.innerWidth / textScale >= 380;
     if (inHeader && this.summary.parentElement !== extra) extra.prepend(this.summary);
     else if (!inHeader && this.summary.parentElement !== this.root) this.grid.before(this.summary);
+    // The key hints button sits in the header next to the close button (desktop; the phone layout hides it).
+    if (extra && this.helpBtn.parentElement !== extra) extra.append(this.helpBtn);
 
     this.root.classList.toggle('select-mode', this.selectMode);
     this.root.classList.toggle('socket-mode', this.selectedCrystal !== null);
@@ -258,6 +373,13 @@ export class InventoryPanel {
     this.selectBtn.setAttribute('aria-pressed', String(this.selectMode));
     this.selectBtn.textContent = this.selectMode ? t('items.bag.selectDone') : t('items.bag.select');
     this.selectBtn.hidden = !!this.gridClick;
+    // Equip best: the number of upgrades is counted here, on every data change (this refresh), never on a timer.
+    const upgrades = this.gridClick ? 0 : this.actions.bestCount();
+    this.bestBtn.hidden = !!this.gridClick;
+    this.bestBtn.disabled = upgrades === 0;
+    this.bestBtn.textContent = upgrades > 0 ? t('items.bag.bestCount', { n: upgrades }) : t('items.bag.best');
+    this.bestBtn.title = upgrades === 0 ? t('items.bag.bestNone') : upgrades === 1 ? t('items.bag.bestTitleOne') : t('items.bag.bestTitle', { n: upgrades });
+    this.bestBtn.setAttribute('aria-label', this.bestBtn.title);
     for (const b of this.chips.querySelectorAll<HTMLElement>('.inv-chip')) {
       b.classList.toggle('on', b.dataset.chip === this.filter);
       b.setAttribute('aria-pressed', String(b.dataset.chip === this.filter));
@@ -282,13 +404,15 @@ export class InventoryPanel {
         if (item) this.decorate(cell, item, { power: true });
         cell.addEventListener('contextmenu', () => this.actions.unequip(slot));
         cell.addEventListener('click', () => this.onDollClick(slot, item));
-        if (item) this.hover(cell, item, true);
+        if (item) this.hover(cell, item, true, { slot });
         if (this.selectedCrystal !== null) this.markSocketTarget(cell, item);
         if (this.sheetFor && 'slot' in this.sheetFor && this.sheetFor.slot === slot) cell.classList.add('selected');
         return cell;
       }),
     );
 
+    const query = this.searchQuery.trim();
+    const search = query ? (it: Item) => textMatches(itemSearchText(it), query) : undefined;
     this.grid.replaceChildren(
       ...inv.grid.map((item, index) => {
         const cell = this.cell(item);
@@ -302,19 +426,85 @@ export class InventoryPanel {
           cell.setAttribute('aria-label', itemDisplayName(item));
         }
         if (this.selection.has(index)) cell.classList.add('picked');
-        if (!filterMatches(item, this.filter, better)) cell.classList.add('filtered-out');
+        if (!filterMatches(item, this.filter, better, search)) cell.classList.add('filtered-out');
         if (this.selectedCrystal !== null) this.markSocketTarget(cell, item, index === this.selectedCrystal);
-        cell.addEventListener('contextmenu', () => {
-          if (item && !item.crystal && !this.selectMode) this.actions.equip(index);
+        cell.addEventListener('contextmenu', (e) => {
+          if (!item || item.crystal || this.selectMode) return;
+          // Shift+right-click: the other ring slot (B011).
+          const base = BASE_ITEMS.get(item.base);
+          const other = e.shiftKey && base ? otherSlot(slotsFor(base.type), this.getInventory().equipped) : undefined;
+          if (other) this.actions.equip(index, other);
+          else this.actions.equip(index);
         });
         cell.addEventListener('click', (e) => this.onGridClick(e, index, item));
-        if (item) this.hover(cell, item, false);
+        cell.addEventListener('pointerdown', (e) => this.onSelectPointerDown(e, index, item));
+        cell.addEventListener('pointerenter', (e) => {
+          if (this.dragMode && this.selectMode && e.pointerType === 'mouse') this.dragSelect(index);
+        });
+        if (item) this.hover(cell, item, false, { grid: index });
         return cell;
       }),
     );
 
     this.renderBanners(inv, used);
     this.renderSelbar(inv);
+    this.rehover();
+  }
+
+  // ---- Marks, search, keys (UI audit B002, B003, B015) ------------------------------------------------------
+
+  private toast(text: string): void {
+    this.actions.notify?.(text);
+  }
+
+  private toggleLock(item: Item): void {
+    setLocked(item, !item.locked);
+    haptic('tick');
+    this.actions.marked?.();
+    this.refresh();
+  }
+
+  private toggleJunk(item: Item): void {
+    setJunk(item, !item.junk);
+    haptic('tick');
+    this.toast(t(item.junk ? 'items.bag.junkMarked' : 'items.bag.junkUnmarked'));
+    this.actions.marked?.();
+    this.refresh();
+  }
+
+  openSearch(): void {
+    if (!this.open || useSheet()) return;
+    this.searchRow.hidden = false;
+    this.chips.hidden = true;
+    this.searchInput.focus({ preventScroll: true });
+    this.searchInput.select();
+  }
+
+  closeSearch(): void {
+    const had = this.searchQuery !== '' || !this.searchRow.hidden;
+    this.searchQuery = '';
+    this.searchInput.value = '';
+    this.searchRow.hidden = true;
+    this.chips.hidden = false;
+    if (had && this.open) this.refresh();
+  }
+
+  private onKey(e: KeyboardEvent, down: boolean): void {
+    if (e.key === 'Shift') {
+      if (this.shiftDown === down) return;
+      this.shiftDown = down;
+      // Holding Shift hides the equipped item beside the hovered one (B005).
+      if (this.hovered) this.placeEquipped();
+      return;
+    }
+    if (!down || !this.open || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.key === '/' && !useSheet()) {
+      e.preventDefault();
+      this.openSearch();
+    } else if ((e.key === 'l' || e.key === 'L') && this.hovered && !useSheet()) {
+      this.toggleLock(this.hovered.item);
+    }
   }
 
   private cell(item: Item | null, emptyLabel = ''): HTMLDivElement {
@@ -360,24 +550,97 @@ export class InventoryPanel {
     if (useSheet()) this.openItemSheet(item, { slot });
   }
 
+  /** Select mode with a mouse: pressing a cell starts a drag that adds (or removes) every cell it enters (B016). */
+  private onSelectPointerDown(e: PointerEvent, index: number, item: Item | null): void {
+    if (!this.selectMode || this.gridClick || !item || e.pointerType !== 'mouse' || e.button !== 0) return;
+    this.suppressClick = true;
+    if (e.shiftKey && this.anchor !== null) {
+      for (const i of indexRange(this.anchor, index)) this.selectCell(i, true);
+    } else {
+      this.dragMode = this.selection.has(index) ? 'remove' : 'add';
+      this.selectCell(index, this.dragMode === 'add', true);
+    }
+    this.anchor = index;
+    this.paintSelection();
+  }
+
+  private dragSelect(index: number): void {
+    if (!this.dragMode) return;
+    this.selectCell(index, this.dragMode === 'add');
+    this.paintSelection();
+  }
+
+  /** Add or remove one cell from the selection; locked items are never selected (a toast says so once per press). */
+  private selectCell(index: number, on: boolean, announce = false): void {
+    const item = this.getInventory().grid[index];
+    if (!item) return;
+    if (on && item.locked) {
+      if (announce) this.toast(t('items.bag.lockedToast'));
+      return;
+    }
+    if (on) this.selection.add(index);
+    else this.selection.delete(index);
+  }
+
+  /** Update the picked marks and the select bar without rebuilding the cells (a drag must keep its cells). */
+  private paintSelection(): void {
+    this.grid.querySelectorAll<HTMLElement>('.inv-cell').forEach((cell) => {
+      const picked = this.selection.has(Number(cell.dataset.index));
+      cell.classList.toggle('picked', picked);
+      const check = cell.querySelector('.cell-check');
+      if (check) {
+        check.classList.toggle('on', picked);
+        check.textContent = picked ? '✓' : '';
+      }
+    });
+    this.renderSelbar(this.getInventory());
+  }
+
   private onGridClick(e: MouseEvent, index: number, item: Item | null): void {
     if (!item) return;
+    const touch = useSheet();
+    // Alt+click marks or unmarks junk (B003).
+    if (!touch && e.altKey && !this.selectMode) {
+      this.toggleJunk(item);
+      return;
+    }
     if (this.gridClick) {
       this.gridClick(index);
       this.hideTooltip();
       return;
     }
     if (this.selectMode) {
+      if (this.suppressClick) {
+        this.suppressClick = false;
+        return;
+      }
       if (this.selection.has(index)) this.selection.delete(index);
-      else this.selection.add(index);
+      else this.selectCell(index, true, true);
+      this.anchor = index;
       haptic('tick');
       this.refresh();
       return;
     }
-    const touch = useSheet();
     if (!touch && e.shiftKey) {
-      this.actions.salvage(index);
       this.hideTooltip();
+      if (item.locked) {
+        this.toast(t('items.bag.lockedToast'));
+        return;
+      }
+      if (!needsSalvageConfirm(item)) {
+        this.actions.salvage(index);
+        return;
+      }
+      // Rare and better ask first, like the touch sheet does (B004).
+      const gold = salvageValue(item);
+      void confirmSheet({
+        title: t('items.bag.salvageOneTitle', { name: itemDisplayName(item) }),
+        body: t('items.bag.salvageOneBody', { gold }),
+        confirmLabel: t('items.bag.salvageButton'),
+        danger: true,
+      }).then((ok) => {
+        if (ok && this.getInventory().grid[index] === item && !item.locked) this.actions.salvage(index);
+      });
       return;
     }
     if (this.selectedCrystal !== null) {
@@ -489,8 +752,9 @@ export class InventoryPanel {
       const gold = salvageValue(item);
       const confirm = needsSalvageConfirm(item);
       buttons.push({
-        label: t('items.bag.salvage', { gold }),
+        label: item.locked ? t('items.bag.locked') : t('items.bag.salvage', { gold }),
         danger: true,
+        disabled: !!item.locked,
         keepOpen: confirm,
         onClick: () => {
           if (!confirm) {
@@ -509,6 +773,9 @@ export class InventoryPanel {
           });
         },
       });
+    }
+    if (!item.crystal || isGrid) {
+      buttons.push({ label: t(item.locked ? 'items.bag.unlock' : 'items.bag.lock'), onClick: () => this.toggleLock(item) });
     }
     this.showSheet(where, content, buttons);
   }
@@ -551,13 +818,24 @@ export class InventoryPanel {
       const crystal = inv.grid[this.selectedCrystal];
       const def = crystal?.crystal ? CRYSTAL_DEFS.get(crystal.crystal.id) : undefined;
       if (crystal?.crystal && def) {
-        const bonus = (['weapon', 'armor', 'jewelry'] as const)
-          .map((g) => `${t(`items.crystalWhere.${g}`)} ${formatStat(def[g].stat, def[g].values[crystal.crystal!.tier] ?? 0)}`)
-          .join(' · ');
+        const groups = (['weapon', 'armor', 'jewelry'] as const).map((g) => ({
+          group: g,
+          stat: formatStat(def[g].stat, def[g].values[crystal.crystal!.tier] ?? 0),
+        }));
+        const bonus = groups.map((g) => `${t(`items.crystalWhere.${g.group}`)} ${g.stat}`).join(' · ');
         const banner = el('div', 'inv-banner socket');
         banner.dataset.testid = 'socket-banner';
+        // Phones read the long sentence; the desktop banner is one row: name, three chips, Cancel (B012).
+        const chips = el('span', 'inv-banner-chips');
+        for (const g of groups) {
+          const chip = el('span', 'inv-banner-chip', `${t(`items.crystalWhereShort.${g.group}`)} ${g.stat}`);
+          chip.title = `${t(`items.crystalWhere.${g.group}`)} ${g.stat}`;
+          chips.appendChild(chip);
+        }
         banner.append(
           el('span', 'inv-banner-text', t('items.bag.socketBanner', { crystal: itemDisplayName(crystal), bonus })),
+          el('span', 'inv-banner-name', itemDisplayName(crystal)),
+          chips,
           button('inv-banner-btn', t('items.bag.socketCancel'), () => {
             this.selectedCrystal = null;
             this.refresh();
@@ -566,18 +844,30 @@ export class InventoryPanel {
         out.push(banner);
       }
     }
-    if (used >= inv.grid.length) {
-      const junk = inv.grid.reduce((sum, i) => (i && !i.crystal && !needsSalvageConfirm(i) ? sum + salvageValue(i) : sum), 0);
+    const full = used >= inv.grid.length;
+    const junkItems = inv.grid.filter((i): i is Item => isJunk(i));
+    const junk = junkItems.reduce((sum, i) => sum + salvageValue(i), 0);
+    this.fullInline?.remove();
+    this.fullInline = null;
+    if (full) {
       const banner = el('div', 'inv-banner full');
       banner.dataset.testid = 'bag-full';
       banner.appendChild(el('span', 'inv-banner-text', t('items.bag.full')));
       if (junk > 0) {
         // Two taps: the first arms the button, the second (within 3 s) runs it.
-        const b = button('inv-banner-btn', t('items.bag.salvageJunk', { gold: junk }), () => undefined);
-        armConfirm(b, { armedLabel: t('items.bag.salvageJunkArmed', { gold: junk }), run: () => this.actions.salvageJunk() });
+        // On desktop the warning shares the tools row with Equip best, so its button gets the short wording.
+        const inline = !document.getElementById('ui')?.classList.contains('touch-ui');
+        const b = button('inv-banner-btn', t(inline ? 'items.bag.salvageJunkShort' : 'items.bag.salvageJunk', { gold: junk }), () => undefined);
+        armConfirm(b, { armedLabel: t(inline ? 'items.bag.salvageJunkArmedShort' : 'items.bag.salvageJunkArmed', { gold: junk }), run: () => this.actions.salvageJunk() });
+        b.title = t('items.bag.salvageJunk', { gold: junk });
         banner.appendChild(b);
       }
-      out.push(banner);
+      if (document.getElementById('ui')?.classList.contains('touch-ui')) out.push(banner);
+      else {
+        banner.classList.add('inline');
+        this.tools.after(banner);
+        this.fullInline = banner;
+      }
     }
     this.banners.replaceChildren(...out);
     this.banners.hidden = out.length === 0;
@@ -586,7 +876,7 @@ export class InventoryPanel {
   private renderSelbar(inv: Inventory): void {
     this.selbar.hidden = !this.selectMode;
     if (!this.selectMode) return;
-    const items = [...this.selection].map((i) => inv.grid[i]).filter((i): i is Item => !!i);
+    const items = unlockedIndices(inv.grid, this.selection).map((i) => inv.grid[i]).filter((i): i is Item => !!i);
     const gold = items.reduce((sum, i) => sum + salvageValue(i), 0);
     const label =
       items.length === 0
@@ -597,7 +887,7 @@ export class InventoryPanel {
     run.disabled = items.length === 0;
     run.dataset.testid = 'inv-salvage-selected';
     run.addEventListener('click', () => {
-      const indices = [...this.selection];
+      const indices = unlockedIndices(inv.grid, this.selection);
       const doIt = () => {
         this.selection.clear();
         this.selectMode = false;
@@ -621,32 +911,115 @@ export class InventoryPanel {
 
   // ---- Desktop hover tooltip ---------------------------------------------------------------------------
 
-  private hover(cell: HTMLElement, item: Item, equipped: boolean): void {
+  private hover(cell: HTMLElement, item: Item, equipped: boolean, where: Where): void {
     cell.addEventListener('mouseenter', () => {
       // Touch screens fire a mouseenter on tap; the item sheet is their tooltip.
       if (useSheet()) return;
-      const base = BASE_ITEMS.get(item.base);
-      const comparable = !equipped && base && slotsFor(base.type).length > 0;
-      const tip = renderItemTooltip(item, this.getClassId(), {
-        equipped,
-        comparison: comparable ? this.actions.compare(item) : null,
-      });
-      this.tooltip.replaceChildren(tip);
-      this.tooltip.hidden = false;
-      const rect = cell.getBoundingClientRect();
-      if (placeTooltipForPortrait(this.tooltip, rect)) return;
-      const tipRect = this.tooltip.getBoundingClientRect();
-      let left = rect.left - tipRect.width - 10;
-      if (left < 8) left = rect.right + 10;
-      const top = Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, rect.top - 20));
-      this.tooltip.style.left = `${left}px`;
-      this.tooltip.style.top = `${top}px`;
+      this.hovered = { cell, item, equipped, where };
+      this.showTooltip();
     });
-    cell.addEventListener('mouseleave', () => this.hideTooltip());
+    cell.addEventListener('mouseleave', () => {
+      if (this.hovered?.cell === cell) this.hovered = null;
+      this.hideTooltip();
+    });
+  }
+
+  /** The cells were rebuilt under a resting mouse: point the hover state and tooltips at the new cell. */
+  private rehover(): void {
+    const h = this.hovered;
+    if (!h) return;
+    const cell = 'grid' in h.where ? this.grid.children[h.where.grid] : this.doll.querySelector(`[data-slot='${h.where.slot}']`);
+    const inv = this.getInventory();
+    const item = 'grid' in h.where ? inv.grid[h.where.grid] : inv.equipped[h.where.slot];
+    if (!(cell instanceof HTMLElement) || !item || item.uid !== h.item.uid) {
+      this.hovered = null;
+      this.hideTooltip();
+      return;
+    }
+    this.hovered = { ...h, cell, item };
+    this.showTooltip();
+  }
+
+  private showTooltip(): void {
+    const h = this.hovered;
+    if (!h) return;
+    const { cell, item, equipped } = h;
+    const inv = this.getInventory();
+    const classId = this.getClassId();
+    const base = BASE_ITEMS.get(item.base);
+    const slots = !item.crystal && base ? slotsFor(base.type) : [];
+    const comparable = !equipped && slots.length > 0;
+    const defaultSlot = comparable ? defaultTargetSlot(slots, inv.equipped) : undefined;
+    const targets: CompareTarget[] = comparable
+      ? slots.map((slot) => ({
+          slot,
+          label: this.slotLabel(slot, slots),
+          equipped: inv.equipped[slot] ?? null,
+          comparison: this.actions.compare(item, slot),
+        }))
+      : [];
+    const tip = renderItemTooltip(item, classId, {
+      equipped,
+      targets,
+      defaultSlot,
+      ranges: true,
+      aspectStatus: item.aspect && !item.unique ? aspectStatus(item.aspect.id, inv.aspects ?? [], this.actions.codex?.() ?? []) : undefined,
+      hints: comparable && slots.length > 1 ? [t('items.otherRingHint')] : undefined,
+    });
+    this.tooltip.replaceChildren(tip);
+    this.tooltip.hidden = false;
+    const rect = cell.getBoundingClientRect();
+    if (placeTooltipForPortrait(this.tooltip, rect)) {
+      this.tooltipEq.hidden = true;
+      return;
+    }
+    const tipRect = this.tooltip.getBoundingClientRect();
+    let left = rect.left - tipRect.width - 10;
+    if (left < 8) left = rect.right + 10;
+    const top = Math.max(8, Math.min(window.innerHeight - tipRect.height - 8, rect.top - 20));
+    this.tooltip.style.left = `${left}px`;
+    this.tooltip.style.top = `${top}px`;
+
+    // The worn item in the default slot, beside the hovered one (B005); the doll slot it replaces is outlined (B010).
+    const worn = defaultSlot ? inv.equipped[defaultSlot] : undefined;
+    this.tooltipEq.replaceChildren(...(worn ? [renderItemTooltip(worn, classId, { equipped: true, ranges: true })] : []));
+    this.placeEquipped();
+    this.markDollTargets(comparable ? slots : []);
+  }
+
+  /** Put the equipped tooltip left of the main one (else right of it); hidden when Shift is held or there is no room. */
+  private placeEquipped(): void {
+    const eq = this.tooltipEq;
+    if (this.tooltip.hidden || !this.hovered || this.shiftDown || eq.childElementCount === 0) {
+      eq.hidden = true;
+      return;
+    }
+    eq.hidden = false;
+    const main = this.tooltip.getBoundingClientRect();
+    const w = eq.getBoundingClientRect().width;
+    let left = main.left - w - 10;
+    if (left < 8) left = main.right + 10;
+    // No room left of the tooltip: right of it, unless that lands on the inventory panel or off screen.
+    const panel = this.root.getBoundingClientRect();
+    if (left + w > window.innerWidth - 8 || (left >= main.right && left + w > panel.left && !this.root.hidden)) {
+      eq.hidden = true;
+      return;
+    }
+    const h = eq.getBoundingClientRect().height;
+    eq.style.left = `${left}px`;
+    eq.style.top = `${Math.max(8, Math.min(window.innerHeight - h - 8, main.top))}px`;
+  }
+
+  /** Outline the doll slots a hovered bag item would go to (B010). */
+  private markDollTargets(slots: readonly Slot[]): void {
+    for (const c of this.doll.querySelectorAll('.compare-target')) c.classList.remove('compare-target');
+    for (const slot of slots) this.doll.querySelector(`[data-slot='${slot}']`)?.classList.add('compare-target');
   }
 
   private hideTooltip(): void {
     this.tooltip.hidden = true;
+    this.tooltipEq.hidden = true;
+    this.markDollTargets([]);
   }
 }
 
@@ -679,6 +1052,20 @@ export function renderItemCell(item: Item | null, iconUrl: (id: string) => strin
       dots.appendChild(d);
     }
     cell.appendChild(dots);
+  }
+  // Lock and junk marks are small corner glyphs inside the cell (B002, B003): the cell keeps its size.
+  if (item.locked) {
+    cell.classList.add('locked');
+    const lock = Object.assign(document.createElement('span'), { className: 'cell-lock', title: t('items.bag.locked') });
+    lock.setAttribute('role', 'img');
+    lock.setAttribute('aria-label', t('items.bag.locked'));
+    cell.appendChild(lock);
+  } else if (item.junk) {
+    cell.classList.add('junk');
+    const slash = Object.assign(document.createElement('span'), { className: 'cell-junk', title: t('items.junkLine') });
+    slash.setAttribute('role', 'img');
+    slash.setAttribute('aria-label', t('items.junkLine'));
+    cell.appendChild(slash);
   }
   return cell;
 }

@@ -1,0 +1,107 @@
+/* Diablo-comparison UI pass (feedback): see docs/ui/diablo-audit-*.md. Desktop-only rules use #ui:not(.touch-ui). */
+
+/* ---- A019: control hints and title step back once the player knows the game (F1 or ? brings the hints back) ---- */
+#ui:not(.touch-ui) .hud-title > h1,
+#ui:not(.touch-ui) .hud-title > p { transition: opacity 0.8s; }
+#ui:not(.touch-ui) .hud-title.faded > h1,
+#ui:not(.touch-ui) .hud-title.faded > p:not(.hud-hint),
+#ui:not(.touch-ui) .hud-title p.hud-hint.faded { opacity: 0; }
+
+/* ---- A022/A023/A050: target frame by tier, life %, phase ticks, lagging ghost, wide boss frame ---- */
+.target-track { position: relative; }
+.target-fill { position: relative; }
+/* Pale strip behind the fill: after a hit it drains 0.15 s later over 0.45 s, like the orb ghost. */
+.target-ghost { position: absolute; left: 0; top: 0; bottom: 0; background: #e8a090; transition: width 0.45s ease-out 0.15s; }
+.target-ghost.snap { transition: none; }
+#ui:not(.touch-ui) .target-frame[data-tier='champion'] .target-track { border-color: #4a7fd0; }
+#ui:not(.touch-ui) .target-frame[data-tier='rare'] .target-track { border-color: #d8b030; }
+#ui:not(.touch-ui) .target-frame[data-tier='named'] .target-track { border-color: #ff9a3a; }
+#ui:not(.touch-ui) .target-frame.boss .target-track { border-color: #d8b030; }
+#ui:not(.touch-ui) .target-name { padding: 0 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 3px #000, 0 1px 2px #000; }
+#ui:not(.touch-ui) .target-frame.has-portrait .target-name { padding-left: 0; }
+#ui:not(.touch-ui) .target-pct { display: block; position: absolute; right: 0; top: 0; font-size: 11px; font-weight: 700; font-family: var(--ui-mono); color: #ffd8b0; text-shadow: 0 0 3px #000; font-variant-numeric: tabular-nums; }
+#ui:not(.touch-ui) .target-tick { display: block; position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: rgba(255, 240, 220, 0.85); box-shadow: 0 0 2px #000; }
+#ui:not(.touch-ui) .target-frame.boss { width: 440px; max-width: calc(100vw - 32px); min-height: 52px; box-sizing: border-box; }
+#ui:not(.touch-ui) .target-frame.boss.has-portrait { padding-left: 48px; }
+#ui:not(.touch-ui) .target-frame.boss .target-portrait { top: 0; width: 40px; height: 40px; border-width: 2px; }
+#ui:not(.touch-ui) .target-frame.boss .target-name { font-size: 15px; padding-right: 44px; }
+#ui:not(.touch-ui) .target-frame.boss .target-pct { font-size: 13px; }
+#ui:not(.touch-ui) .target-frame.boss .target-track { height: 16px; }
+
+/* ---- A032/A033: low-life vignette (rule unscoped in portrait/hud.css) and the hit flash ---- */
+#ui .low-life-vignette.hit, #ui .low-life-vignette.on.hit {
+  animation: none;
+  opacity: var(--hit-op, 0.3);
+  transition: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(190, 10, 10, 0.7));
+}
+#ui.reduce-flashing .low-life-vignette.on { animation: none; opacity: 0.8; }
+
+/* ---- A034: gold level-up banner and the ring over the life orb ---- */
+#ui:not(.touch-ui) .center-banner.levelup { z-index: 5; color: #ffd27a; text-shadow: 0 0 24px rgba(255, 200, 80, 0.7), 0 0 4px #000; }
+#ui:not(.touch-ui) .orb-life.levelup::before {
+  content: '';
+  position: absolute;
+  inset: -40% 25%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 240, 170, 0.95), rgba(255, 210, 90, 0.5) 45%, transparent 70%);
+  animation: level-ring 0.7s ease-out forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+#ui.reduce-flashing .orb-life.levelup::before { animation: none; opacity: 0; }
+
+/* ---- A042/A044: with a target frame up, toasts step below it and the event box moves to the right column ---- */
+#ui:not(.touch-ui).has-target .toast-stack { top: max(128px, calc(76px + var(--boss-frame-h, 0px) + 14px)); }
+#ui:not(.touch-ui).has-target .event-box { left: auto; right: 14px; top: 290px; width: 230px; box-sizing: border-box; transform: none; text-align: left; }
+
+/* ---- A043: dying clears the screen of messages and dims the secondary HUD ---- */
+#ui.hud-dead .quest-tracker, #ui.hud-dead .minimap, #ui.hud-dead .buff-bar { opacity: 0.25; transition: opacity 0.6s; }
+#ui.hud-dead .toast-stack { opacity: 0; transition: opacity 0.6s; }
+#ui.hud-dead .center-banner { visibility: hidden; }
+
+/* ---- A045: desktop death screen: a "Rise (R)" button whose fill completes with the 1.2 s lock; a click elsewhere does nothing ---- */
+#ui:not(.touch-ui) .death-screen { cursor: default; }
+#ui:not(.touch-ui) .death-screen p { display: none; }
+#ui:not(.touch-ui) .death-respawn {
+  display: block;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 180px;
+  height: 36px;
+  margin-top: 22px;
+  padding: 0;
+  font: inherit;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ui-text);
+  background: rgba(20, 17, 15, 0.9);
+  border: 1px solid var(--ui-accent);
+  cursor: pointer;
+  pointer-events: auto;
+}
+#ui:not(.touch-ui) .death-respawn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(255, 138, 42, 0.45);
+  transform-origin: left center;
+  animation: rise-fill var(--lock-time, 1.2s) linear forwards;
+}
+@keyframes rise-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+#ui:not(.touch-ui) .death-respawn:disabled { border-color: var(--ui-border); color: var(--ui-muted); cursor: default; }
+#ui:not(.touch-ui) .death-respawn:not(:disabled):hover { background: rgba(60, 50, 40, 0.95); }
+#ui:not(.touch-ui) .death-respawn:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+
+/* ---- A047: the region card is smaller, higher and fades in over 0.6 s (it covered the fight) ---- */
+#ui:not(.touch-ui) .region-card { top: 8%; }
+#ui:not(.touch-ui) .region-card img { width: min(420px, 86vw); opacity: 0.85; }
+#ui:not(.touch-ui) .region-card.show { animation-name: region-card-desk; }
+@keyframes region-card-desk {
+  0% { opacity: 0; transform: translateX(-50%); }
+  15% { opacity: 1; transform: translateX(-50%); }
+  78% { opacity: 1; transform: translateX(-50%); }
+  100% { opacity: 0; transform: translateX(-50%); }
+}

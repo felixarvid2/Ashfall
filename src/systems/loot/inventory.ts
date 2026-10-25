@@ -52,10 +52,20 @@ export function unequip(inv: Inventory, slot: Slot): Result {
   return r;
 }
 
-/** Destroy a grid item for gold. Returns gold gained (0 if the cell was empty). */
+/**
+ * "Junk" for every bulk action (salvage junk, store junk, sell junk): common and magic gear plus anything the
+ * player marked, but never a locked item (UI audit B002/B003). Crystals count only when marked.
+ */
+export function isJunk(item: Item | null | undefined): boolean {
+  if (!item || item.locked) return false;
+  if (item.junk) return true;
+  return !item.crystal && (item.rarity === 'common' || item.rarity === 'magic');
+}
+
+/** Destroy a grid item for gold. Returns gold gained (0 if the cell was empty or the item is locked). */
 export function salvage(inv: Inventory, index: number): number {
   const item = inv.grid[index];
-  if (!item) return 0;
+  if (!item || item.locked) return 0;
   const gold = salvageValue(item);
   inv.grid[index] = null;
   inv.gold += gold;

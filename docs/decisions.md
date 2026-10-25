@@ -508,3 +508,11 @@ damage. The game is single-player, so a healer needs targets, and the class must
   Meshy (33 credits), and the item, aspect and menu art with FLUX ($0.168). There is no separate weapon
   model: the censer and staff are a procedural lantern-censer.
 
+
+### 2026-10-25 — Refunding one skill rank (UI pass B032)
+Right-clicking a learned tree node (mouse only) takes one rank back. Rules, all in `systems/skillTree.ts`
+(`canRefund`, `refundRank`, `refundCost`): the free first rank of the starting skill stays; the last rank of a skill
+or enhancement is kept while an enhancement or modifier still hangs on it; and a rank cannot go if a learned node
+would drop below its branch's unlock total. It costs 20 % of the full respec price (`REFUND_COST_SHARE`) behind a
+confirm sheet, so it is a small tax on trying a build, not a replacement for the full Reset. Touch has no refund
+action yet.

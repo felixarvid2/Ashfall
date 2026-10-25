@@ -89,6 +89,133 @@ export interface MapMarker {
   shape?: 'dot' | 'square' | 'diamond';
 }
 
+/** A hostile on the minimap (A016). */
+export type BlipKind = 'normal' | 'champion' | 'rare' | 'boss';
+export interface MapBlip {
+  x: number;
+  z: number;
+  kind: BlipKind;
+}
+
+/** Hostile blips: only enemies within this many metres, at most `BLIP_CAP` of them. */
+export const BLIP_RANGE = 40;
+export const BLIP_CAP = 60;
+/** Radius in CSS px and colour per kind (the boss also gets a ring). */
+export const BLIP_STYLE: Record<BlipKind, { r: number; color: string }> = {
+  normal: { r: 2.5, color: '#d9443a' },
+  champion: { r: 4, color: '#6fb3ff' },
+  rare: { r: 4, color: '#ffd23a' },
+  boss: { r: 6, color: '#ff2a2a' },
+};
+const BLIP_RANK: Record<BlipKind, number> = { normal: 0, champion: 1, rare: 2, boss: 3 };
+
+/** The blips to draw: within `range` of (px, pz), the rarest and then the nearest `cap`; drawn smallest first. */
+export function selectBlips(blips: readonly MapBlip[], px: number, pz: number, range = BLIP_RANGE, cap = BLIP_CAP): MapBlip[] {
+  const near = blips.filter((b) => Math.hypot(b.x - px, b.z - pz) <= range);
+  if (near.length > cap) {
+    near.sort((a, b) => BLIP_RANK[b.kind] - BLIP_RANK[a.kind] || Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
+    near.length = cap;
+  }
+  return near.sort((a, b) => BLIP_RANK[a.kind] - BLIP_RANK[b.kind]);
+}
+
+/** A short-lived marker on the minimap (A039: a legendary drop). Times are in `MapUi`'s own clock, seconds. */
+export interface MapPip {
+  x: number;
+  z: number;
+  from: number;
+  until: number;
+  color: string;
+}
+/** Pips on the minimap at once (the oldest go first), their diameter in CSS px, and the seconds a pip fades over at its end. */
+export const PIP_CAP = 16;
+export const PIP_SIZE = 4;
+export const PIP_FADE = 2;
+/** Gold, as the rare blip and the legendary label. */
+export const PIP_GOLD = '#ffd23a';
+
+/** Opacity of a pip at `now`: 0 once expired; fades over its last `PIP_FADE` s, or stays 1 until then with `steady` (reduce flashing). */
+export function pipAlpha(pip: Pick<MapPip, 'until'>, now: number, steady = false): number {
+  const left = pip.until - now;
+  if (left <= 0) return 0;
+  return steady ? 1 : Math.min(1, left / PIP_FADE);
+}
+
+/** The pips that are still alive at `now` (the same array when none expired), at most `cap`, newest kept. */
+export function livePips(pips: MapPip[], now: number, cap = PIP_CAP): MapPip[] {
+  const live = pips.filter((p) => p.until > now);
+  const kept = live.length > cap ? live.slice(live.length - cap) : live;
+  return kept.length === pips.length ? pips : kept;
+}
+
+/** Wheel zoom factor: one 100 px notch doubles (or halves) the scale; a touchpad's small deltas zoom smoothly (B039). */
+export function wheelFactor(deltaY: number, deltaMode = 0): number {
+  const px = deltaMode === 1 ? deltaY * 33 : deltaMode === 2 ? deltaY * 400 : deltaY;
+  return Math.pow(2, Math.max(-1, Math.min(1, -px / 100)));
+}
+
+export type LegendShape = 'dot' | 'square' | 'diamond' | 'arrow';
+export interface LegendEntry {
+  /** Language key: map.legend.<key>. */
+  key: string;
+  color: string;
+  shape: LegendShape;
+}
+
+/** Every glyph the maps draw, with the colour it is drawn in (B038); the legend lists the ones present. */
+export const LEGEND: LegendEntry[] = [
+  { key: 'teleporter', color: '#5ad2ff', shape: 'diamond' },
+  { key: 'quest', color: '#ffd23a', shape: 'dot' },
+  { key: 'sideQuest', color: '#e8e0d0', shape: 'dot' },
+  { key: 'boss', color: POI_STYLE.boss!.color, shape: 'diamond' },
+  { key: 'dungeon', color: POI_STYLE.dungeon!.color, shape: 'square' },
+  { key: 'stronghold', color: POI_STYLE.stronghold!.color, shape: 'square' },
+  { key: 'bunker', color: POI_STYLE.bunker!.color, shape: 'square' },
+  { key: 'event', color: POI_STYLE.event!.color, shape: 'diamond' },
+  { key: 'relic', color: POI_STYLE.relic!.color, shape: 'diamond' },
+  { key: 'signalTower', color: POI_STYLE.signalTower!.color, shape: 'dot' },
+  { key: 'gate', color: '#e8e0d0', shape: 'square' },
+  { key: 'cache', color: '#ff8a3a', shape: 'diamond' },
+  { key: 'you', color: '#ffd27a', shape: 'arrow' },
+];
+
+/** What a zone's maps currently draw, for `legendFor`. */
+export interface LegendPresence {
+  poiKinds: ReadonlySet<string>;
+  teleporters: boolean;
+  gates: boolean;
+  caches: boolean;
+  mainQuest: boolean;
+  sideQuest: boolean;
+  /** The player is on this map. */
+  you: boolean;
+}
+
+/** The legend entries for the glyphs present on the map (all of them are listed in `LEGEND`). */
+export function legendFor(p: LegendPresence): LegendEntry[] {
+  const present = (key: string): boolean => {
+    switch (key) {
+      case 'teleporter':
+        return p.teleporters;
+      case 'quest':
+        return p.mainQuest;
+      case 'sideQuest':
+        return p.sideQuest;
+      case 'gate':
+        return p.gates;
+      case 'cache':
+        return p.caches;
+      case 'you':
+        return p.you;
+      default:
+        return p.poiKinds.has(key);
+    }
+  };
+  return LEGEND.filter((e) => present(e.key));
+}
+
+const LEGEND_GLYPH: Record<LegendShape, string> = { dot: '\u25CF', square: '\u25A0', diamond: '\u25C6', arrow: '\u25B2' };
+
 /** A 2-D view transform: world (x, z) → canvas pixels, rotated so "up" matches the camera. */
 interface View {
   cx: number;
@@ -140,6 +267,19 @@ export class MapUi {
   private miniK = 1;
   private fullK = 1;
   private footerKey = '';
+  private legendKey = '';
+  /** Hover label over a glyph on the full map (B038). */
+  private readonly tip: HTMLDivElement;
+  private tipTimer = 0;
+  private tipFor = '';
+  /** Hostiles near the player, fed by the game (A016); drawn on the minimap. */
+  blips: MapBlip[] = [];
+  /** Drop pips (A039), added by `addPip`, drawn with the blips and dropped when they expire. */
+  private pips: MapPip[] = [];
+  /** Seconds of `update` time: the pips' clock. */
+  private clock = 0;
+  /** Reduce flashing: pips stay steady until they vanish instead of fading. */
+  reduceFlashing = false;
   /** A spot the map was opened on (quest log, world boss row): zoomed to and ringed until `until`. */
   private focus: { x: number; z: number; zone: string; until: number } | null = null;
   /** Tapping the minimap (touch) opens the full map. */
@@ -199,7 +339,9 @@ export class MapUi {
     this.locateBtn.textContent = '\u25CE';
     this.locateBtn.title = this.locateBtn.ariaLabel = t('map.locate');
     this.locateBtn.addEventListener('click', () => this.locate());
-    this.viewport.append(this.fullCanvas, this.locateBtn);
+    this.tip = Object.assign(document.createElement('div'), { className: 'map-tip' });
+    this.tip.hidden = true;
+    this.viewport.append(this.fullCanvas, this.locateBtn, this.tip);
     this.legend = this.buildLegend();
     this.full.append(title, this.tabs, this.viewport, this.legend, this.fullInfo);
     this.installGestures();
@@ -211,25 +353,43 @@ export class MapUi {
     return this.full;
   }
 
-  /** Chip row under the map: what the markers mean. */
+  /** Chip row beside the map: what the markers mean (filled by `refreshLegend`). */
   private buildLegend(): HTMLDivElement {
     const row = document.createElement('div');
     row.className = 'map-legend';
-    const entries: [string, string, string][] = [
-      ['teleporter', '#5ad2ff', '\u25C6'],
-      ['quest', '#ffd23a', '\u25CF'],
-      ['boss', '#ff2a2a', '\u25C6'],
-      ['you', '#ffd27a', '\u25B2'],
-    ];
-    for (const [key, color, glyph] of entries) {
-      const chip = document.createElement('span');
-      chip.className = 'map-legend-chip';
-      const mark = Object.assign(document.createElement('i'), { textContent: glyph });
-      mark.style.color = color;
-      chip.append(mark, t(`map.legend.${key}`));
-      row.append(chip);
-    }
     return row;
+  }
+
+  /** Lists the glyphs this map draws; rebuilt only when that set changes (B038). */
+  private refreshLegend(zone: ZoneRuntime, here: boolean): void {
+    const main = this.markers.some((m) => m.color === '#ffd23a');
+    const side = this.markers.some((m) => m.color !== '#ffd23a' && !m.shape);
+    const entries = legendFor({
+      poiKinds: new Set([
+        ...zone.def.pois.filter((p) => POI_STYLE[p.kind] && (p.kind !== 'relic' || zone.found.has(p.id))).map((p) => p.kind as string),
+        // The world boss marker is a diamond in the boss colour.
+        ...(here && this.markers.some((m) => m.shape === 'diamond') ? ['boss'] : []),
+      ]),
+      teleporters: zone.def.teleporters.some((tp) => zone.discovered.has(tp.id)),
+      gates: zone.def.gates.length > 0,
+      caches: this.harvest?.active.zoneId === zone.def.id && (this.harvest?.caches.length ?? 0) > 0,
+      mainQuest: here && main,
+      sideQuest: here && side,
+      you: here,
+    });
+    const key = entries.map((e) => e.key).join(',');
+    if (key === this.legendKey) return;
+    this.legendKey = key;
+    this.legend.replaceChildren(
+      ...entries.map((e) => {
+        const chip = document.createElement('span');
+        chip.className = 'map-legend-chip';
+        const mark = Object.assign(document.createElement('i'), { textContent: LEGEND_GLYPH[e.shape] });
+        mark.style.color = e.color;
+        chip.append(mark, t(`map.legend.${e.key}`));
+        return chip;
+      }),
+    );
   }
 
   get open(): boolean {
@@ -238,6 +398,7 @@ export class MapUi {
 
   toggle(): void {
     this.full.hidden = !this.full.hidden;
+    this.hideTip();
     this.selected = null;
     this.focus = null;
     this.resetZoom();
@@ -344,7 +505,14 @@ export class MapUi {
     el.classList.toggle('fade-r', el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }
 
+  /** A pip at a world position for `ms` ms (A039); drawn on the minimap's next redraw, within its circle only. */
+  addPip(x: number, z: number, ms: number, color = PIP_GOLD): void {
+    this.pips = livePips([...this.pips, { x, z, from: this.clock, until: this.clock + ms / 1000, color }], this.clock);
+    this.timer = 0;
+  }
+
   update(dt: number): void {
+    this.clock += dt;
     const zone = this.zone();
     this.mini.hidden = !zone;
     if (!zone) return;
@@ -384,9 +552,42 @@ export class MapUi {
       c.fillRect(r.x - r.size / 2 + 1, r.z - r.size / 2 + 1, r.size - 2, r.size - 2);
     }
     c.restore();
+    this.drawBlips(c, v, p);
     for (const m of this.markers) this.rimMark(c, v, ...project(v, m.x, m.z), m.color, 5 * this.miniK, m.shape ?? 'dot');
     this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);
     this.miniRing(c);
+  }
+
+  /** Drop pips (A039): a gold dot that fades over its last seconds, steady with reduce flashing. Expired ones are removed here. */
+  private drawPips(c: CanvasRenderingContext2D, v: View, k: number): void {
+    this.pips = livePips(this.pips, this.clock);
+    const reach = MINI_SIZE / 2 - 4;
+    for (const pip of this.pips) {
+      const [sx, sy] = project(v, pip.x, pip.z);
+      if (Math.hypot(sx - v.cx, sy - v.cy) > reach) continue;
+      c.globalAlpha = pipAlpha(pip, this.clock, this.reduceFlashing);
+      this.mark(c, sx, sy, pip.color, (PIP_SIZE / 2) * k, 'dot');
+    }
+    c.globalAlpha = 1;
+  }
+
+  /** Hostile blips (A016): red dots, larger blue champions and gold rares, a ringed boss. Nothing is drawn for the dead. */
+  private drawBlips(c: CanvasRenderingContext2D, v: View, p: { x: number; z: number }): void {
+    const k = this.miniK;
+    if (this.pips.length > 0) this.drawPips(c, v, k);
+    if (this.blips.length === 0) return;
+    for (const b of selectBlips(this.blips, p.x, p.z)) {
+      const style = BLIP_STYLE[b.kind];
+      const [sx, sy] = project(v, b.x, b.z);
+      this.mark(c, sx, sy, style.color, style.r * k, 'dot');
+      if (b.kind === 'boss') {
+        c.strokeStyle = '#fff';
+        c.lineWidth = 1.5 * k;
+        c.beginPath();
+        c.arc(sx, sy, (style.r + 3) * k, 0, Math.PI * 2);
+        c.stroke();
+      }
+    }
   }
 
   /** The minimap rim: a light stroke with a dark edge so it reads on bright ground (the Core), and an "N" tick. */
@@ -432,6 +633,7 @@ export class MapUi {
     c.fillStyle = 'rgba(8,7,6,0.85)';
     c.fillRect(0, 0, MINI_SIZE, MINI_SIZE);
     this.drawWorld(c, zone, v, MINI_RANGE * 1.5);
+    this.drawBlips(c, v, p);
     c.restore();
     this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);
     this.miniRing(c);
@@ -456,6 +658,7 @@ export class MapUi {
     }
     this.drawSelected(c, zone, v);
     this.drawFocus(c, zone, v);
+    this.refreshLegend(zone, here);
     const chips = [t('map.explored', { pct: Math.round(revealedFraction(zone) * 100) }), this.extraInfo(zone), this.harvest?.active.zoneId === zone.def.id ? t('harvest.mapRegion') : ''].filter(Boolean);
     this.updateFooter(chips, touchText('map.travel'));
   }
@@ -820,21 +1023,96 @@ export class MapUi {
       // Two taps on empty ground zoom in (or back out).
       if (e.timeStamp - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
         const m = rel(e.clientX, e.clientY);
-        this.zoom = this.zoom.z > 1.05 ? { z: 1, tx: 0, ty: 0 } : zoomAround(this.zoom, 2.5, m.x, m.y, this.viewSize());
-        this.applyZoom();
+        // Mouse: double-click centres on you (B039); touch: double-tap zooms in or back out.
+        if ((e as PointerEvent).pointerType === 'mouse' && this.shown() === this.zone()) this.locate();
+        else {
+          this.zoom = this.zoom.z > 1.05 ? { z: 1, tx: 0, ty: 0 } : zoomAround(this.zoom, 2.5, m.x, m.y, this.viewSize());
+          this.applyZoom();
+        }
         lastTap = { t: 0, x: 0, y: 0 };
       } else lastTap = { t: e.timeStamp, x: e.clientX, y: e.clientY };
     });
+    // Mouse hover: the place name over a glyph after a short pause (B038).
+    vp.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' || e.buttons !== 0) return this.hideTip();
+      this.hoverAt(e.clientX, e.clientY);
+    });
+    vp.addEventListener('pointerleave', () => this.hideTip());
     vp.addEventListener(
       'wheel',
       (e) => {
         e.preventDefault();
         const m = rel(e.clientX, e.clientY);
-        this.zoom = zoomAround(this.zoom, this.zoom.z * (e.deltaY < 0 ? 1.25 : 0.8), m.x, m.y, this.viewSize());
+        this.zoom = zoomAround(this.zoom, this.zoom.z * wheelFactor(e.deltaY, e.deltaMode), m.x, m.y, this.viewSize());
+        this.hideTip();
         this.applyZoom();
       },
       { passive: false },
     );
+  }
+
+  /** Every glyph on the full map with its label and canvas position, for the hover label. */
+  private glyphs(zone: ZoneRuntime, v: View): { x: number; y: number; label: string }[] {
+    const def = zone.def;
+    const out: { x: number; y: number; label: string }[] = [];
+    const seen = (x: number, z: number) => {
+      const i = Math.floor((x + def.halfSize) / def.mapCell);
+      const j = Math.floor((z + def.halfSize) / def.mapCell);
+      return i >= 0 && j >= 0 && i < zone.cells && j < zone.cells && zone.revealed[j * zone.cells + i] === 1;
+    };
+    const add = (x: number, z: number, label: string) => {
+      const [sx, sy] = project(v, x, z);
+      out.push({ x: sx, y: sy, label });
+    };
+    for (const poi of def.pois) {
+      if (!POI_STYLE[poi.kind] || !seen(poi.x, poi.z) || (poi.kind === 'relic' && !zone.found.has(poi.id))) continue;
+      add(poi.x, poi.z, t(`map.legend.${poi.kind}`));
+    }
+    for (const tp of def.teleporters) if (zone.discovered.has(tp.id)) add(tp.x, tp.z, t(`zones.teleporters.${tp.id}`));
+    for (const g of def.gates) if (seen(g.x, g.z)) add(g.x, g.z, t('map.legend.gate'));
+    for (const cache of this.harvest?.active.zoneId === def.id ? this.harvest.caches : []) add(cache.x, cache.z, t('map.legend.cache'));
+    if (zone === this.zone()) for (const m of this.markers) add(m.x, m.z, m.shape === 'diamond' ? t('map.legend.boss') : m.color === '#ffd23a' ? t('map.legend.quest') : t('map.legend.sideQuest'));
+    return out;
+  }
+
+  private hoverAt(clientX: number, clientY: number): void {
+    const zone = this.shown();
+    const rect = this.fullCanvas.getBoundingClientRect();
+    if (!zone || rect.width === 0) return this.hideTip();
+    const k = MAP_SIZE / rect.width;
+    const cx = (clientX - rect.left) * k;
+    const cy = (clientY - rect.top) * k;
+    let best: { x: number; y: number; label: string } | null = null;
+    let bestD = 14 * k;
+    for (const g of this.glyphs(zone, this.fullView(zone))) {
+      const d = Math.hypot(g.x - cx, g.y - cy);
+      if (d <= bestD) {
+        bestD = d;
+        best = g;
+      }
+    }
+    if (!best) return this.hideTip();
+    const vp = this.viewport.getBoundingClientRect();
+    const x = clientX - vp.left + 14;
+    const y = clientY - vp.top + 14;
+    if (this.tipFor === best.label) {
+      if (!this.tip.hidden) this.tip.style.transform = `translate(${x}px, ${y}px)`;
+      return;
+    }
+    this.hideTip();
+    this.tipFor = best.label;
+    const label = best.label;
+    this.tipTimer = window.setTimeout(() => {
+      this.tip.textContent = label;
+      this.tip.style.transform = `translate(${x}px, ${y}px)`;
+      this.tip.hidden = false;
+    }, 120);
+  }
+
+  private hideTip(): void {
+    window.clearTimeout(this.tipTimer);
+    this.tipFor = '';
+    if (!this.tip.hidden) this.tip.hidden = true;
   }
 
   /** Centres the map on the player, zoomed in (the "locate" button). */

@@ -101,3 +101,45 @@ export function treeEffects(t: SkillTree, state: TreeState): Effect[] {
   }
   return out;
 }
+
+// ---- Refund one rank (B032) ---------------------------------------------------------------------
+
+/** Share of the full respec price that taking back a single rank costs. */
+export const REFUND_COST_SHARE = 0.2;
+
+export type RefundCheck = { ok: true } | { ok: false; reason: 'none' | 'start' | 'dependent' | 'branch' };
+
+/** Gold for one refunded rank at this level. */
+export function refundCost(t: SkillTree, level: number): number {
+  return Math.max(1, Math.round(respecCost(t, level) * REFUND_COST_SHARE));
+}
+
+/**
+ * Can one rank of a node be taken back? Not the free first rank of the starting skill, not the last rank of a node
+ * that an enhancement or modifier hangs on, and not when a learned node would fall below its branch's unlock total.
+ */
+export function canRefund(t: SkillTree, state: TreeState, id: string): RefundCheck {
+  const rank = state.ranks[id] ?? 0;
+  if (rank <= 0) return { ok: false, reason: 'none' };
+  if (id === t.startingNode && rank <= 1) return { ok: false, reason: 'start' };
+  if (rank === 1 && t.nodes.some((x) => (x.type === 'enhancement' || x.type === 'modifier') && x.parent === id && (state.ranks[x.id] ?? 0) > 0)) {
+    return { ok: false, reason: 'dependent' };
+  }
+  const total = pointsInTree(state) - 1;
+  const stranded = t.nodes.some((x) => {
+    const r = x.id === id ? rank - 1 : (state.ranks[x.id] ?? 0);
+    return r > 0 && total < (t.unlockAt[x.branch] ?? 0);
+  });
+  if (stranded) return { ok: false, reason: 'branch' };
+  return { ok: true };
+}
+
+/** Take one rank back (the caller returns the point and charges the gold). Mutates state on success. */
+export function refundRank(t: SkillTree, state: TreeState, id: string): RefundCheck {
+  const check = canRefund(t, state, id);
+  if (!check.ok) return check;
+  const rank = state.ranks[id]! - 1;
+  if (rank > 0) state.ranks[id] = rank;
+  else delete state.ranks[id];
+  return check;
+}
