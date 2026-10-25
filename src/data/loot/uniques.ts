@@ -294,6 +294,96 @@ export const UNIQUES: Unique[] = [
       },
     ],
   },
+  // ---- Content pass (C004), second wave: one more gloves, ring or amulet unique per class.
+  {
+    // Magnetic Pull reaches further, returns sooner and hits far harder.
+    id: 'lodestone_grips',
+    base: 'servo_gauntlets',
+    rarity: 'unique',
+    classes: ['bastion'],
+    affixes: [
+      { stat: 'strength', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'maxLife', min: 20, max: 30, scaling: 'linear' },
+      { stat: 'damageReduction', min: 0.03, max: 0.05, scaling: 'none' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'bastion.magnetic_pull',
+        mods: [{ op: 'mul', field: 'radius', value: 0.4 }, { op: 'mul', field: 'cooldown', value: -0.4 }, { op: 'mul', field: 'coefficient', value: 2 }],
+      },
+    ],
+  },
+  {
+    // Minefield lays five mines with a wider blast, but each is weaker and the field takes longer to rearm.
+    id: 'sappers_signet',
+    base: 'conduit_ring',
+    rarity: 'unique',
+    classes: ['spectre'],
+    affixes: [
+      { stat: 'dexterity', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'critChance', min: 0.03, max: 0.05, scaling: 'none' },
+      { stat: 'cooldownReduction', min: 0.04, max: 0.07, scaling: 'none' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'spectre.minefield',
+        mods: [
+          { op: 'add', field: 'count', value: 2 },
+          { op: 'mul', field: 'radius', value: 0.3 },
+          { op: 'mul', field: 'coefficient', value: -0.2 },
+          { op: 'mul', field: 'cooldown', value: 0.3 },
+        ],
+      },
+    ],
+  },
+  {
+    // Raise Corpse raises three at a time and keeps two more of them standing, but each is frailer.
+    id: 'gravecallers_grasp',
+    base: 'servo_gauntlets',
+    rarity: 'unique',
+    classes: ['xenomant'],
+    affixes: [
+      { stat: 'intelligence', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'maxLife', min: 20, max: 30, scaling: 'linear' },
+      { stat: 'resistToxic', min: 0.08, max: 0.12, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'xenomant.raise_corpse',
+        mods: [
+          { op: 'add', field: 'count', value: 1 },
+          { op: 'add', field: 'maxMinions', value: 2 },
+          { op: 'mul', field: 'lifeFraction', value: -0.3 },
+        ],
+      },
+    ],
+  },
+  {
+    // Guardian Light calls a third light and keeps all of them burning longer, but each is frailer.
+    id: 'vigil_ring',
+    base: 'conduit_ring',
+    rarity: 'unique',
+    classes: ['lightbearer'],
+    affixes: [
+      { stat: 'intelligence', min: 8, max: 12, scaling: 'linear' },
+      { stat: 'maxLife', min: 20, max: 30, scaling: 'linear' },
+      { stat: 'resistEnergy', min: 0.08, max: 0.12, scaling: 'sqrt' },
+    ],
+    effects: [
+      {
+        kind: 'skillMod',
+        skill: 'lightbearer.guardian_light',
+        mods: [
+          { op: 'add', field: 'maxGuardians', value: 1 },
+          { op: 'mul', field: 'duration', value: 0.4 },
+          { op: 'mul', field: 'lifeFraction', value: -0.25 },
+        ],
+      },
+    ],
+  },
   {
     // Mythic: Sanctuary almost never goes down, lasts as long as it can and grows; recast it and it moves with you.
     id: 'aureole_of_the_first_dawn',

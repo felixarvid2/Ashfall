@@ -13,3 +13,6 @@ dist-artifact
 assets-src/vfx/raw/
 assets-src/art/raw/
 assets-src/third-party/
+
+# vitest coverage report (npm run coverage)
+coverage/

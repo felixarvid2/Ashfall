@@ -978,6 +978,7 @@
     "nextRank": "Next rank: {pct}% ({n} point)",
     "maxRankLine": "Max rank",
     "notOnBar": "Not on the action bar",
+    "recommended": "Recommended: learn this skill next",
     "refundHint": "Right-click: take back one rank ({gold} gold)",
     "refundTitle": "Refund a rank of {name}?",
     "refundConfirm": "Take back one rank for {gold} gold? The point returns to you.",
@@ -1713,11 +1714,11 @@
       },
       "vigil": {
         "name": "Vigil",
-        "desc": "+12 maximum life per rank."
+        "desc": "+2% maximum life per rank."
       },
       "piety": {
         "name": "Piety",
-        "desc": "+5% Devotion generation per rank."
+        "desc": "+3% Devotion generation per rank."
       },
       "sacred_flame": {
         "name": "Sacred Flame",
@@ -1729,7 +1730,7 @@
       },
       "consecrated_mail": {
         "name": "Consecrated Mail",
-        "desc": "+15 armour per rank."
+        "desc": "+4% armour per rank."
       },
       "hymnal": {
         "name": "Hymnal",
@@ -1745,7 +1746,7 @@
       },
       "sacred_oath": {
         "name": "Sacred Oath",
-        "desc": "+4 intelligence per rank."
+        "desc": "+4% damage to corrupted enemies per rank."
       },
       "radiance": {
         "name": "Radiance",
@@ -1791,7 +1792,7 @@
       },
       "devout": {
         "name": "Devout",
-        "desc": "Heal, Sanctuary and Kyrie Eleison are 35% stronger, and Devotion builds 15% faster."
+        "desc": "Heal, Sanctuary and Kyrie Eleison are 35% stronger."
       },
       "zealot": {
         "name": "Zealot",
@@ -2099,6 +2100,26 @@
       "name": "Cinder Collar",
       "effect": "Heat Vent reaches 40% further and leaves burning ground for 5 seconds, but takes 30% longer to cool down.",
       "flavor": "Forged shut around the neck of a furnace foreman. The furnace is still in it."
+    },
+    "lodestone_grips": {
+      "name": "Lodestone Grips",
+      "effect": "Magnetic Pull reaches 40% further, returns 40% sooner and deals three times the damage.",
+      "flavor": "The gauntlets never quite let go of what they touch. Neither did the man who wore them."
+    },
+    "sappers_signet": {
+      "name": "Sapper's Signet",
+      "effect": "Minefield lays two more mines with a 30% wider blast, but each mine deals 20% less damage and the cooldown is 30% longer.",
+      "flavor": "Engraved inside the band: count them out, count them in."
+    },
+    "gravecallers_grasp": {
+      "name": "Gravecaller's Grasp",
+      "effect": "Raise Corpse raises one more at a time and allows two more minions, but each has 30% less life.",
+      "flavor": "The fingers are stitched on tighter than they should be. They are not all his."
+    },
+    "vigil_ring": {
+      "name": "Vigil Ring",
+      "effect": "Guardian Light calls one more light and each burns 40% longer, but each has 25% less life.",
+      "flavor": "A watch that never ends is a watch that never rests."
     },
     "aureole_of_the_first_dawn": {
       "name": "Aureole of the First Dawn",
@@ -4185,6 +4206,7 @@
     "talkTag": "Quest",
     "started": "Quest started: {title}",
     "completed": "Quest complete: {title}",
+    "completedReward": "Quest complete: {title}. Reward: {rewards}",
     "failed": "{title}: the tanker was destroyed. Starting over.",
     "progress": "{title}: {step}",
     "log": "Quests",
@@ -4209,6 +4231,7 @@
     "rewards": "Rewards: {xp} XP · {gold} gold",
     "rewardXp": "{xp} XP",
     "rewardGold": "{gold} gold",
+    "rewardItem": "{rarity} item",
     "level": "Level {level}",
     "completedList": "Completed",
     "completedBanner": "Quest complete"

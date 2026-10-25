@@ -16,7 +16,6 @@ export interface GamePanels {
   settings: { element: HTMLElement; open: boolean; show(): void; close(): void };
   /** The Escape pause menu (B041). */
   pause: { element: HTMLElement; open: boolean; show(): void; close(): void; canOpen(): boolean };
-  service: { open: boolean; close(): void };
   tier: { open: boolean; close(): void };
   rift: { open: boolean; close(): void };
   lore: { open: boolean; close(): void };
@@ -24,12 +23,25 @@ export interface GamePanels {
   closeDialogue: () => void;
 }
 
+function panelRoot(root: HTMLElement, selector: string): HTMLElement {
+  const el = root.querySelector<HTMLElement>(selector);
+  if (!el) throw new Error(`panel root not found: ${selector}`);
+  return el;
+}
+
+/**
+ * The hub services panel is built when the first service opens (src/game.ts `loadServicePanel`), so it registers
+ * with the stack then rather than in `registerGamePanels`. Hub services show their own backpack beside them.
+ */
+export function registerServicePanel(root: HTMLElement, service: { close(): void }): void {
+  panelStack.register({
+    id: 'service', el: panelRoot(root, '.service-panel'), kind: 'service', companions: ['inventory'], hint: '.inv-hint',
+    close: () => service.close(),
+  });
+}
+
 export function registerGamePanels(root: HTMLElement, p: GamePanels): void {
-  const q = (selector: string): HTMLElement => {
-    const el = root.querySelector<HTMLElement>(selector);
-    if (!el) throw new Error(`panel root not found: ${selector}`);
-    return el;
-  };
+  const q = (selector: string): HTMLElement => panelRoot(root, selector);
   /** Panels whose toggle() flips: close only when open. */
   const closeIf = (panel: { open: boolean; toggle(): void }) => () => {
     if (panel.open) panel.toggle();
@@ -76,11 +88,6 @@ export function registerGamePanels(root: HTMLElement, p: GamePanels): void {
     if (!p.pause.canOpen()) return false;
     panelStack.open('pause');
     return true;
-  });
-  // Hub services show their own backpack beside them.
-  panelStack.register({
-    id: 'service', el: q('.service-panel'), kind: 'service', companions: ['inventory'], hint: '.inv-hint',
-    close: () => p.service.close(),
   });
   panelStack.register({ id: 'tier', el: q('.tier-panel'), kind: 'service', scrim: true, close: () => p.tier.close() });
   panelStack.register({ id: 'rift', el: q('.rift-panel'), kind: 'service', scrim: true, close: () => p.rift.close() });

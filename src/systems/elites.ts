@@ -65,10 +65,6 @@ export function applyAffixes(world: World, e: Entity, kind: 'champion' | 'rare' 
   if (kind === 'rare' && !world.has(e, DisplayName)) world.add(e, DisplayName, { key: rareName(rng), literal: true });
 }
 
-export function hasAffix(world: World, e: Entity, affix: EliteAffix): boolean {
-  return world.get(e, Elite)?.affixes.includes(affix) ?? false;
-}
-
 const range = (rng: Rng, [a, b]: [number, number]) => rng.range(a, b);
 
 export function eliteSystem(world: World, dt: number, ctx: GameContext): void {

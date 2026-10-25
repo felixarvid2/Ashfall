@@ -518,6 +518,7 @@ html, body {
 .tree-node.t-modifier { border-color: #4a3a6a; border-style: dashed; }
 .tree-node.t-keyPassive { border-color: #8a4a1a; }
 .tree-node.available { box-shadow: 0 0 8px rgba(232, 200, 106, 0.35); }
+.tree-node.recommended { outline: 2px solid #f2d27a; outline-offset: 2px; box-shadow: 0 0 12px rgba(242, 210, 122, 0.7); }
 .tree-node.learned { background: #241d14; border-color: #e8c86a; }
 .tree-node-name { color: var(--ui-text); line-height: 1.15; }
 .tree-node-rank { color: #e8c86a; margin-top: 2px; }

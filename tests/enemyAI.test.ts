@@ -11,6 +11,7 @@ import {
   WaveMember,
 } from '../src/core/components';
 import { World } from '../src/core/ecs';
+import { Rng } from '../src/core/rng';
 import { SpatialHash } from '../src/core/spatial';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
 import { deathSystem } from '../src/systems/death';
@@ -253,5 +254,34 @@ describe('fast wind-ups (G025)', () => {
     expect(warning && 'duration' in warning ? warning.duration : 0).toBeCloseTo(0.6, 5);
     const atk = enemyDef('spore_hound').attack;
     expect(atk.kind === 'melee' ? atk.windup + atk.cooldown : 0).toBeCloseTo(0.35 + 1.2, 5); // swing every 1.55 s, as before;
+  });
+});
+
+describe('AI state belongs to its context (T025)', () => {
+  /** A chasing and a wandering enemy, to be run for some ticks; returns their positions. */
+  function scene(seed: string) {
+    const world = new World();
+    const ctx = makeCtx({ rng: new Rng(seed) });
+    spawnPlayer(world, 'bastion', 0, 0);
+    const chaser = spawnEnemy(world, 'infected_colonist', 9, 3);
+    world.req(chaser, EnemyAI).aggro = true;
+    const idler = spawnEnemy(world, 'infected_colonist', -25, 10);
+    return { world, ctx, at: () => [chaser, idler].map((e) => [world.req(e, Transform).x, world.req(e, Transform).z]) };
+  }
+
+  it('two contexts ticked in turn behave exactly as each one alone', () => {
+    const alone = scene('a');
+    run(alone.world, alone.ctx, SYSTEMS, 90);
+    const other = scene('b');
+    run(other.world, other.ctx, SYSTEMS, 90);
+
+    const a = scene('a');
+    const b = scene('b');
+    for (let i = 0; i < 90; i++) {
+      run(a.world, a.ctx, SYSTEMS);
+      run(b.world, b.ctx, SYSTEMS);
+    }
+    expect(a.at()).toEqual(alone.at());
+    expect(b.at()).toEqual(other.at());
   });
 });

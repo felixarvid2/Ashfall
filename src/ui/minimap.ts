@@ -119,6 +119,42 @@ export function selectBlips(blips: readonly MapBlip[], px: number, pz: number, r
   return near.sort((a, b) => BLIP_RANK[a.kind] - BLIP_RANK[b.kind]);
 }
 
+/** A usable thing in the world (chest, teleporter, lore...) as the minimap sees it (F019). */
+export interface MapFeature {
+  x: number;
+  z: number;
+  /** The `Interactable.kind`. */
+  kind: string;
+}
+
+/** Pip colour per interactable kind: the same colours as the idle glow in the world (`SHIMMER` in src/render/vfx.ts, checked by a test). */
+export const FEATURE_PIP_COLOR: Readonly<Record<string, string>> = {
+  chest: '#ffd27a',
+  lockedChest: '#ffb04a',
+  keycard: '#6affc8',
+  pylon: '#9a8aff',
+  teleporter: '#6ac8ff',
+  lore: '#b8b8c0',
+  relic: '#ff9ae8',
+  stash: '#ffd27a',
+  cache: '#ffd27a',
+  harvestCache: '#9affb0',
+};
+/** At most this many feature pips are drawn, the nearest first; radius in CSS px. */
+export const FEATURE_PIP_CAP = 24;
+export const FEATURE_PIP_R = 2.5;
+
+/** The features to draw as pips: kinds with a colour, within `range` metres, the nearest `cap`. */
+export function selectFeaturePips(features: readonly MapFeature[], px: number, pz: number, range = MINI_RANGE, cap = FEATURE_PIP_CAP): MapFeature[] {
+  return features
+    .filter((f) => FEATURE_PIP_COLOR[f.kind] !== undefined)
+    .map((f) => ({ f, d: Math.hypot(f.x - px, f.z - pz) }))
+    .filter((e) => e.d <= range)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, cap)
+    .map((e) => e.f);
+}
+
 /** A short-lived marker on the minimap (A039: a legendary drop). Times are in `MapUi`'s own clock, seconds. */
 export interface MapPip {
   x: number;
@@ -268,6 +304,8 @@ export class MapUi {
   private tipFor = '';
   /** Hostiles near the player, fed by the game (A016); drawn on the minimap. */
   blips: MapBlip[] = [];
+  /** Unused interactables near the player, fed by the game (F019); drawn on the minimap as pips in their idle-glow colour. */
+  features: MapFeature[] = [];
   /** Drop pips (A039), added by `addPip`, drawn with the blips and dropped when they expire. */
   private pips: MapPip[] = [];
   /** Seconds of `update` time: the pips' clock. */
@@ -568,6 +606,12 @@ export class MapUi {
   /** Hostile blips (A016): red dots, larger blue champions and gold rares, a ringed boss. Nothing is drawn for the dead. */
   private drawBlips(c: CanvasRenderingContext2D, v: View, p: { x: number; z: number }): void {
     const k = this.miniK;
+    if (this.features.length > 0) {
+      for (const f of selectFeaturePips(this.features, p.x, p.z)) {
+        const [sx, sy] = project(v, f.x, f.z);
+        this.mark(c, sx, sy, FEATURE_PIP_COLOR[f.kind]!, FEATURE_PIP_R * k, 'diamond');
+      }
+    }
     if (this.pips.length > 0) this.drawPips(c, v, k);
     if (this.blips.length === 0) return;
     for (const b of selectBlips(this.blips, p.x, p.z)) {

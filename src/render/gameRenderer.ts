@@ -4,10 +4,12 @@
  */
 import * as THREE from 'three';
 import { AwarenessMarkers, GuideLine, NavDebugOverlay } from './navOverlay';
+import { OcclusionCue, SILHOUETTE, propBlocksView, silhouetteEnabled } from './occlusion';
+import { StaticProps } from './staticProps';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { AttackTarget, Boss, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { AttackTarget, Boss, Collider, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from '../data/weapons';
@@ -49,6 +51,10 @@ export class GameRenderer {
   private awareness: AwarenessMarkers | null = null;
   private choir: ChoirLinks | null = null;
   private navDebug: NavDebugOverlay | null = null;
+  /** Rings under enemies hidden behind tall props (F018); off on the low setting. */
+  private occlusionCue: OcclusionCue | null = null;
+  private silhouettes = true;
+  private cueTime = 0;
   private guide: GuideLine | null = null;
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
@@ -147,7 +153,7 @@ export class GameRenderer {
     const size = arena.halfSize * 2 + 40;
     const groundDef = arena.ground;
     // Open air in the ground (The Core's abyss and bridges): a smoothed mask the ground shader discards by.
-    const grid = caveGrid(arena as unknown as Parameters<typeof caveGrid>[0]);
+    const grid = caveGrid(arena);
     const caves = (arena as { caves?: CaveDef }).caves;
     const cutField: CutField | null = grid && caves && (grid.air || grid.bridges) ? blurCut(grid, cutCells(grid, caves)) : null;
     let cutTex: THREE.DataTexture | null = null;
@@ -1064,30 +1070,24 @@ export class GameRenderer {
   private readonly fadedMaterials = new Map<THREE.Material, THREE.Material>();
   private readonly sizeCache = new Map<string, { h: number; r: number }>();
 
-  /** Does this static prop stand between the camera and the player's upper body? */
-  private occludes(r: Renderable, x: number, z: number): boolean {
-    let size = this.sizeCache.get(r.assetId);
+  /** Height and footprint radius of a prop model in metres (cached). */
+  private propSize(assetId: string): { h: number; r: number } {
+    let size = this.sizeCache.get(assetId);
     if (!size) {
-      const entry = this.assets.entry(r.assetId);
+      const entry = this.assets.entry(assetId);
       const p = entry.placeholder?.size ?? [1, 1, 1];
       size = { h: entry.heightMeters ?? p[1], r: Math.max(p[0], p[2]) / 2 };
-      this.sizeCache.set(r.assetId, size);
+      this.sizeCache.set(assetId, size);
     }
+    return size;
+  }
+
+  /** Does this static prop stand between the camera and the player's upper body? */
+  private occludes(r: Renderable, x: number, z: number): boolean {
+    const size = this.propSize(r.assetId);
     const scale = r.scale ?? 1;
-    const h = size.h * scale;
-    if (h < 4.5) return false;
     // The hero, not the camera focus: the focus leads toward the cursor in combat (F018).
-    const f = this.followPos;
-    const cam = this.rig.camera.position;
-    const vx = cam.x - f.x;
-    const vz = cam.z - f.z;
-    const len2 = vx * vx + vz * vz;
-    if (len2 < 1e-6) return false;
-    const t = Math.max(0, Math.min(1, ((x - f.x) * vx + (z - f.z) * vz) / len2));
-    if (t <= 0) return false;
-    const d = Math.hypot(f.x + vx * t - x, f.z + vz * t - z);
-    const rayY = 1.4 + t * (cam.y - 1.4);
-    return d < size.r * scale + 1.2 && rayY < h;
+    return propBlocksView(this.rig.camera.position, this.followPos, { x, z, h: size.h * scale, r: size.r * scale });
   }
 
   private setFaded(obj: THREE.Object3D, on: boolean): void {
@@ -1116,6 +1116,9 @@ export class GameRenderer {
 
   /** Entities seen by this frame's sync, and the query result behind them (reused, not reallocated). */
   private readonly seen = new Set<Entity>();
+  /** Props that never change (T015): kept out of the per-frame loop. */
+  private readonly statics = new StaticProps();
+  private readonly staticView: [number, number, number, number, number] = [0, 0, 0, 0, 0];
   private readonly renderables: Entity[] = [];
 
   /** Free what a retired entity's object owns: its cloned tint materials and per-entity sprite/ring materials. */
@@ -1131,6 +1134,7 @@ export class GameRenderer {
   private swapPlaceholders(id: string): void {
     for (const [e, obj] of this.objects) {
       if (obj.userData.placeholder !== true || obj.name !== id) continue;
+      this.statics.remove(e);
       this.scene.remove(obj);
       this.retire(obj);
       this.objects.delete(e);
@@ -1150,6 +1154,8 @@ export class GameRenderer {
     seen.clear();
     for (const e of world.queryInto(this.renderables, Transform, Renderable)) {
       seen.add(e);
+      // Plain static props are placed once and culled and faded in `statics.update` below (T015).
+      if (this.statics.has(e)) continue;
       const tr = world.req(e, Transform);
       let obj = this.objects.get(e);
       if (!obj) {
@@ -1190,6 +1196,10 @@ export class GameRenderer {
         this.scene.add(obj);
         const clips = this.assets.clips(r.assetId);
         if (clips.size > 0) this.animators.set(e, new CharacterAnimator(obj, clips));
+        else if (!r.look && !((obj.userData.tint as TintSlot[] | undefined)?.length ?? 0) && world.hasOnly(e, Transform, Renderable, Collider)) {
+          this.statics.add(e, obj, tr, r, this.propSize(r.assetId).h * (r.scale ?? 1) >= SILHOUETTE.minPropHeight);
+          continue;
+        }
       }
       // Cull far-away static props (the fog hides them anyway); characters and landmarks stay.
       const r = world.req(e, Renderable);
@@ -1316,8 +1326,21 @@ export class GameRenderer {
       this.applyTint(world, e, obj, frameDt);
       if (this.recoils.size > 0) this.applyRecoil(world, e, obj, frameDt);
     }
+    {
+      const f = this.rig.focusPoint;
+      const cam = this.rig.camera.position;
+      const hero = this.followPos;
+      const view = this.staticView;
+      view[0] = cam.x;
+      view[1] = cam.y;
+      view[2] = cam.z;
+      view[3] = hero.x;
+      view[4] = hero.z;
+      this.statics.update(f, CULL_DISTANCE, view, (r, x, z) => this.occludes(r, x, z), (o, on) => this.setFaded(o, on));
+    }
     for (const [e, obj] of this.objects) {
       if (!seen.has(e)) {
+        this.statics.remove(e);
         this.scene.remove(obj);
         this.retire(obj);
         this.objects.delete(e);
@@ -1405,6 +1428,9 @@ export class GameRenderer {
   updateMinds(world: World, nav: NavService | undefined, time: number): void {
     (this.awareness ??= new AwarenessMarkers(this.scene)).update(world, this.objects, time);
     this.navDebug?.update(nav, world);
+    const cueDt = Math.min(0.1, Math.max(0, this.time - this.cueTime));
+    this.cueTime = this.time;
+    (this.occlusionCue ??= new OcclusionCue(this.scene)).update(world, this.objects, this.rig.camera.position, this.followPos, cueDt, this.silhouettes, (id) => this.propSize(id));
   }
 
   /** The golden dotted guide to the first objective (F007); `goal` null hides it. */
@@ -1670,6 +1696,7 @@ export class GameRenderer {
 
   setQuality(quality: GraphicsQuality): void {
     this.postfx.setQuality(quality);
+    this.silhouettes = silhouetteEnabled(quality);
     this.vfx.sprites.setQuality(quality);
     this.renderer.shadowMap.enabled = quality !== 'low';
     const size = quality === 'high' ? 2048 : 1024;

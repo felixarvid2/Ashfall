@@ -14,14 +14,14 @@ Base resistances: Bastion energy 10 %, Spectre energy 20 % (was 10 %: drone bolt
 build took, see decisions.md 2026-10-25), Xenomant energy 5 %, Lightbearer energy 20 %.
 
 The percentage passives (`maxLifePct`, `armorPct`: Reinforced Plating, Vital Systems, Kevlar Weave, Survival
-Instinct, Cell Division, Thick Hide) scale with the whole build; flat +15 armor was noise from level 15 on.
+Instinct, Cell Division, Thick Hide, and the Lightbearer's Vigil +2 % life and Consecrated Mail +4 % armor) scale with the whole build; flat +15 armor was noise from level 15 on.
 
 ## Bastion skills (changed in the balance pass)
 | Skill | Branch | What changed |
 |---|---|---|
 | Piston Jab | Basic | arc 50 to 90 degrees, so packs that surround you are still hit |
-| Furnace Cleave | Core | arc 170 to 200 degrees (the 360 degree Molten modifier keeps its penalty) |
-| Heat Vent | Mastery | 2 + 0.10 x Heat times weapon damage (was 1 + 0.04 x Heat), CD 10 s |
+| Furnace Cleave | Core | arc 170 to 200 degrees and range 3.4 to 3.9 m (the 360 degree Molten modifier keeps its penalty) |
+| Heat Vent | Mastery | 2 + 0.15 x Heat times weapon damage (was 1 + 0.04 x Heat), CD 10 s |
 | Orbital Strike | Ultimate | 16x weapon damage (was 9x), CD 50 s; about 9 % of a shockwave build's damage |
 
 ## Spectre skills
@@ -111,7 +111,7 @@ Ancient. Uniques: **Mother of Spores** (bio-focus: Spore Dart bursts into a spor
 | Benediction | Ultimate | CD 60 | 12 m: heals 30 % of life and cleanses allies, who survive the first lethal blow within 8 s (the blessing is spent and 1.5 s of invulnerability follows); cooldown never under 30 s; enemies within 7 m take 3× and are stunned 1.2 s (corrupted +60 %), knocked back 2 m |
 
 Key passives (choose one):
-- **Devout** (healer): Heal, Kyrie Eleison and Sanctuary are 35 % stronger (heal, barrier, heal), Devotion builds 15 % faster.
+- **Devout** (healer): Heal, Kyrie Eleison and Sanctuary are 35 % stronger (heal, barrier, heal).
 - **Zealot** (exorcist): ranged attacks +15 % damage (multiplicative), +15 % more against corrupted enemies;
   Magnus Exorcismus pulses 20 % faster; Lex Aeterna's cooldown is 25 % shorter.
 - **Shepherd** (shepherd): one more Guardian Light (2 → 3), with +40 % life, +25 % duration and 15 % faster
@@ -150,7 +150,7 @@ New bases: **Censer Mace** (weapon, 22–27 weapon damage, 12–18 life, 2 socke
   compiler keeps every sanctum's `interval` at 0.35 s or more. Skills have `minCooldown`, a floor applied after
   cooldown reduction (`effectiveCooldown`). Guardian bolts can burst (`explodeRadius`).
 - **Devotion** is fed by `healAlly` and `applyAllyStatus`: the healing or shielding of allies counts for the
-  resource, and `resourceGen` (Devout, Piety, the bases) scales it.
+  resource, and `resourceGen` (Piety, gear, the bases) scales it.
 - **Weapon look**: the censer and staff are drawn procedurally (a lantern-censer), with no separate model.
 - **Effects**: `holy` and `holyRing` vfx, tinted by the skill's `color` (`#fff2b0`, `#ffe9a8`, `#bfe4ff`,
   `#ffe08a`, `#fff6d8`).

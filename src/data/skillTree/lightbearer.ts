@@ -30,7 +30,7 @@ export const LIGHTBEARER_TREE: Tree = {
     { id: 'm.holy_light.radiant_mote', branch: 'basic', type: 'modifier', parent: 'e.holy_light', group: 'holy_light',
       effects: [{ kind: 'skillMod', skill: L('holy_light'), mods: [{ op: 'set', field: 'explodeRadius', value: 1.8 }, { op: 'mul', field: 'coefficient', value: -0.15 }] }] },
     { id: 'p.fervor', branch: 'basic', type: 'passive', effects: [{ kind: 'stat', stat: 'damage', value: 0.04 }] },
-    { id: 'p.vigil', branch: 'basic', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLife', value: 12 }] },
+    { id: 'p.vigil', branch: 'basic', type: 'passive', effects: [{ kind: 'stat', stat: 'maxLifePct', value: 0.02 }] },
 
     // ---- Core
     skillNode('heal', 'core'),
@@ -47,7 +47,7 @@ export const LIGHTBEARER_TREE: Tree = {
       effects: [{ kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'duration', value: 0.5 }] }] },
     { id: 'm.magnus_exorcismus.rapid', branch: 'core', type: 'modifier', parent: 'e.magnus_exorcismus', group: 'magnus_exorcismus',
       effects: [{ kind: 'skillMod', skill: L('magnus_exorcismus'), mods: [{ op: 'mul', field: 'interval', value: -0.2 }] }] },
-    { id: 'p.piety', branch: 'core', type: 'passive', effects: [{ kind: 'stat', stat: 'resourceGen', value: 0.05 }] },
+    { id: 'p.piety', branch: 'core', type: 'passive', effects: [{ kind: 'stat', stat: 'resourceGen', value: 0.03 }] },
     { id: 'p.sacred_flame', branch: 'core', type: 'passive', effects: [{ kind: 'damage', value: 0.05, when: 'ranged' }] },
 
     // ---- Defensive
@@ -66,7 +66,7 @@ export const LIGHTBEARER_TREE: Tree = {
     { id: 'm.sanctuary.tireless', branch: 'defensive', type: 'modifier', parent: 'e.sanctuary', group: 'sanctuary',
       effects: [{ kind: 'skillMod', skill: L('sanctuary'), mods: [{ op: 'mul', field: 'interval', value: -0.3 }] }] },
     { id: 'p.warding_light', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'barrierBonus', value: 0.08 }] },
-    { id: 'p.consecrated_mail', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armor', value: 15 }] },
+    { id: 'p.consecrated_mail', branch: 'defensive', type: 'passive', effects: [{ kind: 'stat', stat: 'armorPct', value: 0.04 }] },
 
     // ---- Tactical
     skillNode('blessing', 'tactical'),
@@ -95,7 +95,7 @@ export const LIGHTBEARER_TREE: Tree = {
     { id: 'm.guardian_light.vigilant', branch: 'mastery', type: 'modifier', parent: 'e.guardian_light', group: 'guardian_light',
       effects: [{ kind: 'skillMod', skill: L('guardian_light'), mods: [{ op: 'mul', field: 'attackCooldown', value: -0.35 }] }] },
     { id: 'p.martyrdom', branch: 'mastery', type: 'passive', effects: [{ kind: 'stat', stat: 'damageReduction', value: 0.02 }] },
-    { id: 'p.sacred_oath', branch: 'mastery', type: 'passive', effects: [{ kind: 'stat', stat: 'intelligence', value: 4 }] },
+    { id: 'p.sacred_oath', branch: 'mastery', type: 'passive', effects: [{ kind: 'damage', value: 0.04, when: 'corrupted' }] },
 
     // ---- Ultimate
     skillNode('benediction', 'ultimate'),
@@ -113,7 +113,6 @@ export const LIGHTBEARER_TREE: Tree = {
         { kind: 'skillMod', skill: L('heal'), mods: [{ op: 'mul', field: 'heal', value: 0.35 }] },
         { kind: 'skillMod', skill: L('kyrie_eleison'), mods: [{ op: 'mul', field: 'barrier', value: 0.35 }] },
         { kind: 'skillMod', skill: L('sanctuary'), mods: [{ op: 'mul', field: 'heal', value: 0.35 }] },
-        { kind: 'stat', stat: 'resourceGen', value: 0.15 },
       ] },
     { id: 'k.zealot', branch: 'key', type: 'keyPassive',
       effects: [

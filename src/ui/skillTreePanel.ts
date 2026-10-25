@@ -20,7 +20,7 @@ import { classDef, skill } from '../data/db';
 import type { SkillTree, TreeNode } from '../data/skillTree/schema';
 import { BRANCHES } from '../data/skillTree/schema';
 import type { CompiledSkill } from '../systems/skillCompile';
-import { branchUnlocked, canLearn, canRefund, maxRank, pointsInTree, type TreeState } from '../systems/skillTree';
+import { branchUnlocked, canLearn, canRefund, maxRank, pointsInTree, pointsSpent, type TreeState } from '../systems/skillTree';
 import { nextRankPercent, slotForKey } from './serviceLogic';
 
 export interface SkillTreeView {
@@ -82,6 +82,21 @@ export function blockedInfo(rank: number, reason: string | null): { reason: stri
   return { reason, lock: reason === 'locked' || reason === 'requires' || reason === 'exclusive' };
 }
 
+/** The first active skill a new character should learn next, per class (F004): the second basic skill, learnable at once. */
+export const RECOMMENDED_FIRST: Readonly<Record<string, string>> = {
+  bastion: 'n.piston_jab',
+  lightbearer: 'n.holy_light',
+  spectre: 'n.vibro_slash',
+  xenomant: 'n.scalpel_slash',
+};
+
+/** The node to ring for a new player: shown until the first point is spent, and only while that node can be learned. */
+export function recommendedNode(tree: SkillTree, state: TreeState, unspent: number): string | null {
+  const id = RECOMMENDED_FIRST[tree.classId];
+  if (!id || pointsSpent(tree, state) > 0) return null;
+  return canLearn(tree, state, id, unspent).ok ? id : null;
+}
+
 export class SkillTreePanel {
   private readonly root: HTMLDivElement;
   private readonly body: HTMLDivElement;
@@ -97,6 +112,8 @@ export class SkillTreePanel {
   private treeScroll = 0;
   /** The Neural Matrix view (endgame) shown in place of the skill branches. */
   private matrix: MatrixPanel | null = null;
+  /** Builds the matrix on first use: 36 kB of code that only players at the level cap ever open (T005). */
+  private matrixLoader: (() => Promise<MatrixPanel>) | null = null;
   private matrixMode = false;
   /** The learned skill node under the pointer: number keys assign it (B029). Mouse only. */
   private hoverNode: string | null = null;
@@ -157,6 +174,11 @@ export class SkillTreePanel {
     matrix.onBack = () => this.showMatrix(false);
   }
 
+  /** Same, but the matrix is fetched and built the first time its tab is used. */
+  setMatrixLoader(load: () => Promise<MatrixPanel>): void {
+    this.matrixLoader = load;
+  }
+
   get matrixOpen(): boolean {
     return this.open && this.matrixMode;
   }
@@ -178,7 +200,16 @@ export class SkillTreePanel {
 
   /** Switch between the skill tree and the Neural Matrix. */
   showMatrix(on: boolean): void {
-    if (!this.matrix) return;
+    if (!this.matrix) {
+      if (!on || !this.matrixLoader) return;
+      void this.matrixLoader()
+        .then((m) => {
+          this.setMatrix(m);
+          if (this.open) this.showMatrix(true);
+        })
+        .catch((err) => console.warn('Neural Matrix failed to load', err));
+      return;
+    }
     // Coming back from the matrix: the branch list is where it was.
     if (on) this.treeScroll = this.body.querySelector('.tree-scroll')?.scrollTop ?? this.treeScroll;
     this.matrixMode = on;
@@ -230,7 +261,7 @@ export class SkillTreePanel {
     });
     const tools = document.createElement('span');
     tools.className = `tree-tools${this.menuOpen ? ' menu-open' : ''}`;
-    if (v.matrixUnlocked && this.matrix) {
+    if (v.matrixUnlocked && (this.matrix || this.matrixLoader)) {
       const tab = document.createElement('button');
       tab.type = 'button';
       tab.className = 'matrix-tab';
@@ -405,6 +436,11 @@ export class SkillTreePanel {
         card.classList.add('blocked');
         card.appendChild(Object.assign(document.createElement('span'), { className: 'tree-lock', title: t(`tree.cannot.${blocked.reason}`) }));
       }
+    }
+    // A ring on the one skill a new player should learn first, until the first points are spent (F004).
+    if (n.id === recommendedNode(v.tree, v.state, v.unspent)) {
+      card.classList.add('recommended');
+      card.title = t('tree.recommended');
     }
     // A learned active skill that no action bar slot holds gets a dot (B036).
     const offBar = n.type === 'skill' && rank > 0 && !v.slots.includes(n.skill);

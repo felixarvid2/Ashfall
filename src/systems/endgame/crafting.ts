@@ -15,7 +15,6 @@ import {
   RECIPE_DEFS,
   SALVAGE_DUST,
   TEMPERING,
-  type Recipe,
 } from '../../data/endgame/crafting';
 import { ASPECT_DEFS, BASE_ITEMS } from '../../data/loot/db';
 import type { Item, RolledStat } from '../../data/loot/schemas';
@@ -82,12 +81,6 @@ export function temperChargesLeft(item: Item): number {
 export function temperCost(item: Item): number {
   const spent = TEMPERING.charges - temperChargesLeft(item);
   return Math.round(TEMPERING.goldBase * (item.itemPower / 100) * TEMPERING.goldGrowth ** spent);
-}
-
-/** The recipes of this character that are learned, in data order. */
-export function learnedRecipes(ctx: GameContext): Recipe[] {
-  const known = new Set(ctx.endgame?.recipes ?? []);
-  return [...RECIPE_DEFS.values()].filter((r) => known.has(r.id));
 }
 
 /**

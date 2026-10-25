@@ -127,6 +127,7 @@ export function loadAccount(storage: Storage | undefined): LoadedAccount {
   try {
     json = storage?.getItem(KEY);
   } catch {
+    // Storage blocked: treated as no account yet.
     json = null;
   }
   if (!json) return { account: emptyAccount(), recovered: false };
@@ -147,7 +148,8 @@ export function loadAccount(storage: Storage | undefined): LoadedAccount {
   let account: AccountData;
   try {
     account = salvageAccount(raw);
-  } catch {
+  } catch (err) {
+    console.error('[ashfall] the account data could not be salvaged; starting an empty account', err);
     account = emptyAccount();
   }
   held.set(account, 'corrupt');

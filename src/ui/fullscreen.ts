@@ -80,6 +80,7 @@ export function inFrame(win: Pick<Window, 'self' | 'top'> = window): boolean {
   try {
     return win.self !== win.top;
   } catch {
+    // Reading `top` across origins throws: that means we are framed.
     return true;
   }
 }

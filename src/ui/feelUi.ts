@@ -19,6 +19,63 @@ export function blackHoldMs(elapsedMs: number, minBlackMs: number): number {
   return Math.max(0, minBlackMs - elapsedMs);
 }
 
+/** Clock, timers and frames the black hold runs on, so a test can drive it with a fake clock (and the game uses real time). */
+export interface HoldEnv {
+  now(): number;
+  after(ms: number, fn: () => void): void;
+  frames(n: number, fn: () => void): void;
+}
+
+/** Real time: `performance.now`, `setTimeout` and `requestAnimationFrame`. */
+export const realHoldEnv: HoldEnv = {
+  now: () => performance.now(),
+  after: (ms, fn) => void setTimeout(fn, ms),
+  frames: (n, fn) => {
+    const step = (left: number): void => (left <= 0 ? fn() : void requestAnimationFrame(() => step(left - 1)));
+    step(n);
+  },
+};
+
+export interface HoldPlan {
+  /** Real milliseconds the screen stays black counted from `started` (the card must be readable). */
+  minBlackMs: number;
+  /** After `settled`, the most real time spent waiting for two drawn frames. Under 1 fps they would take seconds. */
+  frameCapMs: number;
+  /** From the call, the latest the screen is released whatever else is pending. */
+  hardCapMs: number;
+  /** Resolves when the new place's models are in (already capped by the caller). */
+  settled: Promise<unknown>;
+}
+
+/**
+ * Release the black screen once `minBlackMs` of real time has passed since `started` and the new place has had two
+ * frames, but never wait on frames longer than `frameCapMs` after `settled`, nor longer than `hardCapMs` overall. All
+ * of it is wall-clock time (F013, F014), not frame counts: software rendering at 1 fps no longer stretches it.
+ */
+export function holdThenRelease(env: HoldEnv, started: number, plan: HoldPlan, release: () => void): void {
+  const called = env.now();
+  let done = false;
+  let ready = false;
+  const finish = (): void => {
+    if (done) return;
+    done = true;
+    release();
+  };
+  const onReady = (): void => {
+    if (ready) return;
+    ready = true;
+    env.after(blackHoldMs(env.now() - started, plan.minBlackMs), finish);
+  };
+  void plan.settled.then(
+    () => {
+      env.frames(2, onReady);
+      env.after(plan.frameCapMs, onReady);
+    },
+    () => onReady(),
+  );
+  env.after(Math.max(0, plan.hardCapMs - (env.now() - called)), finish);
+}
+
 /** The first main quest, whose objective gets the golden guide line (F007). */
 export const GUIDE_QUEST = 'mq.wake_up';
 

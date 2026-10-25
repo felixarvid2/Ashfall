@@ -589,3 +589,15 @@ in `docs/balance.md`. Real decisions:
   2 + 0.02 x level, five rare affixes from level 30) and **Rift damage grows slower than life** (1.035 against
   1.06 per level) so rift 40 hits x4 like a World Tier 4 enemy would, not x10. Rift cache item power now grows to
   rift 100 and the cache can hold a unique, rarely a mythic, giving a goal past rift 40.
+
+### 2026-10-25 — Finishing the partial balance items (G007, G009, G013, G014)
+- **Lightbearer passives are percentages.** Vigil +2 % life, Consecrated Mail +4 % armor (`maxLifePct`, `armorPct`),
+  Sacred Oath +4 % damage against corrupted enemies instead of +4 Intelligence.
+- **Late Devotion, not early.** Raising Heal's cost or lowering `onHeal`/`idleRate` slowed the level 1-10 healer
+  (average Devotion there is already 25-33). The surplus at level 30 came from gain multipliers, so Devout lost its
+  +15 % Devotion gain (Heal, Kyrie, Sanctuary stay 35 % stronger) and Piety went 5 to 3 % per rank. L30 healer average
+  Devotion 78 to 59; Healer L10 12:49 / 11:17 unchanged. A +1 Heal cost on Devout also worked (62) but the average
+  falls off a cliff there (+3 gives 35), so the gain multipliers are the smoother lever.
+- **Furnace Cleave gets reach, not damage.** Range 3.4 to 3.9 m (L10 10:24 / 11:13 to 8:51 / 8:46; seeds c / d 8:26 /
+  9:37). Raising the coefficient to 3.0 gave 10:52 on seed a and 3.3 broke the "+10 % on the L15 row" limit.
+- **Heat Vent** `perResource` 0.10 to 0.15: the L30 vent build 744 to 816.

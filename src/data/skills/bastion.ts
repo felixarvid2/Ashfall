@@ -122,7 +122,7 @@ export const BASTION_SKILLS: SkillInput[] = [
     recovery: 0.3,
     effect: {
       kind: 'meleeArc',
-      range: 3.4,
+      range: 3.9,
       arcDeg: 200,
       coefficient: 2.7,
       damageType: 'heat',
@@ -183,7 +183,7 @@ export const BASTION_SKILLS: SkillInput[] = [
       kind: 'vent',
       radius: 5.5,
       coefficient: 2,
-      perResource: 0.1,
+      perResource: 0.15,
       minResource: 20,
       damageType: 'heat',
       knockback: 4,
