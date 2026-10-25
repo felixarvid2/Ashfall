@@ -229,13 +229,16 @@ export class SettingsPanel {
       this.switchRow(t('settings.showTips'), t('settings.showTipsHint'), () => this.deps.settings().showTips, (on) => this.change({ showTips: on }), 'tips'),
       this.resetTipsRow(),
     );
-    if (hapticsSupported()) {
-      // Vibration only matters on a phone: `html:not(.touch-device) .touch-only` hides it (B043, menus.css).
+    const padApi = typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function';
+    if (hapticsSupported() || padApi) {
+      // The switch covers phone vibration and pad rumble, so it shows on a touch device or while the pad is
+      // in use (menus.css); without navigator.vibrate it only shows for the pad.
       const vibration = this.switchRow(t('settings.vibration'), t('settings.vibrationHint'), () => this.deps.settings().haptics, (on) => {
         this.change({ haptics: on });
         if (on) haptic('success');
       }, 'vibration');
-      vibration.classList.add('touch-only');
+      vibration.classList.add('haptics-row');
+      if (!hapticsSupported()) vibration.classList.add('pad-only');
       page.append(vibration);
     }
     page.append(
