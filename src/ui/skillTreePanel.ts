@@ -20,7 +20,7 @@ import { classDef, skill } from '../data/db';
 import type { SkillTree, TreeNode } from '../data/skillTree/schema';
 import { BRANCHES } from '../data/skillTree/schema';
 import type { CompiledSkill } from '../systems/skillCompile';
-import { branchUnlocked, canLearn, canRefund, maxRank, pointsInTree, type TreeState } from '../systems/skillTree';
+import { branchUnlocked, canLearn, canRefund, maxRank, pointsInTree, pointsSpent, type TreeState } from '../systems/skillTree';
 import { nextRankPercent, slotForKey } from './serviceLogic';
 
 export interface SkillTreeView {
@@ -80,6 +80,21 @@ export function skillIconId(skillId: string): string {
 export function blockedInfo(rank: number, reason: string | null): { reason: string; lock: boolean } | null {
   if (rank > 0 || !reason || reason === 'maxed') return null;
   return { reason, lock: reason === 'locked' || reason === 'requires' || reason === 'exclusive' };
+}
+
+/** The first active skill a new character should learn next, per class (F004): the second basic skill, learnable at once. */
+export const RECOMMENDED_FIRST: Readonly<Record<string, string>> = {
+  bastion: 'n.piston_jab',
+  lightbearer: 'n.holy_light',
+  spectre: 'n.vibro_slash',
+  xenomant: 'n.scalpel_slash',
+};
+
+/** The node to ring for a new player: shown until the first point is spent, and only while that node can be learned. */
+export function recommendedNode(tree: SkillTree, state: TreeState, unspent: number): string | null {
+  const id = RECOMMENDED_FIRST[tree.classId];
+  if (!id || pointsSpent(tree, state) > 0) return null;
+  return canLearn(tree, state, id, unspent).ok ? id : null;
 }
 
 export class SkillTreePanel {
@@ -405,6 +420,11 @@ export class SkillTreePanel {
         card.classList.add('blocked');
         card.appendChild(Object.assign(document.createElement('span'), { className: 'tree-lock', title: t(`tree.cannot.${blocked.reason}`) }));
       }
+    }
+    // A ring on the one skill a new player should learn first, until the first points are spent (F004).
+    if (n.id === recommendedNode(v.tree, v.state, v.unspent)) {
+      card.classList.add('recommended');
+      card.title = t('tree.recommended');
     }
     // A learned active skill that no action bar slot holds gets a dot (B036).
     const offBar = n.type === 'skill' && rank > 0 && !v.slots.includes(n.skill);

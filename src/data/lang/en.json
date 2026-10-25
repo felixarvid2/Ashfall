@@ -978,6 +978,7 @@
     "nextRank": "Next rank: {pct}% ({n} point)",
     "maxRankLine": "Max rank",
     "notOnBar": "Not on the action bar",
+    "recommended": "Recommended: learn this skill next",
     "refundHint": "Right-click: take back one rank ({gold} gold)",
     "refundTitle": "Refund a rank of {name}?",
     "refundConfirm": "Take back one rank for {gold} gold? The point returns to you.",
@@ -1713,7 +1714,7 @@
       },
       "vigil": {
         "name": "Vigil",
-        "desc": "+12 maximum life per rank."
+        "desc": "+2% maximum life per rank."
       },
       "piety": {
         "name": "Piety",
@@ -1729,7 +1730,7 @@
       },
       "consecrated_mail": {
         "name": "Consecrated Mail",
-        "desc": "+15 armour per rank."
+        "desc": "+4% armour per rank."
       },
       "hymnal": {
         "name": "Hymnal",
@@ -1745,7 +1746,7 @@
       },
       "sacred_oath": {
         "name": "Sacred Oath",
-        "desc": "+4 intelligence per rank."
+        "desc": "+4% damage to corrupted enemies per rank."
       },
       "radiance": {
         "name": "Radiance",

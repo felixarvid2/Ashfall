@@ -178,7 +178,7 @@ import { PauseMenu } from './ui/pauseMenu';
 import { SettingsPanel } from './ui/settingsPanel';
 import { CoachMarks } from './ui/onboarding';
 import { CROWD_RANGE, lookAheadOffset } from './render/camera';
-import { FeelUi, blackHoldMs, guideGoal } from './ui/feelUi';
+import { FeelUi, blackHoldMs, guideGoal, holdThenRelease, realHoldEnv } from './ui/feelUi';
 import { FEEL, frameFeel } from './systems/impact';
 import { buildInstance, clearInstance, hasInstance, instanceSystem, objectiveText, roomCenter } from './world/instance';
 import { ROOM_CELL } from './data/instances';
@@ -205,6 +205,8 @@ const DEFAULT_CLASS = 'bastion';
 const ASSET_WAIT_MS = 8000;
 /** Seconds of the black fade when crossing into another zone or teleporting there. */
 const ZONE_FADE = 0.35;
+/** Most real time spent waiting for the first two frames of a new place before the fade lifts. */
+const FRAME_WAIT_MS = 600;
 /** Seconds between automatic saves while playing. */
 const AUTOSAVE_INTERVAL = 60;
 /** How long the target frame keeps showing the last enemy you hit. */
@@ -1140,34 +1142,38 @@ export class Game {
   private fading = false;
 
   /**
-   * Black fade around a zone change (the swap happens while the screen is dark). The screen stays black until two
-   * frames of the new place have been drawn and for at least `minBlack` seconds, so the card (where, and a tip) can be
-   * read and a slow swap never shows a half-built frame (F013).
+   * Black fade around a zone change (the swap happens while the screen is dark). The screen stays black for at least
+   * `minBlack` seconds of real time so the card (where, and a tip) can be read, and until the new place has had two
+   * frames, but the frame wait is capped (`holdThenRelease`): a slow renderer never stretches it (F013).
+   * `maxHold` caps the dark time after the swap; `assetWait` caps the wait for models spawned by the swap.
    */
-  private fadeTo(swap: () => void, opts: { name?: string; tip?: boolean; minBlack?: number; prepare?: Promise<unknown> } = {}): void {
+  private fadeTo(
+    swap: () => void,
+    opts: { name?: string; tip?: boolean; minBlack?: number; prepare?: Promise<unknown>; assetWait?: number; maxHold?: number } = {},
+  ): void {
     if (this.fading) return;
     this.fading = true;
     const started = performance.now();
     this.feelUi.setCard(opts.name ?? '', opts.tip ?? false);
     this.fade.classList.add('on');
     const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+    const assetWait = opts.assetWait ?? ASSET_WAIT_MS;
     const swapAndShow = () => {
       try {
         swap();
       } finally {
-        let released = false;
         const release = () => {
-          if (released) return;
-          released = true;
           this.fade.classList.remove('on');
           this.fading = false;
         };
-        const hold = blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000);
         // Models the new place spawned that nobody prefetched load while the screen is still black (capped).
-        const settled = Promise.race([this.settleAssets().catch(() => undefined), wait(ASSET_WAIT_MS)]);
-        // Two frames of the new place, then whatever is left of the minimum; a timer stands in if frames are not coming.
-        void settled.then(() => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(release, blackHoldMs(performance.now() - started, (opts.minBlack ?? 0.9) * 1000)))));
-        setTimeout(release, hold + 1500 + ASSET_WAIT_MS);
+        const settled = Promise.race([this.settleAssets().catch(() => undefined), wait(assetWait)]);
+        holdThenRelease(
+          realHoldEnv,
+          started,
+          { minBlackMs: (opts.minBlack ?? 0.9) * 1000, frameCapMs: FRAME_WAIT_MS, hardCapMs: opts.maxHold ?? assetWait + 1500, settled },
+          release,
+        );
       }
     };
     setTimeout(() => {
@@ -2241,7 +2247,8 @@ export class Game {
         this.doRespawn();
         audio.play('heal');
       },
-      { name: t('feel.rose'), minBlack: 0.6 },
+      // Fade out 0.35 s, black at least 0.6 s, at most 1.0 s after the swap, fade in 0.3 s: 1.65 s at worst, whatever the frame rate.
+      { name: t('feel.rose'), minBlack: 0.6, assetWait: 400, maxHold: 1000 },
     );
   }
 
