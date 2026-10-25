@@ -73,5 +73,5 @@ Behaviour changes to note:
 Other changes in this round:
 
 - **Balance:** the level-up shove moved two Lightbearer L10 times out of band. Lightbearer early numbers were retuned so all balance bands pass.
-- Lightbearer retune: BALANCE_PENDING
+- Lightbearer retune: the level-up shove moved two Lightbearer L10 times out of band (Healer seed a 14:06, Exorcist seed b 6:27). Holy Light coefficient 0.6 → 0.56, Magnus Exorcismus cost 40 → 41, Heal corrupted burst 2.2 → 2.8; all 31 balance checks pass (tightest: Healer seed a 13:16 against a 14:00 ceiling; Exorcist ≥ 7:30 against a 6:30 floor).
 - **Performance and tech:** exactOptionalPropertyTypes, lazy panels, coverage and CI checks are described in the table above.
