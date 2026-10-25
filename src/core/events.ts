@@ -39,6 +39,9 @@ export type VfxKind =
   | 'slam'
   | 'corpseBurst'
   | 'flame'
+  // Lightbearer: a ring and pillar of light in `color`, and a plain ring of light.
+  | 'holy'
+  | 'holyRing'
   // Hydroponic Vaults: a crystal's blinding burst.
   | 'flash'
   // Deep Mines: a burning flare, and dust falling before a cave-in.
@@ -68,7 +71,7 @@ export type GameEvent =
   | { type: 'hitstop'; ms: number }
   | { type: 'shake'; trauma: number }
   | { type: 'telegraph'; owner: Entity | null; x: number; z: number; shape: TelegraphShape; duration: number; color: string }
-  | { type: 'vfx'; kind: VfxKind; x: number; z: number; radius: number; facing: number; arcDeg?: number }
+  | { type: 'vfx'; kind: VfxKind; x: number; z: number; radius: number; facing: number; arcDeg?: number; /** Tint for effects that take one (holy, holyRing). */ color?: string }
   | { type: 'wave'; wave: number; enemies: number }
   | { type: 'waveCleared'; wave: number }
   | { type: 'overheat' }

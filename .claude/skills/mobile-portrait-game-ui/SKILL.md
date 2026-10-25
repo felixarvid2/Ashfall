@@ -7,7 +7,7 @@ description: Audit and improve a browser game's DOM UI for phones held upright (
 
 ## Audit first, then implement
 
-1. Screenshot every state at 390×844, 360×780 and 320×640 (see headless-browser-game-checks): hub, combat with a
+1. Screenshot every state at 390×844, 360×780 and 320×640 (see playwright-webgl-testing): hub, combat with a
    horde, boss with phase banner, low life, loot pile, level up, toasts stacking, every panel and dialog.
 2. Write each finding as a **testable item**: ID, area, problem (screenshot name), concrete change (px, position,
    behaviour), files, effort, priority. No "improve UX".

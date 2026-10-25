@@ -42,7 +42,7 @@ Varje zon har:
 
 ## 3. Klasser
 
-Det finns tre klasser. Varje klass har en egen resurs, egen spelstil och eget skillträd.
+Det finns fyra klasser. Varje klass har en egen resurs, egen spelstil och eget skillträd.
 
 ### 3.1 Bastion – tung närstrid i exoskelett
 - **Fantasi:** En före detta säkerhetsmarin i en sliten stridsrustning. Står i centrum av striden.
@@ -61,6 +61,12 @@ Det finns tre klasser. Varje klass har en egen resurs, egen spelstil och eget sk
 - **Resurs: Biomassa.** Samlas in från döda fiender och används till att skapa och förstärka varelser och sporer.
 - **Vapen:** Biologiska fokuseringsenheter, skalpellblad och injektorer.
 - **Exempel på förmågor:** Sporpil (bas), Sporspridning (skada över tid, AoE), Väck lik (skapar tjänare av döda fiender), Kitinpansar (försvar), Parasitlänk (stjäl liv), Lumens vrede (ultimate, en gigantisk tentakelvarelse).
+
+### 3.4 Lightbearer – stödpräst med ljus
+- **Fantasi:** En kolonipräst som håller de gamla lyktorna tända. Läker och skyddar sina allierade, men kan också bränna det korrumperade.
+- **Resurs: Hängivenhet.** Byggs upp av att läka och skydda andra (och sig själv) och laddas långsamt på egen hand. Mäts i hur mycket liv som återställs, inte i hur mycket som slås.
+- **Vapen:** Rökelsekärlsklubba, solstav och reliklykta (sidovapen).
+- **Exempel på förmågor:** Rökelseslag (bas), Heligt ljus (bas), Helning (core), Magnus exorcismus (core), Kyrie eleison (försvar), Helig mark (försvar), Välsignelse (taktik), Vaktande ljus (mästerskap, följeslagare), Benediktion (ultimate).
 
 Klasserna ska kännas tydligt olika att spela. Varje klass ska ha minst tre fungerande byggen (till exempel tjänar-Xenomant, sjukdoms-Xenomant och närstrids-Xenomant).
 

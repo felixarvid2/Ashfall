@@ -69,6 +69,7 @@ export function hitOne(
     fromZ,
     applies: [...impact.applies, ...extraApplies],
     range: impact.delivery,
+    corruptedMul: impact.corruptedMul,
     ...(bonuses ? { bonuses } : {}),
   });
   if (dealt !== null && impact.lifeSteal > 0) heal(world, ctx, caster, dealt * impact.lifeSteal);

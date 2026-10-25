@@ -261,6 +261,19 @@ Phase 2's 60 FPS check is still open (needs a measurement on real hardware).
   classes; Bastion too slow, Spectre too fragile, Xenomant ranged too fast (details in docs/balance.md).
 - 187 unit tests.
 
+### Phase 4d – Lightbearer (see docs/classes.md)
+- **Lightbearer** (Intelligence, **Devotion**: +3/s always, +0.5 per 1 % of an ally's max life healed or
+  shielded, overheal excluded): 10 skills — Censer Strike, Holy Light, Heal, Magnus Exorcismus, Kyrie Eleison,
+  Sanctuary, Blessing, Lex Aeterna, Guardian Light, Benediction — full tree with 3 key passives (Devout,
+  Zealot, Shepherd), 9 aspects, 2 uniques (Dawnbringer, Halo of the Penitent), new bases Censer Mace, Sun
+  Staff and Reliquary Lantern.
+- New mechanics: `allyArea`, `sanctum` and `guardian` effects (Guardian Light is a summon that does not count
+  toward Raise Corpse's cap); corrupted families (infected, lumen) burned harder through `corruptedMul` and the
+  `corrupted` condition; data-driven buff fields; consume-on-hit Lex Aeterna marks.
+- Assets: Meshy character model (about 71 credits), icons and portrait (33 credits); FLUX item, aspect and menu
+  art ($0.168); the weapon is a procedural lantern-censer. Meshy credits: (concept 6, model 30, rig and animations 35, icons and portrait 33, item icons 9; 113 in total).
+- Checks: `npx tsc --noEmit -p .` clean, `npx vitest run` 833/833, `npm run assets:check` clean.
+
 ## How to run
 
 ```bash

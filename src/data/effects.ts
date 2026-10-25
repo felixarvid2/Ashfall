@@ -47,6 +47,9 @@ export const SKILL_FIELDS = [
   'attackCooldown',
   'slamCoefficient',
   'slamRadius',
+  // Lightbearer
+  'maxGuardians',
+  'allyHealFraction',
 ] as const;
 export const SkillFieldSchema = z.enum(SKILL_FIELDS);
 export type SkillField = z.infer<typeof SkillFieldSchema>;

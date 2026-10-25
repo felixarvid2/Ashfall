@@ -3,6 +3,7 @@
  * so schema defaults are applied and bad data fails loudly at startup.
  */
 import { BASTION } from './classes/bastion';
+import { LIGHTBEARER } from './classes/lightbearer';
 import { SPECTRE } from './classes/spectre';
 import { XENOMANT } from './classes/xenomant';
 import { ENEMIES } from './enemies';
@@ -21,11 +22,13 @@ import {
   type StatusId,
 } from './schemas';
 import { BASTION_SKILLS } from './skills/bastion';
+import { LIGHTBEARER_SKILLS } from './skills/lightbearer';
 import { SPECTRE_SKILLS } from './skills/spectre';
 import { XENOMANT_SKILLS } from './skills/xenomant';
 import { STATUSES } from './statuses';
 import { SkillTreeSchema, type SkillTree } from './skillTree/schema';
 import { BASTION_TREE } from './skillTree/bastion';
+import { LIGHTBEARER_TREE } from './skillTree/lightbearer';
 import { SPECTRE_TREE } from './skillTree/spectre';
 import { XENOMANT_TREE } from './skillTree/xenomant';
 
@@ -39,10 +42,10 @@ function byId<T extends { id: string }>(items: T[], what: string): Map<string, T
 }
 
 export const SKILLS: ReadonlyMap<string, SkillDef> = byId(
-  [...BASTION_SKILLS, ...SPECTRE_SKILLS, ...XENOMANT_SKILLS].map((s) => SkillDefSchema.parse(s)),
+  [...BASTION_SKILLS, ...SPECTRE_SKILLS, ...XENOMANT_SKILLS, ...LIGHTBEARER_SKILLS].map((s) => SkillDefSchema.parse(s)),
   'skill',
 );
-export const CLASSES: ReadonlyMap<string, ClassDef> = byId([BASTION, SPECTRE, XENOMANT].map((c) => ClassDefSchema.parse(c)), 'class');
+export const CLASSES: ReadonlyMap<string, ClassDef> = byId([BASTION, SPECTRE, XENOMANT, LIGHTBEARER].map((c) => ClassDefSchema.parse(c)), 'class');
 export const ENEMY_DEFS: ReadonlyMap<string, EnemyDef> = byId(
   ENEMIES.map((e) => EnemyDefSchema.parse(e)),
   'enemy',
@@ -53,7 +56,7 @@ export const STATUS_DEFS = Object.fromEntries(
 export const ENCOUNTERS: ReadonlyMap<string, Encounter> = byId([EncounterSchema.parse(TEST_ARENA_WAVES)], 'encounter');
 
 export const SKILL_TREES: ReadonlyMap<string, SkillTree> = new Map(
-  [BASTION_TREE, SPECTRE_TREE, XENOMANT_TREE].map((t) => SkillTreeSchema.parse(t)).map((t) => [t.classId, t] as const),
+  [BASTION_TREE, SPECTRE_TREE, XENOMANT_TREE, LIGHTBEARER_TREE].map((t) => SkillTreeSchema.parse(t)).map((t) => [t.classId, t] as const),
 );
 
 export function skill(id: string): SkillDef {

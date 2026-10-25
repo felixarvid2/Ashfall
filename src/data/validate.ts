@@ -5,7 +5,7 @@
 import manifestJson from '../../assets/manifest.json';
 import { AssetManifestSchema } from './assetManifest';
 import { fieldAccess } from '../systems/skillCompile';
-import { CLASSES, ENCOUNTERS, ENEMY_DEFS, SKILLS, SKILL_TREES } from './db';
+import { CLASSES, ENCOUNTERS, ENEMY_DEFS, SKILLS, SKILL_TREES, STATUS_DEFS } from './db';
 import type { Effect } from './effects';
 import { ASPECT_DEFS, BASE_ITEMS, UNIQUE_DEFS } from './loot/db';
 import en from './lang/en.json';
@@ -84,6 +84,28 @@ export function validateGameData(): string[] {
     const [cls, name] = def.id.split('.');
     const strings = (en as { skills?: Record<string, Record<string, unknown>> }).skills;
     if (!strings?.[cls!]?.[name!]) errors.push(`lang/en.json: missing strings for skill ${def.id}`);
+  }
+  // Lightbearer effects: the statuses they apply exist, and their numbers make sense.
+  for (const def of SKILLS.values()) {
+    const e = def.effect;
+    const where = `skill ${def.id}`;
+    const statuses: { status: string }[] = [];
+    if (e.kind === 'allyArea') {
+      statuses.push(...e.applies, ...(e.enemyImpact?.applies ?? []));
+      if (e.center === 'cursor' && e.maxRange <= 0) errors.push(`${where}: a cursor-centred allyArea needs maxRange`);
+      if (e.healFraction <= 0 && e.applies.length === 0 && !e.enemyImpact && !e.cleanse) errors.push(`${where}: allyArea does nothing`);
+    } else if (e.kind === 'sanctum') {
+      statuses.push(...e.allyApplies, ...(e.impact?.applies ?? []));
+      if (e.center === 'cursor' && e.maxRange <= 0) errors.push(`${where}: a cursor-centred sanctum needs maxRange`);
+      if (e.interval > e.duration) errors.push(`${where}: sanctum interval is longer than its duration`);
+      if (e.allyHealFraction <= 0 && e.allyApplies.length === 0 && !e.impact) errors.push(`${where}: sanctum does nothing`);
+    } else if (e.kind === 'guardian') {
+      statuses.push(...e.bolt.applies);
+      if (e.bolt.coefficient <= 0) errors.push(`${where}: guardian bolt needs a coefficient`);
+      if (e.healPulse && e.healPulse.interval > e.duration) errors.push(`${where}: guardian heal pulse is slower than its life`);
+      if (!ids.has('enemy.light_mote')) errors.push(`${where}: the guardian model enemy.light_mote is missing from the manifest`);
+    }
+    for (const s of statuses) if (!(s.status in STATUS_DEFS)) errors.push(`${where}: unknown status ${s.status}`);
   }
   for (const enemy of ENEMY_DEFS.values()) {
     const names = (en as unknown as { enemies?: Record<string, unknown> }).enemies;

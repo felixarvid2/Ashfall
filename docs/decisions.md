@@ -488,3 +488,23 @@ The numbers are in docs/endgame.md ("As built"). The choices behind them:
 - **One status column for the endgame HUD.** Rift timer, world boss countdown and Harvest line share a column instead
   of each claiming a corner, so they cannot overlap each other or the minimap and quest tracker.
 
+### 2026-10-25 — A fourth class: the Lightbearer (support)
+The owner asked for a support class in the spirit of Ragnarok Online's Priest, one that can still deal
+damage. The game is single-player, so a healer needs targets, and the class must be fun to play alone.
+- **Targets.** Support needs allies, so the Lightbearer heals, shields and blesses itself plus a Guardian
+  Light (a summon, up to two) and, where present, Xenomant-style allies. Heals and shields reach the caster
+  as well, so the class works without a party.
+- **Damage identity.** Taken from the Ragnarok Priest's "Heal hurts undead": light burns corrupted enemies
+  (infected and lumen families) harder. It is kept per skill (`corruptedMul` on each hit) and modest, because
+  those two families are about half of all enemies, so a larger bonus would make the class a corrupted-only
+  specialist.
+- **Devotion rewards healing, not hitting.** The resource grows with every life healed or shielded (0.5 per
+  1 % of an ally's max life; overheal excluded) and by 3 per second on its own. `resourceGen` on the tree and
+  gear scales it.
+- **Few new effect kinds.** Three new kinds (`allyArea`, `sanctum`, `guardian`) plus data fields on buffs
+  (`damageMul`, `hasteMul`, `damageTakenMul`, `cheatDeath`). Per-status code was avoided, so later classes
+  can reuse the same effects.
+- **Assets.** The character model was generated with Meshy (about 71 credits), the icons and portrait with
+  Meshy (33 credits), and the item, aspect and menu art with FLUX ($0.168). There is no separate weapon
+  model: the censer and staff are a procedural lantern-censer.
+

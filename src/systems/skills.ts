@@ -34,10 +34,11 @@ import type { Entity, World } from '../core/ecs';
 import { STATUS_DEFS, classDef, skill } from '../data/db';
 import type { Impact } from '../data/schemas';
 import type { CompiledSkill } from './skillCompile';
-import { applyStatus, gainResource, hasStatus, heal, kill, removeStatuses } from './combat';
+import { applyStatus, buffMultiplier, gainResource, hasStatus, heal, kill, removeStatuses } from './combat';
 import { impactArea, spawnHazards } from './impact';
 import { hubAt } from '../world/zone';
 import { consumeCorpse, findCorpses, minionsOf, raiseCorpse } from './minions';
+import { castAllyArea, castGuardian, castSanctum } from './lightbearer';
 import { livingInCircle, nearestOpposing, opposingTeam } from './targeting';
 
 /** Seconds of the "evasive" window after a dodge or blink (Ghost key passive). */
@@ -116,7 +117,9 @@ export function skillSystem(world: World, dt: number, ctx: GameContext): void {
       if (user.request.ttl <= 0) user.request = null;
     }
 
-    const speed = 1 + (world.get(e, CombatStats)?.attackSpeed ?? 0) + (hasStatus(world, e, 'kinetic') ? PYLON_EFFECTS.kineticSpeed : 0);
+    // Attack and cast speed: gear, the Kinetic pylon, then data-driven buffs (Blessing).
+    const speed =
+      (1 + (world.get(e, CombatStats)?.attackSpeed ?? 0) + (hasStatus(world, e, 'kinetic') ? PYLON_EFFECTS.kineticSpeed : 0)) * buffMultiplier(world, e, 'hasteMul');
     if (user.cast) {
       const cast = user.cast;
       const compiled = skillOf(user, cast.skillId);
@@ -538,6 +541,23 @@ function fireSkill(world: World, ctx: GameContext, caster: Entity, compiled: Com
       world.add(w, Turret, { owner: caster, skillId: def.id, interval: effect.interval, timer: 0.5, slamSeq: 0 });
       ctx.events.push({ type: 'vfx', kind: 'raise', x: at.x, z: at.z, radius: 3, facing: 0 });
       ctx.events.push({ type: 'shake', trauma: 0.4 });
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'allyArea': {
+      const at = effect.center === 'cursor' ? clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize) : tr;
+      castAllyArea(world, ctx, caster, compiled, effect, at.x, at.z);
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'sanctum': {
+      const at = effect.center === 'cursor' ? clampToRange(tr, aimX, aimZ, effect.maxRange, ctx.worldHalfSize) : tr;
+      castSanctum(world, ctx, caster, compiled, effect, at.x, at.z);
+      if (resource) gainResource(resource, gain);
+      break;
+    }
+    case 'guardian': {
+      castGuardian(world, ctx, caster, compiled, effect);
       if (resource) gainResource(resource, gain);
       break;
     }

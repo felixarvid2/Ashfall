@@ -12,6 +12,7 @@ import {
   EnemyAI,
   Hazard,
   Projectile,
+  Sanctum,
   StatusEffects,
   Tether,
   Transform,
@@ -90,6 +91,7 @@ export class VfxSystem {
   private readonly trapLightGeo = new THREE.SphereGeometry(0.07, 8, 6);
 
   private readonly hazards = new Map<Entity, TimedFx>();
+  private readonly sanctums = new Map<Entity, TimedFx>();
   private readonly bubbles = new Map<Entity, THREE.Mesh>();
   private readonly bubblePool: THREE.Mesh[] = [];
   private readonly bubbleGeo = new THREE.SphereGeometry(1, 20, 14);
@@ -114,7 +116,7 @@ export class VfxSystem {
   handle(event: GameEvent): void {
     switch (event.type) {
       case 'vfx':
-        this.spawnVfx(event.kind, event.x, event.z, event.radius, event.facing, event.arcDeg ?? 90);
+        this.spawnVfx(event.kind, event.x, event.z, event.radius, event.facing, event.arcDeg ?? 90, event.color);
         break;
       case 'telegraph':
         this.spawnTelegraph(event.owner, event.x, event.z, event.shape, event.duration, event.color);
@@ -163,6 +165,7 @@ export class VfxSystem {
     this.syncTraps(world);
     this.syncTethers(world, alpha);
     this.syncHazards(world, dt);
+    this.syncSanctums(world, dt);
     this.syncStatuses(world, alpha, dt);
     this.sparks.update(dt);
     this.sprites.update(dt);
@@ -224,6 +227,24 @@ export class VfxSystem {
     fx.update(fx, 0);
   }
 
+  /** A thin pillar of light that fades (Lightbearer casts). */
+  private spawnPillar(x: number, z: number, width: number, color: string): void {
+    const fx = this.acquire(`pillar:${color}`, () => {
+      const mat = additive(color, 0.6);
+      const group = new THREE.Group();
+      group.add(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 16, 1, true).translate(0, 0.5, 0), mat));
+      return { group, materials: [mat] };
+    });
+    fx.life = 0.6;
+    fx.group.position.set(x, 0, z);
+    fx.update = (f, t) => {
+      const w = width * (1 - t * 0.5);
+      f.group.scale.set(w, 12 * Math.min(1, t * 6 + 0.3), w);
+      f.materials[0]!.opacity = 0.55 * (1 - t);
+    };
+    fx.update(fx, 0);
+  }
+
   /** Vertical light column for the orbital strike. */
   private spawnBeam(x: number, z: number, radius: number): void {
     const fx = this.acquire('beam', () => {
@@ -262,7 +283,7 @@ export class VfxSystem {
     return g;
   }
 
-  private spawnVfx(kind: VfxKind, x: number, z: number, radius: number, facing: number, arcDeg: number): void {
+  private spawnVfx(kind: VfxKind, x: number, z: number, radius: number, facing: number, arcDeg: number, tint?: string): void {
     switch (kind) {
       case 'slash':
       case 'enemySlash': {
@@ -435,6 +456,21 @@ export class VfxSystem {
         this.sparks.emit(x, 0.5, z, 24, '#9aff5a', 8);
         this.sprites.corpseBurst(x, z, radius);
         break;
+      case 'holy': {
+        // Lightbearer: a ring, a pillar and motes of light in the skill's colour.
+        const color = tint ?? HOLY;
+        this.spawnRing(`ring:holy:${color}`, color, x, z, radius, 0.6, 0.15);
+        this.spawnPillar(x, z, Math.min(2.4, 0.7 + radius * 0.12), color);
+        this.sparks.emit(x, 0.6, z, 24, color, 5);
+        this.sprites.holy(x, z, Math.min(radius, 6), color);
+        break;
+      }
+      case 'holyRing': {
+        const color = tint ?? HOLY;
+        this.spawnRing(`ring:holyring:${color}`, color, x, z, radius, 0.45, 0.3);
+        this.sparks.emit(x, 0.4, z, Math.min(12, 4 + Math.round(radius)), color, 3);
+        break;
+      }
       case 'mark':
         this.spawnRing('ring:mark', '#ff4a6a', x, z, radius, 0.5, 1, 0.08);
         this.sprites.rune('rune_mark_0', x, z, radius, 0.7);
@@ -679,6 +715,47 @@ export class VfxSystem {
     }
   }
 
+  /** Consecrated ground: a glowing disc and two rings in the sanctum's colour, fading in and out. */
+  private syncSanctums(world: World, dt: number): void {
+    const seen = new Set<Entity>();
+    for (const e of world.query(Sanctum, Transform)) {
+      seen.add(e);
+      const s = world.req(e, Sanctum);
+      let fx = this.sanctums.get(e);
+      if (!fx) {
+        fx = this.acquire(`sanctum:${s.color}`, () => {
+          const fill = additive(s.color, 0.2);
+          const edge = additive(s.color, 0.6);
+          const inner = additive(s.color, 0.35);
+          const group = new THREE.Group();
+          const innerRing = new THREE.Mesh(this.ringGeo, inner);
+          innerRing.scale.set(0.55, 1, 0.55);
+          group.add(new THREE.Mesh(this.discGeo, fill), new THREE.Mesh(this.ringGeo, edge), innerRing);
+          return { group, materials: [fill, edge, inner] };
+        });
+        fx.life = Infinity;
+        fx.update = () => {};
+        this.sanctums.set(e, fx);
+      }
+      const tr = world.req(e, Transform);
+      const fade = Math.min(1, (s.duration - s.remaining) / 0.3) * (s.remaining < 0 ? Math.max(0, 1 + s.remaining / 0.5) : 1);
+      const pulse = 1 + Math.sin(this.time * 4) * 0.015;
+      fx.group.position.set(tr.x, 0.045, tr.z);
+      fx.group.scale.set(s.radius * pulse, 1, s.radius * pulse);
+      fx.group.rotation.y = this.time * 0.25;
+      fx.materials[0]!.opacity = 0.07 * fade;
+      fx.materials[1]!.opacity = 0.45 * fade;
+      fx.materials[2]!.opacity = 0.18 * fade;
+      if (fade > 0.3) this.sprites.holyMotes(`s${e}`, tr.x, tr.z, s.radius, s.color, dt);
+    }
+    for (const [e, fx] of this.sanctums) {
+      if (seen.has(e)) continue;
+      fx.active = false;
+      fx.group.visible = false;
+      this.sanctums.delete(e);
+    }
+  }
+
   private syncStatuses(world: World, alpha: number, dt: number): void {
     const bubbleSeen = new Set<Entity>();
     const stunSeen = new Set<Entity>();
@@ -760,6 +837,9 @@ function hazardLook(hz: Hazard): 'fire' | 'gas' | 'frost' | 'plain' {
   if (ids.includes('chilled') || ids.includes('frozen')) return 'frost';
   return 'plain';
 }
+
+/** Default colour of the Lightbearer's light. */
+const HOLY = '#ffe9a8';
 
 /** Tiny CPU particle system for hit sparks (one draw call). */
 class Sparks {

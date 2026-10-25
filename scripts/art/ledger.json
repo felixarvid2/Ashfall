@@ -1,6 +1,6 @@
 {
-  "spent": 1.7920000000000014,
-  "images": 218,
+  "spent": 1.9600000000000015,
+  "images": 239,
   "tries": {
     "textures/mine_rock": 1,
     "bosses/governor_kade": 1,
@@ -190,7 +190,28 @@
     "bosses/shade_warden": 1,
     "bosses/shade_kade": 1,
     "regions/the_core": 1,
-    "maps/the_core": 1
+    "maps/the_core": 1,
+    "items/censer_mace_1": 1,
+    "items/censer_mace_2": 1,
+    "items/censer_mace_3": 1,
+    "items/sun_staff_1": 1,
+    "items/sun_staff_2": 1,
+    "items/sun_staff_3": 1,
+    "items/reliquary_lantern_1": 1,
+    "items/reliquary_lantern_2": 1,
+    "items/reliquary_lantern_3": 1,
+    "items/unique_dawnbringer": 1,
+    "items/unique_halo_of_the_penitent": 1,
+    "aspects/mercy": 1,
+    "aspects/warding": 1,
+    "aspects/hallowed": 1,
+    "aspects/litany": 1,
+    "aspects/verdict": 1,
+    "aspects/sentinel": 1,
+    "aspects/radiant": 1,
+    "aspects/fervent": 1,
+    "aspects/daybreak": 1,
+    "menu/lightbearer": 1
   },
   "log": [
     {
@@ -1282,6 +1303,111 @@
       "key": "regions/the_core",
       "cost": 0.008,
       "at": "2026-10-18T17:48:23.116Z"
+    },
+    {
+      "key": "items/sun_staff_1",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:38.100Z"
+    },
+    {
+      "key": "items/censer_mace_2",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:41.048Z"
+    },
+    {
+      "key": "items/censer_mace_3",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:41.108Z"
+    },
+    {
+      "key": "items/censer_mace_1",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:44.079Z"
+    },
+    {
+      "key": "items/sun_staff_2",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:46.901Z"
+    },
+    {
+      "key": "items/sun_staff_3",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:47.716Z"
+    },
+    {
+      "key": "items/reliquary_lantern_1",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:49.994Z"
+    },
+    {
+      "key": "items/reliquary_lantern_2",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:53.146Z"
+    },
+    {
+      "key": "items/reliquary_lantern_3",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:53.536Z"
+    },
+    {
+      "key": "items/unique_halo_of_the_penitent",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:56.792Z"
+    },
+    {
+      "key": "items/unique_dawnbringer",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:59.081Z"
+    },
+    {
+      "key": "aspects/mercy",
+      "cost": 0.008,
+      "at": "2026-10-25T06:22:59.730Z"
+    },
+    {
+      "key": "aspects/warding",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:02.380Z"
+    },
+    {
+      "key": "aspects/hallowed",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:02.741Z"
+    },
+    {
+      "key": "aspects/litany",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:04.119Z"
+    },
+    {
+      "key": "aspects/verdict",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:05.674Z"
+    },
+    {
+      "key": "aspects/sentinel",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:07.126Z"
+    },
+    {
+      "key": "aspects/radiant",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:08.478Z"
+    },
+    {
+      "key": "aspects/fervent",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:08.933Z"
+    },
+    {
+      "key": "aspects/daybreak",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:10.114Z"
+    },
+    {
+      "key": "menu/lightbearer",
+      "cost": 0.008,
+      "at": "2026-10-25T06:23:11.349Z"
     }
   ]
 }

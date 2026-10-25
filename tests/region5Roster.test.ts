@@ -9,7 +9,7 @@ import { CHOIR, FADE_DEATH } from '../src/data/core';
 import { ENEMY_DEFS, STATUS_DEFS } from '../src/data/db';
 import { t } from '../src/data/i18n';
 import { PACK_TEMPLATES } from '../src/data/packs';
-import { ENEMY_FAMILIES, type EnemyDef } from '../src/data/schemas';
+import { ENEMY_FAMILIES, ENEMY_LOOKS, type EnemyDef } from '../src/data/schemas';
 import { CORE_ENV, THE_CORE } from '../src/data/zones/theCore';
 import { LOOKS, deathFade, fadesOnDeath, lookState } from '../src/render/looks';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
@@ -174,8 +174,9 @@ describe('Looks and the fade-and-shrink death', () => {
     expect(Math.max(...shade.map((s) => s.opacity))).toBeLessThan(0.95);
     // A dark core remains on pale ground even during a dropout.
     expect(Math.min(...shade.map((s) => s.opacity))).toBeGreaterThan(0.3);
-    for (const spec of Object.values(LOOKS)) {
-      const c = new THREE.Color(spec.color);
+    // (The enemy looks only: the Lightbearer's gold `halo` look is meant to be bright.)
+    for (const look of ENEMY_LOOKS) {
+      const c = new THREE.Color(LOOKS[look].color);
       expect(0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b, 'body luminance (linear)').toBeLessThan(0.25);
     }
   });

@@ -227,4 +227,62 @@ export const BUILDS: Build[] = [
     nodes: { ...skill('scalpel_slash', 3), 'e.scalpel_slash': 1, ...skill('parasite_link', 3), ...skill('chitin_armor'), 'p.lumen_affinity': 1 },
     rotation: [{ skill: 'xenomant.parasite_link' }, { skill: 'xenomant.scalpel_slash' }],
   },
+  // ---- Lightbearer
+  {
+    name: 'Lightbearer L1 starter (Censer Strike)',
+    classId: 'lightbearer',
+    level: 1,
+    nodes: {},
+    rotation: [{ skill: 'lightbearer.censer_strike' }],
+  },
+  {
+    // Healer: Heal (burns the corrupted), Sanctuary and Kyrie keep the party up; Holy Light fills the gaps.
+    name: 'Lightbearer L10 healer (Heal + Sanctuary)',
+    classId: 'lightbearer',
+    distance: 6,
+    level: 10,
+    nodes: {
+      ...sp('holy_light'),
+      ...sp('heal', 3),
+      'e.heal': 1,
+      'm.heal.smiting': 1,
+      ...sp('kyrie_eleison'),
+      ...sp('sanctuary'),
+      'p.piety': 2,
+    },
+    rotation: [{ skill: 'lightbearer.sanctuary' }, { skill: 'lightbearer.heal' }, { skill: 'lightbearer.kyrie_eleison' }, { skill: 'lightbearer.holy_light' }],
+  },
+  {
+    // Exorcist: sigil and judgment on the corrupted, Holy Light between casts.
+    name: 'Lightbearer L10 exorcist (Magnus + Lex Aeterna)',
+    classId: 'lightbearer',
+    distance: 6,
+    level: 10,
+    nodes: {
+      ...sp('holy_light', 2),
+      ...sp('magnus_exorcismus', 3),
+      'e.magnus_exorcismus': 1,
+      'm.magnus_exorcismus.rapid': 1,
+      ...sp('lex_aeterna'),
+      'p.sacred_flame': 2,
+    },
+    rotation: [{ skill: 'lightbearer.lex_aeterna' }, { skill: 'lightbearer.magnus_exorcismus' }, { skill: 'lightbearer.holy_light' }],
+  },
+  {
+    // Shepherd: Blessing and two Guardian Lights carry the damage; the Lightbearer mends and buffs.
+    name: 'Lightbearer L15 shepherd (Guardian Light + Blessing)',
+    classId: 'lightbearer',
+    distance: 6,
+    level: 15,
+    nodes: {
+      ...sp('holy_light', 2),
+      ...sp('heal'),
+      ...sp('blessing'),
+      ...sp('guardian_light', 3),
+      'e.guardian_light': 1,
+      'm.guardian_light.vigilant': 1,
+      'p.fervor': 2,
+    },
+    rotation: [{ skill: 'lightbearer.blessing' }, { skill: 'lightbearer.guardian_light' }, { skill: 'lightbearer.heal' }, { skill: 'lightbearer.holy_light' }],
+  },
 ];

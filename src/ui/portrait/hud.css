@@ -56,9 +56,9 @@
 /* ---- Life and resource bars, XP bar (H001-H008) -------------------------------------- */
 #ui.touch-ui.portrait .orb { left: var(--bars-left); right: var(--bars-right); width: auto; overflow: hidden; }
 #ui.touch-ui.portrait .orb-life { top: calc(var(--sat) + 8px); height: 22px; }
-#ui.touch-ui.portrait .orb-heat, #ui.touch-ui.portrait .orb-focus, #ui.touch-ui.portrait .orb-biomass { top: calc(var(--sat) + 34px); height: 16px; }
+#ui.touch-ui.portrait .orb-heat, #ui.touch-ui.portrait .orb-focus, #ui.touch-ui.portrait .orb-biomass, #ui.touch-ui.portrait .orb-devotion { top: calc(var(--sat) + 34px); height: 16px; }
 #ui.touch-ui.portrait .orb-text { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; font-weight: 700; line-height: 1; white-space: nowrap; }
-#ui.touch-ui.portrait .orb-heat .orb-text, #ui.touch-ui.portrait .orb-focus .orb-text, #ui.touch-ui.portrait .orb-biomass .orb-text { font-size: 12px; }
+#ui.touch-ui.portrait .orb-heat .orb-text, #ui.touch-ui.portrait .orb-focus .orb-text, #ui.touch-ui.portrait .orb-biomass .orb-text, #ui.touch-ui.portrait .orb-devotion .orb-text { font-size: 12px; }
 #ui.touch-ui.portrait .orb-cap { display: inline; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
 #ui.touch-ui.portrait .orb-life .orb-cap { display: none; }
 #ui.touch-ui.portrait .orb-extra { display: inline; margin-left: -3px; color: #bfe6ff; }

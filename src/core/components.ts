@@ -58,7 +58,7 @@ export interface Renderable {
   /** Huge landmark: never distance-culled and ignores fog. */
   landmark?: boolean;
   /** The Core: Lumen's creations (`lumen`) and memory shades (`shade`) are drawn with their own materials. */
-  look?: import('../data/schemas').EnemyLook;
+  look?: import('../data/schemas').EnemyLook | 'halo';
 }
 export const Renderable = defineComponent<Renderable>('Renderable');
 
@@ -156,7 +156,7 @@ export const StatusEffects = defineComponent<StatusEffects>('StatusEffects');
 
 /** Class resource (Heat for Bastion). */
 export interface Resource {
-  kind: 'heat' | 'focus' | 'biomass';
+  kind: 'heat' | 'focus' | 'biomass' | 'devotion';
   current: number;
   max: number;
   /** Seconds since the owner last dealt or took damage. */
@@ -563,6 +563,39 @@ export interface Turret {
   slamSeq: number;
 }
 export const Turret = defineComponent<Turret>('Turret');
+
+/** Lightbearer: a floating guardian light. It is also a MinionAI (shoots), but Raise Corpse's cap ignores it. */
+export interface Guardian {
+  owner: Entity;
+  skillId: string;
+  /** Tick it was cast (the oldest guardian is replaced at the cap). */
+  born: number;
+  /** The bolt it fires (scaled by the owner's synced stats). */
+  bolt: Impact;
+  /** Heals player-team allies near it on an interval; the healing counts as the owner's. */
+  healPulse: { interval: number; radius: number; healFraction: number } | null;
+  pulseTimer: number;
+}
+export const Guardian = defineComponent<Guardian>('Guardian');
+
+/** Lightbearer: consecrated ground that pulses on an interval (Magnus Exorcismus, Sanctuary). */
+export interface Sanctum {
+  owner: Entity;
+  skillId: string;
+  team: Team;
+  radius: number;
+  /** Seconds of life left; counts below zero during the fade-out, then the ground is removed. */
+  remaining: number;
+  duration: number;
+  interval: number;
+  /** Time until the next pulse (the first pulse is immediate). */
+  timer: number;
+  pulsesLeft: number;
+  /** Pulses fired so far. */
+  pulses: number;
+  color: string;
+}
+export const Sanctum = defineComponent<Sanctum>('Sanctum');
 
 // ---- Open world -------------------------------------------------------------------
 

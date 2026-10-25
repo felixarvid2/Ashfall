@@ -37,6 +37,10 @@ export const STATUS_IDS = [
   'overclock',
   // The Core: the Choir's song (enemies near a living singer hit harder and move faster).
   'empowered',
+  // Lightbearer: Blessing (damage and speed), Lex Aeterna (next hit deals double) and Benediction (cannot die).
+  'blessed',
+  'lexAeterna',
+  'benediction',
 ] as const;
 export const StatusIdSchema = z.enum(STATUS_IDS);
 export type StatusId = z.infer<typeof StatusIdSchema>;
@@ -52,6 +56,8 @@ export const CONDITIONS = [
   'melee',
   'ranged',
   'marked',
+  // The target is a corrupted enemy (family in CORRUPTED_FAMILIES): the Lightbearer's light burns it.
+  'corrupted',
   // Attacker-side conditions (evaluated on the one dealing damage).
   'highResource',
   'hasBarrier',
@@ -98,9 +104,27 @@ export const StatusDefSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('vulnerable'), damageTakenMultiplier: z.number().min(1), color: z.string() }),
   z.object({ kind: z.literal('barrier'), color: z.string() }),
   /** Takes more damage; the killer's owner gets `refund` resource when it dies marked. */
-  z.object({ kind: z.literal('mark'), damageTakenMultiplier: z.number().min(1), refund: z.number().nonnegative(), color: z.string() }),
-  /** Flag-like buff read by game logic (stealth, evasive). */
-  z.object({ kind: z.literal('buff'), color: z.string() }),
+  z.object({
+    kind: z.literal('mark'),
+    damageTakenMultiplier: z.number().min(1),
+    refund: z.number().nonnegative(),
+    /** The mark is removed by the first hit that benefits from it (Lex Aeterna). */
+    consumeOnHit: z.boolean().default(false),
+    color: z.string(),
+  }),
+  /**
+   * Buff read by game logic (stealth, evasive). The optional fields make it data-driven:
+   * outgoing damage ×damageMul, move and cast speed ×hasteMul, damage taken ×damageTakenMul,
+   * and cheatDeath keeps the holder at 1 life instead of dying.
+   */
+  z.object({
+    kind: z.literal('buff'),
+    color: z.string(),
+    damageMul: z.number().positive().optional(),
+    hasteMul: z.number().positive().optional(),
+    damageTakenMul: z.number().positive().optional(),
+    cheatDeath: z.boolean().optional(),
+  }),
   /** Damage reduction plus thorns: melee attackers take `thornsCoefficient` × the wearer's weapon damage. */
   z.object({ kind: z.literal('ward'), damageReduction: z.number().min(0).max(0.9), thornsCoefficient: z.number().nonnegative(), color: z.string() }),
 ]);
@@ -134,6 +158,8 @@ const ImpactSchema = z.object({
   delivery: z.enum(['melee', 'ranged']).default('melee'),
   /** Heal the attacker for this fraction of the damage dealt. */
   lifeSteal: z.number().min(0).max(1).default(0),
+  /** Damage multiplier against corrupted enemies (CORRUPTED_FAMILIES: infected, lumen). */
+  corruptedMul: z.number().min(1).default(1),
 });
 
 export type Impact = z.infer<typeof ImpactSchema>;
@@ -295,6 +321,55 @@ export const SkillEffectSchema = z.discriminatedUnion('kind', [
     interval: z.number().positive(),
     slam: ImpactSchema.extend({ radius: z.number().positive() }),
   }),
+  // Lightbearer: heal, shield and buff the caster's side in an area; optionally strike enemies there too.
+  z.object({
+    kind: z.literal('allyArea'),
+    center: z.enum(['self', 'cursor']).default('self'),
+    /** How far from the caster a cursor-centred area may be placed. */
+    maxRange: z.number().nonnegative().default(0),
+    radius: z.number().positive(),
+    /** Heal this fraction of each ally's max life (the caster counts as an ally). */
+    healFraction: z.number().min(0).max(1).default(0),
+    /** Statuses for every ally in the area (barrier with lifeFraction, blessed, benediction). */
+    applies: z.array(StatusApplySchema).default([]),
+    /** Remove disabling statuses and slows from allies. */
+    cleanse: z.boolean().default(false),
+    /** Hit enemies in the area (own radius, defaults to the effect's); corruptedOnly skips other families. */
+    enemyImpact: ImpactSchema.extend({
+      radius: z.number().positive().optional(),
+      corruptedOnly: z.boolean().default(false),
+    }).optional(),
+    color: z.string().default('#ffe9a8'),
+  }),
+  // Lightbearer: consecrated ground that pulses every `interval` s, healing allies and striking enemies inside.
+  z.object({
+    kind: z.literal('sanctum'),
+    center: z.enum(['self', 'cursor']).default('cursor'),
+    maxRange: z.number().nonnegative().default(0),
+    radius: z.number().positive(),
+    duration: z.number().positive(),
+    interval: z.number().positive(),
+    allyHealFraction: z.number().min(0).max(1).default(0),
+    allyApplies: z.array(StatusApplySchema).default([]),
+    impact: ImpactSchema.optional(),
+    color: z.string().default('#ffe9a8'),
+  }),
+  // Lightbearer: a floating light that follows the caster, shoots enemies and heals allies near it.
+  z.object({
+    kind: z.literal('guardian'),
+    /** Guardians alive at once; casting at the cap replaces the oldest. */
+    maxGuardians: z.number().int().positive(),
+    duration: z.number().positive(),
+    /** Guardian life as a fraction of the caster's max life. */
+    lifeFraction: z.number().positive(),
+    /** Fires `bolt` (a projectile, scaled by the caster's damage) at the nearest enemy within `range`. */
+    range: z.number().positive(),
+    attackCooldown: z.number().positive(),
+    bolt: ImpactSchema,
+    healPulse: z
+      .object({ interval: z.number().positive(), radius: z.number().positive(), healFraction: z.number().min(0).max(1) })
+      .optional(),
+  }),
 ]);
 export type SkillEffect = z.infer<typeof SkillEffectSchema>;
 
@@ -346,7 +421,7 @@ export const ClassDefSchema = z.object({
   moveSpeed: z.number().positive(),
   collider: z.object({ radius: z.number().positive(), mass: z.number().positive() }),
   resource: z.object({
-    id: z.enum(['heat', 'focus', 'biomass']),
+    id: z.enum(['heat', 'focus', 'biomass', 'devotion']),
     max: z.number().positive(),
     start: z.number().nonnegative(),
     /** Passive change per second (negative = decays) once out of combat for `idleDelay` seconds. */
@@ -358,6 +433,8 @@ export const ClassDefSchema = z.object({
     onCrit: z.number().nonnegative().default(0),
     /** Resource gained when an attack is avoided by dodging or stealth (Focus). */
     onAvoid: z.number().nonnegative().default(0),
+    /** Resource gained per 1 % of an ally's max life healed or shielded by the caster (Devotion; overheal does not count). */
+    onHeal: z.number().nonnegative().default(0),
     /** Resource gained when an enemy dies within `radius` metres (Biomass). */
     onNearbyDeath: z.object({ radius: z.number().positive(), amount: z.number().nonnegative() }).optional(),
     overheat: z
@@ -380,6 +457,8 @@ export type ClassDef = z.infer<typeof ClassDefSchema>;
 
 /** What an enemy is made of: picks its death sound (docs/regions/the-core.md: `light` = Lumen's own creatures). */
 export const ENEMY_FAMILIES = ['infected', 'insect', 'machine', 'beast', 'lumen', 'human', 'light'] as const;
+/** Families the Lightbearer's light burns (Impact.corruptedMul, allyArea corruptedOnly). */
+export const CORRUPTED_FAMILIES: readonly (typeof ENEMY_FAMILIES)[number][] = ['infected', 'lumen'];
 export const EnemyFamilySchema = z.enum(ENEMY_FAMILIES);
 export type EnemyFamily = z.infer<typeof EnemyFamilySchema>;
 

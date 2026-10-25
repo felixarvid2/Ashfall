@@ -14,6 +14,7 @@ import {
   Health,
   Inventory,
   Invulnerable,
+  MinionAI,
   Mover,
   Progression,
   Resource,
@@ -39,6 +40,7 @@ import { navigationSystem } from '../../src/systems/navigation';
 import { canEquip, generateItem, itemPowerFor } from '../../src/systems/loot/generate';
 import { addToGrid, equipFromGrid, salvage } from '../../src/systems/loot/inventory';
 import { nextItemUid, pickUp, pickupSystem, rewardSystem } from '../../src/systems/loot/rewards';
+import { guardianSystem, guardiansOf, sanctumSystem } from '../../src/systems/lightbearer';
 import { findCorpses, minionSystem, minionsOf, tetherSystem, turretSystem } from '../../src/systems/minions';
 import { movementSystem } from '../../src/systems/movement';
 import { hazardSystem, projectileSystem, summonSystem, trapSystem } from '../../src/systems/projectiles';
@@ -63,6 +65,10 @@ export interface PlayStep {
   minionsBelow?: number;
   /** Needs a corpse within 8 m of the target. */
   needsCorpse?: boolean;
+  /** Lightbearer heals: only while you, a guardian light or a minion is below this life fraction (cast whatever the distance to the enemy). */
+  allyHurtBelow?: number;
+  /** Lightbearer: only while fewer guardian lights than this are alive. */
+  guardiansBelow?: number;
 }
 
 export interface PlayPlan {
@@ -109,6 +115,8 @@ const SYSTEMS = [
   summonSystem,
   tetherSystem,
   turretSystem,
+  sanctumSystem,
+  guardianSystem,
   hazardSystem,
   resourceSystem,
   deathSystem,
@@ -380,7 +388,10 @@ function bot(world: World, ctx: GameContext, player: Entity, plan: PlayPlan, rng
       if (step.minEnemiesNear !== undefined && near < step.minEnemiesNear) continue;
       if (step.minionsBelow !== undefined && minionsOf(world, player).length >= step.minionsBelow) continue;
       if (step.needsCorpse && findCorpses(world, tt.x, tt.z, 8, 1).length === 0) continue;
-      if (dist - targetRadius > reach(c.def.effect)) continue;
+      if (step.allyHurtBelow !== undefined && !allyHurt(world, player, step.allyHurtBelow)) continue;
+      if (step.guardiansBelow !== undefined && guardiansOf(world, player).length >= step.guardiansBelow) continue;
+      // Heals ignore how far the enemy is: they are about our own side.
+      if (step.allyHurtBelow === undefined && dist - targetRadius > reach(c.def.effect)) continue;
       const corpse = step.needsCorpse ? findCorpses(world, tt.x, tt.z, 8, 1)[0] : undefined;
       const aim = corpse !== undefined ? world.req(corpse, Transform) : tt;
       user.request = { slot, aimX: aim.x, aimZ: aim.z, ttl: 0.25 };
@@ -415,6 +426,18 @@ function bot(world: World, ctx: GameContext, player: Entity, plan: PlayPlan, rng
     mover.vz = (dz / dist) * speed;
   }
   unstick(tr, mover, DT);
+}
+
+/** Is the player, or one of their guardian lights or minions, below `fraction` of its life? */
+function allyHurt(world: World, player: Entity, fraction: number): boolean {
+  const own = world.req(player, Health);
+  if (own.current < own.max * fraction) return true;
+  for (const e of world.query(MinionAI, Health)) {
+    if (world.req(e, MinionAI).owner !== player || world.has(e, Dead)) continue;
+    const h = world.req(e, Health);
+    if (h.current < h.max * fraction) return true;
+  }
+  return false;
 }
 
 const reacted = new Set<string>();
@@ -476,6 +499,11 @@ function reach(effect: import('../../src/data/schemas').SkillEffect): number {
     case 'tether':
       return effect.maxRange;
     case 'orbital':
+    case 'guardian':
       return effect.range;
+    case 'allyArea':
+      return effect.enemyImpact?.radius ?? 99;
+    case 'sanctum':
+      return effect.center === 'self' ? effect.radius : effect.maxRange;
   }
 }

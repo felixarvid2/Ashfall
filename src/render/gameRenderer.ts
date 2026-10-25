@@ -7,10 +7,10 @@ import { AwarenessMarkers, NavDebugOverlay } from './navOverlay';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { Boss, CombatStats, Dead, EnemyAI, ForcedMove, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { Boss, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
-import { CLASS_WEAPONS } from '../data/weapons';
+import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from '../data/weapons';
 import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena';
@@ -27,6 +27,7 @@ import { CameraRig } from './camera';
 import { CoreLook, blurCut, cutCells, cutTexture, ghostMaterial, type CutField } from './coreLook';
 import { ChoirLinks } from './choirLinks';
 import { memoryAtmosphere, type Atmosphere } from './memoryLook';
+import { proceduralWeapon } from './proceduralWeapons';
 import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
 import { LootVisuals } from './lootVisuals';
@@ -992,8 +993,9 @@ export class GameRenderer {
     obj.updateMatrixWorld(true);
     for (const mount of CLASS_WEAPONS[classId] ?? []) {
       const bone = obj.getObjectByName(mount.bone);
-      if (!bone || !this.assets.has(mount.asset)) continue;
-      const weapon = this.assets.create(mount.asset);
+      const procedural = mount.asset.startsWith(PROCEDURAL_PREFIX);
+      if (!bone || (!procedural && !this.assets.has(mount.asset))) continue;
+      const weapon = procedural ? proceduralWeapon(mount.asset.slice(PROCEDURAL_PREFIX.length), mount.length) : this.assets.create(mount.asset);
       weapon.traverse((o) => {
         o.castShadow = true;
         o.userData.noTint = true;
@@ -1158,6 +1160,9 @@ export class GameRenderer {
           marks.beacon.material.opacity = blink;
         }
       }
+
+      // Guardian lights bob in the air.
+      if (world.has(e, Guardian)) obj.position.y += Math.sin(this.time * 2.6 + e) * 0.12;
 
       const turret = world.get(e, Turret);
       if (turret) {

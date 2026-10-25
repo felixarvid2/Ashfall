@@ -224,7 +224,7 @@ async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const name = opts.scenario;
   if (!name || !SCENARIOS[name] || !opts.out) {
-    console.error(`Usage: run.mjs --scenario <${Object.keys(SCENARIOS).join('|')}> --out <dir> [--url U] [--viewport WxH] [--mobile] [--class bastion|spectre|xenomant] [--poi id] [--zone id] [--at x,z] [--timeout seconds]`);
+    console.error(`Usage: run.mjs --scenario <${Object.keys(SCENARIOS).join('|')}> --out <dir> [--url U] [--viewport WxH] [--mobile] [--class bastion|spectre|xenomant|lightbearer] [--poi id] [--zone id] [--at x,z] [--timeout seconds]`);
     process.exit(2);
   }
   const out = resolve(opts.out);

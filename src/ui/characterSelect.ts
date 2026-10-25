@@ -26,8 +26,8 @@ export interface CharacterSelectActions {
 }
 
 /** Classes that can be picked. */
-export const PLAYABLE_CLASSES = ['bastion', 'spectre', 'xenomant'];
-const ALL_CLASSES = ['bastion', 'spectre', 'xenomant'];
+export const PLAYABLE_CLASSES = ['bastion', 'spectre', 'xenomant', 'lightbearer'];
+const ALL_CLASSES = ['bastion', 'spectre', 'xenomant', 'lightbearer'];
 
 /** Longest character name. */
 export const NAME_MAX = 24;

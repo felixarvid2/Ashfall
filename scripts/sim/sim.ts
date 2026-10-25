@@ -16,6 +16,7 @@ import { generateItem, generateUnique } from '../../src/systems/loot/generate';
 import { movementSystem } from '../../src/systems/movement';
 import { resourceSystem } from '../../src/systems/resource';
 import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from '../../src/systems/skills';
+import { guardianSystem, sanctumSystem } from '../../src/systems/lightbearer';
 import { minionSystem, minionsOf, tetherSystem, turretSystem } from '../../src/systems/minions';
 import { deathSystem } from '../../src/systems/death';
 import { kill } from '../../src/systems/combat';
@@ -76,6 +77,8 @@ const SYSTEMS = [
   summonSystem,
   tetherSystem,
   turretSystem,
+  sanctumSystem,
+  guardianSystem,
   hazardSystem,
   resourceSystem,
   deathSystem,
