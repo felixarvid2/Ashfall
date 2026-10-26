@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- ember flame -->
+    <path android:fillColor="#E07A2C" android:pathData="M54,22 C62,36 76,44 76,62 C76,76 66,86 54,86 C42,86 32,76 32,62 C32,52 38,46 42,40 C44,46 46,48 49,49 C48,40 50,30 54,22z" />
+    <path android:fillColor="#FFD08A" android:pathData="M54,50 C59,58 66,62 66,72 C66,79 61,84 54,84 C47,84 42,79 42,72 C42,66 46,62 48,58 C50,61 51,62 53,62 C52,57 52,53 54,50z" />
+</vector>
