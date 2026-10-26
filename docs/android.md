@@ -12,7 +12,8 @@ as the browser build; a thin host layer connects it to the device. Layout and bu
 - `android/app/src/main/assets/panel/` the bottom-screen page (hand-written HTML/CSS/JS, committed).
 - `src/core/host.ts` the game side of the host API below.
 - `npm run build:android` builds the web game into `www/`, runs Gradle and copies the APK to
-  `dist-android/ashfall-thor.apk` (gitignored). Needs the Android SDK (`android/local.properties` with `sdk.dir`).
+  `dist-android/ashfall-thor.apk` (gitignored). Needs the Android SDK (`android/local.properties` with `sdk.dir`,
+  or `ANDROID_HOME`). The release workflow builds it too and attaches `ashfall-vX.Y.Z-thor.apk` to the release.
 
 ## Serving the game
 

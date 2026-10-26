@@ -73,17 +73,28 @@ jobs:
             exit 1
           fi
           echo "No .map files in the zip."
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Build the AYN Thor APK
+        run: |
+          npm run build:android
+          cp dist-android/ashfall-thor.apk "ashfall-${TAG}-thor.apk"
       - name: Release notes
         run: |
           {
             echo "Playable web build of Ashfall. Unzip \`ashfall-${TAG}-web.zip\` and serve the folder"
             echo "with any static web server (see HOW-TO-PLAY.txt inside), e.g. \`npx serve .\`."
+            echo "For the AYN Thor: install \`ashfall-${TAG}-thor.apk\` (allow installs from unknown sources)."
             if [ -f "docs/releases/${TAG}.md" ]; then echo; cat "docs/releases/${TAG}.md"; fi
           } > release-notes.md
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
           name: Ashfall ${{ env.TAG }}
-          files: ashfall-${{ env.TAG }}-web.zip
+          files: |
+            ashfall-${{ env.TAG }}-web.zip
+            ashfall-${{ env.TAG }}-thor.apk
           body_path: release-notes.md
           overwrite_files: true
