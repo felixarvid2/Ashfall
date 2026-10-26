@@ -27,6 +27,7 @@ import {
 import type { GamepadInput } from '../core/gamepad';
 import { armConfirm } from './confirmSheet';
 import { hapticsSupported, haptic } from './haptics';
+import { isAndroidHost } from '../core/host';
 import { keyLabel } from './hud';
 import { panelStack } from './panelStack';
 import type { SoundUi } from './soundPanel';
@@ -229,7 +230,7 @@ export class SettingsPanel {
       this.switchRow(t('settings.showTips'), t('settings.showTipsHint'), () => this.deps.settings().showTips, (on) => this.change({ showTips: on }), 'tips'),
       this.resetTipsRow(),
     );
-    const padApi = typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function';
+    const padApi = isAndroidHost() || (typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function');
     if (hapticsSupported() || padApi) {
       // The switch covers phone vibration and pad rumble, so it shows on a touch device or while the pad is
       // in use (menus.css); without navigator.vibrate it only shows for the pad.
