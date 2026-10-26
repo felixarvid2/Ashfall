@@ -1,17 +1,18 @@
 /**
  * Repeatable bounties (C013): three per region, offered by hub NPCs once the region's campaign is
- * done. A finished bounty comes back when the player re-enters its region (resetBounties in
+ * done (four each; the fourth escorts a tanker to the hub, D03). A finished bounty comes back when the player re-enters its region (resetBounties in
  * systems/quests.ts). They pay gold, XP (scaled by the World Tier like every quest), a guaranteed
  * rare and Lumen Dust or Rift Shards. Text: lang quests.bt.<id> and enemies.named.*.
  * The ids after `bt.` start with the region's short name.
  */
 import type { z } from 'zod';
 import type { QuestDefSchema } from './schema';
-import { at } from '../zones/cinderFlats';
-import { rd } from '../zones/refineryDistrict';
+import { at, CINDER_FLATS_HUB } from '../zones/cinderFlats';
+import { COOLANT_WORKS, rd } from '../zones/refineryDistrict';
 import { hv } from '../zones/hydroponicVaults';
-import { dm } from '../zones/deepMines';
+import { dm, ZERO } from '../zones/deepMines';
 import { cr } from '../zones/theCore';
+import { EMPTY_CAB_PATH } from './theCore';
 
 type QuestInput = z.input<typeof QuestDefSchema>;
 
@@ -43,6 +44,30 @@ const LAKE_SHORE = pt(dm, 214, 18);
 const BORDERLAND = pt(cr, 0, -232);
 const DARK = pt(cr, 130, -40);
 const ROAD = pt(at, -128, 168);
+
+/** D03: the escort bounties. The tankers follow routes the campaign's own escorts already use, so the roads are known to be clear. */
+const ESCORT_CF: [number, number][] = [at(-90, -42), at(-110, -55), at(-130, -68), [CINDER_FLATS_HUB.x + 14, CINDER_FLATS_HUB.z - 4]];
+const ESCORT_RD: [number, number][] = [rd(-128, 150), rd(-100, 110), rd(-75, 70), rd(-60, 20), rd(-105, -48), [COOLANT_WORKS.x + 18, COOLANT_WORKS.z + 6]];
+const ESCORT_HV: [number, number][] = [hv(100, 40), hv(160, 80), hv(205, 110), hv(250, 150), hv(262, 176)];
+const ESCORT_DM: [number, number][] = [dm(0, -160), dm(8, -200), dm(14, -250), [ZERO.x, ZERO.z + 24]];
+const ESCORT_CORE = EMPTY_CAB_PATH;
+export const BOUNTY_ESCORT_PATHS: Record<string, readonly (readonly [number, number])[]> = {
+  'bt.cf_tanker': ESCORT_CF,
+  'bt.rd_tanker': ESCORT_RD,
+  'bt.hv_tanker': ESCORT_HV,
+  'bt.dm_tanker': ESCORT_DM,
+  'bt.core_tanker': ESCORT_CORE,
+};
+
+/** Reach the tanker's start, walk it along its route (it only moves while the player is near) and report to the giver. */
+const escortSteps = (id: string, giver: string, life: number, speed: number) => {
+  const path = BOUNTY_ESCORT_PATHS[id]!.map(([x, z]) => [x, z] as [number, number]);
+  return [
+    { kind: 'reach' as const, x: path[0]![0], z: path[0]![1], radius: 12 },
+    { kind: 'escort' as const, asset: 'prop.water_tanker', path, life, speed },
+    { kind: 'talk' as const, npc: giver },
+  ];
+};
 
 export const BOUNTY_QUESTS: QuestInput[] = [
   // ---- Cinder Flats: Outpost Ember ----------------------------------------------
@@ -84,6 +109,16 @@ export const BOUNTY_QUESTS: QuestInput[] = [
     ],
     rewards: { xp: 560, gold: 120, item: 'rare', dust: 6, shards: 2 },
   },
+  {
+    id: 'bt.cf_tanker',
+    kind: 'side',
+    repeatable: true,
+    ...CF,
+    giver: 'benny',
+    level: 10,
+    steps: escortSteps('bt.cf_tanker', 'benny', 900, 2.6),
+    rewards: { xp: 540, gold: 110, item: 'rare', dust: 4, shards: 1 },
+  },
   // ---- Refinery District: the Coolant Works --------------------------------------
   {
     id: 'bt.rd_smelters',
@@ -122,6 +157,16 @@ export const BOUNTY_QUESTS: QuestInput[] = [
       { kind: 'talk', npc: 'mara' },
     ],
     rewards: { xp: 1700, gold: 250, item: 'rare', dust: 6, shards: 3 },
+  },
+  {
+    id: 'bt.rd_tanker',
+    kind: 'side',
+    repeatable: true,
+    ...RD,
+    giver: 'tobin',
+    level: 17,
+    steps: escortSteps('bt.rd_tanker', 'tobin', 1100, 2.7),
+    rewards: { xp: 1550, gold: 230, item: 'rare', dust: 5, shards: 2 },
   },
   // ---- Hydroponic Vaults: Lab 9 --------------------------------------------------
   {
@@ -162,6 +207,16 @@ export const BOUNTY_QUESTS: QuestInput[] = [
     ],
     rewards: { xp: 2900, gold: 360, item: 'rare', dust: 8, shards: 4 },
   },
+  {
+    id: 'bt.hv_tanker',
+    kind: 'side',
+    repeatable: true,
+    ...HV,
+    giver: 'okafor',
+    level: 26,
+    steps: escortSteps('bt.hv_tanker', 'okafor', 1600, 2.7),
+    rewards: { xp: 2700, gold: 330, item: 'rare', dust: 6, shards: 3 },
+  },
   // ---- Deep Mines: Station Zero --------------------------------------------------
   {
     id: 'bt.dm_burrowers',
@@ -201,6 +256,16 @@ export const BOUNTY_QUESTS: QuestInput[] = [
     ],
     rewards: { xp: 3900, gold: 780, item: 'rare', dust: 10, shards: 5 },
   },
+  {
+    id: 'bt.dm_tanker',
+    kind: 'side',
+    repeatable: true,
+    ...DM,
+    giver: 'brask',
+    level: 35,
+    steps: escortSteps('bt.dm_tanker', 'brask', 1800, 2.8),
+    rewards: { xp: 3700, gold: 720, item: 'rare', dust: 8, shards: 4 },
+  },
   // ---- The Core: the Last Camp ---------------------------------------------------
   {
     id: 'bt.core_drones',
@@ -239,5 +304,15 @@ export const BOUNTY_QUESTS: QuestInput[] = [
       { kind: 'talk', npc: 'dace_core' },
     ],
     rewards: { xp: 6000, gold: 1600, item: 'rare', dust: 12, shards: 6 },
+  },
+  {
+    id: 'bt.core_tanker',
+    kind: 'side',
+    repeatable: true,
+    ...CORE,
+    giver: 'maren',
+    level: 45,
+    steps: escortSteps('bt.core_tanker', 'maren', 2600, 3.2),
+    rewards: { xp: 5500, gold: 1450, item: 'rare', dust: 10, shards: 5 },
   },
 ];

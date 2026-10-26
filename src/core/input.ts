@@ -3,8 +3,9 @@
  * and wheel. Systems read a snapshot every tick; "pressed" edges are consumed
  * once per tick so a tap is never missed or double-counted.
  */
-import type { TouchState } from './context';
-import type { Action } from '../data/settings';
+import type { PadState, TouchState } from './context';
+import { DEFAULT_PADBINDINGS, type Action, type PadAction } from '../data/settings';
+import { GamepadInput } from './gamepad';
 
 export class Input {
   private readonly keysDown = new Set<string>();
@@ -22,6 +23,14 @@ export class Input {
   /** Joystick and attack button while the touch controls are shown (null otherwise). */
   touch: TouchState | null = null;
 
+  /** The gamepad (A01): its buttons arrive as "Pad<n>" codes looked up in `padBindings`. */
+  readonly gamepad: GamepadInput;
+  private padBindings: Record<PadAction, string[]> = DEFAULT_PADBINDINGS;
+  private readonly padDown = new Set<string>();
+  private readonly padPressed = new Set<string>();
+  /** True while a menu owns the pad: its buttons do nothing in the world (set by the game). */
+  padBlocked: () => boolean = () => false;
+
   /** Mouse in normalized device coordinates (-1..1), +y up. */
   readonly mouseNdc = { x: 0, y: 0 };
   /** True once the mouse has moved over the canvas at least once. */
@@ -30,8 +39,20 @@ export class Input {
   constructor(
     private readonly target: HTMLElement,
     bindings: Record<Action, string[]>,
+    padBindings?: Record<PadAction, string[]>,
+    gamepad: GamepadInput = new GamepadInput(),
   ) {
     this.bindings = bindings;
+    if (padBindings) this.padBindings = padBindings;
+    this.gamepad = gamepad;
+    // Registered first, so a button that closes a menu (focus navigation listens later) is already blocked here.
+    gamepad.onButton((code, down) => {
+      if (!down) this.padDown.delete(code);
+      else if (!this.padBlocked()) {
+        this.padDown.add(code);
+        this.padPressed.add(code);
+      }
+    });
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('blur', this.onBlur);
@@ -72,18 +93,44 @@ export class Input {
     }
   }
 
-  setBindings(bindings: Record<Action, string[]>): void {
+  setBindings(bindings: Record<Action, string[]>, padBindings?: Record<PadAction, string[]>): void {
     this.bindings = bindings;
+    if (padBindings) this.padBindings = padBindings;
   }
 
-  /** Action held this tick. */
+  /** Action held this tick (keyboard, touch button or pad button). */
   isDown(action: Action): boolean {
-    return this.virtualDown.has(action) || this.bindings[action].some((code) => this.keysDown.has(code));
+    return this.virtualDown.has(action) || this.bindings[action].some((code) => this.keysDown.has(code)) || this.isPadDown(action);
   }
 
   /** Action went down since the last endTick(). */
   wasPressed(action: Action): boolean {
-    return this.virtualPressed.has(action) || this.bindings[action].some((code) => this.keysPressed.has(code));
+    return this.virtualPressed.has(action) || this.bindings[action].some((code) => this.keysPressed.has(code)) || this.wasPadPressed(action);
+  }
+
+  /** A pad button bound to the action is held. */
+  isPadDown(action: Action | PadAction): boolean {
+    return ((this.padBindings as Partial<Record<string, string[]>>)[action] ?? []).some((code) => this.padDown.has(code));
+  }
+
+  /** A pad button bound to the action went down since the last endTick(). */
+  wasPadPressed(action: Action | PadAction): boolean {
+    return ((this.padBindings as Partial<Record<string, string[]>>)[action] ?? []).some((code) => this.padPressed.has(code));
+  }
+
+  /**
+   * Left stick (moves), right stick (aims) and the two basic-slot buttons, while the pad was used last and no menu
+   * owns it; null otherwise, so keyboard and mouse keep working whenever they were touched last.
+   */
+  get pad(): PadState | null {
+    const g = this.gamepad;
+    if (g.lastDevice !== 'pad' || !g.hasPad || this.padBlocked()) return null;
+    return {
+      stick: g.left.x !== 0 || g.left.y !== 0 ? { x: g.left.x, y: g.left.y } : null,
+      aim: g.right.x !== 0 || g.right.y !== 0 ? { x: g.right.x, y: g.right.y } : null,
+      attack: this.isPadDown('attack'),
+      alt: this.isPadDown('altAttack'),
+    };
   }
 
   isMouseDown(button = 0): boolean {
@@ -106,11 +153,13 @@ export class Input {
     this.keysPressed.clear();
     this.buttonsPressed.clear();
     this.virtualPressed.clear();
+    this.padPressed.clear();
   }
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
     // Ignore typing in form fields (debug panel inputs, future chat/search).
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    this.gamepad.noteKeyboardMouse();
     if (!e.repeat) this.keysPressed.add(e.code);
     this.keysDown.add(e.code);
     if (this.isBound(e.code)) e.preventDefault();
@@ -124,6 +173,7 @@ export class Input {
     this.keysDown.clear();
     this.buttonsDown.clear();
     this.virtualDown.clear();
+    this.padDown.clear();
   };
 
   private readonly onTouchStart = (e: TouchEvent): void => {
@@ -165,6 +215,7 @@ export class Input {
   };
 
   private readonly onMouseDown = (e: MouseEvent): void => {
+    this.gamepad.noteKeyboardMouse();
     this.buttonsDown.add(e.button);
     this.buttonsPressed.add(e.button);
     this.updateMouse(e);
@@ -175,6 +226,8 @@ export class Input {
   };
 
   private readonly onMouseMove = (e: MouseEvent): void => {
+    // A mouse that only reports the same spot (or a touch device's synthetic move) is not the player's hand.
+    if (e.movementX !== 0 || e.movementY !== 0) this.gamepad.noteKeyboardMouse();
     this.updateMouse(e);
   };
 

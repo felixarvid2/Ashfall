@@ -155,8 +155,24 @@ describe('NPC greetings follow the campaign (C023)', () => {
     // The Core's people have no "late" line: the region's boss is the end.
     expect(greetingKey(rtWith(CAMPAIGN_END_QUEST), 'maren')).toBe('npcs.maren.greetingEnd');
     // A quest-only NPC without variants keeps its one greeting at every stage.
-    expect(greetingKey(rtWith(CAMPAIGN_END_QUEST), 'danner')).toBe('npcs.danner.greeting');
+    expect(greetingKey(rtWith(CAMPAIGN_END_QUEST), 'tam_unknown')).toBe('npcs.tam_unknown.greeting');
     expect(greetingKey(rtWith('mq.the_first'), 'unknown_npc')).toBe('npcs.unknown_npc.greeting');
+  });
+
+  it('D04: quest-only and follower NPCs have context lines for the late and the end of the campaign', () => {
+    for (const n of NPCS.values()) {
+      if (!n.questOnly && !n.choice) continue;
+      const g = lang.npcs[n.id]!;
+      expect(g.greetingEnd, `${n.id} end`).toBeTruthy();
+      expect(g.greetingEnd, n.id).not.toBe(g.greeting);
+      if (n.zone !== THE_CORE.id) {
+        expect(g.greetingLate, `${n.id} late`).toBeTruthy();
+        expect(g.greetingLate, n.id).not.toBe(g.greeting);
+        expect(g.greetingLate, n.id).not.toBe(g.greetingEnd);
+      }
+    }
+    expect(greetingKey(rtWith('mq.the_first'), 'danner')).toBe('npcs.danner.greetingLate');
+    expect(greetingKey(rtWith(CAMPAIGN_END_QUEST), 'wren')).toBe('npcs.wren.greetingEnd');
   });
 
   it('gives every hub service NPC a late and an end line that differ from the first', () => {

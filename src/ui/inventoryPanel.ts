@@ -10,6 +10,7 @@ import { BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
 import { itemArtUrl, rarityFrameUrl } from './art';
 import { SLOTS, slotsFor, type Item, type Slot } from '../data/loot/schemas';
 import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/generate';
+import { salvagePreview } from '../systems/endgame/crafting';
 import {
   FILTER_CHIPS,
   SORT_MODES,
@@ -41,6 +42,7 @@ import {
 } from './itemTooltip';
 import { armConfirm, confirmSheet } from './confirmSheet';
 import { haptic } from './haptics';
+import { focusNav, type NavButton } from './focusNav';
 import { tooltipSheet, useSheet } from './tooltipSheet';
 import { getPref, setPref } from '../core/localPrefs';
 
@@ -78,6 +80,18 @@ function storedSort(): SortMode | null {
 function storeSort(mode: SortMode): void {
   // Private mode: the choice just is not remembered.
   setPref(SORT_KEY, mode);
+}
+
+/** D09: " You also get 4 Lumen Dust." for the salvage confirmations; empty when the items give no materials. */
+export function materialsLine(items: readonly Item[]): string {
+  const dust = salvagePreview(items).lumen_dust;
+  return dust > 0 ? ` ${t('items.bag.salvageMaterials', { n: dust, material: t('crafting.materials.lumen_dust') })}` : '';
+}
+
+/** The salvage button text: the gold, plus the materials when there are any. */
+export function salvageLabel(gold: number, items: readonly Item[]): string {
+  const dust = salvagePreview(items).lumen_dust;
+  return dust > 0 ? t('items.bag.salvageWithMaterials', { gold, n: dust, material: t('crafting.materials.lumen_dust') }) : t('items.bag.salvage', { gold });
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -249,6 +263,7 @@ export class InventoryPanel {
     this.helpBtn.addEventListener('blur', () => (this.helpTip.hidden = true));
     parent.append(this.root, this.tooltip, this.tooltipEq, this.helpTip);
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
+    focusNav.register('inventory', { enter: () => this.padEnter(), press: (b) => this.padPress(b) });
     document.addEventListener('keydown', (e) => this.onKey(e, true));
     document.addEventListener('keyup', (e) => this.onKey(e, false));
     const endDrag = () => {
@@ -346,6 +361,8 @@ export class InventoryPanel {
     if (!this.open) return;
     const inv = bag;
     const used = bagUsed;
+    // The cells are rebuilt below: a pad cursor (focus) on one of them comes back to the same place afterwards.
+    const kept = this.padWhere();
     this.goldText.textContent = t('ui.gold', { gold: inv.gold.toLocaleString('en-US') });
     this.countText.textContent = t('items.bag.count', { used, max: inv.grid.length });
     this.countText.classList.toggle('full', fillNow === 'full');
@@ -398,6 +415,7 @@ export class InventoryPanel {
         cell.addEventListener('contextmenu', () => this.actions.unequip(slot));
         cell.addEventListener('click', () => this.onDollClick(slot, item));
         if (item) this.hover(cell, item, true, { slot });
+        this.padCell(cell, item, true, { slot });
         if (this.selectedCrystal !== null) this.markSocketTarget(cell, item);
         if (this.sheetFor && 'slot' in this.sheetFor && this.sheetFor.slot === slot) cell.classList.add('selected');
         return cell;
@@ -425,7 +443,7 @@ export class InventoryPanel {
           if (!item || item.crystal || this.selectMode) return;
           // Shift+right-click: the other ring slot (B011).
           const base = BASE_ITEMS.get(item.base);
-          const other = e.shiftKey && base ? otherSlot(slotsFor(base.type), this.getInventory().equipped) : undefined;
+          const other = e.shiftKey && base ? otherSlot(slotsFor(base.type), this.getInventory().equipped, (s) => this.actions.compare(item, s)) : undefined;
           if (other) this.actions.equip(index, other);
           else this.actions.equip(index);
         });
@@ -435,6 +453,7 @@ export class InventoryPanel {
           if (this.dragMode && this.selectMode && e.pointerType === 'mouse') this.dragSelect(index);
         });
         if (item) this.hover(cell, item, false, { grid: index });
+        this.padCell(cell, item, false, { grid: index });
         return cell;
       }),
     );
@@ -442,6 +461,80 @@ export class InventoryPanel {
     this.renderBanners(inv, used);
     this.renderSelbar(inv);
     this.rehover();
+    if (kept) this.padFocus(kept);
+  }
+
+  // ---- Gamepad cursor (round 3, A04) ----------------------------------------------------------------------------
+  // The cursor is DOM focus on the cells (tabindex -1, `data-nav`), so the D-pad moves it over the doll, the bag and
+  // the toolbar alike (src/ui/focusNav.ts). Focus shows the same tooltip with comparison as hovering does.
+
+  private padCell(cell: HTMLElement, item: Item | null, equipped: boolean, where: Where): void {
+    cell.tabIndex = -1;
+    cell.dataset.nav = '';
+    cell.addEventListener('focus', () => {
+      // Only while the pad is in use: a mouse click also focuses a cell and must not pin the tooltip.
+      if (!document.documentElement.classList.contains('pad-active') || useSheet()) return;
+      this.hovered = item ? { cell, item, equipped, where } : null;
+      if (item) this.showTooltip();
+      else this.hideTooltip();
+    });
+    cell.addEventListener('blur', () => {
+      if (this.hovered?.cell === cell) {
+        this.hovered = null;
+        this.hideTooltip();
+      }
+    });
+  }
+
+  /** The cell holding focus, as a position. */
+  private padWhere(): Where | null {
+    const a = document.activeElement;
+    if (!(a instanceof HTMLElement) || !this.root.contains(a)) return null;
+    if (a.dataset.index !== undefined && this.grid.contains(a)) return { grid: Number(a.dataset.index) };
+    if (a.dataset.slot !== undefined && this.doll.contains(a)) return { slot: a.dataset.slot as Slot };
+    return null;
+  }
+
+  private padFocus(where: Where): void {
+    const cell = 'grid' in where ? this.grid.children[where.grid] : this.doll.querySelector(`[data-slot='${where.slot}']`);
+    if (cell instanceof HTMLElement) cell.focus({ preventScroll: true });
+  }
+
+  /** The panel opened with the pad in use: the cursor starts on the first item of the bag (else the first cell). */
+  private padEnter(): boolean {
+    const cells = [...this.grid.children] as HTMLElement[];
+    const used = this.getInventory().grid.findIndex((i) => i !== null);
+    const first = cells[Math.max(0, used)];
+    first?.focus({ preventScroll: true });
+    return !!first;
+  }
+
+  /** A equips (or uses the service click), X marks junk, Y locks, the bumpers step through the filter chips. */
+  private padPress(button: NavButton): boolean {
+    if (!['a', 'x', 'y', 'lb', 'rb'].includes(button)) return false;
+    if (button === 'lb' || button === 'rb') {
+      const at = FILTER_CHIPS.indexOf(this.filter);
+      this.filter = FILTER_CHIPS[(at + (button === 'rb' ? 1 : -1) + FILTER_CHIPS.length) % FILTER_CHIPS.length]!;
+      this.refresh();
+      return true;
+    }
+    const where = this.padWhere();
+    if (!where) return false;
+    const inv = this.getInventory();
+    const index = 'grid' in where ? where.grid : -1;
+    const item = 'grid' in where ? inv.grid[index] : inv.equipped[where.slot];
+    if (!item) return true;
+    if (button === 'x') this.toggleJunk(item);
+    else if (button === 'y') this.toggleLock(item);
+    else if ('slot' in where) this.actions.unequip(where.slot);
+    else if (this.gridClick || this.selectMode || this.selectedCrystal !== null || item.crystal || useSheet()) this.padFocusCell(where)?.click();
+    else this.actions.equip(index);
+    return true;
+  }
+
+  private padFocusCell(where: Where): HTMLElement | null {
+    const cell = 'grid' in where ? this.grid.children[where.grid] : this.doll.querySelector(`[data-slot='${where.slot}']`);
+    return cell instanceof HTMLElement ? cell : null;
   }
 
   // ---- Marks, search, keys (UI audit B002, B003, B015) ------------------------------------------------------
@@ -505,7 +598,7 @@ export class InventoryPanel {
   }
 
   /** Corner badges (P050): item power, upgrade arrow, "new" dot, selection check. */
-  private decorate(cell: HTMLElement, item: Item, o: { power?: boolean; sign?: number; isNew?: boolean; check?: boolean }): void {
+  private decorate(cell: HTMLElement, item: Item, o: { power?: boolean; sign?: number | undefined; isNew?: boolean; check?: boolean | undefined }): void {
     if (o.power && !item.crystal) cell.appendChild(el('span', 'cell-power', String(item.itemPower)));
     if (o.sign) {
       const up = o.sign > 0;
@@ -628,7 +721,7 @@ export class InventoryPanel {
       const gold = salvageValue(item);
       void confirmSheet({
         title: t('items.bag.salvageOneTitle', { name: itemDisplayName(item) }),
-        body: t('items.bag.salvageOneBody', { gold }),
+        body: t('items.bag.salvageOneBody', { gold }) + materialsLine([item]),
         confirmLabel: t('items.bag.salvageButton'),
         danger: true,
       }).then((ok) => {
@@ -708,7 +801,7 @@ export class InventoryPanel {
             comparison: this.actions.compare(item, slot),
           }))
         : [];
-    const defaultSlot = defaultTargetSlot(slots, inv.equipped);
+    const defaultSlot = defaultTargetSlot(slots, inv.equipped, (s) => this.actions.compare(item, s));
     const content = renderItemSheet(item, classId, { equipped: !isGrid, targets, defaultSlot });
     const buttons: NonNullable<Parameters<typeof tooltipSheet.show>[0]['actions']> = [];
 
@@ -745,7 +838,7 @@ export class InventoryPanel {
       const gold = salvageValue(item);
       const confirm = needsSalvageConfirm(item);
       buttons.push({
-        label: item.locked ? t('items.bag.locked') : t('items.bag.salvage', { gold }),
+        label: item.locked ? t('items.bag.locked') : salvageLabel(gold, [item]),
         danger: true,
         disabled: !!item.locked,
         keepOpen: confirm,
@@ -756,7 +849,7 @@ export class InventoryPanel {
           }
           void confirmSheet({
             title: t('items.bag.salvageOneTitle', { name: itemDisplayName(item) }),
-            body: t('items.bag.salvageOneBody', { gold }),
+            body: t('items.bag.salvageOneBody', { gold }) + materialsLine([item]),
             confirmLabel: t('items.bag.salvageButton'),
             danger: true,
           }).then((ok) => {
@@ -892,7 +985,7 @@ export class InventoryPanel {
       }
       void confirmSheet({
         title: t('items.bag.salvageManyTitle', { n: items.length }),
-        body: t('items.bag.salvageManyBody', { gold }),
+        body: t('items.bag.salvageManyBody', { gold }) + materialsLine(items),
         confirmLabel: t('items.bag.salvageButton'),
         danger: true,
       }).then((ok) => {
@@ -942,7 +1035,7 @@ export class InventoryPanel {
     const base = BASE_ITEMS.get(item.base);
     const slots = !item.crystal && base ? slotsFor(base.type) : [];
     const comparable = !equipped && slots.length > 0;
-    const defaultSlot = comparable ? defaultTargetSlot(slots, inv.equipped) : undefined;
+    const defaultSlot = comparable ? defaultTargetSlot(slots, inv.equipped, (s) => this.actions.compare(item, s)) : undefined;
     const targets: CompareTarget[] = comparable
       ? slots.map((slot) => ({
           slot,

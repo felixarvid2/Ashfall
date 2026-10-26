@@ -5,6 +5,8 @@
 
 /* ---- B043: rows that only matter on a phone (thumb layout, button size, vibration) ---- */
 html:not(.touch-device) .settings-row.touch-only { display: none; }
+html:not(.touch-device):not(.pad-active) .settings-row.haptics-row,
+html:not(.pad-active) .settings-row.haptics-row.pad-only { display: none; }
 #ui.touch-ui .key-list { display: none; }
 
 /* ---- Settings: wider on desktop, new rows ---- */

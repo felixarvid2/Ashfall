@@ -28,7 +28,7 @@ export interface LabelCandidate {
   /** Legendary and better: never collapsed into the chip. */
   always: boolean;
   /** Priority among the rest (higher keeps its label first); ties go to the nearest. Unset = by distance only. */
-  rank?: number;
+  rank?: number | undefined;
 }
 
 const RARITY_RANK: Record<string, number> = { common: 0, magic: 1, rare: 2, legendary: 3, unique: 4, mythic: 5 };

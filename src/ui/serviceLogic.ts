@@ -101,3 +101,8 @@ export function averageItemPower(items: readonly (Item | null | undefined)[]): n
   const powers = items.filter((i): i is Item => !!i).map((i) => i.itemPower);
   return powers.length === 0 ? 0 : Math.round(powers.reduce((a, b) => a + b, 0) / powers.length);
 }
+
+/** Skill icons are generated per skill: icon.skill_<name>. */
+export function skillIconId(skillId: string): string {
+  return `icon.skill_${skillId.split('.')[1]}`;
+}

@@ -75,6 +75,14 @@ export class GameRenderer {
   private readonly tint = new THREE.Color();
   private time = 0;
   screenShake = true;
+  /** Reduce motion (B01): no hit squash, and the camera rig drops look-ahead, crowd pull-back and push-ins. */
+  get reduceMotion(): boolean {
+    return this.rig.reduceMotion;
+  }
+  set reduceMotion(on: boolean) {
+    this.rig.setReduceMotion(on);
+    if (on) this.recoils.clear();
+  }
   /** Accessibility (B044): no white hit flash on enemies. */
   reduceFlashing = false;
   /** Ash Storm exposure (0..1): infected enemies glow through the ash. */
@@ -1018,8 +1026,8 @@ export class GameRenderer {
       this.vfx.handle(event);
       if (event.type === 'damage' && !event.dot && !this.reduceFlashing) this.flashes.set(event.target, 0.1);
       // Every landed non-DoT hit on an enemy recoils, however often the hit animation is throttled (F008).
-      if (event.type === 'damage' && !event.dot && !event.toPlayer && event.amount + event.absorbed > 0 && this.objects.has(event.target)) this.recoils.set(event.target, { age: 0, crit: event.crit });
-      if (event.type === 'shake' && this.screenShake) this.rig.addTrauma(event.trauma);
+      if (event.type === 'damage' && !event.dot && !event.toPlayer && event.amount + event.absorbed > 0 && !this.reduceMotion && this.objects.has(event.target)) this.recoils.set(event.target, { age: 0, crit: event.crit });
+      if (event.type === 'shake' && this.screenShake && !this.reduceMotion) this.rig.addTrauma(event.trauma);
       if (event.type === 'levelUp') {
         const f = this.followPos;
         this.vfx.levelBurst(f.x, f.z, this.reduceFlashing);
@@ -1375,7 +1383,7 @@ export class GameRenderer {
       const last = this.lastMarker;
       // Holding the button drags the target along; mark it again only after it has moved and a moment has passed.
       if (!last || (Math.hypot(mt.x - last.x, mt.z - last.z) > 0.6 && this.time - last.at > 0.25)) {
-        this.vfx.moveMarker(mt.x, mt.z);
+        this.vfx.moveMarker(mt.x, mt.z, mt.blocked === true);
         this.lastMarker = { x: mt.x, z: mt.z, at: this.time };
       }
       return;
@@ -1433,10 +1441,17 @@ export class GameRenderer {
     (this.occlusionCue ??= new OcclusionCue(this.scene)).update(world, this.objects, this.rig.camera.position, this.followPos, cueDt, this.silhouettes, (id) => this.propSize(id));
   }
 
+  /** Loot magnet delivery (B12): a few small sparks at the hero, none with reduced flashing. */
+  magnetSpark(kind: 'gold' | 'item'): void {
+    if (this.reduceFlashing) return;
+    const f = this.followPos;
+    this.vfx.magnetSpark(f.x, f.z, kind === 'gold' ? '#ffd23a' : '#9fe8ff');
+  }
+
   /** The golden dotted guide to the first objective (F007); `goal` null hides it. */
-  setGuide(goal: { x: number; z: number } | null, x: number, z: number): void {
+  setGuide(goal: { x: number; z: number } | null, x: number, z: number, route?: readonly { x: number; z: number }[]): void {
     if (!goal && !this.guide) return;
-    (this.guide ??= new GuideLine(this.scene)).update(x, z, goal, this.time);
+    (this.guide ??= new GuideLine(this.scene)).update(x, z, goal, this.time, route);
   }
 
   setNavOverlay(on: boolean): void {

@@ -4,7 +4,8 @@
  * (kills), the guardian, the 10-minute timer, and what a clear pays out. Pure functions on the world and the
  * context, so tests drive them directly.
  */
-import { CombatStats, Dead, Elite, EnemyAI, Faction, Health, Interactable, Renderable, Transform, makeTransform } from '../../core/components';
+import { CombatStats, Dead, Elite, EnemyAI, Faction, Health, Interactable, Renderable, SkillUser, Transform, makeTransform } from '../../core/components';
+import type { AccountData } from '../../core/account';
 import type { GameContext } from '../../core/context';
 import type { Entity, World } from '../../core/ecs';
 import type { Rng } from '../../core/rng';
@@ -50,6 +51,8 @@ export interface RiftState {
   result: RiftResult | null;
   /** The cache was opened. */
   cacheOpened: boolean;
+  /** D11: the date (YYYY-MM-DD) of the daily rift this run is, or null for an ordinary rift. */
+  daily: string | null;
 }
 
 export interface RiftResult {
@@ -65,6 +68,9 @@ export interface RiftResult {
   tiers: number[];
   /** A glyph given because the character had none. */
   grantedGlyph: string | null;
+  /** D08/D11: the record this clear is measured against (the class's best at this level, or the day's best for a daily rift). */
+  record: { previous: number; improved: boolean };
+  daily: boolean;
 }
 
 // ---- Levels and scaling ---------------------------------------------------------------
@@ -113,7 +119,68 @@ export function riftOpenLevel(ctx: GameContext): number {
   return Math.max(1, Math.min(RIFT.maxLevel, Math.max((e?.riftBest ?? 0) + 1, e?.riftOpen ?? 0)));
 }
 
-export function createRift(level: number): RiftState {
+// ---- Records (D08) and the daily rift (D11) ------------------------------------------
+
+/** Days of daily-rift times the account keeps. */
+export const DAILY_KEEP = 30;
+/** The daily rift's level is seeded from the date within this band (and never above the highest open level). */
+export const DAILY_LEVELS = { min: 8, max: 28 } as const;
+
+/** Best clear time (s) of a class at a rift level; 0 when there is none. */
+export function riftRecord(account: AccountData | undefined, classId: string, level: number): number {
+  return account?.riftRecords[classId]?.[String(level)] ?? 0;
+}
+
+/** Stores a clear time when it beats the class's record. Returns the previous record (0 = none) and whether this one is better. */
+export function recordRiftTime(account: AccountData, classId: string, level: number, seconds: number): { previous: number; improved: boolean } {
+  const time = Math.round(seconds * 10) / 10;
+  const previous = riftRecord(account, classId, level);
+  if (previous > 0 && time >= previous) return { previous, improved: false };
+  (account.riftRecords[classId] ??= {})[String(level)] = time;
+  return { previous, improved: true };
+}
+
+/** Local date as YYYY-MM-DD. */
+export function dailyKey(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** FNV-1a hash of a string, the seed behind the daily rift. */
+export function dailySeed(date: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < date.length; i++) h = Math.imul(h ^ date.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/** The daily rift's level: the same for everyone on a date, capped at the highest level this account may enter. */
+export function dailyRiftLevel(date: string, open: number): number {
+  const span = DAILY_LEVELS.max - DAILY_LEVELS.min + 1;
+  return Math.max(1, Math.min(open, DAILY_LEVELS.min + (dailySeed(date) % span)));
+}
+
+/** The seed string for the daily rift's rooms and packs: the same layout all day. */
+export function dailyRiftSeed(date: string): string {
+  return `daily-rift-${date}`;
+}
+
+/** Best time of a day (0 = none), and the best of any day still kept. */
+export function dailyRecord(account: AccountData | undefined, date: string): { today: number; best: number } {
+  const times = Object.values(account?.dailyRifts ?? {});
+  return { today: account?.dailyRifts[date] ?? 0, best: times.length ? Math.min(...times) : 0 };
+}
+
+/** Stores a daily clear if it beats the day's time, and drops days older than `DAILY_KEEP`. */
+export function recordDailyTime(account: AccountData, date: string, seconds: number): { previous: number; improved: boolean } {
+  const time = Math.round(seconds * 10) / 10;
+  const previous = account.dailyRifts[date] ?? 0;
+  const improved = previous === 0 || time < previous;
+  if (improved) account.dailyRifts[date] = time;
+  const days = Object.keys(account.dailyRifts).sort();
+  for (const old of days.slice(0, Math.max(0, days.length - DAILY_KEEP))) delete account.dailyRifts[old];
+  return { previous, improved };
+}
+
+export function createRift(level: number, daily: string | null = null): RiftState {
   const lv = Math.max(1, Math.min(RIFT.maxLevel, Math.floor(level)));
   return {
     level: lv,
@@ -131,6 +198,7 @@ export function createRift(level: number): RiftState {
     collapse: 3.5,
     result: null,
     cacheOpened: false,
+    daily,
   };
 }
 
@@ -294,14 +362,16 @@ export function completeRift(world: World, ctx: GameContext, rt: RiftHost, r: Ri
   const fast = left > RIFT.time * RIFT.fastShare;
   const e = ctx.account?.endgame;
   const prevBest = e?.riftBest ?? 0;
-  const newBest = r.level > prevBest || (r.level === prevBest && (e?.riftTime ?? 0) > 0 && r.elapsed < (e?.riftTime ?? 0));
+  const daily = r.daily !== null;
+  // A daily rift pays like any clear but has its own record: it does not move the open levels, the best level or the tiers.
+  const newBest = !daily && (r.level > prevBest || (r.level === prevBest && (e?.riftTime ?? 0) > 0 && r.elapsed < (e?.riftTime ?? 0)));
   const tiers: number[] = [];
-  if (e) {
+  if (e && !daily) {
     if (r.level > e.riftBest) e.riftBest = r.level;
     e.riftOpen = Math.max(e.riftOpen, Math.min(RIFT.maxLevel, r.level + (fast ? 2 : 1)));
     if (newBest || e.riftTime === 0) e.riftTime = Math.round(r.elapsed * 10) / 10;
   }
-  for (const u of RIFT.tierUnlocks) {
+  for (const u of daily ? [] : RIFT.tierUnlocks) {
     if (r.level < u.level) continue;
     if ((e?.tierUnlocked ?? 4) < u.tier) tiers.push(u.tier);
     unlockTier(ctx, u.tier);
@@ -312,12 +382,20 @@ export function completeRift(world: World, ctx: GameContext, rt: RiftHost, r: Ri
     if (grantGlyph(ctx, id)) grantedGlyph = id;
   }
   r.attempts = RIFT_REWARDS.glyphAttempts;
-  r.result = { level: r.level, elapsed: r.elapsed, fast, open: riftOpenLevel(ctx), best: e?.riftBest ?? r.level, newBest, tiers, grantedGlyph };
+  const classId = world.query(SkillUser).map((p) => world.req(p, SkillUser).classId)[0];
+  const record = !ctx.account
+    ? { previous: 0, improved: false }
+    : r.daily !== null
+      ? recordDailyTime(ctx.account, r.daily, r.elapsed)
+      : classId
+        ? recordRiftTime(ctx.account, classId, r.level, r.elapsed)
+        : { previous: 0, improved: false };
+  r.result = { level: r.level, elapsed: r.elapsed, fast: fast && !daily, open: riftOpenLevel(ctx), best: e?.riftBest ?? r.level, newBest, tiers, grantedGlyph, record, daily };
 
   placeObject(world, 'rift.cache', 'cache', at.x + 2, at.z, 'prop.supply_chest', 1.2, '#b48cff');
   placeObject(world, 'exit', 'portal', at.x - 3, at.z - 3, 'prop.teleporter', 0.32, '#5ad2ff');
   ctx.events.push({ type: 'banner', key: 'rifts.cleared', params: { level: r.level }, seconds: 3 });
-  ctx.events.push({ type: 'interact', kind: 'riftCleared', id: String(r.level) });
+  ctx.events.push({ type: 'interact', kind: 'riftCleared', id: String(r.level), ...(daily ? { detail: 'daily' } : {}) });
   return r.result;
 }
 

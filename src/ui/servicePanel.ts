@@ -22,7 +22,7 @@ import {
   rerollCost,
   sellPrice,
 } from '../systems/hub/services';
-import { codexEntries, MASTERWORK, RECIPE_DEFS, TEMPERING, type RecipeOption } from '../data/endgame/crafting';
+import { CODEX_DUNGEON_REGION, codexEntries, codexMissingDungeons, MASTERWORK, RECIPE_DEFS, TEMPERING, type RecipeOption } from '../data/endgame/crafting';
 import {
   canMasterwork,
   canTemper,
@@ -33,6 +33,7 @@ import {
   temperCost,
 } from '../systems/endgame/crafting';
 import { effectiveAffixes } from '../systems/endgame/itemMods';
+import { salvagePreview } from '../systems/endgame/crafting';
 import { powerScale, roundStat, salvageValue } from '../systems/loot/generate';
 import { renderItemCell } from './inventoryPanel';
 import { FILTER_CHIPS, SORT_MODES, filterMatches, isJunk, upgradeSign, type FilterChip, type SortMode } from './inventoryLogic';
@@ -69,6 +70,13 @@ export interface ServiceActions {
   /** Reorder the stash itself with the same rules as the backpack sort (B020). */
   sortStash(mode: SortMode): void;
   buy(index: number): void;
+  /** D05: gold for the next stock reroll, and the reroll itself (pays, then rolls new stock). */
+  rerollCost?(): number;
+  rerollStock?(): void;
+  /** D10: materials the character carries and the ones in the shared stash; moving them all either way. */
+  materials?(): { character: Readonly<Record<string, number>>; stash: Readonly<Record<string, number>> };
+  depositMaterials?(): void;
+  withdrawMaterials?(): void;
   sell(gridIndex: number): void;
   reroll(gridIndex: number, affixIndex: number): void;
   /** Salvage the common and magic items of the backpack, except the grid indexes in `keep`. */
@@ -84,6 +92,13 @@ export interface ServiceActions {
   masterworkRankUp(gridIndex: number): void;
   masterworkReset(gridIndex: number): void;
   codexImprint(aspectId: string, gridIndex: number): void;
+}
+
+/** D06: "Shaft 13 (Deep Mines)" for a Codex dungeon. */
+export function codexDungeonLabel(dungeon: string): string {
+  const region = CODEX_DUNGEON_REGION[dungeon];
+  const name = t(`instances.names.${dungeon}`);
+  return region ? t('crafting.codex.dungeonIn', { dungeon: name, region: t(`zones.${region}.name`) }) : name;
 }
 
 /** Costs from this many gold, and any rare or better item, ask for a second tap (P013). */
@@ -320,7 +335,21 @@ export class ServicePanel {
       }
       grid.appendChild(slot);
     });
-    return [div('inv-hint', touchText('services.vendor.hint')), grid, ...this.buybackRow(inv)];
+    const out: HTMLElement[] = [div('inv-hint', touchText('services.vendor.hint')), grid];
+    const cost = this.actions.rerollCost?.();
+    if (cost !== undefined) {
+      const reroll = button(t('services.vendor.reroll', { gold: cost.toLocaleString('en-US') }), () => {
+        this.actions.rerollStock?.();
+        this.refresh();
+      });
+      reroll.dataset.testid = 'vendor-reroll';
+      reroll.title = t('services.vendor.rerollHint');
+      reroll.classList.toggle('unaffordable', cost > inv.gold);
+      reroll.disabled = cost > inv.gold;
+      out.push(reroll);
+    }
+    out.push(...this.buybackRow(inv));
+    return out;
   }
 
   /** B023: the last items sold, one line of cells at the stock cell size; a click buys one back at the sale price. */
@@ -485,7 +514,35 @@ export class ServicePanel {
     });
     store.dataset.testid = 'stash-store-junk';
     store.disabled = junk.items.length === 0 || free === 0;
-    out.push(store, div('inv-hint', touchText('services.stash.hint')));
+    out.push(store, ...this.materialButtons(), div('inv-hint', touchText('services.stash.hint')));
+    return out;
+  }
+
+  /** D10: "Deposit all materials" (and "Take all materials" back) for the endgame materials, which are otherwise per character. */
+  private materialButtons(): HTMLElement[] {
+    const m = this.actions.materials?.();
+    if (!m) return [];
+    const sum = (r: Readonly<Record<string, number>>) => Object.values(r).reduce((a, b) => a + b, 0);
+    const mine = sum(m.character);
+    const kept = sum(m.stash);
+    const out: HTMLElement[] = [];
+    const deposit = button(t('services.stash.depositMaterials', { n: mine }), () => {
+      this.actions.depositMaterials?.();
+      this.refresh();
+    });
+    deposit.dataset.testid = 'stash-deposit-materials';
+    deposit.disabled = mine === 0;
+    deposit.title = Object.entries(m.character).filter(([, n]) => n > 0).map(([id, n]) => `${n} ${t(`crafting.materials.${id}`)}`).join(', ');
+    out.push(deposit);
+    if (kept > 0) {
+      const take = button(t('services.stash.withdrawMaterials', { n: kept }), () => {
+        this.actions.withdrawMaterials?.();
+        this.refresh();
+      });
+      take.dataset.testid = 'stash-withdraw-materials';
+      take.title = Object.entries(m.stash).filter(([, n]) => n > 0).map(([id, n]) => `${n} ${t(`crafting.materials.${id}`)}`).join(', ');
+      out.push(take);
+    }
     return out;
   }
 
@@ -712,10 +769,13 @@ export class ServicePanel {
     summary.dataset.testid = 'salvage-summary';
     const update = () => {
       const taken = junk.items.filter((e) => !keep.has(e.index));
-      summary.textContent = t(taken.length === 1 ? 'services.blacksmith.salvageSummaryOne' : 'services.blacksmith.salvageSummary', {
-        n: taken.length,
-        gold: taken.reduce((sum, e) => sum + salvageValue(e.item), 0).toLocaleString('en-US'),
-      });
+      const dust = salvagePreview(taken.map((e) => e.item)).lumen_dust;
+      // D09: the materials come before the player confirms.
+      summary.textContent =
+        t(taken.length === 1 ? 'services.blacksmith.salvageSummaryOne' : 'services.blacksmith.salvageSummary', {
+          n: taken.length,
+          gold: taken.reduce((sum, e) => sum + salvageValue(e.item), 0).toLocaleString('en-US'),
+        }) + (dust > 0 ? ` ${t('items.bag.salvageMaterials', { n: dust, material: t('crafting.materials.lumen_dust') })}` : '');
     };
     const list = div('salvage-list', '');
     for (const e of junk.items.slice(0, 8)) {
@@ -979,13 +1039,20 @@ export class ServicePanel {
       this.refresh();
     });
     out.push(head, bar);
+    // D06: where to go for what is missing, even while the list is folded.
+    const next = codexMissingDungeons(eg.codex).slice(0, 3);
+    if (next.length > 0) {
+      const hint = div('service-note codex-next', t('crafting.codex.next', { list: next.map((m) => codexDungeonLabel(m.dungeon)).join(', ') }));
+      hint.dataset.testid = 'codex-next';
+      out.push(hint);
+    }
     if (this.codexLockedOpen) {
       for (const [dungeon, aspect] of locked.filter(([, a]) => codexVisible(a, null, false, this.codexCategory))) {
         const row = div('aspect-row codex-row aspect-compact locked', '');
         row.dataset.testid = `codex-${aspect}`;
         const icon = artUrl(`aspects/${aspect}`);
         if (icon) row.append(Object.assign(document.createElement('img'), { src: icon, alt: '', className: 'aspect-icon' }));
-        row.append(div('aspect-name', t(`aspects.${aspect}.name`)), div('aspect-desc', t('crafting.codex.locked', { dungeon: t(`instances.names.${dungeon}`) })));
+        row.append(div('aspect-name', t(`aspects.${aspect}.name`)), div('aspect-desc', t('crafting.codex.locked', { dungeon: codexDungeonLabel(dungeon) })));
         out.push(row);
       }
     }

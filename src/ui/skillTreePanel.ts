@@ -21,7 +21,7 @@ import type { SkillTree, TreeNode } from '../data/skillTree/schema';
 import { BRANCHES } from '../data/skillTree/schema';
 import type { CompiledSkill } from '../systems/skillCompile';
 import { branchUnlocked, canLearn, canRefund, maxRank, pointsInTree, pointsSpent, type TreeState } from '../systems/skillTree';
-import { nextRankPercent, slotForKey } from './serviceLogic';
+import { nextRankPercent, skillIconId, slotForKey } from './serviceLogic';
 
 export interface SkillTreeView {
   tree: SkillTree;
@@ -68,10 +68,8 @@ export function nodeDescription(n: TreeNode): string {
   return t(`tree.${n.id}.desc`);
 }
 
-/** Skill icons are generated per skill: icon.skill_<name>. */
-export function skillIconId(skillId: string): string {
-  return `icon.skill_${skillId.split('.')[1]}`;
-}
+// Lives in serviceLogic so game.ts needs no static import of this lazy panel (C02).
+export { skillIconId };
 
 /**
  * What a node shows when it cannot be learned (P066): the reason for `data-reason` and whether a lock is drawn.

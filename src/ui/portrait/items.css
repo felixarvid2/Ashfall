@@ -324,3 +324,16 @@
 }
 #ui.touch-ui .inv-cell.pressing, #ui.touch-ui .tree-slot.pressing { transform: scale(0.94); }
 @media (prefers-reduced-motion: reduce) { .hold-ring { animation: none; --hold-a: 360deg; } }
+
+/* ---- Feats list in the character panel (D12, D13) ---- */
+.char-feat { flex-wrap: wrap; cursor: default; }
+.char-feat-icon { width: 28px; height: 28px; flex: none; object-fit: contain; opacity: 0.55; filter: grayscale(0.7); }
+.char-feat.done .char-feat-icon { opacity: 1; filter: none; }
+.char-feat-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.char-feat-desc { font-size: 0.85em; color: var(--ui-muted); }
+.char-feat.done .char-row-label { color: var(--ui-text); }
+.char-feat-title { flex-basis: 100%; margin: 0 0 4px 38px; padding: 2px 8px; font: inherit; font-size: 0.85em; text-align: left; color: var(--ui-accent); background: none; border: 1px solid var(--ui-border); cursor: pointer; }
+.char-feat-title.worn { background: #2a2118; }
+.char-feat-title.locked { color: var(--ui-muted); border-style: dashed; cursor: default; }
+.char-slot-title { font-size: 0.8em; font-style: italic; letter-spacing: 0.06em; color: var(--ui-accent); }
+.char-slot-title[hidden] { display: none; }

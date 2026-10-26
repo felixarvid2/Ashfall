@@ -45,7 +45,7 @@ export interface QuestState {
   /** Count for kill/interact steps. */
   progress: number;
   /** Decision made in a choice step. */
-  choice?: string;
+  choice?: string | undefined;
 }
 
 export interface QuestRuntime {

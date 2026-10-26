@@ -7,7 +7,7 @@ import { zoneDef } from '../data/zones';
 import type { ArenaDef } from '../data/zones/testArena';
 import { STORM } from '../world/storm';
 
-export type Atmosphere = Pick<ArenaDef, 'fog' | 'ambient' | 'playerLight'> & Partial<Pick<ArenaDef, 'hemisphere' | 'grade' | 'dark'>>;
+export type Atmosphere = Pick<ArenaDef, 'fog' | 'ambient' | 'playerLight'> & { [K in 'hemisphere' | 'grade' | 'dark']?: ArenaDef[K] | undefined };
 
 const SOURCE: Record<BossMemory['look'], string> = {
   ash: 'zone.cinder_flats',

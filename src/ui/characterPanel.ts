@@ -11,6 +11,21 @@ import { panelStack } from './panelStack';
 import { tooltipSheet } from './tooltipSheet';
 import { getJsonPref, setJsonPref } from '../core/localPrefs';
 
+/** One line of the feats list (D12): the game fills these from the account. */
+export interface FeatRow {
+  id: string;
+  name: string;
+  description: string;
+  /** Icon image URL, null when it is not loaded. */
+  icon: string | null;
+  value: number;
+  goal: number;
+  done: boolean;
+  /** The cosmetic title this feat grants (D13), and whether it is the one worn. */
+  title: string | null;
+  worn: boolean;
+}
+
 export interface CharacterSnapshot {
   className: string;
   /** The hero's own name; the class name when none was chosen. */
@@ -27,6 +42,13 @@ export interface CharacterSnapshot {
   gearPower?: number;
   bag?: { used: number; max: number };
   portraitUrl?: string | null;
+  /** D12: every feat with its progress; the section is hidden when absent. */
+  feats?: FeatRow[];
+}
+
+export interface CharacterPanelActions {
+  /** Wear a granted title (a feat id) or none (null) under the name on character select. */
+  wearTitle?(featId: string | null): void;
 }
 
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
@@ -137,8 +159,13 @@ export class CharacterPanel {
   /** The stat whose explanation sheet is open, and the element that shows its value. */
   private statSheet: { row: string; value: HTMLElement } | null = null;
   private last: Record<SectionKey, StatRow[]> | null = null;
+  private readonly featsBlock = el('div', 'char-section char-feats');
+  private readonly featsHead = el('button', 'char-section-head');
+  private readonly featsList = el('div', 'char-rows char-feat-list');
+  private featsOpen = false;
+  private featsSignature = '';
 
-  constructor(parent: HTMLElement, private readonly snapshot: () => CharacterSnapshot) {
+  constructor(parent: HTMLElement, private readonly snapshot: () => CharacterSnapshot, private readonly actions: CharacterPanelActions = {}) {
     this.root = el('div', 'character-panel panel');
     this.root.hidden = true;
     const title = el('h2', undefined, t('ui.character'));
@@ -166,7 +193,16 @@ export class CharacterPanel {
     const footer = el('div', 'char-footer');
     footer.append(this.skillsBtn, this.bagBtn);
 
-    this.body.append(this.card, this.resourceEl, sections, footer);
+    this.featsBlock.dataset.testid = 'char-feats';
+    this.featsHead.type = 'button';
+    this.featsHead.addEventListener('click', () => {
+      this.featsOpen = !this.featsOpen;
+      this.applyFeatsOpen();
+    });
+    this.featsBlock.append(this.featsHead, this.featsList);
+    this.applyFeatsOpen();
+
+    this.body.append(this.card, this.resourceEl, sections, this.featsBlock, footer);
     this.root.append(title, this.body);
     parent.appendChild(this.root);
   }
@@ -186,6 +222,45 @@ export class CharacterPanel {
     if (!panelStack.has(id)) return;
     if (panelStack.has('character') && panelStack.isOpen('character')) panelStack.close('character');
     panelStack.open(id);
+  }
+
+  private applyFeatsOpen(): void {
+    this.featsBlock.classList.toggle('collapsed', !this.featsOpen);
+    this.featsHead.setAttribute('aria-expanded', String(this.featsOpen));
+    this.featsList.hidden = !this.featsOpen;
+  }
+
+  /** D12: the feats list, rebuilt only when a number, a flag or the worn title changes. */
+  private refreshFeats(feats: FeatRow[] | undefined): void {
+    this.featsBlock.hidden = !feats || feats.length === 0;
+    if (!feats) return;
+    const done = feats.filter((f) => f.done).length;
+    const signature = feats.map((f) => `${f.id}:${f.value}:${f.done ? 1 : 0}:${f.worn ? 1 : 0}`).join('|');
+    if (signature === this.featsSignature) return;
+    this.featsSignature = signature;
+    this.featsHead.replaceChildren(el('h3', undefined, t('feats.heading', { done, total: feats.length })), el('span', 'char-section-chev', '▾'));
+    this.featsList.replaceChildren(
+      ...feats.map((f) => {
+        const row = el('div', f.done ? 'char-row char-feat done' : 'char-row char-feat');
+        row.dataset.feat = f.id;
+        row.title = f.description;
+        const icon = f.icon ? Object.assign(document.createElement('img'), { src: f.icon, alt: '', className: 'char-feat-icon', draggable: false }) : el('span', 'char-feat-icon');
+        const text = el('span', 'char-feat-text');
+        text.append(el('span', 'char-row-label', f.name), el('span', 'char-feat-desc', f.description));
+        row.append(icon, text, el('span', 'char-row-value', f.done ? t('feats.done') : `${f.value.toLocaleString('en-US')} / ${f.goal.toLocaleString('en-US')}`));
+        if (f.done && f.title && this.actions.wearTitle) {
+          const wear = el('button', f.worn ? 'char-feat-title worn' : 'char-feat-title', f.worn ? t('feats.titleWorn', { title: f.title }) : t('feats.wear', { title: f.title }));
+          wear.type = 'button';
+          wear.dataset.testid = `feat-title-${f.id}`;
+          wear.addEventListener('click', () => {
+            this.actions.wearTitle?.(f.worn ? null : f.id);
+            this.refresh();
+          });
+          row.append(wear);
+        } else if (f.title) row.append(el('span', 'char-feat-title locked', t('feats.titleLocked', { title: f.title })));
+        return row;
+      }),
+    );
   }
 
   private buildSection(key: SectionKey): HTMLElement {
@@ -219,6 +294,7 @@ export class CharacterPanel {
     const rows = characterRows(s);
     this.last = rows;
     for (const key of ['attributes', 'offense', 'defense', 'utility'] as const) this.refreshSection(key, rows[key]);
+    this.refreshFeats(s.feats);
     if (this.statSheet) {
       const found = Object.values(rows).flat().find((r) => r.key === this.statSheet!.row);
       if (found) this.statSheet.value.textContent = found.value;

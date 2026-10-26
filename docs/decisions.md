@@ -545,6 +545,12 @@ the L30 exorcist (`k.zealot`, Rapid, Radiant, Litany) on the corrupted dummy unl
   under the 6:30 floor. The cost is a flat early-game throttle (the first sigils are Devotion-limited) and leaves the
   per-pulse numbers and the L30 coefficients alone; a coefficient of 0.5 gave the same band but costs 17 % of every
   later pulse. Exorcist L10 (bot) seeds a/b/c 8:10/6:18/7:01 to 8:48/7:23/6:53; seeds d/e/f now 7:41/7:02/7:18.
+- **Level-up shove retune (balance:check).** The shove (knockback and stun on level-up) moved the bot's timings:
+  healer seed a 14:06 (ceiling 14:00), exorcist seed b 6:27 (floor 6:30). The bot's L10 time is noisy in every
+  lever (Magnus cost 41-45 swings seed b between 6:15 and 8:08), so the band is met by a small shift of three
+  numbers rather than one: Holy Light 0.6 to 0.56 (about 2.2 per second; the exorcist's early filler, so it is slower
+  early), Magnus Exorcismus cost 40 to 41, and Heal's corrupted burst 2.2 to 2.8 (the healer's early damage). Exorcist
+  L10 seeds a/b/c/d 7:44/7:31/7:46/7:30; healer a/b/c/d 13:16/10:47/11:29/13:33; Shepherd 12:56/11:32/11:43/11:18.
 
 ### 2026-10-25 — Balance pass for Bastion, Spectre and Xenomant (G009-G017, G025)
 Measured with `npm run sim` (new `--dummy`, `--pack`, `--filter` and ten L30 builds) and `npm run play`; the table is
@@ -601,3 +607,23 @@ in `docs/balance.md`. Real decisions:
 - **Furnace Cleave gets reach, not damage.** Range 3.4 to 3.9 m (L10 10:24 / 11:13 to 8:51 / 8:46; seeds c / d 8:26 /
   9:37). Raising the coefficient to 3.0 gave 10:52 on seed a and 3.3 broke the "+10 % on the L15 row" limit.
 - **Heat Vent** `perResource` 0.10 to 0.15: the L30 vent build 744 to 816.
+
+### 2026-10-25 — Round 3 gameplay (D01-D14)
+- **Halo of the Penitent** keeps its twice-as-long Sanctuary but the cooldown is now twice as long too (x2, was
+  x1.5): uptime 14 s / 40 s = 35 % (was 47 %). A test in `lightbearer.test.ts` pins it.
+- **Zealot stacking was real.** Zealot (+15 % ranged, multiplicative) with Sacred Flame and Radiant on all four slots
+  that take it measured 1,982 DPS (corrupted dummy) against 936 for the plain exorcist, well past the best other
+  L30 build (Bastion 972, mythic 1,100). Radiant became additive and 4-7 % (was multiplicative 10-20 %): the same
+  stack is 1,151 DPS (+23 %, and 791 on a neutral dummy). `balance.test.ts` fails if the stacked build goes above
+  1.1x the best build of another class. The sim has a new "Radiant on 4 slots" build for this.
+- **Daily rift.** The level is seeded from the local date (8 to 28, never above the highest open level), the rooms
+  come from the date too. It pays like a clear (glyph attempts, cache) but does not move the open levels, the best
+  level, the tiers or the class records; its times live in `account.dailyRifts` (last 30 days).
+- **Local records** (`account.riftRecords`, class -> level -> seconds), **feats** (`account.feats`: counters, done
+  times, worn title), the trader's reroll count (`account.vendor`) and the shared materials (`account.materials`)
+  are new account fields with defaults, so the account version stays 1 and old blobs load unchanged (tested).
+- **Trader reroll** costs 60 x (1 + 0.12 x level) x 1.6^(rerolls today); the count restarts on a new local date.
+- **Materials are per character**, so "Deposit all materials" moves them into an account pool and the stash panel
+  offers "Take all materials" to bring them into any character (crafting reads the character's own).
+- **Salvage junk now pays Lumen Dust** for marked legendaries (it paid gold only), and every salvage confirmation
+  names the dust before the player confirms.

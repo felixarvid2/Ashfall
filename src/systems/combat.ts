@@ -31,6 +31,7 @@ import {
   Summon,
   Transform,
   makeTransform,
+  type HitRecord,
   type HitSource,
   type StatusInstance,
   type Team,
@@ -274,6 +275,31 @@ export interface DamageOptions {
   source?: Entity;
 }
 
+/** Seconds of damage the death recap adds up (B04). */
+export const RECAP_WINDOW = 5;
+/** Direct hits the death recap lists (B04). */
+export const RECAP_HITS = 3;
+
+/**
+ * Remember a hit on the player for the death recap (B04): everything of the last `RECAP_WINDOW` seconds (for the damage
+ * total) plus the last `RECAP_HITS` direct hits however old. Damage over time counts toward the total, not the list.
+ */
+export function recordHit(health: Health, rec: HitRecord): void {
+  const list = (health.recentHits ??= []);
+  list.push(rec);
+  let direct = 0;
+  const keep: HitRecord[] = [];
+  for (let i = list.length - 1; i >= 0; i--) {
+    const h = list[i]!;
+    const isRecent = rec.at - h.at <= RECAP_WINDOW;
+    const isDirect = !h.dot && direct < RECAP_HITS;
+    if (!h.dot) direct++;
+    if (isRecent || isDirect) keep.push(h);
+  }
+  keep.reverse();
+  health.recentHits = keep.length > 80 ? keep.slice(-80) : keep;
+}
+
 /** What the death screen needs to name an enemy that hit the player (undefined for anything that is not an enemy). */
 export function hitSourceOf(world: World, source: Entity, now: number): HitSource | undefined {
   const ai = world.get(source, EnemyAI);
@@ -346,7 +372,14 @@ export function applyDamage(world: World, ctx: GameContext, target: Entity, amou
     world.add(target, Invulnerable, { remaining: CHEAT_DEATH_INVULNERABLE });
   }
   if (!(isPlayer && ctx.debug.godMode)) health.current -= remaining;
-  if (isPlayer && opts.source !== undefined && remaining > 0) health.lastHitSource = hitSourceOf(world, opts.source, ctx.time) ?? health.lastHitSource;
+  if (isPlayer && opts.source !== undefined && remaining > 0) {
+    const hit = hitSourceOf(world, opts.source, ctx.time);
+    if (hit) health.lastHitSource = hit;
+  }
+  if (isPlayer && remaining + absorbed > 0) {
+    const src = opts.source !== undefined ? hitSourceOf(world, opts.source, ctx.time) : undefined;
+    recordHit(health, { ...(src ? { src } : {}), amount: remaining + absorbed, damageType: opts.damageType, dot: opts.dot, at: ctx.time });
+  }
   markInCombat(world, target);
   const ai = world.get(target, EnemyAI);
   if (ai) ai.aggro = true;
@@ -617,11 +650,10 @@ export function spawnEnemyHazard(
     tickTimer: 0,
     ...(spec.color ? { color: spec.color } : {}),
     ...(spec.drift ? { drift: true } : {}),
-    applies: spec.applies.map((a) => ({
-      status: a.status,
-      duration: a.duration,
-      dps: a.dps ?? (a.coefficient !== undefined && stats ? (stats.weaponDamage * a.coefficient) / a.duration : undefined),
-    })),
+    applies: spec.applies.map((a) => {
+      const dps = a.dps ?? (a.coefficient !== undefined && stats ? (stats.weaponDamage * a.coefficient) / a.duration : undefined);
+      return { status: a.status, duration: a.duration, ...(dps !== undefined && { dps }) };
+    }),
     attackerLevel: stats?.level ?? 1,
   });
   return hz;

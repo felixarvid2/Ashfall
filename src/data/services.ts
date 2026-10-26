@@ -21,6 +21,8 @@ export const VENDOR = {
     deepMines: { legendary: 10, unique: 0.6 },
     theCore: { legendary: 12, unique: 0.8 },
   } as Record<string, { legendary: number; unique: number }>,
+  /** D05: paying to roll the stock again. Cost = base × (1 + perLevel × player level) × growth ^ rerolls already paid today (the count resets on a new date). */
+  reroll: { base: 60, perLevel: 0.12, growth: 1.6 },
   /** Stock slots reserved for a legendary the player's class can use (its base, and its aspect when the aspect is class-bound). */
   ownClassLegendarySlots: 1,
   /** Buy price = max(minPrice, salvage value × priceMultiplier) × the rarity's multiplier. */

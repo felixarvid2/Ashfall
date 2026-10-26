@@ -140,7 +140,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimO
     if (slot) inv.equipped[slot] = item;
   }
   for (const [slot, id, value] of build.aspects ?? []) {
-    const item = inv.equipped[slot] ?? generateItem(rng, { itemPower, classId, uid: `a-${slot}`, rarity: 'rare', baseId: BASE_FOR_SLOT[slot] });
+    const item = inv.equipped[slot] ?? generateItem(rng, { itemPower, classId, uid: `a-${slot}`, rarity: 'rare', ...(BASE_FOR_SLOT[slot] !== undefined && { baseId: BASE_FOR_SLOT[slot] }) });
     item.aspect = { id, value };
     item.rarity = 'legendary';
     inv.equipped[slot] = item;

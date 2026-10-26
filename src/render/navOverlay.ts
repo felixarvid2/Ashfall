@@ -261,23 +261,42 @@ export function guideOpacity(dist: number): number {
  * sliding toward the goal with `time`. No dot lies past the goal.
  */
 export function guideDots(px: number, pz: number, tx: number, tz: number, time: number): { x: number; z: number }[] {
-  const dist = Math.hypot(tx - px, tz - pz);
-  if (dist < 1e-3) return [];
-  const dx = (tx - px) / dist;
-  const dz = (tz - pz) / dist;
-  const shift = (time * GUIDE_SPEED) % GUIDE_SPACING;
+  return guideDotsAlong([{ x: px, z: pz }, { x: tx, z: tz }], time);
+}
+
+/**
+ * Dot positions along a route (the hero first, the goal last; B05): up to `GUIDE_DOTS` of them, `GUIDE_SPACING` apart
+ * measured along the route, sliding toward its end with `time`. None lies past the end.
+ */
+export function guideDotsAlong(route: readonly { x: number; z: number }[], time: number): { x: number; z: number }[] {
   const out: { x: number; z: number }[] = [];
-  for (let i = 0; i < GUIDE_DOTS; i++) {
-    const d = 2 + i * GUIDE_SPACING + shift;
-    if (d >= dist) break;
-    out.push({ x: px + dx * d, z: pz + dz * d });
+  if (route.length < 2) return out;
+  let total = 0;
+  for (let i = 1; i < route.length; i++) total += Math.hypot(route[i]!.x - route[i - 1]!.x, route[i]!.z - route[i - 1]!.z);
+  if (total < 1e-3) return out;
+  const shift = (time * GUIDE_SPEED) % GUIDE_SPACING;
+  let seg = 1;
+  let segStart = 0;
+  let segLen = Math.hypot(route[1]!.x - route[0]!.x, route[1]!.z - route[0]!.z);
+  for (let n = 0; n < GUIDE_DOTS; n++) {
+    const d = 2 + n * GUIDE_SPACING + shift;
+    if (d >= total) break;
+    while (d > segStart + segLen && seg < route.length - 1) {
+      segStart += segLen;
+      seg++;
+      segLen = Math.hypot(route[seg]!.x - route[seg - 1]!.x, route[seg]!.z - route[seg - 1]!.z);
+    }
+    const a = route[seg - 1]!;
+    const b = route[seg]!;
+    const f = segLen > 1e-6 ? (d - segStart) / segLen : 0;
+    out.push({ x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f });
   }
   return out;
 }
 
 /**
- * A golden dotted line on the ground from the hero toward the first objective. It is a straight line, not a route:
- * it shows the direction, and the minimap and quest tracker still carry the details.
+ * A golden dotted line on the ground from the hero to the first objective. It follows the walking route when the game
+ * has one (B05) and is a straight line otherwise; the minimap and quest tracker still carry the details.
  */
 export class GuideLine {
   private readonly points: THREE.Points;
@@ -303,14 +322,14 @@ export class GuideLine {
     return this.points.visible ? this.points.geometry.drawRange.count : 0;
   }
 
-  /** `goal` null hides the line. */
-  update(px: number, pz: number, goal: { x: number; z: number } | null, time: number): void {
+  /** `goal` null hides the line. `route` (waypoints after the hero, ending at the goal) bends it round obstacles. */
+  update(px: number, pz: number, goal: { x: number; z: number } | null, time: number, route?: readonly { x: number; z: number }[]): void {
     const opacity = goal ? guideOpacity(Math.hypot(goal.x - px, goal.z - pz)) : 0;
     if (!goal || opacity <= 0) {
       this.points.visible = false;
       return;
     }
-    const dots = guideDots(px, pz, goal.x, goal.z, time);
+    const dots = route && route.length > 0 ? guideDotsAlong([{ x: px, z: pz }, ...route], time) : guideDots(px, pz, goal.x, goal.z, time);
     dots.forEach((d, i) => this.position.setXYZ(i, d.x, 0.14, d.z));
     this.position.needsUpdate = true;
     this.points.geometry.setDrawRange(0, dots.length);

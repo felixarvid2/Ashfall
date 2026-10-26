@@ -92,6 +92,10 @@ export const SettingsSchema = z.object({
   /** Touch controls: 'auto' shows them on touch screens. */
   touchControls: z.enum(['auto', 'on', 'off']).default('auto'),
   screenShake: z.boolean().default(true),
+  /** Accessibility: no slow-motion, push-in, letterbox, camera look-ahead, crowd pull-back or hit squash (B01). */
+  reduceMotion: z.boolean().default(false),
+  /** Onboarding tips and hints (the coach, the first-run banners); "Reset tips" shows them again (B06). */
+  showTips: z.boolean().default(true),
   /** Freeze the simulation while a menu is open and no enemy is within 12 m (always safe in the hub). */
   pauseInMenus: z.boolean().default(true),
   /** Vibration on touch devices (src/ui/haptics.ts). */
@@ -105,6 +109,8 @@ export const SettingsSchema = z.object({
   textScale: z.number().min(0.75).max(2).default(1),
   language: z.string().default('en'),
   keybindings: z.object(actionShape).partial().default({}),
+  /** Gamepad buttons per action ("Pad0" is A); only actions that differ from DEFAULT_PADBINDINGS are stored (A02). */
+  padBindings: z.record(z.string(), z.array(z.string())).default({}),
   /** Accessibility: soften screen flashes, hit flashes and pulsing (docs/ui/diablo-audit-panels.md B044). */
   reduceFlashing: z.boolean().default(false),
   /** Accessibility: colour-blind palette for rarity, life/danger and status colours (B044). */
@@ -208,6 +214,126 @@ export function overridesOf(bindings: Record<Action, string[]>): Settings['keybi
   return out;
 }
 
+// ---- Gamepad bindings (round 3, A02) --------------------------------------------------------------
+
+/**
+ * What a pad button can do: the rebindable keyboard actions that make sense on a pad, plus the two basic slots that
+ * the mouse buttons cover on a keyboard (`attack` = left button, `altAttack` = right button) and `pause` (Start).
+ */
+export const PAD_ACTIONS = [
+  'attack',
+  'altAttack',
+  'skill1',
+  'skill2',
+  'skill3',
+  'skill4',
+  'dodge',
+  'potion',
+  'pickup',
+  'mount',
+  'flare',
+  'inventory',
+  'character',
+  'skills',
+  'quests',
+  'map',
+  'pause',
+] as const;
+export type PadAction = (typeof PAD_ACTIONS)[number];
+
+/**
+ * Pad buttons are "Pad<n>" with n the standard-mapping index: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 Select,
+ * 9 Start, 10 L3, 11 R3, 12-15 D-pad up/down/left/right. The sticks move and aim and are not rebindable; menus use
+ * the D-pad, A, B, X, Y and the bumpers as fixed buttons (src/ui/focusNav.ts).
+ */
+export const DEFAULT_PADBINDINGS: Record<PadAction, string[]> = {
+  attack: ['Pad2'],
+  altAttack: ['Pad3'],
+  skill1: ['Pad4'],
+  skill2: ['Pad5'],
+  skill3: ['Pad6'],
+  skill4: ['Pad7'],
+  dodge: ['Pad1'],
+  potion: ['Pad12'],
+  pickup: ['Pad0'],
+  mount: ['Pad13'],
+  flare: ['Pad14'],
+  inventory: ['Pad15'],
+  character: ['Pad10'],
+  skills: ['Pad11'],
+  quests: [],
+  map: ['Pad8'],
+  pause: ['Pad9'],
+};
+
+export function resolvePadBindings(settings: Settings): Record<PadAction, string[]> {
+  const out = { ...DEFAULT_PADBINDINGS };
+  // Settings built by hand (tests) or saved before the pad layer have none; unknown action names are ignored.
+  for (const a of PAD_ACTIONS) {
+    const own = settings.padBindings?.[a];
+    if (own) out[a] = [...own];
+  }
+  return out;
+}
+
+/** Pad buttons that can be bound: any face, shoulder, stick-click or D-pad button except Home (the system button). */
+export function isBindablePadButton(code: string): boolean {
+  const n = /^Pad(\d+)$/.exec(code)?.[1];
+  return n !== undefined && Number(n) <= 15;
+}
+
+/** Actions other than `action` that already use the button. */
+export function padConflicts(bindings: Record<PadAction, string[]>, action: PadAction, code: string): PadAction[] {
+  return PAD_ACTIONS.filter((a) => a !== action && bindings[a].includes(code));
+}
+
+/** Only the actions whose buttons differ from the defaults are stored. */
+export function padOverridesOf(bindings: Record<PadAction, string[]>): Settings['padBindings'] {
+  const out: Settings['padBindings'] = {};
+  for (const a of PAD_ACTIONS) {
+    const keys = bindings[a];
+    const def = DEFAULT_PADBINDINGS[a];
+    if (keys.length !== def.length || keys.some((k, i) => k !== def[i])) out[a] = [...keys];
+  }
+  return out;
+}
+
+export interface PadRebindResult {
+  padBindings: Settings['padBindings'] | null;
+  conflicts: PadAction[];
+}
+
+/** Same rules as `rebindKey`: a taken button warns first, `force` swaps it over; an action never loses its last button by a swap. */
+export function rebindPad(settings: Settings, action: PadAction, slot: number, code: string, force = false): PadRebindResult {
+  const current = resolvePadBindings(settings);
+  const conflicts = padConflicts(current, action, code);
+  if (conflicts.length > 0 && !force) return { padBindings: null, conflicts };
+  const next = {} as Record<PadAction, string[]>;
+  for (const a of PAD_ACTIONS) next[a] = [...current[a]];
+  const old = next[action][slot];
+  for (const other of conflicts) {
+    next[other] = next[other].filter((k) => k !== code);
+    if (old !== undefined && !next[other].includes(old)) next[other].push(old);
+  }
+  const keys = next[action];
+  if (slot >= keys.length) keys.push(code);
+  else keys[slot] = code;
+  next[action] = keys.filter((k, i) => keys.indexOf(k) === i).slice(0, MAX_KEYS_PER_ACTION);
+  return { padBindings: padOverridesOf(next), conflicts };
+}
+
+/** Back to the default buttons of one action; a button another action took in the meantime goes back too (a swap). */
+export function resetPadBinding(settings: Settings, action: PadAction): Settings['padBindings'] {
+  const current = resolvePadBindings(settings);
+  const next = {} as Record<PadAction, string[]>;
+  for (const a of PAD_ACTIONS) next[a] = [...current[a]];
+  const wanted = DEFAULT_PADBINDINGS[action];
+  for (const other of PAD_ACTIONS) if (other !== action) next[other] = next[other].filter((k) => !wanted.includes(k));
+  next[action] = [...wanted];
+  for (const a of PAD_ACTIONS) if (next[a].length === 0) next[a] = [...DEFAULT_PADBINDINGS[a]];
+  return padOverridesOf(next);
+}
+
 // ---- Reset to defaults (B047) -------------------------------------------------------------------
 
 export type SettingsTabId = 'sound' | 'display' | 'controls';
@@ -223,6 +349,8 @@ export function tabDefaults(tab: SettingsTabId, touch = false): Partial<Settings
       textScale: d.textScale,
       graphics: touch ? 'medium' : d.graphics,
       screenShake: d.screenShake,
+      reduceMotion: d.reduceMotion,
+      showTips: d.showTips,
       showFps: touch ? false : d.showFps,
       haptics: d.haptics,
       pauseInMenus: d.pauseInMenus,
@@ -233,7 +361,7 @@ export function tabDefaults(tab: SettingsTabId, touch = false): Partial<Settings
     };
   }
   if (tab === 'controls') {
-    return { moveMode: d.moveMode, touchControls: d.touchControls, touchLayout: d.touchLayout, buttonScale: d.buttonScale, keybindings: {} };
+    return { moveMode: d.moveMode, touchControls: d.touchControls, touchLayout: d.touchLayout, buttonScale: d.buttonScale, keybindings: {}, padBindings: {} };
   }
   return {};
 }

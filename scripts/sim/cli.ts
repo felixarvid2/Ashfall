@@ -21,7 +21,7 @@ console.log(`Training dummy ${dummy ?? 'spore_carrier'}${pack && pack > 1 ? ` x$
 console.log(`${'build'.padEnd(54)} ${'DPS'.padStart(8)}  ${'heat'.padStart(5)}  ${'overheat'.padStart(8)}  casts`);
 for (const build of BUILDS) {
   if (filter && !build.name.toLowerCase().includes(filter)) continue;
-  const r = simulate(build, seconds, 'sim', { dummy, pack });
+  const r = simulate(build, seconds, 'sim', { ...(dummy !== undefined && { dummy }), ...(pack !== undefined && { pack }) });
   const casts = Object.entries(r.casts)
     .map(([id, n]) => `${id.split('.')[1]}x${n}`)
     .join(' ');

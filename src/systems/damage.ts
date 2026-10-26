@@ -28,7 +28,7 @@ export interface OutgoingInput {
 
 export interface TargetState {
   armor: number;
-  resist: Partial<Record<DamageType, number>>;
+  resist: Partial<Record<DamageType, number | undefined>>;
   vulnerable: boolean;
   /** Extra multiplier from the vulnerable status definition (1.2 by default). */
   vulnerableMultiplier: number;

@@ -19,6 +19,11 @@ export interface RiftPanelActions {
   /** Upgrade attempts left, and the last clear's summary (null outside a cleared rift). */
   attempts(): number;
   result(): RiftResult | null;
+  /** D08: every class's best time (s) at a rift level, the current class flagged; only classes with a record. */
+  records?(level: number): { classId: string; className: string; time: number; mine: boolean }[];
+  /** D11: today's daily rift (null before the first tier unlock): its level, today's best and the best of the kept days (0 = none). */
+  daily?(): { level: number; today: number; best: number } | null;
+  enterDaily?(): void;
   upgrade(glyphId: string): { ok: boolean; level: number | null } | false;
 }
 
@@ -111,6 +116,19 @@ export class RiftPanel {
     rows.push(el('div', 'rift-best', best > 0 ? (time > 0 ? t('rifts.best', { level: best, time: clock(time) }) : t('rifts.bestNoTime', { level: best })) : t('rifts.noBest')));
     rows.push(el('div', 'rift-open', t('rifts.open', { max: open })));
 
+    const daily = this.actions.daily?.();
+    if (daily) {
+      const go = el('button', 'service-btn rift-daily', t('rifts.daily.enter', { level: daily.level }));
+      go.dataset.testid = 'rift-daily';
+      go.title = t('rifts.daily.hint');
+      go.addEventListener('click', () => {
+        this.close();
+        this.actions.enterDaily?.();
+      });
+      rows.push(go, el('div', 'rift-open', daily.today > 0 ? t('rifts.daily.today', { time: clock(daily.today) }) : t('rifts.daily.none')));
+      if (daily.best > 0) rows.push(el('div', 'rift-open', t('rifts.daily.best', { time: clock(daily.best) })));
+    }
+
     const stepper = el('div', 'rift-stepper');
     const step = (label: string, delta: number, testid: string) => {
       const b = el('button', 'service-btn rift-step', label);
@@ -144,6 +162,17 @@ export class RiftPanel {
     slider.addEventListener('input', () => this.setLevel(Number(slider.value)));
     rows.push(slider);
 
+    // D08: each class's best time at this level.
+    const records = this.actions.records?.(this.level) ?? [];
+    const board = el('div', 'rift-records');
+    board.dataset.testid = 'rift-records';
+    if (records.length === 0) board.append(el('span', 'rift-open', t('rifts.records.none', { level: this.level })));
+    else {
+      board.append(el('span', 'rift-open', t('rifts.records.title', { level: this.level })));
+      for (const r of records) board.append(el('span', r.mine ? 'rift-chip mine' : 'rift-chip', t('rifts.records.row', { class: r.className, time: clock(r.time) })));
+    }
+    rows.push(board);
+
     // What the level changes, as chips (the long sentence stays as the tooltip).
     const effects = el('div', 'rift-effects');
     effects.title = t('rifts.effects', { mul: riftScale(this.level).toFixed(2), dmg: riftDamageScale(this.level).toFixed(2), power: riftItemPower(this.level) });
@@ -174,6 +203,8 @@ export class RiftPanel {
     if (res) {
       rows.push(el('div', 'rift-best', t('rifts.resultTime', { time: clock(res.elapsed), open: res.open })));
       if (res.fast) rows.push(el('div', 'rift-open', t('rifts.fast')));
+      if (res.record.improved) rows.push(el('div', 'rift-tier', res.record.previous > 0 ? t('rifts.records.beaten', { time: clock(res.record.previous) }) : t('rifts.records.first')));
+      else if (res.record.previous > 0) rows.push(el('div', 'rift-open', t('rifts.records.kept', { time: clock(res.record.previous) })));
       for (const tier of res.tiers) rows.push(el('div', 'rift-tier', t('rifts.tierUnlocked', { tier: t(`worldTiers.${tier}.name`) })));
       if (res.grantedGlyph) rows.push(el('div', 'rift-open', t('rifts.glyphGranted', { name: this.glyphName(res.grantedGlyph) })));
     }

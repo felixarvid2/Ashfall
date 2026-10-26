@@ -144,7 +144,7 @@ export class EpilogueScreen {
     this.root.classList.remove('paused');
     this.root.hidden = true;
     this.root.replaceChildren();
-    void this.wakeLock?.release().catch(() => {});
+    void this.wakeLock?.release().catch(() => {}); // releasing a lock that is already gone is fine
     this.wakeLock = null;
     const done = this.done;
     this.done = null;

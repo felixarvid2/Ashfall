@@ -36,6 +36,22 @@ export const AccountSchema = z.object({
       playtime: z.number().nonnegative().default(0),
     })
     .prefault({}),
+  /** D08: the best clear time (s) per class per rift level, local to this browser: class id → level → seconds. */
+  riftRecords: z.record(z.string(), z.record(z.string(), z.number().positive())).default({}),
+  /** D11: the best clear time (s) of each day's seeded rift, by local date (YYYY-MM-DD); the oldest days are dropped. */
+  dailyRifts: z.record(z.string(), z.number().positive()).default({}),
+  /** D05: how many times the trader's stock was rerolled for gold on `date` (the price rises with each). */
+  vendor: z.object({ date: z.string().default(''), rerolls: z.number().int().nonnegative().default(0) }).prefault({}),
+  /** D10: materials deposited in the shared stash (id → count), so any character can take them. */
+  materials: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  /** D12/D13: feats earned (id → when, ms since 1970), the counters behind them, and the title worn on character select. */
+  feats: z
+    .object({
+      done: z.record(z.string(), z.number()).default({}),
+      stats: z.record(z.string(), z.number()).default({}),
+      title: z.string().nullable().default(null),
+    })
+    .prefault({}),
 });
 export type AccountData = z.infer<typeof AccountSchema>;
 

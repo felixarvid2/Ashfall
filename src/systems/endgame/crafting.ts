@@ -54,6 +54,11 @@ export function salvageDust(item: Item): number {
   return SALVAGE_DUST[item.rarity] ?? 0;
 }
 
+/** D09: the materials salvaging these items would give, for the preview before the player confirms (the same numbers `grantSalvageDust` pays). */
+export function salvagePreview(items: readonly Item[]): { lumen_dust: number } {
+  return { lumen_dust: items.reduce((sum, item) => sum + salvageDust(item), 0) };
+}
+
 /** Call when an item is salvaged; returns the dust granted. */
 export function grantSalvageDust(ctx: GameContext, item: Item): number {
   const n = ctx.endgame ? salvageDust(item) : 0;

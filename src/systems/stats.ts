@@ -54,7 +54,7 @@ export function compareGear(
   item: Item,
   slot: Slot,
   equipped: Partial<Record<Slot, Item>>,
-): { stats: { stat: StatKey; delta: number }[]; damagePct: number; life: number } {
+): { stats: { stat: StatKey; delta: number }[]; damagePct: number; life: number; lifePct: number } {
   const before = computePlayerStats(cls, level, equipped);
   const after = computePlayerStats(cls, level, { ...equipped, [slot]: item });
   const a = sumItemStats([item]);
@@ -64,6 +64,7 @@ export function compareGear(
     stats: [...keys].map((stat) => ({ stat, delta: (a.get(stat) ?? 0) - (b.get(stat) ?? 0) })),
     damagePct: before.damageEstimate > 0 ? after.damageEstimate / before.damageEstimate - 1 : 0,
     life: after.maxLife - before.maxLife,
+    lifePct: before.maxLife > 0 ? after.maxLife / before.maxLife - 1 : 0,
   };
 }
 

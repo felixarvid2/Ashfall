@@ -81,8 +81,9 @@ export type GameEvent =
   | { type: 'levelUp'; level: number }
   | { type: 'xp'; amount: number }
   | { type: 'loot'; entity: Entity; rarity: Rarity; x: number; z: number }
-  | { type: 'pickup'; kind: 'gold'; amount: number }
-  | { type: 'pickup'; kind: 'item'; rarity: Rarity; name: string }
+  /** `magnet`: the loot magnet delivered it (soft sound and a small spark instead of the full pickup cue, B12). */
+  | { type: 'pickup'; kind: 'gold'; amount: number; magnet?: boolean }
+  | { type: 'pickup'; kind: 'item'; rarity: Rarity; name: string; magnet?: boolean }
   | { type: 'notice'; key: string }
   | { type: 'discover'; id: string }
   | { type: 'hub'; id: string; entered: boolean }

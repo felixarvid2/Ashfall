@@ -82,15 +82,39 @@ function now(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
 
-/** Plays a short vibration for the moment, if supported, enabled and not throttled. */
+/** Gamepad rumble (round 3, A07): strong and weak motor 0..1 and milliseconds; the game installs it for the active pad. */
+type RumbleSink = (strong: number, weak: number, ms: number) => void;
+let rumbleSink: RumbleSink | null = null;
+
+export function setRumbleSink(sink: RumbleSink | null): void {
+  rumbleSink = sink;
+}
+
+/** Which moments rumble a pad, and how hard. Small taps (ticks, selects, loot) stay silent: a pad has no touch UI. */
+export const RUMBLE: Partial<Record<HapticKind, [strong: number, weak: number, ms: number]>> = {
+  bigHit: [0.6, 0.3, 140],
+  hurt: [0.5, 0.4, 160],
+  boss: [0.7, 0.5, 320],
+  levelUp: [0.4, 0.8, 380],
+  legendary: [0.3, 0.6, 220],
+  death: [1, 0.6, 600],
+  dodge: [0, 0.35, 70],
+};
+
+/** Plays a short vibration for the moment, if supported, enabled and not throttled; a pad rumbles for the big ones. */
 export function haptic(kind: HapticKind): void {
-  if (!enabled || !hapticsSupported()) return;
+  if (!enabled) return;
+  const canVibrate = hapticsSupported();
+  if (!canVibrate && !rumbleSink) return;
   const t = now();
   if (!ALWAYS.has(kind) && t - last < GLOBAL_GAP) return;
   const gap = KIND_GAP[kind];
   if (gap !== undefined && t - (lastByKind.get(kind) ?? -Infinity) < gap) return;
   last = t;
   lastByKind.set(kind, t);
+  const rumble = RUMBLE[kind];
+  if (rumble && rumbleSink) rumbleSink(...rumble);
+  if (!canVibrate) return;
   try {
     navigator.vibrate(PATTERNS[kind]);
   } catch {

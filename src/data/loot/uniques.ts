@@ -187,7 +187,7 @@ export const UNIQUES: Unique[] = [
     ],
   },
   {
-    // Sanctuary lasts twice as long and covers more ground, but takes half again as long to return.
+    // Sanctuary lasts twice as long and covers more ground, but takes twice as long to return (uptime 35 %, was 47 %: D01).
     id: 'halo_of_the_penitent',
     base: 'combat_helm',
     rarity: 'unique',
@@ -204,7 +204,7 @@ export const UNIQUES: Unique[] = [
         mods: [
           { op: 'mul', field: 'duration', value: 1 },
           { op: 'mul', field: 'radius', value: 0.4 },
-          { op: 'mul', field: 'cooldown', value: 0.5 },
+          { op: 'mul', field: 'cooldown', value: 1 },
         ],
       },
     ],

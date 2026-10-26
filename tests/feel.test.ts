@@ -13,9 +13,14 @@ import en from '../src/data/lang/en.json';
 const dmg = (over: Partial<Extract<GameEvent, { type: 'damage' }>> = {}): GameEvent => ({
   type: 'damage', target: 2, x: 0, y: 0, z: 0, amount: 10, absorbed: 0, crit: false, damageType: 'physical', toPlayer: false, dot: false, ...over,
 });
-const death = (target = 2, over: Partial<Extract<GameEvent, { type: 'death' }>> = {}): GameEvent => ({
-  type: 'death', target, x: 0, z: 0, isPlayer: false, family: 'infected', ...over,
-});
+type DeathEvent = Extract<GameEvent, { type: 'death' }>;
+type DeathOver = Partial<Omit<DeathEvent, 'family'>> & { family?: DeathEvent['family'] | undefined };
+/** A death event; passing `family: undefined` leaves the family off (summons and props). */
+const death = (target = 2, over: DeathOver = {}): GameEvent => {
+  const { family, ...rest } = over;
+  const fam = 'family' in over ? family : 'infected';
+  return { type: 'death', target, x: 0, z: 0, isPlayer: false, ...rest, ...(fam && { family: fam }) };
+};
 
 describe('hit feel (F001, F009)', () => {
   it('maps the share of life lost to shake trauma and a short freeze', () => {

@@ -1,5 +1,5 @@
 /** Manifest status changes shared by the CLI and the dev-server asset viewer. */
-import type { AssetEntry } from '../../src/data/assetManifest';
+import type { AssetEntry } from '../../src/data/assetManifest.ts';
 
 export type ReviewAction = 'approve-preview' | 'approve' | 'reject';
 

@@ -9,7 +9,7 @@
  * Touch (phones): a joystick moves, the attack button hits the nearest enemy, skill buttons aim at
  * the nearest enemy, and tapping the screen works like a left-click.
  */
-import type { GameContext, TouchState } from '../core/context';
+import type { GameContext, PadState, TouchState } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import {
   AttackTarget,
@@ -30,7 +30,8 @@ import { skill } from '../data/db';
 import type { SkillDef } from '../data/schemas';
 import type { Action } from '../data/settings';
 import { isAlive } from './combat';
-import { enemyNear } from './targeting';
+import { buildGrid, cellOf, findPath, openAt } from './navigation';
+import { enemyNear, nearestOpposing } from './targeting';
 
 const SLOT_KEYS: Action[] = ['skill1', 'skill2', 'skill3', 'skill4'];
 /** How long a skill press stays buffered while the character is busy. */
@@ -39,6 +40,8 @@ const BUFFER = 0.25;
 const CLICK_REACH = 1.3;
 /** Touch: the attack button and skills look for enemies this far away (m). */
 const TOUCH_SEEK = 12;
+/** Gamepad: cosine of the half-angle round the right stick in which an enemy is aimed at (about 35 degrees). */
+const AIM_CONE = 0.82;
 /** Touch: joystick deflection below this is ignored. */
 const DEAD_ZONE = 0.18;
 
@@ -68,14 +71,17 @@ export function playerControlSystem(world: World, _dt: number, ctx: GameContext)
     const tr = world.req(e, Transform);
     const user = world.get(e, SkillUser);
     const input = ctx.input;
-    const touch = input.touch ?? null;
+    // The gamepad (A01) drives the same mode as the touch controls: stick to move, a button to attack, skills at
+    // the nearest enemy; the right stick overrides that aim. It is only present while the pad was used last.
+    const pad = input.touch ? null : (input.pad ?? null);
+    const touch = input.touch ?? (pad ? { stick: pad.stick, attack: pad.attack } : null);
     const ground = ctx.pickGround();
     // Without a cursor (e.g. before the mouse moves), aim straight ahead.
     const ahead = { x: tr.x + Math.sin(tr.facing) * 3, z: tr.z + Math.cos(tr.facing) * 3 };
     const aim = ground ?? ahead;
 
     if (touch) {
-      touchMode(world, ctx, e, mover, user, touch, ground);
+      touchMode(world, ctx, e, mover, user, touch, ground, pad);
       continue;
     }
 
@@ -207,7 +213,8 @@ function clickMode(
         else world.add(e, InteractTarget, { target: thing.target });
         world.add(e, MoveTarget, { x: tr.x, z: tr.z });
       } else {
-        world.add(e, MoveTarget, { x: aim.x, z: aim.z });
+        const blocked = fresh && groundUnreachable(world, ctx, e, aim.x, aim.z);
+        world.add(e, MoveTarget, blocked ? { x: aim.x, z: aim.z, blocked } : { x: aim.x, z: aim.z });
       }
     }
   }
@@ -219,6 +226,18 @@ function clickMode(
     mover.vx = 0;
     mover.vz = 0;
   }
+}
+
+/**
+ * A ground click the navigation grid cannot reach (A09): the cell is blocked (rock, wall) or no path leads there. Points
+ * outside the grid window are not judged. Only fresh clicks are checked, so holding the button costs nothing.
+ */
+export function groundUnreachable(world: World, ctx: GameContext, e: Entity, x: number, z: number): boolean {
+  const tr = world.req(e, Transform);
+  const grid = ctx.nav?.grid ?? buildGrid(world, ctx, tr.x, tr.z);
+  if (cellOf(grid, x, z) < 0) return false;
+  if (!openAt(grid, x, z)) return true;
+  return findPath(grid, tr.x, tr.z, x, z) === null;
 }
 
 /** Chase the attack target into reach and hit it; keep attacking only while `holding`. */
@@ -256,11 +275,14 @@ function touchMode(
   user: SkillUserData | undefined,
   touch: TouchState,
   ground: { x: number; z: number } | null,
+  pad: PadState | null = null,
 ): void {
   const input = ctx.input;
   const tr = world.req(e, Transform);
   const dir = wasdDirection(ctx, touch.stick);
   const facing = { x: Math.sin(tr.facing), z: Math.cos(tr.facing) };
+  // Right stick: where skills and the basic attack point (world space), else the nearest enemy / the move direction.
+  const aimDir = pad?.aim ? wasdDirection(ctx, pad.aim) : null;
 
   if (user) {
     if (input.wasPressed('potion')) user.potionRequested = true;
@@ -269,12 +291,22 @@ function touchMode(
     const cast = (slot: number) => {
       const id = user.slots[slot];
       if (!id) return;
-      request(user, slot, touchAim(world, ctx, e, skill(id), dir ?? facing));
+      request(user, slot, touchAim(world, ctx, e, skill(id), aimDir ?? dir ?? facing, aimDir !== null));
     };
     SLOT_KEYS.forEach((action, i) => {
       if (input.isDown(action) || input.wasPressed(action)) cast(i + 2);
     });
-    if (input.isMouseDown(2) || input.wasMousePressed(2)) cast(1);
+    if (input.isMouseDown(2) || input.wasMousePressed(2) || pad?.alt) cast(1);
+  }
+
+  if (pad && user && touch.attack && aimDir) {
+    // Twin-stick: the basic attack fires where the right stick points while the left stick keeps walking.
+    clearOrders(world, e);
+    const basic = user.slots[0] ? skill(user.slots[0]) : null;
+    request(user, 0, touchAim(world, ctx, e, basic, aimDir, true));
+    mover.vx = dir ? dir.x * mover.speed : 0;
+    mover.vz = dir ? dir.z * mover.speed : 0;
+    return;
   }
 
   if (touch.attack && user) {
@@ -315,13 +347,31 @@ function distanceTo(world: World, tr: Transform, target: Entity): number {
 }
 
 /** Touch aim for a skill: the attack target or nearest enemy in reach, else a point in `dir`. */
-function touchAim(world: World, ctx: GameContext, e: Entity, def: SkillDef, dir: { x: number; z: number }): { x: number; z: number } {
+function touchAim(world: World, ctx: GameContext, e: Entity, def: SkillDef | null, dir: { x: number; z: number }, pointed = false): { x: number; z: number } {
   const tr = world.req(e, Transform);
   const reach = skillReach(def);
-  const kind = def.effect.kind;
+  const kind = def?.effect.kind;
   if (kind === 'blink' || kind === 'leap') {
     const range = Math.max(3, reach);
     return { x: tr.x + dir.x * range, z: tr.z + dir.z * range };
+  }
+  if (pointed) {
+    // Aimed with the right stick: the nearest enemy within a cone round that direction (a little help), else a point along it.
+    const range = Math.max(reach + 3, 6);
+    const near = nearestOpposing(world, ctx, tr.x, tr.z, range, 'enemy', (c) => {
+      const ct = world.get(c, Transform);
+      if (!ct) return false;
+      const dx = ct.x - tr.x;
+      const dz = ct.z - tr.z;
+      const d = Math.hypot(dx, dz);
+      return d < 0.01 || (dx * dir.x + dz * dir.z) / d > AIM_CONE;
+    });
+    if (near !== null) {
+      const nt = world.req(near, Transform);
+      return { x: nt.x, z: nt.z };
+    }
+    const d = Math.min(Math.max(reach, 2), 8);
+    return { x: tr.x + dir.x * d, z: tr.z + dir.z * d };
   }
   const current = world.get(e, AttackTarget)?.target;
   const target =

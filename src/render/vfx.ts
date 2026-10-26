@@ -31,7 +31,7 @@ interface TimedFx {
   life: number;
   active: boolean;
   update: (fx: TimedFx, t: number) => void;
-  owner?: Entity;
+  owner?: Entity | undefined;
 }
 
 /** A warning colour that still shows on pale ground: saturated, and no lighter than mid-tone. */
@@ -78,6 +78,8 @@ export function telegraphOutlineOpacity(t: number, life: number, bright: boolean
 
 /** Seconds a ground-click marker lives (F005). */
 export const MOVE_MARKER_LIFE = 0.5;
+/** Seconds the red X of an unreachable click lives (A09). */
+export const BLOCKED_MARKER_LIFE = 0.6;
 /** Two rings, the second 0.1 s behind: radius (m) and opacity at `age` seconds; null once that ring is over. */
 export function moveMarkerRing(age: number, ring: 0 | 1): { radius: number; opacity: number } | null {
   const t = (age - ring * 0.1) / 0.4;
@@ -151,6 +153,8 @@ export class VfxSystem {
   private readonly arcGeometries = new Map<number, THREE.BufferGeometry>();
   private readonly coneGeometries = new Map<number, THREE.BufferGeometry>();
   private readonly ringGeo = flat(new THREE.RingGeometry(0.86, 1, 64));
+  /** One bar of the red X (A09): lies on the ground, 1.1 m long and 0.14 m wide. */
+  private readonly barGeo = flat(new THREE.PlaneGeometry(0.14, 1.1));
   private readonly discGeo = flat(new THREE.CircleGeometry(1, 48));
   private readonly lineGeo = flat(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0));
 
@@ -326,6 +330,7 @@ export class VfxSystem {
    * Ground-click marker (F005): two small rings closing in on the spot, named `moveMarker`. `blocked` makes it red.
    */
   moveMarker(x: number, z: number, blocked = false): void {
+    if (blocked) return this.blockedMarker(x, z);
     const color = blocked ? '#ff4a3a' : '#ffe2a0';
     const fx = this.acquire(`moveMarker:${color}`, () => {
       const group = new THREE.Group();
@@ -349,6 +354,31 @@ export class VfxSystem {
     fx.update(fx, 0);
   }
 
+  /** A red X where a click cannot be reached (A09): two crossed bars that pop in and fade, `moveMarkerX` in the scene. */
+  private blockedMarker(x: number, z: number): void {
+    const fx = this.acquire('moveMarker:x', () => {
+      const group = new THREE.Group();
+      group.name = 'moveMarkerX';
+      const materials = [additive('#ff3a2a'), additive('#ff3a2a')];
+      materials.forEach((m, i) => {
+        const bar = new THREE.Mesh(this.barGeo, m);
+        bar.rotation.y = (i === 0 ? 1 : -1) * Math.PI * 0.25;
+        group.add(bar);
+      });
+      return { group, materials };
+    });
+    fx.life = BLOCKED_MARKER_LIFE;
+    fx.group.position.set(x, 0.07, z);
+    fx.update = (f) => {
+      const t = Math.min(1, f.age / BLOCKED_MARKER_LIFE);
+      // Pops to full size in the first fifth, then fades.
+      const grow = Math.min(1, t / 0.2);
+      f.group.scale.set(0.5 + 0.5 * grow, 1, 0.5 + 0.5 * grow);
+      for (const m of f.materials) m.opacity = 0.9 * (1 - Math.max(0, (t - 0.4) / 0.6));
+    };
+    fx.update(fx, 0);
+  }
+
   /** Level-up (F017): a golden ring and a column of light around the hero, `quiet` for reduced flashing (no column). */
   levelBurst(x: number, z: number, quiet = false): void {
     this.spawnRing('ring:levelup', '#ffd27a', x, z, 3.2, LEVEL_BURST_LIFE, 0.2);
@@ -356,6 +386,11 @@ export class VfxSystem {
     this.spawnPillar(x, z, 1.1, '#ffe9a8');
     this.sparks.emit(x, 0.6, z, 22, '#ffd27a', 5);
     this.sprites.holy(x, z, 3, '#ffe9a8');
+  }
+
+  /** A few small sparks where the loot magnet's delivery arrives (B12); gold is warm, crystals cool. */
+  magnetSpark(x: number, z: number, color: string): void {
+    this.sparks.emit(x, 0.9, z, 5, color, 2);
   }
 
   private shimmerClock = 0;
@@ -848,7 +883,7 @@ export class VfxSystem {
           const edge = band !== null ? flat(new THREE.RingGeometry(band, band + 0.02, 64)) : this.ringGeo;
           group.add(new THREE.Mesh(fill, mat), new THREE.Mesh(edge, ringMat));
           group.children.forEach((c) => (c.renderOrder = 3));
-          return { group, materials: [mat, ringMat], geometries: band !== null ? [fill, edge] : undefined };
+          return { group, materials: [mat, ringMat], ...(band !== null && { geometries: [fill, edge] }) };
         });
         fx.life = Infinity;
         fx.update = () => {};

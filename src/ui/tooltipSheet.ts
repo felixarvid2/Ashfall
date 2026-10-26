@@ -27,9 +27,9 @@ export interface SheetAction {
 export interface SheetOptions {
   content: HTMLElement;
   /** Second element for a comparison, e.g. the equipped item. */
-  compare?: HTMLElement;
+  compare?: HTMLElement | undefined;
   title?: string;
-  actions?: SheetAction[];
+  actions?: SheetAction[] | undefined;
   onClose?: () => void;
 }
 

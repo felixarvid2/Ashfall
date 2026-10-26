@@ -19,7 +19,14 @@ const ids = (events: GameEvent[]) => soundsForEvents(events).map((c) => c.id);
 const damage = (over: Partial<Extract<GameEvent, { type: 'damage' }>> = {}): GameEvent => ({
   type: 'damage', target: 1 as never, x: 3, y: 1, z: 4, amount: 10, absorbed: 0, crit: false, damageType: 'physical', toPlayer: false, dot: false, ...over,
 });
-const death = (over: Partial<Extract<GameEvent, { type: 'death' }>> = {}): GameEvent => ({ type: 'death', target: 1 as never, x: 3, z: 4, isPlayer: false, family: 'infected', ...over });
+type DeathEvent = Extract<GameEvent, { type: 'death' }>;
+type DeathOver = Partial<Omit<DeathEvent, 'family'>> & { family?: DeathEvent['family'] | undefined };
+/** A death event; passing `family: undefined` leaves the family off (summons and props). */
+const death = (over: DeathOver = {}): GameEvent => {
+  const { family, ...rest } = over;
+  const fam = 'family' in over ? family : 'infected';
+  return { type: 'death', target: 1 as never, x: 3, z: 4, isPlayer: false, ...rest, ...(fam && { family: fam }) };
+};
 const clipStarts = (id: SfxId) => SOUND_CATALOG[id].clips.map((c) => c.start);
 
 /** A just-enough AudioContext. */

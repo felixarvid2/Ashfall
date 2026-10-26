@@ -43,6 +43,11 @@ export function takeFirstQuestToast(): boolean {
   return true;
 }
 
+/** "Reset tips" (B06): the first-quest toast may show again. */
+export function resetFirstQuestToast(): void {
+  setPref(FIRST_QUEST_SEEN, '0');
+}
+
 type TouchHint = 'move' | 'attack' | 'menu' | 'interact';
 export type DesktopHint = 'click' | 'strike' | 'skill' | 'potion' | 'dodge' | 'loot' | 'bag';
 type Hint = TouchHint | DesktopHint | 'quest';
@@ -189,11 +194,13 @@ function save(s: Stored): void {
 export interface CoachOptions {
   /** Shows a one-line message (the first quest done, F025). */
   toast?: (message: string) => void;
+  /** The coach's own "Skip tips" button was pressed: the Show tips setting follows (B06). */
+  onSkip?: () => void;
 }
 
 export class CoachMarks {
   private state = load();
-  private readonly script = new HintScript(this.state.done);
+  private script = new HintScript(this.state.done);
   private readonly el: HTMLDivElement;
   private readonly text: HTMLSpanElement;
   private current: Hint | null = null;
@@ -215,9 +222,8 @@ export class CoachMarks {
     this.text = document.createElement('span');
     const skip = Object.assign(document.createElement('button'), { type: 'button', className: 'coach-skip', textContent: t('onboarding.skip') });
     skip.addEventListener('click', () => {
-      this.state.skipped = true;
-      save(this.state);
-      this.hide();
+      this.setEnabled(false);
+      this.options.onSkip?.();
     });
     this.el.append(this.text, skip);
     root.append(this.el);
@@ -234,6 +240,30 @@ export class CoachMarks {
       true,
     );
     setInterval(() => this.poll(), 500);
+  }
+
+  /** True when the tips are turned off ("Skip tips" or Settings > Show tips off). */
+  get skipped(): boolean {
+    return this.state.skipped;
+  }
+
+  /** Show tips on or off (B06). Progress is kept, so turning them back on does not repeat finished tips. */
+  setEnabled(on: boolean): void {
+    this.state.skipped = !on;
+    save(this.state);
+    if (!on) this.hide();
+  }
+
+  /** Reset tips (B06): every tip is new again and the tips come back on. */
+  reset(): void {
+    this.state = { done: [], skipped: false };
+    save(this.state);
+    this.script = new HintScript();
+    this.snoozed.clear();
+    this.moveSeconds = 0;
+    this.prevObservation = null;
+    resetFirstQuestToast();
+    this.hide();
   }
 
   /** The tip being shown, if any (tests). */

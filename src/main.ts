@@ -15,6 +15,7 @@ import './ui/desktop/combat.css';
 import './ui/desktop/inventory.css';
 import './ui/desktop/services.css';
 import './ui/desktop/menus.css';
+import './ui/desktop/gamepad.css';
 import { Game } from './game';
 import { START_ZONE } from './data/zones';
 import { t } from './data/i18n';
@@ -94,4 +95,5 @@ const select = new CharacterSelect(ui, () => game.characterSlots(), {
   },
   remove: (slot) => game.deleteCharacter(slot),
   portraitUrl: (classId) => game.renderer.assets.iconUrl(`icon.portrait_${classId}`, import.meta.env.BASE_URL),
+  title: () => game.wornTitleText(),
 });

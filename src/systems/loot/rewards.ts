@@ -5,6 +5,7 @@
 import { PYLON_EFFECTS } from '../../data/interactables';
 import {
   AccountBonuses,
+  Boss,
   Dead,
   GroundGold,
   GroundItem,
@@ -23,7 +24,8 @@ import {
 import type { GameContext } from '../../core/context';
 import type { Entity, World } from '../../core/ecs';
 import { PROGRESSION, UNIQUE_DEFS, dropTable } from '../../data/loot/db';
-import { heal } from '../combat';
+import { applyKnockback, applyStatus, heal } from '../combat';
+import { livingInCircle } from '../targeting';
 import { ensureMatrixStarted, grantMatrixXp } from '../endgame/matrix';
 import { scalesToPlayer, tierMods } from '../endgame/tiers';
 import { recomputePlayer } from '../stats';
@@ -44,6 +46,24 @@ export function setItemNamer(fn: (baseId: string) => string): void {
 export function nextItemUid(ctx: GameContext): string {
   ctx.loot.seq++;
   return `${ctx.rng.seed}-${ctx.loot.seq}`;
+}
+
+/** Level-up shove (B03, F017): enemies this close are knocked back and staggered. */
+export const LEVEL_SHOVE = { radius: 6, knockback: 1.5, stagger: 0.4 } as const;
+
+/** Knock back and briefly stagger every living enemy within 6 m of the player. Bosses stand their ground. Returns how many. */
+export function levelUpShove(world: World, ctx: GameContext, player: Entity): number {
+  const tr = world.get(player, Transform);
+  if (!tr) return 0;
+  const level = world.get(player, CombatStats)?.level ?? 1;
+  let n = 0;
+  for (const e of livingInCircle(world, ctx, tr.x, tr.z, LEVEL_SHOVE.radius, 'enemy')) {
+    if (world.has(e, Boss)) continue;
+    applyKnockback(world, e, tr.x, tr.z, LEVEL_SHOVE.knockback);
+    applyStatus(world, ctx, e, { status: 'stunned', duration: LEVEL_SHOVE.stagger }, { team: 'player', level, attacker: player });
+    n++;
+  }
+  return n;
 }
 
 /** Add XP, handling multiple level-ups. Returns levels gained. */
@@ -77,6 +97,7 @@ export function grantXp(world: World, ctx: GameContext, player: Entity, amount: 
     // Levelling up fully restores life, as in classic ARPGs.
     const health = world.get(player, Health);
     if (health && !world.has(player, Dead)) health.current = health.max;
+    levelUpShove(world, ctx, player);
   }
   return gained;
 }
@@ -115,7 +136,7 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
     if (req.rarity) {
       for (let n = 0; n < (req.count ?? 1); n++) {
         const itemPower = req.itemPower ?? itemPowerFor(req.level, ctx.loot.rng) + tier.itemPower;
-        drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, nameOf, greaterBonus: tier.greaterChance }));
+        drop.items.push(generateItem(ctx.loot.rng, { itemPower, classId, uid: nextItemUid(ctx), rarity: req.rarity, ...(nameOf && { nameOf }), greaterBonus: tier.greaterChance }));
       }
     }
     const unique = req.unique ? UNIQUE_DEFS.get(req.unique) : undefined;
@@ -140,7 +161,8 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
 }
 
 /** Try to move a ground item into the player's backpack. */
-export function pickUp(world: World, ctx: GameContext, player: Entity, itemEntity: Entity): boolean {
+/** `magnet`: the loot magnet delivered it (B12). */
+export function pickUp(world: World, ctx: GameContext, player: Entity, itemEntity: Entity, magnet = false): boolean {
   const ground = world.get(itemEntity, GroundItem);
   const inv = world.get(player, Inventory);
   if (!ground || !inv) return false;
@@ -149,7 +171,7 @@ export function pickUp(world: World, ctx: GameContext, player: Entity, itemEntit
     ctx.events.push({ type: 'notice', key: 'loot.inventoryFull' });
     return false;
   }
-  ctx.events.push({ type: 'pickup', kind: 'item', rarity: ground.item.rarity, name: ground.item.name });
+  ctx.events.push({ type: 'pickup', kind: 'item', rarity: ground.item.rarity, name: ground.item.name, ...(magnet ? { magnet: true } : {}) });
   world.destroyDeferred(itemEntity);
   return true;
 }
@@ -178,7 +200,7 @@ export function pickupSystem(world: World, dt: number, ctx: GameContext): void {
   const inv = world.req(player, Inventory);
 
   // The loot magnet (F020): gold and crystals within reach fly in; crystals that arrive go into the backpack.
-  for (const e of magnetPull(world, dt, ptr.x, ptr.z, freeCells(inv) > 0)) pickUp(world, ctx, player, e);
+  for (const e of magnetPull(world, dt, ptr.x, ptr.z, freeCells(inv) > 0)) pickUp(world, ctx, player, e, true);
 
   for (const e of world.query(GroundGold, Transform)) {
     const gold = world.req(e, GroundGold);
@@ -187,7 +209,7 @@ export function pickupSystem(world: World, dt: number, ctx: GameContext): void {
     const reach = gold.magnet === undefined ? GOLD_PICKUP_RADIUS : MAGNET_ARRIVE;
     if (gold.age > 0.4 && Math.hypot(tr.x - ptr.x, tr.z - ptr.z) <= reach) {
       inv.gold += gold.amount;
-      ctx.events.push({ type: 'pickup', kind: 'gold', amount: gold.amount });
+      ctx.events.push({ type: 'pickup', kind: 'gold', amount: gold.amount, ...(gold.magnet !== undefined ? { magnet: true } : {}) });
       world.destroyDeferred(e);
     }
   }

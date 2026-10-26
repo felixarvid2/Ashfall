@@ -9,7 +9,7 @@ import type { Game } from './game';
 /** Shows why the game could not start (no WebGL, a failed asset load, ...) and rethrows for the console. */
 export function failStartup(ui: HTMLElement, err: unknown): never {
   console.error('[ashfall] start-up failed', err);
-  showErrorScreen(ui, classifyStartupError(err), describeError(err));
+  showErrorScreen(ui, classifyStartupError(err), describeError(err), undefined, err instanceof Error ? err.stack : undefined);
   throw err;
 }
 
@@ -32,7 +32,7 @@ export function installRuntimeGuards(game: Game, canvas: HTMLCanvasElement, ui: 
     if (crashed) return;
     crashed = true;
     game.loop.stop();
-    showErrorScreen(ui, 'crash', describeError(err));
+    showErrorScreen(ui, 'crash', describeError(err), undefined, err instanceof Error ? err.stack : undefined);
   };
 
   // A throwing tick is reported and skipped; five in a second stop the loop with the message.

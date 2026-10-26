@@ -2,6 +2,8 @@
  * Tiny translation layer. All player-visible text goes through t().
  * Add a language by dropping `<code>.json` next to en.json and registering it.
  */
+import { actionLabel } from '../core/inputLabels';
+import { ACTIONS, PAD_ACTIONS, type Action } from './settings';
 import en from './lang/en.json';
 
 type Dict = { [key: string]: string | Dict | string[] };
@@ -41,6 +43,8 @@ export function setTouchWording(on: boolean): void {
   touchWording = on;
 }
 
+const KEY_ACTIONS: ReadonlySet<string> = new Set<string>([...ACTIONS, ...PAD_ACTIONS]);
+
 /** Aim phrases in skill texts: [mouse, touch]. A touch player has no cursor; skills aim at the target. */
 const AIM_TOKENS: Record<string, [string, string]> = {
   aim: ['at the cursor', 'at your target'],
@@ -55,8 +59,10 @@ export function t(key: string, params?: Record<string, string | number>): string
     const pair = AIM_TOKENS[name];
     return pair ? pair[touchWording ? 1 : 0] : match;
   });
-  if (!params) return template;
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
+  // `{key:skills}` names the current binding of an action (key, or pad button while the pad is in use).
+  const keyed = template.includes('{key:') ? template.replace(/\{key:(\w+)\}/g, (match, name: string) => (KEY_ACTIONS.has(name) ? actionLabel(name as Action) : match)) : template;
+  if (!params) return keyed;
+  return keyed.replace(/\{(\w+)\}/g, (match, name: string) =>
     name in params ? String(params[name]) : match,
   );
 }

@@ -460,6 +460,9 @@ html, body {
 .item-tip-compare { border-top: 1px solid #2a2420; margin-top: 6px; padding-top: 6px; }
 .item-tip-compare .up { color: #6bdc7a; }
 .item-tip-compare .down { color: #e0574a; }
+/* One-line headline of the comparison (B11): "+12% damage, −3% life". */
+.item-tip-compare .item-tip-summary { font-weight: bold; margin-bottom: 3px; }
+.item-tip-compare .item-tip-summary.flat { color: #c8b89a; }
 .item-tip-salvage { margin-top: 6px; font-size: 0.9em; }
 
 /* ---- Loot labels ------------------------------------------------------------------ */
