@@ -22,8 +22,11 @@ import { t } from './data/i18n';
 import { CharacterSelect } from './ui/characterSelect';
 import { registerFonts } from './ui/fonts';
 import { audio } from './audio/engine';
+import { installHost } from './core/host';
 import { guardStartup, installRuntimeGuards } from './bootGuard';
 
+// Android host: define `__ashfallPad` before anything polls the pad (the app may send the controller at once).
+installHost();
 registerFonts();
 // Listen for the first click or key press while the game loads, so the title music can start with it.
 audio.install();
@@ -48,6 +51,7 @@ loading.textContent = t('game.loading', { done: 0, total: '…' });
 ui.appendChild(loading);
 await guardStartup(ui, () => game.loadAssets((done, total) => (loading.textContent = t('game.loading', { done, total }))));
 installRuntimeGuards(game, canvas, ui);
+game.connectHost();
 loading.remove();
 
 // Debug handle for the console and automated smoke tests (dev builds or ?debug).

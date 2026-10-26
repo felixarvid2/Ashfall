@@ -13,6 +13,7 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
   (`assets/thirdParty.ts`), the artifact build (`artifact/`)
 - `assets/manifest.json` every 3D asset; `public/assets/` the optimized game files
 - `tests/` vitest; `docs/credits.md` third-party credits and licences
+- `android/` the AYN Thor APK: a plain-Java WebView host for the web build (`docs/android.md`); `src/core/host.ts` the game side
 
 ## Commands
 
@@ -20,6 +21,7 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
 - `npx tsc --noEmit -p .` and `npx vitest run` must pass before anything is done
 - `npm run build:artifact` the self-contained build for a claude.ai artifact (`dist-artifact/`) and the page to
   publish (`dist-artifact/artifact-page.html`)
+- `npm run build:android` the AYN Thor APK in `dist-android/ashfall-thor.apk` (needs the Android SDK; `docs/android.md`)
 - `npm run e2e -- --scenario <boot|portrait|tooltip|instance|zone|landscape> --out <dir>` headless
   browser checks with screenshots (`scripts/e2e/README.md`; start `npm run dev` first)
 - Releases: merge a notes file `docs/releases/vX.Y.Z.md` to main (or push a tag / run the workflow by

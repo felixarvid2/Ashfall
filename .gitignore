@@ -10,6 +10,7 @@ assets/source/**/*.glb
 assets/source/**/*.fbx
 assets/.manifest.lock
 dist-artifact
+dist-android/
 assets-src/vfx/raw/
 assets-src/art/raw/
 assets-src/third-party/

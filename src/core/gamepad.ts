@@ -10,6 +10,8 @@
  *  - `onConnection` fires for plugging and unplugging, `capture` takes the next button press (rebinding).
  */
 
+import { hostPadSource, isAndroidHost } from './host';
+
 /** Button indexes of the standard mapping. */
 export const PAD = {
   A: 0,
@@ -95,6 +97,8 @@ export class GamepadInput {
   constructor(opts: GamepadOptions = {}) {
     this.getPads =
       opts.getGamepads ??
+      // The Android app delivers its controller through `__ashfallPad`; the WebView's own Gamepad API stays empty.
+      (isAndroidHost() ? hostPadSource : null) ??
       (() => {
         try {
           return typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function' ? (navigator.getGamepads() as ArrayLike<GamepadLike | null>) : [];

@@ -5,6 +5,8 @@
  * (`Settings.haptics`, wired by the settings panel through `setHaptics`) live here, so callers only name the
  * moment. `setLowLife(true/false)` runs the low-life heartbeat by itself.
  */
+import { isAndroidHost } from '../core/host';
+
 export type HapticKind =
   | 'tap'
   | 'tick'
@@ -62,6 +64,8 @@ let heartbeat: ReturnType<typeof setInterval> | undefined;
 
 /** True when this browser can vibrate at all (the settings switch is hidden otherwise). */
 export function hapticsSupported(): boolean {
+  // On the Android app the host rumbles the controller (or the device); the WebView's own vibrate would double it.
+  if (isAndroidHost()) return false;
   return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
 }
 

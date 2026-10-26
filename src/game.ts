@@ -124,6 +124,7 @@ import { bossPhaseTicks } from './ui/hud';
 import { actionLabel, setPromptSource } from './core/inputLabels';
 import { focusNav } from './ui/focusNav';
 import { setRumbleSink } from './ui/haptics';
+import { hostRumble, installHostCommands, isAndroidHost, sendPanelState, type HostCommandHandlers } from './core/host';
 import { LORE_XP_PER_LEVEL } from './data/interactables';
 import {
   choose,
@@ -483,8 +484,9 @@ export class Game {
     this.soundUi.refresh();
     installUiSounds(uiRoot, audio);
     this.applyTouchControls();
-    // "Auto" also switches the touch layout on at the first touch (tablets that report a mouse).
-    window.addEventListener(
+    // "Auto" also switches the touch layout on at the first touch (tablets that report a mouse); not in the Android app,
+    // where taps on the screen only click and the controller plays.
+    if (!isAndroidHost()) window.addEventListener(
       'touchstart',
       () => {
         if (this.settings.touchControls === 'auto' && !this.touchControls.shown) {
@@ -1429,6 +1431,7 @@ export class Game {
     }
     const hudState = this.hudState();
     this.hud.update(hudState, frameDt);
+    this.sendHostState(hudState);
     this.touchControls.sync(hudState.combat ?? false, hudState.xp.skillPoints);
     this.touchControls.setUnassigned(hudState.unassignedSkills ?? 0);
     this.worldBossHud.update(this.ctx);
@@ -3259,8 +3262,53 @@ export class Game {
       // The pad in use went away mid-play: stop the world rather than let the hero stand in a fight.
       if (event === 'disconnected' && wasActive && this.playing && !this.pauseMenu.pausing) panelStack.open('pause');
     });
-    setRumbleSink((strong, weak, ms) => pad.rumble(strong, weak, ms));
+    // The Android app rumbles through its own bridge (the WebView has no pad of its own).
+    setRumbleSink(isAndroidHost() ? hostRumble : (strong, weak, ms) => pad.rumble(strong, weak, ms));
     pad.start();
+  }
+
+  /**
+   * Android host (docs/android.md): the system Back button and the bottom-screen panel send commands that take the same
+   * paths as Escape, the pad's Start button and the bound actions. Does nothing in a browser.
+   */
+  connectHost(): void {
+    const handlers: HostCommandHandlers = {
+      // Escape: close the top panel, else the pause menu (character select and dialogue are panels of the stack).
+      escape: () => void panelStack.escape(),
+      pause: () => {
+        if (this.playing && panelStack.top() === null && this.pauseMenu.canOpen()) panelStack.open('pause');
+      },
+      press: (action) => {
+        if (!this.playing) return;
+        // A pad's A button (pickup) also rises after dying.
+        if (action === 'pickup' && this.world.has(this.player, Dead) && !this.hud.respawnLocked) this.respawn();
+        else this.input.pressAction(action);
+      },
+    };
+    installHostCommands(handlers);
+    // The bottom screen shows "not in game" until a character is chosen and the first frame sends real numbers.
+    if (isAndroidHost()) {
+      sendPanelState(() => ({ hp: 0, hpMax: 0, res: 0, resMax: 0, resName: '', level: 0, xpPct: 0, zone: '', gold: 0, potions: 0, potionsMax: 0, inGame: false }));
+    }
+  }
+
+  /** Bottom-screen state for the Android host, four times a second at most (nothing runs elsewhere). */
+  private sendHostState(state: HudState): void {
+    if (!isAndroidHost()) return;
+    sendPanelState(() => ({
+      hp: Math.round(state.life.current),
+      hpMax: Math.round(state.life.max),
+      res: Math.round(state.resource.current),
+      resMax: Math.round(state.resource.max),
+      resName: t(`resources.${state.resource.kind}`),
+      level: state.xp.level,
+      xpPct: state.xp.next > 0 ? Math.max(0, Math.min(100, Math.round((state.xp.current / state.xp.next) * 100))) : 0,
+      zone: state.location?.title ?? '',
+      gold: this.world.req(this.player, Inventory).gold,
+      potions: state.potion.charges,
+      potionsMax: state.potion.max,
+      inGame: this.playing,
+    }));
   }
 
   private refreshHint(): void {

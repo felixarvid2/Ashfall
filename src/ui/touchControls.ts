@@ -12,9 +12,12 @@ import { fullscreenOrFallback, isFullscreen, onFullscreenChange } from './fullsc
 import type { Action } from '../data/settings';
 import type { TouchMenuEntry } from './soundPanel';
 import { haptic } from './haptics';
+import { isAndroidHost } from '../core/host';
 
 /** Touch screens without a precise pointer (phones, tablets). */
 export function isTouchDevice(): boolean {
+  // The Android app has a controller and a bottom-screen panel: no overlay (taps still click).
+  if (isAndroidHost()) return false;
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
   return window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(pointer: fine)').matches;
 }

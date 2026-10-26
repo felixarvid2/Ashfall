@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Ashfall Panel</title>
+<style>
+  :root {
+    --bg: #121214;
+    --bg-2: #1a1816;
+    --card: rgba(14, 13, 12, 0.82);
+    --border: #3b3530;
+    --border-hi: #4a4038;
+    --text: #d8d0c4;
+    --muted: #8c8378;
+    --ember: #e07a2c;
+    --ember-hi: #ff8a2a;
+    --life: #c22a1f;
+    --life-dark: #5a0c08;
+    --gold: #e8c86a;
+    /* one unit = 1% of the shorter side, so the layout holds at 1240x1080 and at other sizes */
+    --u: min(1vw, 1.148vh);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  }
+  body {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(224, 122, 44, 0.12), transparent 55%),
+      linear-gradient(#141315, #0e0d0c);
+  }
+  main {
+    height: 100%; padding: calc(var(--u) * 2.4) calc(var(--u) * 2.8);
+    display: flex; flex-direction: column; gap: calc(var(--u) * 2);
+  }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .brand { font-size: calc(var(--u) * 4); font-weight: 700; letter-spacing: 0.32em; color: var(--ember-hi); }
+  .zone { font-size: calc(var(--u) * 2.6); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text);
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+
+  .status {
+    background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--ember);
+    padding: calc(var(--u) * 2) calc(var(--u) * 2.4); display: flex; flex-direction: column; gap: calc(var(--u) * 1.5);
+  }
+  .row { display: flex; align-items: center; gap: calc(var(--u) * 1.8); }
+  .row .label { width: calc(var(--u) * 15); font-size: calc(var(--u) * 2.2); letter-spacing: 0.1em;
+                text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .num { min-width: calc(var(--u) * 17); text-align: right; font-size: calc(var(--u) * 2.6);
+              font-family: 'Share Tech Mono', ui-monospace, Menlo, Consolas, monospace; color: var(--text); white-space: nowrap; }
+  .bar { flex: 1; height: calc(var(--u) * 3.4); background: #0d0b0a; border: 1px solid var(--border-hi); position: relative; overflow: hidden; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; width: 0%; transition: width 0.18s linear; }
+  #hpFill { background: linear-gradient(#e03a2c, var(--life-dark)); }
+  #resFill { background: linear-gradient(#ffae3a, #8a3a08); }
+  #xpFill { background: linear-gradient(90deg, #8a6a2a, var(--gold)); }
+  .bar.low #hpFill { animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse { 50% { filter: brightness(1.5); } }
+  #resFill.heat    { background: linear-gradient(#ffae3a, #8a3a08); }
+  #resFill.focus   { background: linear-gradient(#6fe0ff, #0a4a6a); }
+  #resFill.biomass { background: linear-gradient(#8aff6a, #1f5a10); }
+  #resFill.devotion{ background: linear-gradient(#fff3c4, #a8741a); }
+
+  .stats { display: flex; gap: calc(var(--u) * 2); }
+  .chip { flex: 1; border: 1px solid var(--border); background: rgba(0, 0, 0, 0.28);
+          padding: calc(var(--u) * 1) calc(var(--u) * 1.8); display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .chip span { font-size: calc(var(--u) * 2.1); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .chip b { font-size: calc(var(--u) * 3.4); font-weight: 700; font-family: 'Share Tech Mono', ui-monospace, Menlo, Consolas, monospace; }
+  #gold { color: var(--gold); }
+  #potions.empty { color: var(--life); }
+
+  .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+          gap: calc(var(--u) * 1.8); }
+  .btn {
+    position: relative; min-height: 0; border: 1px solid var(--border-hi); border-bottom: 3px solid #2a2420;
+    background: linear-gradient(160deg, #2a2420, #15120f); color: var(--text);
+    font: inherit; font-size: calc(var(--u) * 3.2); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * 0.6);
+    cursor: pointer; padding: 0;
+  }
+  .btn small { font-size: calc(var(--u) * 2); font-weight: 500; letter-spacing: 0.1em; color: var(--muted); }
+  .btn:active, .btn.down { background: linear-gradient(160deg, #4a2c14, #2a1608); border-color: var(--ember-hi); transform: translateY(2px); }
+  .btn:active small, .btn.down small { color: var(--text); }
+  .btn.core { border-color: #c06a2a; }
+  .btn.potion { border-color: #8a2a22; color: #ffb0a8; }
+  .btn.potion:active, .btn.potion.down { background: linear-gradient(160deg, #5a1a14, #2a0a08); border-color: #ff5544; }
+  .btn.pause { color: var(--muted); }
+  .btn[disabled] { opacity: 0.38; }
+  .btn svg { width: calc(var(--u) * 6.4); height: calc(var(--u) * 6.4); fill: none; stroke: currentColor; stroke-width: 1.8;
+             stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+
+  footer { text-align: center; font-size: calc(var(--u) * 1.9); letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); min-height: 1.2em; }
+  footer.warn { color: var(--ember); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">ASHFALL</div>
+    <div class="zone" id="zone">&mdash;</div>
+  </header>
+
+  <section class="status" aria-label="Status">
+    <div class="row">
+      <div class="label">Health</div>
+      <div class="bar" id="hpBar"><i id="hpFill"></i></div>
+      <div class="num" id="hpNum">&mdash;</div>
+    </div>
+    <div class="row">
+      <div class="label" id="resLabel">Resource</div>
+      <div class="bar"><i id="resFill"></i></div>
+      <div class="num" id="resNum">&mdash;</div>
+    </div>
+    <div class="row">
+      <div class="label" id="lvl">Level &mdash;</div>
+      <div class="bar"><i id="xpFill"></i></div>
+      <div class="num" id="xpNum">&mdash;</div>
+    </div>
+    <div class="stats">
+      <div class="chip"><span>Gold</span><b id="gold">&mdash;</b></div>
+      <div class="chip"><span>Potions</span><b id="potions">&mdash;</b></div>
+    </div>
+  </section>
+
+  <nav class="grid" id="grid">
+    <button class="btn core" data-cmd="inventory"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="1.5"/><path d="M8 8V6a4 4 0 0 1 8 0v2M4 13h16"/></svg>Inventory</button>
+    <button class="btn core" data-cmd="character"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>Character</button>
+    <button class="btn core" data-cmd="skills"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 16.7 6.7 19.6l1.1-6L3.4 9.4l6-.8z"/></svg>Skills</button>
+    <button class="btn" data-cmd="quests"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6zM9 10h6M9 14h6"/></svg>Quests</button>
+    <button class="btn" data-cmd="map"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg>Map</button>
+    <button class="btn potion" data-cmd="potion"><svg viewBox="0 0 24 24"><path d="M10 3h4M11 3v5l-5 9a3 3 0 0 0 2.6 4.5h6.8A3 3 0 0 0 18 17l-5-9V3M8 15h8"/></svg>Potion<small id="potionSub">&nbsp;</small></button>
+    <button class="btn" data-cmd="flare"><svg viewBox="0 0 24 24"><path d="M12 2v5M12 17v5M2 12h5M17 12h5M5 5l3.5 3.5M15.5 15.5L19 19M19 5l-3.5 3.5M8.5 15.5L5 19"/></svg>Flare</button>
+    <button class="btn" data-cmd="mount"><svg viewBox="0 0 24 24"><path d="M3 17l3-7h8l2-3h3l-1 4 2 2v4M7 17a2 2 0 1 0 0 .1M17 17a2 2 0 1 0 0 .1"/></svg>Mount</button>
+    <button class="btn pause" data-cmd="pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>Pause</button>
+  </nav>
+
+  <footer id="foot"></footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var lastUpdate = 0;
+  var inGame = false;
+
+  function num(v, d) { v = Number(v); return isFinite(v) ? v : d; }
+  function pct(a, b) { return b > 0 ? Math.max(0, Math.min(100, (a / b) * 100)) : 0; }
+  function fmt(v) { return Math.round(num(v, 0)).toLocaleString('en-US'); }
+
+  // Called by the host with the game's { hp, hpMax, res, resMax, resName, level, xpPct, zone, gold, potions, potionsMax, inGame }
+  window.__panel = function (s) {
+    if (!s || typeof s !== 'object') return;
+    lastUpdate = Date.now();
+    inGame = s.inGame !== false;
+    var hp = num(s.hp, 0), hpMax = num(s.hpMax, 0);
+    $('hpFill').style.width = pct(hp, hpMax) + '%';
+    $('hpBar').classList.toggle('low', hpMax > 0 && hp / hpMax < 0.25);
+    $('hpNum').textContent = fmt(hp) + ' / ' + fmt(hpMax);
+
+    var resName = String(s.resName || 'Resource');
+    var res = num(s.res, 0), resMax = num(s.resMax, 0);
+    $('resLabel').textContent = resName;
+    $('resFill').className = String(resName).toLowerCase().replace(/[^a-z]/g, '');
+    $('resFill').style.width = pct(res, resMax) + '%';
+    $('resNum').textContent = fmt(res) + ' / ' + fmt(resMax);
+
+    var xp = Math.max(0, Math.min(100, num(s.xpPct, 0)));
+    $('lvl').textContent = 'Level ' + fmt(s.level);
+    $('xpFill').style.width = xp + '%';
+    $('xpNum').textContent = Math.floor(xp) + '% XP';
+
+    $('zone').textContent = s.zone ? String(s.zone) : '—';
+    $('gold').textContent = fmt(s.gold);
+    var pn = num(s.potions, 0), pm = num(s.potionsMax, 0);
+    $('potions').textContent = pn + ' / ' + pm;
+    $('potions').classList.toggle('empty', pn <= 0);
+    $('potionSub').textContent = pn + ' / ' + pm;
+    render();
+  };
+
+  function render() {
+    var stale = lastUpdate === 0 || Date.now() - lastUpdate > 4000;
+    var foot = $('foot');
+    if (lastUpdate === 0) { foot.textContent = 'Waiting for the game'; foot.className = 'warn'; }
+    else if (stale) { foot.textContent = 'No signal from the game'; foot.className = 'warn'; }
+    else if (!inGame) { foot.textContent = 'Not in a run'; foot.className = ''; }
+    else { foot.textContent = ''; foot.className = ''; }
+  }
+  setInterval(render, 1000);
+  render();
+
+  function send(cmd) {
+    try {
+      if (window.AshfallPanel && window.AshfallPanel.command) window.AshfallPanel.command(cmd);
+      else console.log('AshfallPanel.command', cmd);
+    } catch (e) { console.log('command failed', e); }
+  }
+
+  var buttons = document.querySelectorAll('.btn');
+  Array.prototype.forEach.call(buttons, function (b) {
+    b.addEventListener('click', function () { send(b.getAttribute('data-cmd')); });
+  });
+  document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
