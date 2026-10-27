@@ -8,6 +8,8 @@
  * assets/manifest.json; their pieces are.
  */
 import type { Look } from '../render/looks';
+import { DEEP_CORE_VARIANTS } from './variants/deepCore';
+import { REGIONS123_VARIANTS } from './variants/regions123';
 
 export type Vec3 = readonly [number, number, number];
 
@@ -77,6 +79,8 @@ const DEFS: readonly VariantDef[] = [
       { asset: 'part.crystal_shard', bone: 'RightForeArm', position: [-0.09, 0.04, 0], rotation: [-8, 0, 12], scale: 1.1 },
     ],
   },
+  ...REGIONS123_VARIANTS,
+  ...DEEP_CORE_VARIANTS,
 ];
 
 export const VARIANTS: ReadonlyMap<string, VariantDef> = new Map(DEFS.map((d) => [d.id, d]));

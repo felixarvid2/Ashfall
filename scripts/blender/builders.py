@@ -59,3 +59,11 @@ def kitbash(pieces):
 
 
 BUILDERS = {"crystal_cluster": crystal_cluster, "crystal_shard": crystal_shard, "vine": vine, "kitbash": kitbash}
+
+import builders_regions123  # noqa: E402  (Cinder Flats, Refinery, Vaults variants)
+
+BUILDERS.update(builders_regions123.BUILDERS)
+
+import builders_deep_core  # noqa: E402  (Deep Mines and Core variants)
+
+BUILDERS.update(builders_deep_core.BUILDERS)

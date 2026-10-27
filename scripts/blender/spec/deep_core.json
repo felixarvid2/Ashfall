@@ -1,0 +1,7491 @@
+{
+ "$comment": "Parts and models for the Deep Mines and Core enemies, bosses and world bosses (builders_deep_core.py, variants in src/data/variants/deepCore.ts).",
+ "parts": [
+  {
+   "id": "part.dc_antenna",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.022,
+      "len": 0.07,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.009,
+      "len": 0.4,
+      "at": [
+       0,
+       0.05,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "sphere",
+      "r": 0.045,
+      "at": [
+       0,
+       0.47,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fd0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4
+     },
+     {
+      "shape": "ring",
+      "r": 0.07,
+      "tube": 0.008,
+      "at": [
+       0,
+       0.24,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 10,
+      "minor": 3
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.006,
+       0.15,
+       0.08
+      ],
+      "at": [
+       0.035,
+       0.06,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       -14
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.006,
+       0.15,
+       0.08
+      ],
+      "at": [
+       -0.035,
+       0.06,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       14
+      ],
+      "base": true
+     }
+    ]
+   },
+   "prompt": "Governor drone antenna: a gold mast with a glowing blue orb, a ring and two fins. Origin at the base, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_collar",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.31,
+      "tube": 0.03,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 14,
+      "minor": 4,
+      "squash": 1.4
+     },
+     {
+      "shape": "cone",
+      "r": 0.028,
+      "len": 0.11,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5,
+      "radial": {
+       "n": 4,
+       "r": 0.33,
+       "tilt": 90,
+       "phase": 45,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "sphere",
+      "r": 0.022,
+      "at": [
+       0,
+       0.03,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fd0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3,
+      "radial": {
+       "n": 4,
+       "r": 0.31,
+       "tilt": 0,
+       "phase": 0,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Governor drone collar: a gold ring with four outward spikes and blue studs, worn round the drone body. Origin at the centre, axis up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_helmet_lamp",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.13,
+       0.105,
+       0.14
+      ],
+      "at": [
+       0,
+       0.02,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#d0a020"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 4
+     },
+     {
+      "shape": "cyl",
+      "r": 0.17,
+      "len": 0.02,
+      "at": [
+       0,
+       -0.015,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#b8901a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 10,
+      "squash": [
+       1,
+       1.08
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.035,
+       0.03,
+       0.22
+      ],
+      "at": [
+       0,
+       0.105,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#b8901a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "cyl",
+      "r": 0.04,
+      "len": 0.05,
+      "at": [
+       0,
+       0.04,
+       0.115
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.032,
+      "len": 0.012,
+      "at": [
+       0,
+       0.04,
+       0.17
+      ],
+      "mat": [
+       "glow",
+       "#fff0b0",
+       "#ffe9a0",
+       3.0
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "verts": 6
+     }
+    ]
+   },
+   "prompt": "Miner hard hat: a yellow dome with brim, a ridge and a glowing headlamp on the front (+Z). Origin at the brim centre.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_drill_arm",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.085,
+      "len": 0.2,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#a8561f"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 8
+     },
+     {
+      "shape": "ring",
+      "r": 0.095,
+      "tube": 0.018,
+      "at": [
+       0,
+       0.2,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 10,
+      "minor": 3
+     },
+     {
+      "shape": "drill",
+      "r": 0.078,
+      "len": 0.42,
+      "at": [
+       0,
+       0.2,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#a8b0b8"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "lobes": 3,
+      "turns": 1.4,
+      "steps": 6
+     }
+    ]
+   },
+   "prompt": "Drill arm: a rust-orange housing with a flange and a spiral steel drill bit. Origin at the base, grows up (+Y).",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_dynamite",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.022,
+      "len": 0.22,
+      "at": [
+       0,
+       -0.11,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#a02818"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6,
+      "radial": {
+       "n": 4,
+       "r": 0.024,
+       "tilt": 0,
+       "phase": 45,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.1,
+       0.02,
+       0.1
+      ],
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0,
+        0.11,
+        0
+       ],
+       [
+        0.02,
+        0.15,
+        0.01
+       ],
+       [
+        0.04,
+        0.17,
+        0.0
+       ]
+      ],
+      "r": 0.005,
+      "mat": [
+       "cloth",
+       "#d8d0b0"
+      ],
+      "taper": 1.0,
+      "sides": 4
+     },
+     {
+      "shape": "sphere",
+      "r": 0.014,
+      "at": [
+       0.04,
+       0.175,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#ffb040",
+       "#ff8a1a",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "A bundle of four red dynamite sticks tied with a band, a fuse with a spark. Origin at the centre.",
+   "targetPolycount": 200
+  },
+  {
+   "id": "part.dc_crystal_pauldron",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.17,
+       0.06,
+       0.14
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#3b3a44"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.36,
+      "r": 0.05,
+      "at": [
+       0.02,
+       0.03,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.0
+      ],
+      "rot": [
+       0,
+       0,
+       -12
+      ],
+      "sides": 6,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.25,
+      "r": 0.04,
+      "at": [
+       -0.07,
+       0.03,
+       0.05
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.0
+      ],
+      "rot": [
+       8,
+       0,
+       10
+      ],
+      "sides": 5,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.2,
+      "r": 0.035,
+      "at": [
+       0.08,
+       0.03,
+       -0.06
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.0
+      ],
+      "rot": [
+       -10,
+       0,
+       -25
+      ],
+      "sides": 5,
+      "lean": [
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Crystal pauldron: a flat dark rock slab with three Lumen crystals. Origin at the middle of the slab, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_crystal_spire",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.17,
+       0.06,
+       0.17
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#3b3a44"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.95,
+      "r": 0.095,
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 6,
+      "lean": [
+       0.08,
+       0.0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.5,
+      "r": 0.055,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 5,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 4,
+       "r": 0.1,
+       "tilt": 22,
+       "phase": 0,
+       "jitter": 0.25,
+       "seed": 3,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Crystal spire: one tall Lumen crystal ringed by four shorter ones on a rock base. Origin at the base, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_crystal_crown",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.1,
+      "tube": 0.012,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 10,
+      "minor": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.26,
+      "r": 0.022,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 7,
+       "r": 0.1,
+       "tilt": 14,
+       "phase": 0,
+       "jitter": 0.3,
+       "seed": 5,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Crystal crown: a thin band with seven Lumen crystal spikes. Origin at the band centre, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_shard_sac",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.15,
+       0.13,
+       0.15
+      ],
+      "at": [
+       0,
+       0.1,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.1
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.1,
+       0.09,
+       0.1
+      ],
+      "at": [
+       0.14,
+       0.07,
+       0.06
+      ],
+      "mat": [
+       "crystal",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.1
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.09,
+       0.08,
+       0.09
+      ],
+      "at": [
+       -0.12,
+       0.06,
+       -0.08
+      ],
+      "mat": [
+       "crystal",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.1
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.2,
+      "r": 0.025,
+      "at": [
+       0,
+       0.17,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#9fd8f0",
+       "#c8f0ff",
+       1.5
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 5,
+       "r": 0.07,
+       "tilt": 28,
+       "phase": 0,
+       "jitter": 0.3,
+       "seed": 2,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "shard",
+      "len": 0.22,
+      "r": 0.03,
+      "at": [
+       0.14,
+       0.12,
+       0.06
+      ],
+      "mat": [
+       "crystal",
+       "#9fd8f0",
+       "#c8f0ff",
+       1.5
+      ],
+      "rot": [
+       0,
+       0,
+       -30
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Shard sac: three swollen glowing blue sacs with crystal shards bursting out. Origin at the base, grows up.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_maw",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.24,
+      "tube": 0.05,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "bone",
+       "#b8ab8a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 12,
+      "minor": 4,
+      "squash": 1.2
+     },
+     {
+      "shape": "cone",
+      "r": 0.036,
+      "len": 0.24,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "bone",
+       "#e0d6b8"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5,
+      "radial": {
+       "n": 8,
+       "r": 0.24,
+       "tilt": -26,
+       "phase": 0,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "cyl",
+      "r": 0.18,
+      "len": 0.02,
+      "at": [
+       0,
+       -0.02,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.6
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 10
+     }
+    ]
+   },
+   "prompt": "Burrower maw: a bone ring of eight inward curving teeth round a glowing throat, worn on top of the body. Origin at the ring centre, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_stone_collar",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.3,
+      "tube": 0.075,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#5b5448"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 12,
+      "minor": 4,
+      "squash": 1.4
+     },
+     {
+      "shape": "shard",
+      "len": 0.16,
+      "r": 0.032,
+      "at": [
+       0,
+       0.04,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       1.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 5,
+       "r": 0.3,
+       "tilt": 25,
+       "phase": 0,
+       "jitter": 0.3,
+       "seed": 4,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Burrower armour: a ring of packed rock with crystal nubs, worn round the body. Origin at the centre, axis up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_trooper_visor",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.2,
+       0.05,
+       0.05
+      ],
+      "at": [
+       0,
+       0.0,
+       0.135
+      ],
+      "mat": [
+       "glow",
+       "#8fd0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.008
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.035,
+       0.07,
+       0.3
+      ],
+      "at": [
+       0,
+       0.15,
+       -0.0
+      ],
+      "mat": [
+       "metal",
+       "#24508f"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "taper": [
+       1.0,
+       0.6
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.025,
+       0.02,
+       0.06
+      ],
+      "at": [
+       0,
+       0.11,
+       0.17
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Security helmet add-on: a glowing blue visor band on the front (+Z) and a blue crest ridge. Origin at the head centre.",
+   "targetPolycount": 200
+  },
+  {
+   "id": "part.dc_shield_panel",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.52,
+       0.8,
+       0.03
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.01,
+      "taper": [
+       0.82,
+       1.0
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.42,
+       0.7,
+       0.03
+      ],
+      "at": [
+       0,
+       0,
+       0.012
+      ],
+      "mat": [
+       "glow",
+       "#8fd0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "taper": [
+       0.8,
+       1.0
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.05,
+       0.05,
+       0.06
+      ],
+      "at": [
+       0,
+       0.4,
+       0.02
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Officer energy shield: a tall gold-framed plate with a glowing blue pane. Origin at its centre, faces +Z.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_backpack_gen",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.3,
+       0.4,
+       0.16
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.012
+     },
+     {
+      "shape": "cyl",
+      "r": 0.035,
+      "len": 0.34,
+      "at": [
+       0,
+       -0.1,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fd0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6,
+      "radial": {
+       "n": 2,
+       "r": 0.07,
+       "tilt": 0,
+       "phase": 90,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "cyl",
+      "r": 0.01,
+      "len": 0.4,
+      "at": [
+       0.1,
+       0.2,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "sphere",
+      "r": 0.03,
+      "at": [
+       0.1,
+       0.62,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fd0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Shield generator backpack: a dark box with two glowing coils and an antenna. Origin at the centre of the back, faces away along -Z.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_shoulder_plate_blue",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.17,
+       0.09,
+       0.15
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#24508f"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 4
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.2,
+       0.025,
+       0.04
+      ],
+      "at": [
+       0,
+       0.075,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "sphere",
+      "r": 0.025,
+      "at": [
+       0,
+       0.09,
+       0.09
+      ],
+      "mat": [
+       "glow",
+       "#8fd0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Armoured shoulder plate, security blue with a glow stud. Origin at the middle.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_shoulder_plate_gold",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.2,
+       0.1,
+       0.17
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 4
+     },
+     {
+      "shape": "cone",
+      "r": 0.03,
+      "len": 0.14,
+      "at": [
+       0,
+       0.06,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5,
+      "radial": {
+       "n": 3,
+       "r": 0.08,
+       "tilt": 12,
+       "phase": 0,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "sphere",
+      "r": 0.03,
+      "at": [
+       0,
+       0.09,
+       0.1
+      ],
+      "mat": [
+       "glow",
+       "#e8b83a",
+       "#ffd23a",
+       1.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Armoured shoulder plate, gold with spikes (officers and governors). Origin at the middle.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_peaked_cap",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.14,
+      "len": 0.09,
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "cloth",
+       "#1c1d21"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 10,
+      "r2": 0.16
+     },
+     {
+      "shape": "cyl",
+      "r": 0.15,
+      "len": 0.02,
+      "at": [
+       0,
+       0.085,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 10,
+      "r2": 0.17
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.2,
+       0.012,
+       0.12
+      ],
+      "at": [
+       0,
+       -0.002,
+       0.15
+      ],
+      "mat": [
+       "cloth",
+       "#1c1d21"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.04,
+       0.045,
+       0.012
+      ],
+      "at": [
+       0,
+       0.04,
+       0.145
+      ],
+      "mat": [
+       "glow",
+       "#e8b83a",
+       "#ffd23a",
+       1.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Security chief peaked cap: a flat dark crown, a stiff brim on the front (+Z) and a gold badge. Origin at the brim centre.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_grenade_belt",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.65,
+       0.07,
+       0.03
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "cloth",
+       "#1c1d21"
+      ],
+      "rot": [
+       0,
+       0,
+       -32
+      ]
+     },
+     {
+      "shape": "cyl",
+      "r": 0.03,
+      "len": 0.08,
+      "at": [
+       -0.22,
+       0.15,
+       0.035
+      ],
+      "mat": [
+       "rust",
+       "#4a5a2a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.03,
+      "len": 0.08,
+      "at": [
+       -0.11,
+       0.075,
+       0.035
+      ],
+      "mat": [
+       "rust",
+       "#4a5a2a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.03,
+      "len": 0.08,
+      "at": [
+       0.0,
+       0.0,
+       0.035
+      ],
+      "mat": [
+       "rust",
+       "#4a5a2a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.03,
+      "len": 0.08,
+      "at": [
+       0.11000000000000001,
+       -0.07499999999999998,
+       0.035
+      ],
+      "mat": [
+       "rust",
+       "#4a5a2a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.03,
+      "len": 0.08,
+      "at": [
+       0.22,
+       -0.15,
+       0.035
+      ],
+      "mat": [
+       "rust",
+       "#4a5a2a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "sphere",
+      "r": 0.012,
+      "at": [
+       -0.22,
+       0.2,
+       0.035
+      ],
+      "mat": [
+       "glow",
+       "#ff6a2a",
+       "#ff6a2a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.012,
+      "at": [
+       -0.11,
+       0.125,
+       0.035
+      ],
+      "mat": [
+       "glow",
+       "#ff6a2a",
+       "#ff6a2a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.012,
+      "at": [
+       0.0,
+       0.05,
+       0.035
+      ],
+      "mat": [
+       "glow",
+       "#ff6a2a",
+       "#ff6a2a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.012,
+      "at": [
+       0.11000000000000001,
+       -0.02499999999999998,
+       0.035
+      ],
+      "mat": [
+       "glow",
+       "#ff6a2a",
+       "#ff6a2a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.012,
+      "at": [
+       0.22,
+       -0.09999999999999999,
+       0.035
+      ],
+      "mat": [
+       "glow",
+       "#ff6a2a",
+       "#ff6a2a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Grenade bandolier: a strap across the chest with five grenades. Origin at the middle of the chest, faces +Z.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_kade_crown",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.12,
+      "tube": 0.018,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 12,
+      "minor": 4
+     },
+     {
+      "shape": "cone",
+      "r": 0.025,
+      "len": 0.2,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c9a227"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5,
+      "radial": {
+       "n": 6,
+       "r": 0.12,
+       "tilt": 10,
+       "phase": 0,
+       "jitter": 0.25,
+       "seed": 2,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "shard",
+      "len": 0.3,
+      "r": 0.04,
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#2a8fc0",
+       "#5ac8ff",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 6,
+      "lean": [
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Governor Kade grim crown: a gold band with six tall spikes round a glowing Lumen crystal. Origin at the band centre.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_conduit_pack",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.34,
+       0.42,
+       0.2
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.012
+     },
+     {
+      "shape": "cyl",
+      "r": 0.032,
+      "len": 0.6,
+      "at": [
+       0,
+       0.18,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#5ac8ff",
+       "#5ac8ff",
+       2.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6,
+      "radial": {
+       "n": 3,
+       "r": 0.09,
+       "tilt": 0,
+       "phase": 90,
+       "jitter": 0.15,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.12,
+        0.18,
+        0.0
+       ],
+       [
+        0.2,
+        0.3,
+        0.12
+       ],
+       [
+        0.26,
+        0.28,
+        0.26
+       ]
+      ],
+      "r": 0.022,
+      "mat": [
+       "glow",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.6
+      ],
+      "taper": 1.0,
+      "sides": 4
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -0.12,
+        0.18,
+        0.0
+       ],
+       [
+        -0.2,
+        0.3,
+        0.12
+       ],
+       [
+        -0.26,
+        0.28,
+        0.26
+       ]
+      ],
+      "r": 0.022,
+      "mat": [
+       "glow",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.6
+      ],
+      "taper": 1.0,
+      "sides": 4
+     }
+    ]
+   },
+   "prompt": "Lumen conduit pack: a dark backpack with three tall glowing cyan conduits and two cables to the shoulders. Origin at the centre of the back, faces -Z.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_glitch_fan",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.5,
+       0.012
+      ],
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#3ab8ff",
+       "#5ae0ff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       -64
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.5499999999999999,
+       0.012
+      ],
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#3ab8ff",
+       "#5ae0ff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       -32
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.6,
+       0.012
+      ],
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#3ab8ff",
+       "#5ae0ff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.5499999999999999,
+       0.012
+      ],
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#3ab8ff",
+       "#5ae0ff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       32
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.5,
+       0.012
+      ],
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#3ab8ff",
+       "#5ae0ff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       64
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     }
+    ]
+   },
+   "prompt": "Echo glitch fan: five flat cyan blades fanned out like broken light. Origin at the root of the fan, spreads in the XY plane.",
+   "targetPolycount": 200
+  },
+  {
+   "id": "part.dc_tablets",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.2,
+       0.3,
+       0.02
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#c8f0ff",
+       "#8fe0ff",
+       1.8
+      ],
+      "rot": [
+       0,
+       90,
+       0
+      ],
+      "radial": {
+       "n": 5,
+       "r": 0.5,
+       "tilt": 0,
+       "phase": 0,
+       "jitter": 0.2,
+       "seed": 2,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "ring",
+      "r": 0.5,
+      "tube": 0.008,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#5ac8ff",
+       "#5ac8ff",
+       1.5
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 14,
+      "minor": 3
+     }
+    ]
+   },
+   "prompt": "Memory tablets: five thin glowing slabs floating in a ring. Origin at the ring centre.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_prism",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cone",
+      "r": 0.22,
+      "len": 0.45,
+      "at": [
+       0,
+       0.45,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#9fd8f0",
+       "#c8f0ff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 3
+     },
+     {
+      "shape": "cone",
+      "r": 0.22,
+      "len": 0.45,
+      "at": [
+       0,
+       0.45,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#9fd8f0",
+       "#c8f0ff",
+       1.8
+      ],
+      "rot": [
+       180,
+       0,
+       0
+      ],
+      "verts": 3
+     },
+     {
+      "shape": "ring",
+      "r": 0.36,
+      "tube": 0.012,
+      "at": [
+       0,
+       0.45,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#5ac8ff",
+       "#5ac8ff",
+       1.8
+      ],
+      "rot": [
+       18,
+       0,
+       0
+      ],
+      "major": 12,
+      "minor": 3
+     }
+    ]
+   },
+   "prompt": "The Prism: a floating triangular bipyramid of white-cyan crystal with a thin ring. Origin at the bottom tip, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_elder_ring",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.9,
+      "tube": 0.06,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#8fa0b8"
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "major": 16,
+      "minor": 4
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       0.9,
+       0.0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       -90
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       0.6363961030678928,
+       0.6363961030678927,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       -45
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       5.5109105961630896e-17,
+       0.9,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       -0.6363961030678927,
+       0.6363961030678928,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       45
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       -0.9,
+       1.1021821192326179e-16,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       90
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       -0.636396103067893,
+       -0.6363961030678927,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       135
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       -1.6532731788489269e-16,
+       -0.9,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       180
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.14,
+       0.09
+      ],
+      "at": [
+       0.6363961030678926,
+       -0.636396103067893,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       225
+      ]
+     }
+    ]
+   },
+   "prompt": "Elder halo: a large upright ring with eight glyph blocks, cold blue. Origin at the ring centre, the ring stands in the XY plane.",
+   "targetPolycount": 500
+  },
+  {
+   "id": "part.dc_elder_slab",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.4,
+       1.3,
+       0.22
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#8fa0b8"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "taper": [
+       0.6,
+       0.7
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.05,
+       0.9,
+       0.02
+      ],
+      "at": [
+       0,
+       0.15,
+       0.115
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.2,
+       0.04,
+       0.02
+      ],
+      "at": [
+       0,
+       0.8,
+       0.105
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.2,
+       0.04,
+       0.02
+      ],
+      "at": [
+       0,
+       0.55,
+       0.11
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#5ac8ff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Elder monolith: a tall tapering slab of pale stone with glowing glyph bars. Origin at the base, grows up.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_cable_bundle",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0.08,
+        -0.25,
+        0.06
+       ],
+       [
+        0.1,
+        -0.6,
+        0.12
+       ],
+       [
+        0.04,
+        -0.95,
+        0.1
+       ]
+      ],
+      "r": 0.035,
+      "mat": [
+       "cloth",
+       "#1c1d21"
+      ],
+      "taper": 0.8,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.05,
+        0,
+        -0.04
+       ],
+       [
+        -0.05,
+        -0.3,
+        -0.08
+       ],
+       [
+        -0.1,
+        -0.7,
+        0.0
+       ],
+       [
+        -0.12,
+        -1.0,
+        0.04
+       ]
+      ],
+      "r": 0.03,
+      "mat": [
+       "cloth",
+       "#1c1d21"
+      ],
+      "taper": 0.8,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -0.05,
+        0,
+        0.05
+       ],
+       [
+        0.0,
+        -0.2,
+        0.18
+       ],
+       [
+        0.14,
+        -0.5,
+        0.22
+       ],
+       [
+        0.2,
+        -0.85,
+        0.2
+       ]
+      ],
+      "r": 0.028,
+      "mat": [
+       "rust",
+       "#3a3a30"
+      ],
+      "taper": 0.8,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.0,
+        0,
+        0.0
+       ],
+       [
+        -0.12,
+        -0.2,
+        0.0
+       ],
+       [
+        -0.22,
+        -0.55,
+        0.06
+       ],
+       [
+        -0.26,
+        -0.8,
+        0.02
+       ]
+      ],
+      "r": 0.025,
+      "mat": [
+       "cloth",
+       "#1c1d21"
+      ],
+      "taper": 0.8,
+      "sides": 5
+     },
+     {
+      "shape": "sphere",
+      "r": 0.04,
+      "at": [
+       0.04,
+       -0.97,
+       0.1
+      ],
+      "mat": [
+       "glow",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.035,
+      "at": [
+       -0.26,
+       -0.82,
+       0.02
+      ],
+      "mat": [
+       "glow",
+       "#3a7fb0",
+       "#5ac8ff",
+       1.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Drowned cables: four thick black cables drooping from the attach point, with dull glow tips. Origin at the top, hangs down (-Y).",
+   "targetPolycount": 500
+  },
+  {
+   "id": "part.dc_moss_mat",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.28,
+       0.1,
+       0.24
+      ],
+      "at": [
+       0,
+       0.03,
+       0
+      ],
+      "mat": [
+       "flesh",
+       "#3a5a2a",
+       "#7dff7a",
+       0.25
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.16,
+       0.09,
+       0.15
+      ],
+      "at": [
+       0.2,
+       0.04,
+       0.1
+      ],
+      "mat": [
+       "flesh",
+       "#3a5a2a",
+       "#7dff7a",
+       0.25
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.15,
+       0.08,
+       0.14
+      ],
+      "at": [
+       -0.2,
+       0.03,
+       0.08
+      ],
+      "mat": [
+       "flesh",
+       "#4a6a2a",
+       "#7dff7a",
+       0.25
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.13,
+       0.09,
+       0.12
+      ],
+      "at": [
+       0.05,
+       0.05,
+       -0.2
+      ],
+      "mat": [
+       "flesh",
+       "#3a5a2a",
+       "#7dff7a",
+       0.25
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.1,
+       0.07,
+       0.1
+      ],
+      "at": [
+       -0.1,
+       0.04,
+       0.2
+      ],
+      "mat": [
+       "flesh",
+       "#4a6a2a",
+       "#7dff7a",
+       0.25
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Moss: a low mat of five dark green mounds with faint glow. Origin at the middle, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_shade_halo",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.3,
+      "tube": 0.008,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 14,
+      "minor": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.2,
+      "r": 0.028,
+      "at": [
+       0,
+       0.03,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 7,
+       "r": 0.3,
+       "tilt": 6,
+       "phase": 0,
+       "jitter": 0.35,
+       "seed": 4,
+       "lift": 0.0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Shade halo: seven floating violet shards round a thin glowing ring. Origin at the ring centre, axis up.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_shade_fan",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.42,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       -60.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.52,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       -30.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.62,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       0.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.52,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       30.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.075,
+       0.42,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       60.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     }
+    ]
+   },
+   "prompt": "Shade fan: five ragged violet blades fanned out behind the body. Origin at the root, spreads in the XY plane.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_shade_crown",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.1,
+      "tube": 0.012,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 10,
+      "minor": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.36,
+      "r": 0.022,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 9,
+       "r": 0.1,
+       "tilt": 8,
+       "phase": 0,
+       "jitter": 0.3,
+       "seed": 3,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Shade crown: a thin violet band with nine long thin spikes, the middle ones tallest. Origin at the band centre.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_shade_drift",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "shard",
+      "len": 0.24,
+      "r": 0.03,
+      "at": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       180
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.18,
+      "r": 0.025,
+      "at": [
+       0.14,
+       0.06,
+       0.04
+      ],
+      "mat": [
+       "crystal",
+       "#4a3a8a",
+       "#9d7bff",
+       1.6
+      ],
+      "rot": [
+       20,
+       0,
+       150
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.2,
+      "r": 0.025,
+      "at": [
+       -0.14,
+       0.04,
+       -0.03
+      ],
+      "mat": [
+       "crystal",
+       "#4a3a8a",
+       "#9d7bff",
+       1.6
+      ],
+      "rot": [
+       -15,
+       0,
+       -160
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.14,
+      "r": 0.02,
+      "at": [
+       0.06,
+       -0.12,
+       0.1
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       40,
+       0,
+       190
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.16,
+      "r": 0.022,
+      "at": [
+       -0.07,
+       -0.1,
+       -0.1
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       -35,
+       0,
+       170
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Shade drift: five violet shards floating loose below and around the body. Origin at the middle, shards point every way.",
+   "targetPolycount": 200
+  },
+  {
+   "id": "part.dc_shade_spine",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "shard",
+      "len": 0.24,
+      "r": 0.03,
+      "at": [
+       0,
+       0,
+       -0.0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       -28,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.27,
+      "r": 0.03,
+      "at": [
+       0,
+       0,
+       -0.14
+      ],
+      "mat": [
+       "crystal",
+       "#4a3a8a",
+       "#9d7bff",
+       1.6
+      ],
+      "rot": [
+       -28,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.3,
+      "r": 0.03,
+      "at": [
+       0,
+       0,
+       -0.28
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       -28,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.27,
+      "r": 0.03,
+      "at": [
+       0,
+       0,
+       -0.42000000000000004
+      ],
+      "mat": [
+       "crystal",
+       "#4a3a8a",
+       "#9d7bff",
+       1.6
+      ],
+      "rot": [
+       -28,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.24,
+      "r": 0.03,
+      "at": [
+       0,
+       0,
+       -0.56
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       -28,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.21,
+      "r": 0.03,
+      "at": [
+       0,
+       0,
+       -0.7000000000000001
+      ],
+      "mat": [
+       "crystal",
+       "#4a3a8a",
+       "#9d7bff",
+       1.6
+      ],
+      "rot": [
+       -28,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Shade spine: a row of six violet shards leaning back, for a beast. Origin at the front of the row, runs back along -Z.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_shade_wing",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.6,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       -35.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.7,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       0.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.09,
+       0.6,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       35.0
+      ],
+      "taper": [
+       0.12,
+       1.0
+      ],
+      "base": true
+     }
+    ]
+   },
+   "prompt": "Shade wing: three long violet blades sweeping out, one of a pair. Origin at the root, spreads in the XY plane.",
+   "targetPolycount": 200
+  },
+  {
+   "id": "part.dc_kade_crown_violet",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.12,
+      "tube": 0.018,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#5a4aa0"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 12,
+      "minor": 4
+     },
+     {
+      "shape": "cone",
+      "r": 0.025,
+      "len": 0.2,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#5a4aa0"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5,
+      "radial": {
+       "n": 6,
+       "r": 0.12,
+       "tilt": 10,
+       "phase": 0,
+       "jitter": 0.25,
+       "seed": 2,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "shard",
+      "len": 0.3,
+      "r": 0.04,
+      "at": [
+       0,
+       0.0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 6,
+      "lean": [
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "The shade of Kade crown: a violet band with six tall spikes round a glowing crystal. Origin at the band centre.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_conduit_pack_violet",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.34,
+       0.42,
+       0.2
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.012
+     },
+     {
+      "shape": "cyl",
+      "r": 0.032,
+      "len": 0.6,
+      "at": [
+       0,
+       0.18,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6,
+      "radial": {
+       "n": 3,
+       "r": 0.09,
+       "tilt": 0,
+       "phase": 90,
+       "jitter": 0.15,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.12,
+        0.18,
+        0.0
+       ],
+       [
+        0.2,
+        0.3,
+        0.12
+       ],
+       [
+        0.26,
+        0.28,
+        0.26
+       ]
+      ],
+      "r": 0.022,
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       1.8
+      ],
+      "taper": 1.0,
+      "sides": 4
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -0.12,
+        0.18,
+        0.0
+       ],
+       [
+        -0.2,
+        0.3,
+        0.12
+       ],
+       [
+        -0.26,
+        0.28,
+        0.26
+       ]
+      ],
+      "r": 0.022,
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       1.8
+      ],
+      "taper": 1.0,
+      "sides": 4
+     }
+    ]
+   },
+   "prompt": "Violet conduit pack: a dark backpack with three tall glowing violet conduits. Origin at the centre of the back.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_shoulder_plate_violet",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.2,
+       0.1,
+       0.17
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#5a4aa0"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 4
+     },
+     {
+      "shape": "cone",
+      "r": 0.03,
+      "len": 0.14,
+      "at": [
+       0,
+       0.06,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#5a4aa0"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5,
+      "radial": {
+       "n": 3,
+       "r": 0.08,
+       "tilt": 12,
+       "phase": 0,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "sphere",
+      "r": 0.03,
+      "at": [
+       0,
+       0.09,
+       0.1
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Armoured shoulder plate in violet metal with spikes. Origin at the middle.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_vines_violet",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0,
+        0,
+        0
+       ],
+       [
+        0.08,
+        -0.25,
+        0.06
+       ],
+       [
+        0.1,
+        -0.6,
+        0.12
+       ],
+       [
+        0.04,
+        -0.95,
+        0.1
+       ]
+      ],
+      "r": 0.035,
+      "mat": [
+       "flesh",
+       "#4a3a8a",
+       "#9d7bff",
+       0.8
+      ],
+      "taper": 0.7,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.05,
+        0,
+        -0.04
+       ],
+       [
+        -0.05,
+        -0.3,
+        -0.08
+       ],
+       [
+        -0.1,
+        -0.7,
+        0.0
+       ],
+       [
+        -0.12,
+        -1.0,
+        0.04
+       ]
+      ],
+      "r": 0.03,
+      "mat": [
+       "flesh",
+       "#5a4aa0",
+       "#9d7bff",
+       0.8
+      ],
+      "taper": 0.7,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -0.05,
+        0,
+        0.05
+       ],
+       [
+        0.0,
+        -0.2,
+        0.18
+       ],
+       [
+        0.14,
+        -0.5,
+        0.22
+       ],
+       [
+        0.2,
+        -0.85,
+        0.2
+       ]
+      ],
+      "r": 0.028,
+      "mat": [
+       "flesh",
+       "#4a3a8a",
+       "#9d7bff",
+       0.8
+      ],
+      "taper": 0.7,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.0,
+        0,
+        0.0
+       ],
+       [
+        -0.12,
+        -0.2,
+        0.0
+       ],
+       [
+        -0.22,
+        -0.55,
+        0.06
+       ],
+       [
+        -0.26,
+        -0.8,
+        0.02
+       ]
+      ],
+      "r": 0.025,
+      "mat": [
+       "flesh",
+       "#5a4aa0",
+       "#9d7bff",
+       0.8
+      ],
+      "taper": 0.7,
+      "sides": 5
+     },
+     {
+      "shape": "sphere",
+      "r": 0.04,
+      "at": [
+       0.04,
+       -0.97,
+       0.1
+      ],
+      "mat": [
+       "crystal",
+       "#8a78d8",
+       "#d8c8ff",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Shade vines: four long violet vines hanging from the attach point with glowing tips. Origin at the top, hangs down (-Y).",
+   "targetPolycount": 500
+  },
+  {
+   "id": "part.dc_abs_crown",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.2,
+      "tube": 0.012,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 10,
+      "minor": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.3,
+      "r": 0.022,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#e8d8a0",
+       "#ffe49a",
+       1.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 9,
+       "r": 0.2,
+       "tilt": 22,
+       "phase": 0,
+       "jitter": 0.2,
+       "seed": 6,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Absorbed halo: a pale gold ring with nine radiating spikes of Lumen crystal. Origin at the centre, axis up.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_abs_wings",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.085,
+       0.6,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       -45.0
+      ],
+      "taper": [
+       0.1,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.085,
+       0.7,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       -15.0
+      ],
+      "taper": [
+       0.1,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.085,
+       0.7,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       15.0
+      ],
+      "taper": [
+       0.1,
+       1.0
+      ],
+      "base": true
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.085,
+       0.6,
+       0.012
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       45.0
+      ],
+      "taper": [
+       0.1,
+       1.0
+      ],
+      "base": true
+     }
+    ]
+   },
+   "prompt": "Absorbed wings: four long gold crystal blades fanned out, one of a pair. Origin at the root, spreads in the XY plane.",
+   "targetPolycount": 200
+  },
+  {
+   "id": "part.dc_abs_hammer",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.025,
+      "len": 0.7,
+      "at": [
+       0,
+       -0.1,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.3,
+       0.16,
+       0.16
+      ],
+      "at": [
+       0,
+       0.64,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#e8d8a0",
+       "#ffe49a",
+       1.5
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.012
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.06,
+       0.22,
+       0.2
+      ],
+      "at": [
+       0.17,
+       0.64,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.06,
+       0.22,
+       0.2
+      ],
+      "at": [
+       -0.17,
+       0.64,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     }
+    ]
+   },
+   "prompt": "Ostrow smith hammer grown in crystal: a long shaft and a heavy faceted head, gold-white. Origin at the grip, grows up.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_abs_toque",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.12,
+      "len": 0.09,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#f0e8c0",
+       "#ffe49a",
+       1.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 9
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.17,
+       0.12,
+       0.17
+      ],
+      "at": [
+       0,
+       0.16,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#f0e8c0",
+       "#ffe49a",
+       1.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 4
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.1,
+       0.08,
+       0.1
+      ],
+      "at": [
+       0.1,
+       0.22,
+       0.04
+      ],
+      "mat": [
+       "crystal",
+       "#f0e8c0",
+       "#ffe49a",
+       1.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Brother Lenn chef hat grown in pale crystal: a tall puffed toque. Origin at the base of the hat.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_abs_pipes",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.3,
+       0.32,
+       0.12
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.01
+     },
+     {
+      "shape": "cyl",
+      "r": 0.04,
+      "len": 0.62,
+      "at": [
+       0,
+       -0.1,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 7,
+      "radial": {
+       "n": 3,
+       "r": 0.09,
+       "tilt": 0,
+       "phase": 90,
+       "jitter": 0.2,
+       "seed": 2,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "cyl",
+      "r": 0.035,
+      "len": 0.34,
+      "at": [
+       0.0,
+       0.1,
+       0.0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       90
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "sphere",
+      "r": 0.05,
+      "at": [
+       0,
+       0.55,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3,
+      "radial": {
+       "n": 3,
+       "r": 0.09,
+       "tilt": 0,
+       "phase": 90,
+       "jitter": 0.2,
+       "seed": 2,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Halvorsen pump pipes: a backpack of three brass pipes with glowing valves. Origin at the middle of the back.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_abs_dish",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.018,
+      "len": 0.45,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cyl",
+      "r": 0.2,
+      "len": 0.03,
+      "at": [
+       0,
+       0.45,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       25,
+       0,
+       0
+      ],
+      "verts": 10,
+      "r2": 0.04
+     },
+     {
+      "shape": "sphere",
+      "r": 0.03,
+      "at": [
+       0,
+       0.5,
+       0.06
+      ],
+      "mat": [
+       "glow",
+       "#7affd8",
+       "#7affd8",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Rhee antenna dish: a mast with a shallow dish and a glowing feed, gold-white. Origin at the mast base, grows up.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_abs_helm",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.14,
+       0.12,
+       0.15
+      ],
+      "at": [
+       0,
+       0.02,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#c8b878"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 4
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.2,
+       0.05,
+       0.05
+      ],
+      "at": [
+       0,
+       0.0,
+       0.13
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.035,
+       0.08,
+       0.28
+      ],
+      "at": [
+       0,
+       0.13,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#e8d8a0",
+       "#ffe49a",
+       1.5
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "taper": [
+       1.0,
+       0.5
+      ]
+     }
+    ]
+   },
+   "prompt": "Danner helmet grown in crystal: a dome, a glowing visor band and a crest. Origin at the head centre.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_choir_crown",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.22,
+      "tube": 0.02,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 10,
+      "minor": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.55,
+      "r": 0.022,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#f0e8c0",
+       "#fff0c0",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 5,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 7,
+       "r": 0.22,
+       "tilt": 8,
+       "phase": 0,
+       "jitter": 0.3,
+       "seed": 7,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "sphere",
+      "r": 0.08,
+      "at": [
+       0,
+       0.1,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#f2e2a0",
+       "#ffe49a",
+       1.8
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4
+     }
+    ]
+   },
+   "prompt": "Choir crown: a pale gold band with seven tall spires round a bright pearl. Origin at the band centre.",
+   "targetPolycount": 400
+  },
+  {
+   "id": "part.dc_veil",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -0.1,
+        0,
+        0
+       ],
+       [
+        -0.18,
+        -0.3,
+        -0.12
+       ],
+       [
+        -0.22,
+        -0.7,
+        -0.3
+       ],
+       [
+        -0.12,
+        -1.2,
+        -0.45
+       ]
+      ],
+      "r": 0.04,
+      "mat": [
+       "flesh",
+       "#f0e8c0",
+       "#ffe49a",
+       0.9
+      ],
+      "taper": 0.4,
+      "sides": 4
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -0.04000000000000001,
+        0,
+        0
+       ],
+       [
+        -0.072,
+        -0.3,
+        -0.12
+       ],
+       [
+        -0.08800000000000001,
+        -0.7,
+        -0.3
+       ],
+       [
+        -0.048,
+        -1.2,
+        -0.45
+       ]
+      ],
+      "r": 0.04,
+      "mat": [
+       "flesh",
+       "#f0e8c0",
+       "#ffe49a",
+       0.9
+      ],
+      "taper": 0.4,
+      "sides": 4
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.04000000000000001,
+        0,
+        0
+       ],
+       [
+        0.072,
+        -0.3,
+        -0.12
+       ],
+       [
+        0.08800000000000001,
+        -0.7,
+        -0.3
+       ],
+       [
+        0.048,
+        -1.2,
+        -0.45
+       ]
+      ],
+      "r": 0.04,
+      "mat": [
+       "flesh",
+       "#f0e8c0",
+       "#ffe49a",
+       0.9
+      ],
+      "taper": 0.4,
+      "sides": 4
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.1,
+        0,
+        0
+       ],
+       [
+        0.18,
+        -0.3,
+        -0.12
+       ],
+       [
+        0.22,
+        -0.7,
+        -0.3
+       ],
+       [
+        0.12,
+        -1.2,
+        -0.45
+       ]
+      ],
+      "r": 0.04,
+      "mat": [
+       "flesh",
+       "#f0e8c0",
+       "#ffe49a",
+       0.9
+      ],
+      "taper": 0.4,
+      "sides": 4
+     }
+    ]
+   },
+   "prompt": "Choir veil: four long pale ribbons trailing down and back from the attach point. Origin at the top, hangs down.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_stone_crown",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 0.22,
+      "tube": 0.04,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#4a4844"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 10,
+      "minor": 4
+     },
+     {
+      "shape": "cone",
+      "r": 0.05,
+      "len": 0.5,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#6a6860"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5,
+      "radial": {
+       "n": 7,
+       "r": 0.22,
+       "tilt": 8,
+       "phase": 0,
+       "jitter": 0.3,
+       "seed": 3,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "cone",
+      "r": 0.012,
+      "len": 0.3,
+      "at": [
+       0,
+       0.05,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#ffb050",
+       "#ff9a30",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 4,
+      "radial": {
+       "n": 7,
+       "r": 0.22,
+       "tilt": 8,
+       "phase": 0,
+       "jitter": 0.3,
+       "seed": 3,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Stone crown: a band of rough stone with seven blunt grey spires and glowing cracks. Origin at the band centre.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_stone_orbit",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.44,
+       0.32,
+       0.38
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#6a6860"
+      ],
+      "rot": [
+       15,
+       20,
+       10
+      ],
+      "bevel": 0.02,
+      "radial": {
+       "n": 6,
+       "r": 0.75,
+       "tilt": 0,
+       "phase": 0,
+       "jitter": 0.35,
+       "seed": 5,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.07,
+       0.2,
+       0.07
+      ],
+      "at": [
+       0,
+       0.06,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#ffb050",
+       "#ff9a30",
+       2.2
+      ],
+      "rot": [
+       15,
+       20,
+       10
+      ],
+      "radial": {
+       "n": 6,
+       "r": 0.75,
+       "tilt": 0,
+       "phase": 0,
+       "jitter": 0.35,
+       "seed": 5,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.24,
+       0.18,
+       0.2
+      ],
+      "at": [
+       0,
+       0.3,
+       0.12
+      ],
+      "mat": [
+       "rust",
+       "#4a4844"
+      ],
+      "rot": [
+       -10,
+       40,
+       0
+      ],
+      "radial": {
+       "n": 6,
+       "r": 0.75,
+       "tilt": 0,
+       "phase": 30,
+       "jitter": 0.35,
+       "seed": 8,
+       "lift": 0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "Stone orbit: six rough rock blocks floating in a ring, each with a glowing crack. Origin at the ring centre.",
+   "targetPolycount": 700
+  },
+  {
+   "id": "part.dc_hatch_pods",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "box",
+      "size": [
+       0.9,
+       0.12,
+       0.6
+      ],
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.02
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.22,
+       0.34,
+       0.22
+      ],
+      "at": [
+       0.0,
+       0.34,
+       0
+      ],
+      "mat": [
+       "flesh",
+       "#7a8a3a",
+       "#c8e060",
+       0.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 5
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.18,
+       0.28,
+       0.18
+      ],
+      "at": [
+       0.3,
+       0.3,
+       0.05
+      ],
+      "mat": [
+       "flesh",
+       "#7a8a3a",
+       "#c8e060",
+       0.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.18,
+       0.28,
+       0.18
+      ],
+      "at": [
+       -0.3,
+       0.3,
+       -0.05
+      ],
+      "mat": [
+       "flesh",
+       "#7a8a3a",
+       "#c8e060",
+       0.9
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.5,
+       0.04,
+       0.4
+      ],
+      "at": [
+       0,
+       0.78,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#a8561f"
+      ],
+      "rot": [
+       0,
+       0,
+       25
+      ],
+      "bevel": 0.01
+     },
+     {
+      "shape": "cyl",
+      "r": 0.05,
+      "len": 0.5,
+      "at": [
+       0.38,
+       0.1,
+       -0.2
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.05,
+      "len": 0.4,
+      "at": [
+       -0.38,
+       0.1,
+       -0.2
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     }
+    ]
+   },
+   "prompt": "Brood pods: three upright egg pods with hatch plates and exhaust pipes, glowing gold-green. Origin at the base, grows up.",
+   "targetPolycount": 450
+  },
+  {
+   "id": "part.dc_hollow_ring",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "ring",
+      "r": 1.0,
+      "tube": 0.1,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "major": 16,
+      "minor": 5
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.1,
+       0.18,
+       0.1
+      ],
+      "at": [
+       0.8886517601859429,
+       0.23811352149431908,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       -75
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.1,
+       0.18,
+       0.1
+      ],
+      "at": [
+       0.23811352149431908,
+       0.8886517601859429,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       -15
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.1,
+       0.18,
+       0.1
+      ],
+      "at": [
+       -0.6505382386916236,
+       0.6505382386916237,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       45
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.1,
+       0.18,
+       0.1
+      ],
+      "at": [
+       -0.8886517601859429,
+       -0.23811352149431914,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       105
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.1,
+       0.18,
+       0.1
+      ],
+      "at": [
+       -0.238113521494319,
+       -0.8886517601859429,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       165
+      ]
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.1,
+       0.18,
+       0.1
+      ],
+      "at": [
+       0.6505382386916236,
+       -0.6505382386916239,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#7c5cff",
+       "#b89cff",
+       2.2
+      ],
+      "rot": [
+       0,
+       0,
+       225
+      ]
+     },
+     {
+      "shape": "cone",
+      "r": 0.07,
+      "len": 0.25,
+      "at": [
+       0.7636753236814714,
+       0.7636753236814713,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       -45
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.07,
+      "len": 0.25,
+      "at": [
+       -0.2795245687107225,
+       1.043199892392194,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       15
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.07,
+      "len": 0.25,
+      "at": [
+       -1.0431998923921937,
+       0.27952456871072273,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       75
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.07,
+      "len": 0.25,
+      "at": [
+       -0.7636753236814715,
+       -0.7636753236814713,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       135
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.07,
+      "len": 0.25,
+      "at": [
+       0.27952456871072195,
+       -1.043199892392194,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       195
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.07,
+      "len": 0.25,
+      "at": [
+       1.043199892392194,
+       -0.27952456871072234,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       255
+      ],
+      "verts": 5
+     }
+    ]
+   },
+   "prompt": "Hollow ring: a heavy dark ring standing upright with violet glowing cracks and six blunt teeth round the hole. Origin at the ring centre, the ring stands in the XY plane.",
+   "targetPolycount": 700
+  },
+  {
+   "id": "part.dc_smokestack",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.16,
+      "len": 0.6,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#7a4a28"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 8,
+      "r2": 0.12
+     },
+     {
+      "shape": "ring",
+      "r": 0.14,
+      "tube": 0.03,
+      "at": [
+       0,
+       0.6,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 8,
+      "minor": 3
+     },
+     {
+      "shape": "cyl",
+      "r": 0.1,
+      "len": 0.03,
+      "at": [
+       0,
+       0.62,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#c2410c",
+       "#ff7a1a",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 8
+     },
+     {
+      "shape": "ring",
+      "r": 0.15,
+      "tube": 0.015,
+      "at": [
+       0,
+       0.2,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f36"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 8,
+      "minor": 3
+     }
+    ]
+   },
+   "prompt": "Smokestack: a fat rusted chimney with a flared glowing ember mouth. Origin at the base, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_ash_pile",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.3,
+       0.14,
+       0.26
+      ],
+      "at": [
+       0,
+       0.04,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#6a6a66"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.18,
+       0.11,
+       0.17
+      ],
+      "at": [
+       0.22,
+       0.03,
+       0.1
+      ],
+      "mat": [
+       "rust",
+       "#7a7a74"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.15,
+       0.1,
+       0.14
+      ],
+      "at": [
+       -0.2,
+       0.03,
+       -0.08
+      ],
+      "mat": [
+       "rust",
+       "#5a5a56"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.03,
+      "at": [
+       0.05,
+       0.16,
+       0.05
+      ],
+      "mat": [
+       "glow",
+       "#c2410c",
+       "#ff7a1a",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.025,
+      "at": [
+       -0.12,
+       0.1,
+       0.1
+      ],
+      "mat": [
+       "glow",
+       "#c2410c",
+       "#ff7a1a",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.022,
+      "at": [
+       0.2,
+       0.12,
+       0.12
+      ],
+      "mat": [
+       "glow",
+       "#c2410c",
+       "#ff7a1a",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Ash pile: three low grey mounds with a few glowing embers. Origin at the middle, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_horn_row",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cone",
+      "r": 0.07,
+      "len": 0.4,
+      "at": [
+       0,
+       0,
+       -0.0
+      ],
+      "mat": [
+       "rust",
+       "#7a4a28"
+      ],
+      "rot": [
+       -30,
+       0,
+       0
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.062000000000000006,
+      "len": 0.35000000000000003,
+      "at": [
+       0,
+       0,
+       -0.2
+      ],
+      "mat": [
+       "rust",
+       "#7a4a28"
+      ],
+      "rot": [
+       -30,
+       0,
+       0
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.054000000000000006,
+      "len": 0.30000000000000004,
+      "at": [
+       0,
+       0,
+       -0.4
+      ],
+      "mat": [
+       "rust",
+       "#7a4a28"
+      ],
+      "rot": [
+       -30,
+       0,
+       0
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.046000000000000006,
+      "len": 0.25,
+      "at": [
+       0,
+       0,
+       -0.6000000000000001
+      ],
+      "mat": [
+       "rust",
+       "#7a4a28"
+      ],
+      "rot": [
+       -30,
+       0,
+       0
+      ],
+      "verts": 5
+     },
+     {
+      "shape": "cone",
+      "r": 0.038000000000000006,
+      "len": 0.2,
+      "at": [
+       0,
+       0,
+       -0.8
+      ],
+      "mat": [
+       "rust",
+       "#7a4a28"
+      ],
+      "rot": [
+       -30,
+       0,
+       0
+      ],
+      "verts": 5
+     }
+    ]
+   },
+   "prompt": "A row of five blunt rusted horns along the back, getting smaller. Origin at the front of the row, runs back along -Z.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_spore_sac_big",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       0.2,
+       0.17,
+       0.2
+      ],
+      "at": [
+       0,
+       0.13,
+       0
+      ],
+      "mat": [
+       "flesh",
+       "#6a7a3a",
+       "#9dff5a",
+       0.7
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.13,
+       0.12,
+       0.13
+      ],
+      "at": [
+       0.18,
+       0.09,
+       0.08
+      ],
+      "mat": [
+       "flesh",
+       "#7a8a3a",
+       "#9dff5a",
+       0.7
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.12,
+       0.11,
+       0.12
+      ],
+      "at": [
+       -0.16,
+       0.08,
+       -0.1
+      ],
+      "mat": [
+       "flesh",
+       "#6a7a3a",
+       "#9dff5a",
+       0.7
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 6,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.04,
+      "at": [
+       0.04,
+       0.3,
+       0.06
+      ],
+      "mat": [
+       "glow",
+       "#9dff5a",
+       "#c8ff8a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.03,
+      "at": [
+       0.2,
+       0.2,
+       0.1
+      ],
+      "mat": [
+       "glow",
+       "#9dff5a",
+       "#c8ff8a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 5,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Spore sacs: three swollen green sacs with glowing spots. Origin at the base, grows up.",
+   "targetPolycount": 300
+  },
+  {
+   "id": "part.dc_bracket_fungus",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.2,
+      "len": 0.05,
+      "at": [
+       0.05,
+       0.0,
+       0
+      ],
+      "mat": [
+       "flesh",
+       "#c8b878",
+       "#9dff5a",
+       0.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 9,
+      "squash": [
+       1.2,
+       1.0
+      ]
+     },
+     {
+      "shape": "cyl",
+      "r": 0.15,
+      "len": 0.05,
+      "at": [
+       0.0,
+       0.1,
+       0.05
+      ],
+      "mat": [
+       "flesh",
+       "#b8a868",
+       "#9dff5a",
+       0.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 8
+     },
+     {
+      "shape": "cyl",
+      "r": 0.11,
+      "len": 0.045,
+      "at": [
+       0.04,
+       0.19,
+       -0.03
+      ],
+      "mat": [
+       "flesh",
+       "#c8b878",
+       "#9dff5a",
+       0.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 8
+     },
+     {
+      "shape": "cyl",
+      "r": 0.04,
+      "len": 0.2,
+      "at": [
+       0,
+       -0.02,
+       0
+      ],
+      "mat": [
+       "rust",
+       "#4a3a2a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 5
+     }
+    ]
+   },
+   "prompt": "Bracket fungus: three stacked shelf caps of pale fungus. Origin at the stalk, grows up.",
+   "targetPolycount": 250
+  },
+  {
+   "id": "part.dc_mushroom_crown",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.04,
+      "len": 0.25,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "flesh",
+       "#b8a868",
+       "#9dff5a",
+       0.2
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.2,
+       0.09,
+       0.2
+      ],
+      "at": [
+       0,
+       0.27,
+       0
+      ],
+      "mat": [
+       "flesh",
+       "#8a6a4a",
+       "#9dff5a",
+       0.35
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 8,
+      "rings": 3
+     },
+     {
+      "shape": "cyl",
+      "r": 0.035,
+      "len": 0.2,
+      "at": [
+       0.17,
+       0,
+       0.05
+      ],
+      "mat": [
+       "flesh",
+       "#b8a868",
+       "#9dff5a",
+       0.2
+      ],
+      "rot": [
+       0,
+       0,
+       -20
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.15,
+       0.07,
+       0.15
+      ],
+      "at": [
+       0.26,
+       0.22,
+       0.05
+      ],
+      "mat": [
+       "flesh",
+       "#8a6a4a",
+       "#9dff5a",
+       0.35
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 3
+     },
+     {
+      "shape": "cyl",
+      "r": 0.035,
+      "len": 0.22,
+      "at": [
+       -0.16,
+       0,
+       -0.05
+      ],
+      "mat": [
+       "flesh",
+       "#b8a868",
+       "#9dff5a",
+       0.2
+      ],
+      "rot": [
+       0,
+       0,
+       22
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.15,
+       0.07,
+       0.15
+      ],
+      "at": [
+       -0.26,
+       0.24,
+       -0.05
+      ],
+      "mat": [
+       "flesh",
+       "#8a6a4a",
+       "#9dff5a",
+       0.35
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.02,
+      "at": [
+       0,
+       0.36,
+       0.1
+      ],
+      "mat": [
+       "glow",
+       "#9dff5a",
+       "#c8ff8a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     },
+     {
+      "shape": "sphere",
+      "r": 0.02,
+      "at": [
+       0.22,
+       0.28,
+       0.12
+      ],
+      "mat": [
+       "glow",
+       "#9dff5a",
+       "#c8ff8a",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 4,
+      "rings": 3
+     }
+    ]
+   },
+   "prompt": "Mushroom crown: a cluster of three domed mushroom caps on thick stalks, glowing spots. Origin at the base, grows up.",
+   "targetPolycount": 400
+  }
+ ],
+ "models": [
+  {
+   "id": "enemy.lumen_turret",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "cyl",
+      "r": 0.62,
+      "len": 0.2,
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.46,
+      "len": 0.7,
+      "at": [
+       0,
+       0.2,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#4a4860"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 6,
+      "r2": 0.3
+     },
+     {
+      "shape": "ring",
+      "r": 0.36,
+      "tube": 0.05,
+      "at": [
+       0,
+       0.55,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#7affd8",
+       2.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "major": 12,
+      "minor": 3
+     },
+     {
+      "shape": "cone",
+      "r": 0.1,
+      "len": 0.55,
+      "at": [
+       0,
+       0.15,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 4,
+      "radial": {
+       "n": 3,
+       "r": 0.5,
+       "tilt": 28,
+       "phase": 60,
+       "jitter": 0.0,
+       "seed": 1,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "cyl",
+      "r": 0.3,
+      "len": 0.12,
+      "at": [
+       0,
+       0.88,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2f3a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "verts": 10
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.42,
+       0.34,
+       0.42
+      ],
+      "at": [
+       0,
+       1.2,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#5a5870"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 10,
+      "rings": 6
+     },
+     {
+      "shape": "cyl",
+      "r": 0.11,
+      "len": 1.0,
+      "at": [
+       0,
+       1.22,
+       0.2
+      ],
+      "mat": [
+       "metal",
+       "#2b2f3a"
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "verts": 8
+     },
+     {
+      "shape": "cyl",
+      "r": 0.16,
+      "len": 0.18,
+      "at": [
+       0,
+       1.22,
+       0.78
+      ],
+      "mat": [
+       "metal",
+       "#3a3848"
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "verts": 8
+     },
+     {
+      "shape": "shard",
+      "len": 0.4,
+      "r": 0.09,
+      "at": [
+       0,
+       1.22,
+       1.15
+      ],
+      "mat": [
+       "crystal",
+       "#6a8fe0",
+       "#7affd8",
+       2.6
+      ],
+      "rot": [
+       90,
+       0,
+       0
+      ],
+      "sides": 6,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.75,
+      "r": 0.07,
+      "at": [
+       0.42,
+       1.3,
+       -0.02
+      ],
+      "mat": [
+       "crystal",
+       "#6a8fe0",
+       "#7affd8",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       -30
+      ],
+      "sides": 5,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.75,
+      "r": 0.07,
+      "at": [
+       -0.42,
+       1.3,
+       -0.02
+      ],
+      "mat": [
+       "crystal",
+       "#6a8fe0",
+       "#7affd8",
+       2.0
+      ],
+      "rot": [
+       0,
+       0,
+       30
+      ],
+      "sides": 5,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.8,
+      "r": 0.09,
+      "at": [
+       0,
+       1.5,
+       -0.12
+      ],
+      "mat": [
+       "crystal",
+       "#6a8fe0",
+       "#7affd8",
+       2.2
+      ],
+      "rot": [
+       -12,
+       0,
+       0
+      ],
+      "sides": 6,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "ring",
+      "r": 0.7,
+      "tube": 0.025,
+      "at": [
+       0,
+       1.2,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#7affd8",
+       2.4
+      ],
+      "rot": [
+       12,
+       0,
+       6
+      ],
+      "major": 14,
+      "minor": 3
+     },
+     {
+      "shape": "box",
+      "size": [
+       0.55,
+       0.45,
+       0.5
+      ],
+      "at": [
+       0,
+       1.2,
+       -0.62
+      ],
+      "mat": [
+       "metal",
+       "#2b2f3a"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "bevel": 0.02
+     },
+     {
+      "shape": "cyl",
+      "r": 0.17,
+      "len": 0.5,
+      "at": [
+       0,
+       1.2,
+       -1.15
+      ],
+      "mat": [
+       "glow",
+       "#8fe0ff",
+       "#7affd8",
+       2.4
+      ],
+      "rot": [
+       -90,
+       0,
+       0
+      ],
+      "verts": 8
+     }
+    ]
+   },
+   "prompt": "Lumen turret: a hexagonal pedestal and column, a domed head with a crystal cannon pointing forward (+Z), two glowing side crystals, a tall antenna crystal and a floating ring. Built from primitives.",
+   "targetPolycount": 1500,
+   "category": "enemy",
+   "heightMeters": 2.6,
+   "placeholder": {
+    "shape": "cylinder",
+    "color": "#3a3848",
+    "size": [
+     1.2,
+     2.6,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "enemy.lumen_heart",
+   "builder": "deep_kit",
+   "params": {
+    "seed": 1,
+    "pieces": [
+     {
+      "shape": "sphere",
+      "r": [
+       2.0,
+       0.12,
+       2.0
+      ],
+      "at": [
+       0,
+       0.08,
+       0
+      ],
+      "mat": [
+       "metal",
+       "#2b2a3c"
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 12,
+      "rings": 3,
+      "smooth": false
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        1.821894343072585,
+        0.1,
+        0.3212491286838211
+       ],
+       [
+        1.3294904665664808,
+        1.0,
+        0.23442503985035595
+       ],
+       [
+        0.5416442641567144,
+        2.0,
+        0.09550649771681169
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#3a3858"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        1.0611164072494355,
+        0.1,
+        1.515431281934635
+       ],
+       [
+        0.7743281890739123,
+        1.0,
+        1.105855259790139
+       ],
+       [
+        0.3154670399930754,
+        2.0,
+        0.4505336243589455
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#2b2a3c"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -0.32124912868382105,
+        0.1,
+        1.821894343072585
+       ],
+       [
+        -0.23442503985035593,
+        1.0,
+        1.3294904665664808
+       ],
+       [
+        -0.09550649771681168,
+        2.0,
+        0.5416442641567144
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#3a3858"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -1.5154312819346352,
+        0.1,
+        1.061116407249435
+       ],
+       [
+        -1.1058552597901392,
+        1.0,
+        0.7743281890739121
+       ],
+       [
+        -0.45053362435894556,
+        2.0,
+        0.3154670399930753
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#2b2a3c"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -1.821894343072585,
+        0.1,
+        -0.3212491286838214
+       ],
+       [
+        -1.3294904665664808,
+        1.0,
+        -0.23442503985035615
+       ],
+       [
+        -0.5416442641567144,
+        2.0,
+        -0.09550649771681177
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#3a3858"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        -1.061116407249436,
+        0.1,
+        -1.5154312819346345
+       ],
+       [
+        -0.7743281890739127,
+        1.0,
+        -1.1058552597901388
+       ],
+       [
+        -0.3154670399930755,
+        2.0,
+        -0.4505336243589454
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#2b2a3c"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        0.32124912868382044,
+        0.1,
+        -1.8218943430725851
+       ],
+       [
+        0.23442503985035548,
+        1.0,
+        -1.329490466566481
+       ],
+       [
+        0.0955064977168115,
+        2.0,
+        -0.5416442641567145
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#3a3858"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "tube",
+      "points": [
+       [
+        1.5154312819346345,
+        0.1,
+        -1.0611164072494361
+       ],
+       [
+        1.1058552597901388,
+        1.0,
+        -0.7743281890739128
+       ],
+       [
+        0.4505336243589454,
+        2.0,
+        -0.31546703999307557
+       ]
+      ],
+      "r": 0.14,
+      "mat": [
+       "metal",
+       "#2b2a3c"
+      ],
+      "taper": 0.55,
+      "sides": 5
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.95,
+       1.15,
+       0.95
+      ],
+      "at": [
+       0,
+       2.5,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#e8e0ff",
+       "#fff0c0",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 9,
+      "rings": 6,
+      "smooth": false
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.5,
+       0.55,
+       0.5
+      ],
+      "at": [
+       0.52,
+       3.45,
+       0.05
+      ],
+      "mat": [
+       "crystal",
+       "#e8e0ff",
+       "#fff0c0",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4,
+      "smooth": false
+     },
+     {
+      "shape": "sphere",
+      "r": [
+       0.45,
+       0.5,
+       0.45
+      ],
+      "at": [
+       -0.5,
+       3.45,
+       -0.05
+      ],
+      "mat": [
+       "crystal",
+       "#e8e0ff",
+       "#fff0c0",
+       3.0
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "segs": 7,
+      "rings": 4,
+      "smooth": false
+     },
+     {
+      "shape": "shard",
+      "len": 1.3,
+      "r": 0.16,
+      "at": [
+       0,
+       3.7,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#c8b8ff",
+       "#b89cff",
+       2.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 6,
+      "lean": [
+       0,
+       0
+      ]
+     },
+     {
+      "shape": "shard",
+      "len": 0.9,
+      "r": 0.1,
+      "at": [
+       0,
+       3.5,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#c8b8ff",
+       "#b89cff",
+       2.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 5,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 6,
+       "r": 0.45,
+       "tilt": 20,
+       "phase": 0,
+       "jitter": 0.25,
+       "seed": 3,
+       "lift": 0,
+       "skip": []
+      }
+     },
+     {
+      "shape": "ring",
+      "r": 1.55,
+      "tube": 0.05,
+      "at": [
+       0,
+       2.5,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#b89cff",
+       "#b89cff",
+       2.4
+      ],
+      "rot": [
+       65,
+       0,
+       20
+      ],
+      "major": 16,
+      "minor": 3
+     },
+     {
+      "shape": "ring",
+      "r": 1.25,
+      "tube": 0.04,
+      "at": [
+       0,
+       2.5,
+       0
+      ],
+      "mat": [
+       "glow",
+       "#ffe49a",
+       "#ffe49a",
+       2.4
+      ],
+      "rot": [
+       -35,
+       0,
+       75
+      ],
+      "major": 14,
+      "minor": 3
+     },
+     {
+      "shape": "shard",
+      "len": 0.55,
+      "r": 0.06,
+      "at": [
+       0,
+       2.0,
+       0
+      ],
+      "mat": [
+       "crystal",
+       "#c8b8ff",
+       "#b89cff",
+       2.4
+      ],
+      "rot": [
+       0,
+       0,
+       0
+      ],
+      "sides": 4,
+      "lean": [
+       0,
+       0
+      ],
+      "radial": {
+       "n": 9,
+       "r": 1.7,
+       "tilt": -12,
+       "phase": 20,
+       "jitter": 0.4,
+       "seed": 9,
+       "lift": 0.0,
+       "skip": []
+      }
+     }
+    ]
+   },
+   "prompt": "The Heart of Lumen: a huge faceted white-gold heart with two upper lobes and a crown of violet spires, held up by eight buttress roots and circled by two glowing rings and floating shards. Built from primitives.",
+   "targetPolycount": 4000,
+   "category": "enemy",
+   "heightMeters": 4.5,
+   "placeholder": {
+    "shape": "cylinder",
+    "color": "#6f4dff",
+    "size": [
+     3.2,
+     4.5,
+     3.2
+    ]
+   }
+  }
+ ]
+}

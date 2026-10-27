@@ -3,6 +3,7 @@ import { Dead, EnemyAI, ForcedMove, Hazard, Health, StatusEffects, Transform } f
 import { World, type Entity } from '../src/core/ecs';
 import { ENEMY_DEFS } from '../src/data/db';
 import { PACK_TEMPLATES } from '../src/data/packs';
+import { VARIANTS } from '../src/data/variants';
 import { collisionSystem, spatialSystem } from '../src/systems/collision';
 import { dealHit, hasStatus, kill } from '../src/systems/combat';
 import { deathSystem } from '../src/systems/death';
@@ -35,8 +36,11 @@ describe('Region 2 roster', () => {
     for (const id of ids) expect(ENEMY_DEFS.has(id), id).toBe(true);
     const packed = new Set(PACK_TEMPLATES.filter((p) => p.id.startsWith('rd_')).flatMap((p) => p.members.map((m) => m.enemy)));
     for (const id of ids) expect(packed.has(id), id).toBe(true);
-    // Variants reuse region 1 models (no new credits).
-    for (const id of ['scorched_walker', 'slag_hound', 'flame_drone', 'fire_bloater']) expect(ENEMY_DEFS.get(id)!.assetId.startsWith('enemy.')).toBe(true);
+    // Variants reuse region 1 models (no new credits): their base is a region 1 enemy model, with Blender parts on top.
+    for (const id of ['scorched_walker', 'slag_hound', 'flame_drone', 'fire_bloater']) {
+      const asset = ENEMY_DEFS.get(id)!.assetId;
+      expect((VARIANTS.get(asset)?.base ?? asset).startsWith('enemy.'), id).toBe(true);
+    }
   });
 });
 

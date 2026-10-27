@@ -4909,6 +4909,1538 @@
         "bytes": 2724,
         "textures": 0
       }
+    },
+    {
+      "id": "part.sac_cluster",
+      "category": "part",
+      "prompt": "Swollen spore sacs, ochre: one big lump and smaller ones on a dark root pad (bloater, brood mother). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/sac_cluster.glb",
+      "stats": {
+        "triangles": 260,
+        "bytes": 4624,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.sac_cluster_fire",
+      "category": "part",
+      "prompt": "Swollen fire sacs, glowing ember red-orange (fire bloater). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/sac_cluster_fire.glb",
+      "stats": {
+        "triangles": 260,
+        "bytes": 4736,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.sac_cluster_spore",
+      "category": "part",
+      "prompt": "Swollen spore sacs, wet green and luminous (swarm bloater, brood mother). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/sac_cluster_spore.glb",
+      "stats": {
+        "triangles": 302,
+        "bytes": 4860,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.tank_pair",
+      "category": "part",
+      "prompt": "Two rusty red fuel tanks with straps and a hose stub, a backpack (ash thrower). Origin on the spine, tanks behind.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/tank_pair.glb",
+      "stats": {
+        "triangles": 400,
+        "bytes": 5940,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.spore_tank",
+      "category": "part",
+      "prompt": "Two glass-green spore tanks with straps, a botanist's backpack (mutated botanist, Ilse Varga).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/spore_tank.glb",
+      "stats": {
+        "triangles": 400,
+        "bytes": 6112,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.nozzle",
+      "category": "part",
+      "prompt": "Pipe nozzle: canister, barrel, flared mouth with a hot tip (ash thrower pipe, flame drone). Grows along +Y.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/nozzle.glb",
+      "stats": {
+        "triangles": 136,
+        "bytes": 5780,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.charred_plate",
+      "category": "part",
+      "prompt": "Burnt armour plate with an ember crack (scorched walker, slag hound). Faces +z.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/charred_plate.glb",
+      "stats": {
+        "triangles": 184,
+        "bytes": 6264,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dome_crack",
+      "category": "part",
+      "prompt": "Broken crown of jagged rusty shards round a drone dome, with a rust patch (rust drone).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dome_crack.glb",
+      "stats": {
+        "triangles": 68,
+        "bytes": 4148,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.cable_tangle",
+      "category": "part",
+      "prompt": "Dangling rubber cable, a loose wire hanging from a drone (rust drone).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/cable_tangle.glb",
+      "stats": {
+        "triangles": 66,
+        "bytes": 2400,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.burner_ring",
+      "category": "part",
+      "prompt": "Flame-drone burner ring: dark torus with hot nozzle beads.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/burner_ring.glb",
+      "stats": {
+        "triangles": 224,
+        "bytes": 6640,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.censer",
+      "category": "part",
+      "prompt": "Swinging censer on a chain: spiked golden cage with a live coal. Hangs down from the hand.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/censer.glb",
+      "stats": {
+        "triangles": 154,
+        "bytes": 4848,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.mitre",
+      "category": "part",
+      "prompt": "Tall pointed red-and-gold mitre (smelter priest, Brother Ash).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/mitre.glb",
+      "stats": {
+        "triangles": 158,
+        "bytes": 4464,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.halo_ring",
+      "category": "part",
+      "prompt": "Glowing gold halo with rays, a vertical ring facing forward.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/halo_ring.glb",
+      "stats": {
+        "triangles": 240,
+        "bytes": 4068,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.pauldron",
+      "category": "part",
+      "prompt": "Domed spiked shoulder guard, charred metal with an ember band (Brother Ash, Pyre Warden).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/pauldron.glb",
+      "stats": {
+        "triangles": 198,
+        "bytes": 4688,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.brazier",
+      "category": "part",
+      "prompt": "Back-mounted pyre: stand, bowl and three tongues of fire (Pyre Warden).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/brazier.glb",
+      "stats": {
+        "triangles": 78,
+        "bytes": 4380,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.officer_cap",
+      "category": "part",
+      "prompt": "Peaked officer's cap with a gold badge (Commandant Hale).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/officer_cap.glb",
+      "stats": {
+        "triangles": 196,
+        "bytes": 6136,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.coat_flap",
+      "category": "part",
+      "prompt": "Long flared officer's coat tail with a gold hem (Commandant Hale).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/coat_flap.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 5000,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.lab_coat_flap",
+      "category": "part",
+      "prompt": "Long pale lab-coat tail with a green hem (Ilse Varga).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/lab_coat_flap.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 5000,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.epaulette",
+      "category": "part",
+      "prompt": "Gold officer's epaulette with fringe (Commandant Hale).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/epaulette.glb",
+      "stats": {
+        "triangles": 172,
+        "bytes": 5252,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.frost_cluster",
+      "category": "part",
+      "prompt": "Frost: a cluster of pale blue ice crystals on a frosted base (Frozen Welder, The Keeper). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/frost_cluster.glb",
+      "stats": {
+        "triangles": 224,
+        "bytes": 7604,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.frost_shard",
+      "category": "part",
+      "prompt": "One frost crystal (Frozen Welder, The Keeper). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/frost_shard.glb",
+      "stats": {
+        "triangles": 28,
+        "bytes": 2712,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.crystal_green",
+      "category": "part",
+      "prompt": "Five green Lumen crystals on a dark base (Commandant Hale). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/crystal_green.glb",
+      "stats": {
+        "triangles": 168,
+        "bytes": 6396,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.crystal_teal",
+      "category": "part",
+      "prompt": "Nine tall teal Lumen crystals on a dark base (Lumen Giant). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/crystal_teal.glb",
+      "stats": {
+        "triangles": 280,
+        "bytes": 8848,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.moss_clump",
+      "category": "part",
+      "prompt": "Cushions of moss in two greens (vault walkers, Mossborn, Lumen Giant). Origin at the base.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/moss_clump.glb",
+      "stats": {
+        "triangles": 168,
+        "bytes": 3924,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.flower_bloom",
+      "category": "part",
+      "prompt": "A big pale flower with a glowing green heart on a short stem. Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/flower_bloom.glb",
+      "stats": {
+        "triangles": 236,
+        "bytes": 5944,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.goggles",
+      "category": "part",
+      "prompt": "Botanist's goggles: head strap and two glowing round lenses (mutated botanist, Ilse Varga).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/goggles.glb",
+      "stats": {
+        "triangles": 232,
+        "bytes": 4884,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.cocoon_husk",
+      "category": "part",
+      "prompt": "Torn silk-and-flesh cocoon husk, tall ovoid with ridges and a dark rent (cocoon warden, brood warden). Grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/cocoon_husk.glb",
+      "stats": {
+        "triangles": 502,
+        "bytes": 5600,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.fungus_shelf",
+      "category": "part",
+      "prompt": "Bracket fungus: stacked half-round shelves glowing teal underneath (Lumen Giant, Mossborn).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/fungus_shelf.glb",
+      "stats": {
+        "triangles": 212,
+        "bytes": 5520,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.insect_wings",
+      "category": "part",
+      "prompt": "Insect rig: two pairs of thin wings, banded abdomen and stinger behind (spore swarm).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/insect_wings.glb",
+      "stats": {
+        "triangles": 200,
+        "bytes": 5744,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.spike_crown",
+      "category": "part",
+      "prompt": "Crown of bone horns on a band (brood warden).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/spike_crown.glb",
+      "stats": {
+        "triangles": 92,
+        "bytes": 3280,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.vine_long",
+      "category": "part",
+      "prompt": "A long writhing green vine with leaves, about 1.5 m (vine weaver, vine matriarch).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/vine_long.glb",
+      "stats": {
+        "triangles": 206,
+        "bytes": 4408,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.vine_short",
+      "category": "part",
+      "prompt": "A short green vine with leaves, about 0.7 m (overgrown walker, vine weaver).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/vine_short.glb",
+      "stats": {
+        "triangles": 138,
+        "bytes": 4076,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.root_long",
+      "category": "part",
+      "prompt": "A thick bark-brown root with a curl, about 1.5 m (Mother Root, Warden).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/root_long.glb",
+      "stats": {
+        "triangles": 86,
+        "bytes": 2480,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.harvest_blade",
+      "category": "part",
+      "prompt": "Great curved harvesting scythe on an arm (Warden).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/harvest_blade.glb",
+      "stats": {
+        "triangles": 292,
+        "bytes": 8004,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.glass_shards",
+      "category": "part",
+      "prompt": "Shards of a broken glass dome, pale teal (Warden, Lumen Giant, Gamma Bloom).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/glass_shards.glb",
+      "stats": {
+        "triangles": 36,
+        "bytes": 2852,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.robe_flap",
+      "category": "part",
+      "prompt": "Long dark-red smelter robe tail with an ember hem (Brother Ash, Pyre Warden).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/robe_flap.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 4984,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_antenna",
+      "category": "part",
+      "prompt": "Governor drone antenna: a gold mast with a glowing blue orb, a ring and two fins. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_antenna.glb",
+      "stats": {
+        "triangles": 162,
+        "bytes": 5068,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_collar",
+      "category": "part",
+      "prompt": "Governor drone collar: a gold ring with four outward spikes and blue studs, worn round the drone body. Origin at the centre, axis up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_collar.glb",
+      "stats": {
+        "triangles": 224,
+        "bytes": 5528,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_helmet_lamp",
+      "category": "part",
+      "prompt": "Miner hard hat: a yellow dome with brim, a ridge and a glowing headlamp on the front (+Z). Origin at the brim centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_helmet_lamp.glb",
+      "stats": {
+        "triangles": 136,
+        "bytes": 6724,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_drill_arm",
+      "category": "part",
+      "prompt": "Drill arm: a rust-orange housing with a flange and a spiral steel drill bit. Origin at the base, grows up (+Y).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_drill_arm.glb",
+      "stats": {
+        "triangles": 168,
+        "bytes": 7180,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_dynamite",
+      "category": "part",
+      "prompt": "A bundle of four red dynamite sticks tied with a band, a fuse with a spark. Origin at the centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 200,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_dynamite.glb",
+      "stats": {
+        "triangles": 148,
+        "bytes": 7016,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_crystal_pauldron",
+      "category": "part",
+      "prompt": "Crystal pauldron: a flat dark rock slab with three Lumen crystals. Origin at the middle of the slab, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_crystal_pauldron.glb",
+      "stats": {
+        "triangles": 118,
+        "bytes": 5416,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_crystal_spire",
+      "category": "part",
+      "prompt": "Crystal spire: one tall Lumen crystal ringed by four shorter ones on a rock base. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_crystal_spire.glb",
+      "stats": {
+        "triangles": 174,
+        "bytes": 6596,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_crystal_crown",
+      "category": "part",
+      "prompt": "Crystal crown: a thin band with seven Lumen crystal spikes. Origin at the band centre, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_crystal_crown.glb",
+      "stats": {
+        "triangles": 214,
+        "bytes": 7808,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shard_sac",
+      "category": "part",
+      "prompt": "Shard sac: three swollen glowing blue sacs with crystal shards bursting out. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shard_sac.glb",
+      "stats": {
+        "triangles": 222,
+        "bytes": 6944,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_maw",
+      "category": "part",
+      "prompt": "Burrower maw: a bone ring of eight inward curving teeth round a glowing throat, worn on top of the body. Origin at the ring centre, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_maw.glb",
+      "stats": {
+        "triangles": 196,
+        "bytes": 7060,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_stone_collar",
+      "category": "part",
+      "prompt": "Burrower armour: a ring of packed rock with crystal nubs, worn round the body. Origin at the centre, axis up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_stone_collar.glb",
+      "stats": {
+        "triangles": 206,
+        "bytes": 6704,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_trooper_visor",
+      "category": "part",
+      "prompt": "Security helmet add-on: a glowing blue visor band on the front (+Z) and a blue crest ridge. Origin at the head centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 200,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_trooper_visor.glb",
+      "stats": {
+        "triangles": 68,
+        "bytes": 5264,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shield_panel",
+      "category": "part",
+      "prompt": "Officer energy shield: a tall gold-framed plate with a glowing blue pane. Origin at its centre, faces +Z.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shield_panel.glb",
+      "stats": {
+        "triangles": 68,
+        "bytes": 4240,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_backpack_gen",
+      "category": "part",
+      "prompt": "Shield generator backpack: a dark box with two glowing coils and an antenna. Origin at the centre of the back, faces away along -Z.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_backpack_gen.glb",
+      "stats": {
+        "triangles": 124,
+        "bytes": 5804,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shoulder_plate_blue",
+      "category": "part",
+      "prompt": "Armoured shoulder plate, security blue with a glow stud. Origin at the middle.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shoulder_plate_blue.glb",
+      "stats": {
+        "triangles": 80,
+        "bytes": 4992,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shoulder_plate_gold",
+      "category": "part",
+      "prompt": "Armoured shoulder plate, gold with spikes (officers and governors). Origin at the middle.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shoulder_plate_gold.glb",
+      "stats": {
+        "triangles": 92,
+        "bytes": 4232,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_peaked_cap",
+      "category": "part",
+      "prompt": "Security chief peaked cap: a flat dark crown, a stiff brim on the front (+Z) and a gold badge. Origin at the brim centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_peaked_cap.glb",
+      "stats": {
+        "triangles": 96,
+        "bytes": 5600,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_grenade_belt",
+      "category": "part",
+      "prompt": "Grenade bandolier: a strap across the chest with five grenades. Origin at the middle of the chest, faces +Z.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_grenade_belt.glb",
+      "stats": {
+        "triangles": 192,
+        "bytes": 6104,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_kade_crown",
+      "category": "part",
+      "prompt": "Governor Kade grim crown: a gold band with six tall spikes round a glowing Lumen crystal. Origin at the band centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_kade_crown.glb",
+      "stats": {
+        "triangles": 178,
+        "bytes": 6064,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_conduit_pack",
+      "category": "part",
+      "prompt": "Lumen conduit pack: a dark backpack with three tall glowing cyan conduits and two cables to the shoulders. Origin at the centre of the back, faces -Z.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_conduit_pack.glb",
+      "stats": {
+        "triangles": 176,
+        "bytes": 6248,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_glitch_fan",
+      "category": "part",
+      "prompt": "Echo glitch fan: five flat cyan blades fanned out like broken light. Origin at the root of the fan, spreads in the XY plane.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 200,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_glitch_fan.glb",
+      "stats": {
+        "triangles": 60,
+        "bytes": 2896,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_tablets",
+      "category": "part",
+      "prompt": "Memory tablets: five thin glowing slabs floating in a ring. Origin at the ring centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_tablets.glb",
+      "stats": {
+        "triangles": 144,
+        "bytes": 5344,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_prism",
+      "category": "part",
+      "prompt": "The Prism: a floating triangular bipyramid of white-cyan crystal with a thin ring. Origin at the bottom tip, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_prism.glb",
+      "stats": {
+        "triangles": 80,
+        "bytes": 4804,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_elder_ring",
+      "category": "part",
+      "prompt": "Elder halo: a large upright ring with eight glyph blocks, cold blue. Origin at the ring centre, the ring stands in the XY plane.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 500,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_elder_ring.glb",
+      "stats": {
+        "triangles": 224,
+        "bytes": 5704,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_elder_slab",
+      "category": "part",
+      "prompt": "Elder monolith: a tall tapering slab of pale stone with glowing glyph bars. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_elder_slab.glb",
+      "stats": {
+        "triangles": 48,
+        "bytes": 3848,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_cable_bundle",
+      "category": "part",
+      "prompt": "Drowned cables: four thick black cables drooping from the attach point, with dull glow tips. Origin at the top, hangs down (-Y).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 500,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_cable_bundle.glb",
+      "stats": {
+        "triangles": 304,
+        "bytes": 6152,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_moss_mat",
+      "category": "part",
+      "prompt": "Moss: a low mat of five dark green mounds with faint glow. Origin at the middle, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_moss_mat.glb",
+      "stats": {
+        "triangles": 124,
+        "bytes": 4012,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shade_halo",
+      "category": "part",
+      "prompt": "Shade halo: seven floating violet shards round a thin glowing ring. Origin at the ring centre, axis up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shade_halo.glb",
+      "stats": {
+        "triangles": 238,
+        "bytes": 8028,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shade_fan",
+      "category": "part",
+      "prompt": "Shade fan: five ragged violet blades fanned out behind the body. Origin at the root, spreads in the XY plane.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shade_fan.glb",
+      "stats": {
+        "triangles": 60,
+        "bytes": 2968,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shade_crown",
+      "category": "part",
+      "prompt": "Shade crown: a thin violet band with nine long thin spikes, the middle ones tallest. Origin at the band centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shade_crown.glb",
+      "stats": {
+        "triangles": 258,
+        "bytes": 8788,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shade_drift",
+      "category": "part",
+      "prompt": "Shade drift: five violet shards floating loose below and around the body. Origin at the middle, shards point every way.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 200,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shade_drift.glb",
+      "stats": {
+        "triangles": 110,
+        "bytes": 6004,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shade_spine",
+      "category": "part",
+      "prompt": "Shade spine: a row of six violet shards leaning back, for a beast. Origin at the front of the row, runs back along -Z.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shade_spine.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 6288,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shade_wing",
+      "category": "part",
+      "prompt": "Shade wing: three long violet blades sweeping out, one of a pair. Origin at the root, spreads in the XY plane.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 200,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shade_wing.glb",
+      "stats": {
+        "triangles": 36,
+        "bytes": 2676,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_kade_crown_violet",
+      "category": "part",
+      "prompt": "The shade of Kade crown: a violet band with six tall spikes round a glowing crystal. Origin at the band centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_kade_crown_violet.glb",
+      "stats": {
+        "triangles": 178,
+        "bytes": 6084,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_conduit_pack_violet",
+      "category": "part",
+      "prompt": "Violet conduit pack: a dark backpack with three tall glowing violet conduits. Origin at the centre of the back.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_conduit_pack_violet.glb",
+      "stats": {
+        "triangles": 176,
+        "bytes": 4964,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_shoulder_plate_violet",
+      "category": "part",
+      "prompt": "Armoured shoulder plate in violet metal with spikes. Origin at the middle.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_shoulder_plate_violet.glb",
+      "stats": {
+        "triangles": 92,
+        "bytes": 4220,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_vines_violet",
+      "category": "part",
+      "prompt": "Shade vines: four long violet vines hanging from the attach point with glowing tips. Origin at the top, hangs down (-Y).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 500,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_vines_violet.glb",
+      "stats": {
+        "triangles": 284,
+        "bytes": 6220,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_abs_crown",
+      "category": "part",
+      "prompt": "Absorbed halo: a pale gold ring with nine radiating spikes of Lumen crystal. Origin at the centre, axis up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_abs_crown.glb",
+      "stats": {
+        "triangles": 258,
+        "bytes": 8776,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_abs_wings",
+      "category": "part",
+      "prompt": "Absorbed wings: four long gold crystal blades fanned out, one of a pair. Origin at the root, spreads in the XY plane.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 200,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_abs_wings.glb",
+      "stats": {
+        "triangles": 48,
+        "bytes": 2740,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_abs_hammer",
+      "category": "part",
+      "prompt": "Ostrow smith hammer grown in crystal: a long shaft and a heavy faceted head, gold-white. Origin at the grip, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_abs_hammer.glb",
+      "stats": {
+        "triangles": 88,
+        "bytes": 4412,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_abs_toque",
+      "category": "part",
+      "prompt": "Brother Lenn chef hat grown in pale crystal: a tall puffed toque. Origin at the base of the hat.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_abs_toque.glb",
+      "stats": {
+        "triangles": 104,
+        "bytes": 4244,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_abs_pipes",
+      "category": "part",
+      "prompt": "Halvorsen pump pipes: a backpack of three brass pipes with glowing valves. Origin at the middle of the back.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_abs_pipes.glb",
+      "stats": {
+        "triangles": 208,
+        "bytes": 5324,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_abs_dish",
+      "category": "part",
+      "prompt": "Rhee antenna dish: a mast with a shallow dish and a glowing feed, gold-white. Origin at the mast base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_abs_dish.glb",
+      "stats": {
+        "triangles": 72,
+        "bytes": 5332,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_abs_helm",
+      "category": "part",
+      "prompt": "Danner helmet grown in crystal: a dome, a glowing visor band and a crest. Origin at the head centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_abs_helm.glb",
+      "stats": {
+        "triangles": 72,
+        "bytes": 5112,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_choir_crown",
+      "category": "part",
+      "prompt": "Choir crown: a pale gold band with seven tall spires round a bright pearl. Origin at the band centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_choir_crown.glb",
+      "stats": {
+        "triangles": 298,
+        "bytes": 8828,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_veil",
+      "category": "part",
+      "prompt": "Choir veil: four long pale ribbons trailing down and back from the attach point. Origin at the top, hangs down.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_veil.glb",
+      "stats": {
+        "triangles": 208,
+        "bytes": 3180,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_stone_crown",
+      "category": "part",
+      "prompt": "Stone crown: a band of rough stone with seven blunt grey spires and glowing cracks. Origin at the band centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_stone_crown.glb",
+      "stats": {
+        "triangles": 178,
+        "bytes": 7292,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_stone_orbit",
+      "category": "part",
+      "prompt": "Stone orbit: six rough rock blocks floating in a ring, each with a glowing crack. Origin at the ring centre.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_stone_orbit.glb",
+      "stats": {
+        "triangles": 408,
+        "bytes": 10700,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_hatch_pods",
+      "category": "part",
+      "prompt": "Brood pods: three upright egg pods with hatch plates and exhaust pipes, glowing gold-green. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 450,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_hatch_pods.glb",
+      "stats": {
+        "triangles": 276,
+        "bytes": 6840,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_hollow_ring",
+      "category": "part",
+      "prompt": "Hollow ring: a heavy dark ring standing upright with violet glowing cracks and six blunt teeth round the hole. Origin at the ring centre, the ring stands in the XY plane.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_hollow_ring.glb",
+      "stats": {
+        "triangles": 280,
+        "bytes": 7508,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_smokestack",
+      "category": "part",
+      "prompt": "Smokestack: a fat rusted chimney with a flared glowing ember mouth. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_smokestack.glb",
+      "stats": {
+        "triangles": 152,
+        "bytes": 6344,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_ash_pile",
+      "category": "part",
+      "prompt": "Ash pile: three low grey mounds with a few glowing embers. Origin at the middle, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_ash_pile.glb",
+      "stats": {
+        "triangles": 124,
+        "bytes": 6248,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_horn_row",
+      "category": "part",
+      "prompt": "A row of five blunt rusted horns along the back, getting smaller. Origin at the front of the row, runs back along -Z.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_horn_row.glb",
+      "stats": {
+        "triangles": 40,
+        "bytes": 2796,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_spore_sac_big",
+      "category": "part",
+      "prompt": "Spore sacs: three swollen green sacs with glowing spots. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_spore_sac_big.glb",
+      "stats": {
+        "triangles": 130,
+        "bytes": 5356,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_bracket_fungus",
+      "category": "part",
+      "prompt": "Bracket fungus: three stacked shelf caps of pale fungus. Origin at the stalk, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 250,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_bracket_fungus.glb",
+      "stats": {
+        "triangles": 104,
+        "bytes": 5572,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_mushroom_crown",
+      "category": "part",
+      "prompt": "Mushroom crown: a cluster of three domed mushroom caps on thick stalks, glowing spots. Origin at the base, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_mushroom_crown.glb",
+      "stats": {
+        "triangles": 180,
+        "bytes": 6036,
+        "textures": 0
+      }
+    },
+    {
+      "id": "enemy.lumen_turret",
+      "category": "enemy",
+      "prompt": "Lumen turret: a hexagonal pedestal and column, a domed head with a crystal cannon pointing forward (+Z), two glowing side crystals, a tall antenna crystal and a floating ring. Built from primitives.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 1500,
+      "heightMeters": 2.6,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/lumen_turret.glb",
+      "lods": [
+        "blender/lumen_turret_lod1.glb",
+        "blender/lumen_turret_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 602,
+        "bytes": 18664,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#3a3848",
+        "size": [
+          1.2,
+          2.6,
+          1.2
+        ]
+      }
+    },
+    {
+      "id": "enemy.lumen_heart",
+      "category": "enemy",
+      "prompt": "The Heart of Lumen: a huge faceted white-gold heart with two upper lobes and a crown of violet spires, held up by eight buttress roots and circled by two glowing rings and floating shards. Built from primitives.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 4000,
+      "heightMeters": 4.5,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/lumen_heart.glb",
+      "lods": [
+        "blender/lumen_heart_lod1.glb",
+        "blender/lumen_heart_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 1170,
+        "bytes": 24840,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#6f4dff",
+        "size": [
+          3.2,
+          4.5,
+          3.2
+        ]
+      }
     }
   ]
 }

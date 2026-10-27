@@ -1,0 +1,454 @@
+{
+  "parts": [
+    {
+      "id": "part.sac_cluster",
+      "builder": "sac_cluster",
+      "params": {
+        "count": 5,
+        "radius": 0.2,
+        "spread": 0.17,
+        "seed": 1,
+        "color": "#9a8a3a",
+        "glow": "#d8c84a",
+        "strength": 0.45
+      },
+      "prompt": "Swollen spore sacs, ochre: one big lump and smaller ones on a dark root pad (bloater, brood mother). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.sac_cluster_fire",
+      "builder": "sac_cluster",
+      "params": {
+        "count": 5,
+        "radius": 0.2,
+        "spread": 0.17,
+        "seed": 2,
+        "kind": "ember",
+        "color": "#8a2a0c",
+        "glow": "#ff5a1a",
+        "strength": 2.0,
+        "base_color": "#2a1810"
+      },
+      "prompt": "Swollen fire sacs, glowing ember red-orange (fire bloater). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.sac_cluster_spore",
+      "builder": "sac_cluster",
+      "params": {
+        "count": 6,
+        "radius": 0.2,
+        "spread": 0.18,
+        "seed": 3,
+        "color": "#5a8a2a",
+        "glow": "#8aff4a",
+        "strength": 0.7,
+        "base_color": "#1f2a14"
+      },
+      "prompt": "Swollen spore sacs, wet green and luminous (swarm bloater, brood mother). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.tank_pair",
+      "builder": "tank_pair",
+      "params": {},
+      "prompt": "Two rusty red fuel tanks with straps and a hose stub, a backpack (ash thrower). Origin on the spine, tanks behind.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.spore_tank",
+      "builder": "tank_pair",
+      "params": {
+        "color": "#3f7a2a",
+        "glow": "#9dff5a",
+        "strength": 1.2,
+        "kind": "flesh",
+        "band": "#1f2a1c"
+      },
+      "prompt": "Two glass-green spore tanks with straps, a botanist's backpack (mutated botanist, Ilse Varga).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.nozzle",
+      "builder": "nozzle",
+      "params": {},
+      "prompt": "Pipe nozzle: canister, barrel, flared mouth with a hot tip (ash thrower pipe, flame drone). Grows along +Y.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.charred_plate",
+      "builder": "charred_plate",
+      "params": {
+        "seed": 1
+      },
+      "prompt": "Burnt armour plate with an ember crack (scorched walker, slag hound). Faces +z.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.dome_crack",
+      "builder": "dome_crack",
+      "params": {
+        "count": 6,
+        "radius": 0.24,
+        "height": 0.14
+      },
+      "prompt": "Broken crown of jagged rusty shards round a drone dome, with a rust patch (rust drone).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.cable_tangle",
+      "builder": "tube",
+      "params": {
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0.05,
+            -0.18,
+            -0.05
+          ],
+          [
+            -0.04,
+            -0.34,
+            0.02
+          ],
+          [
+            0.06,
+            -0.5,
+            -0.03
+          ]
+        ],
+        "radius": 0.015,
+        "taper": 0.8,
+        "kind": "cloth",
+        "color": "#1c1c1c"
+      },
+      "prompt": "Dangling rubber cable, a loose wire hanging from a drone (rust drone).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.burner_ring",
+      "builder": "burner_ring",
+      "params": {},
+      "prompt": "Flame-drone burner ring: dark torus with hot nozzle beads.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.censer",
+      "builder": "censer",
+      "params": {},
+      "prompt": "Swinging censer on a chain: spiked golden cage with a live coal. Hangs down from the hand.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.mitre",
+      "builder": "mitre",
+      "params": {},
+      "prompt": "Tall pointed red-and-gold mitre (smelter priest, Brother Ash).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.halo_ring",
+      "builder": "halo_ring",
+      "params": {},
+      "prompt": "Glowing gold halo with rays, a vertical ring facing forward.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.pauldron",
+      "builder": "pauldron",
+      "params": {
+        "ember": "#ff7a1a"
+      },
+      "prompt": "Domed spiked shoulder guard, charred metal with an ember band (Brother Ash, Pyre Warden).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.brazier",
+      "builder": "brazier",
+      "params": {},
+      "prompt": "Back-mounted pyre: stand, bowl and three tongues of fire (Pyre Warden).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.officer_cap",
+      "builder": "officer_cap",
+      "params": {},
+      "prompt": "Peaked officer's cap with a gold badge (Commandant Hale).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.coat_flap",
+      "builder": "coat_flap",
+      "params": {},
+      "prompt": "Long flared officer's coat tail with a gold hem (Commandant Hale).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.lab_coat_flap",
+      "builder": "coat_flap",
+      "params": {
+        "color": "#a9b09c",
+        "trim": "#6a8a5a"
+      },
+      "prompt": "Long pale lab-coat tail with a green hem (Ilse Varga).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.robe_flap",
+      "builder": "coat_flap",
+      "params": {
+        "color": "#5a1a12",
+        "trim": "#ffb03a"
+      },
+      "prompt": "Long dark-red smelter robe tail with an ember hem (Brother Ash, Pyre Warden).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.epaulette",
+      "builder": "epaulette",
+      "params": {},
+      "prompt": "Gold officer's epaulette with fringe (Commandant Hale).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.frost_cluster",
+      "builder": "crystal_group",
+      "params": {
+        "count": 7,
+        "height": 0.42,
+        "radius": 0.045,
+        "spread": 0.09,
+        "seed": 3,
+        "sides": 5,
+        "tilt": 0.4
+      },
+      "prompt": "Frost: a cluster of pale blue ice crystals on a frosted base (Frozen Welder, The Keeper). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.frost_shard",
+      "builder": "crystal_group",
+      "params": {
+        "count": 1,
+        "height": 0.26,
+        "radius": 0.035,
+        "spread": 0.05,
+        "seed": 5,
+        "base": false
+      },
+      "prompt": "One frost crystal (Frozen Welder, The Keeper). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.crystal_green",
+      "builder": "crystal_group",
+      "params": {
+        "count": 5,
+        "height": 0.3,
+        "radius": 0.04,
+        "spread": 0.07,
+        "seed": 7,
+        "color": "#2a9a4a",
+        "glow": "#7dff8a",
+        "strength": 1.0,
+        "base_color": "#3b2f27"
+      },
+      "prompt": "Five green Lumen crystals on a dark base (Commandant Hale). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.crystal_teal",
+      "builder": "crystal_group",
+      "params": {
+        "count": 9,
+        "height": 0.6,
+        "radius": 0.06,
+        "spread": 0.14,
+        "seed": 9,
+        "color": "#2aa088",
+        "glow": "#7affd8",
+        "strength": 1.1,
+        "base_color": "#2a2f2a"
+      },
+      "prompt": "Nine tall teal Lumen crystals on a dark base (Lumen Giant). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.moss_clump",
+      "builder": "moss_clump",
+      "params": {},
+      "prompt": "Cushions of moss in two greens (vault walkers, Mossborn, Lumen Giant). Origin at the base.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.flower_bloom",
+      "builder": "flower_bloom",
+      "params": {},
+      "prompt": "A big pale flower with a glowing green heart on a short stem. Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.goggles",
+      "builder": "goggles",
+      "params": {},
+      "prompt": "Botanist's goggles: head strap and two glowing round lenses (mutated botanist, Ilse Varga).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.cocoon_husk",
+      "builder": "cocoon_husk",
+      "params": {},
+      "prompt": "Torn silk-and-flesh cocoon husk, tall ovoid with ridges and a dark rent (cocoon warden, brood warden). Grows up.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.fungus_shelf",
+      "builder": "fungus_shelf",
+      "params": {},
+      "prompt": "Bracket fungus: stacked half-round shelves glowing teal underneath (Lumen Giant, Mossborn).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.insect_wings",
+      "builder": "insect_wings",
+      "params": {},
+      "prompt": "Insect rig: two pairs of thin wings, banded abdomen and stinger behind (spore swarm).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.spike_crown",
+      "builder": "spike_crown",
+      "params": {},
+      "prompt": "Crown of bone horns on a band (brood warden).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.vine_long",
+      "builder": "tube",
+      "params": {
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0.15,
+            0.4,
+            0.1
+          ],
+          [
+            0.05,
+            0.8,
+            0.25
+          ],
+          [
+            -0.15,
+            1.2,
+            0.2
+          ],
+          [
+            -0.3,
+            1.45,
+            0.05
+          ]
+        ],
+        "radius": 0.06,
+        "taper": 0.3,
+        "leaves": 5
+      },
+      "prompt": "A long writhing green vine with leaves, about 1.5 m (vine weaver, vine matriarch).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.vine_short",
+      "builder": "tube",
+      "params": {
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0.1,
+            0.25,
+            0.05
+          ],
+          [
+            0.0,
+            0.5,
+            0.15
+          ],
+          [
+            -0.1,
+            0.7,
+            0.1
+          ]
+        ],
+        "radius": 0.035,
+        "taper": 0.35,
+        "leaves": 3
+      },
+      "prompt": "A short green vine with leaves, about 0.7 m (overgrown walker, vine weaver).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.root_long",
+      "builder": "tube",
+      "params": {
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0.1,
+            0.35,
+            0.05
+          ],
+          [
+            0.25,
+            0.75,
+            0.0
+          ],
+          [
+            0.2,
+            1.15,
+            -0.15
+          ],
+          [
+            0.0,
+            1.4,
+            -0.2
+          ]
+        ],
+        "radius": 0.1,
+        "taper": 0.25,
+        "kind": "matte",
+        "color": "#5a4228"
+      },
+      "prompt": "A thick bark-brown root with a curl, about 1.5 m (Mother Root, Warden).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.harvest_blade",
+      "builder": "harvest_blade",
+      "params": {},
+      "prompt": "Great curved harvesting scythe on an arm (Warden).",
+      "targetPolycount": 900
+    },
+    {
+      "id": "part.glass_shards",
+      "builder": "glass_shards",
+      "params": {},
+      "prompt": "Shards of a broken glass dome, pale teal (Warden, Lumen Giant, Gamma Bloom).",
+      "targetPolycount": 700
+    }
+  ]
+}

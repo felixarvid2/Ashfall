@@ -3,6 +3,7 @@ import { Boss, Collider, Dead, Elite, EnemyAI, Health, Interactable, MinionAI, R
 import { World, type Entity } from '../src/core/ecs';
 import { emptyAccount } from '../src/core/account';
 import { BOSS_SCRIPTS } from '../src/data/bosses';
+import { assetIdsOf } from '../src/data/variants';
 import { ENEMY_DEFS } from '../src/data/db';
 import { INSTANCES, CORE_INSTANCES, SHAFT_TUNING, shaftScaling } from '../src/data/instances';
 import en from '../src/data/lang/en.json';
@@ -107,7 +108,8 @@ describe('Core instances: definitions', () => {
       const o = ENEMY_DEFS.get(original)!;
       expect(s.look).toBe('shade');
       expect(s.attack.kind).toBe(o.attack.kind);
-      expect(s.assetId).toBe(o.assetId);
+      // (each wears its own variant of the same base model)
+      expect(assetIdsOf(s.assetId)[0]).toBe(assetIdsOf(o.assetId)[0]);
       if (shade !== 'shade_the_first') expect(s.life).toBeLessThan(o.life * 0.6);
     }
   });

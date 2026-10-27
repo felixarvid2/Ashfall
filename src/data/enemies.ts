@@ -78,7 +78,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Kamikaze: shambles up to you, swells and bursts in a toxic blast.
     id: 'bloater',
-    assetId: 'enemy.spore_carrier',
+    assetId: 'variant.bloater',
     family: 'infected',
     behavior: 'kamikaze',
     life: 38,
@@ -153,7 +153,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Ranged: an infected colonist with a pipe of burning ash that it flings from a distance.
     id: 'ash_thrower',
-    assetId: 'enemy.infected_colonist',
+    assetId: 'variant.ash_thrower',
     family: 'infected',
     behavior: 'ranged',
     life: 40,
@@ -171,7 +171,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Ranged: a rusted drone that zips about faster than a security drone and fires more often, for less.
     id: 'rust_drone',
-    assetId: 'enemy.security_drone',
+    assetId: 'variant.rust_drone',
     family: 'machine',
     behavior: 'ranged',
     life: 24,
@@ -191,7 +191,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Charger: a burned colonist with embers in its wounds; its body burns on where it falls.
     id: 'scorched_walker',
-    assetId: 'enemy.infected_colonist',
+    assetId: 'variant.scorched_walker',
     family: 'infected',
     behavior: 'rusher',
     life: 52,
@@ -219,7 +219,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Flanker: glowing-hot hound with a burning bite.
     id: 'slag_hound',
-    assetId: 'enemy.spore_hound',
+    assetId: 'variant.slag_hound',
     family: 'beast',
     behavior: 'flanker',
     life: 30,
@@ -246,7 +246,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Short-range shooter: a security drone refitted with a flamethrower.
     id: 'flame_drone',
-    assetId: 'enemy.security_drone',
+    assetId: 'variant.flame_drone',
     family: 'machine',
     behavior: 'ranged',
     life: 34,
@@ -275,7 +275,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Kamikaze: bursts in flame and leaves the ground burning.
     id: 'fire_bloater',
-    assetId: 'enemy.spore_carrier',
+    assetId: 'variant.fire_bloater',
     family: 'infected',
     behavior: 'kamikaze',
     life: 40,
@@ -384,7 +384,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Support elite: robed and haloed; empowers Smelters and raises one fallen Smelter.
     id: 'smelter_priest',
-    assetId: 'enemy.smelter',
+    assetId: 'variant.smelter_priest',
     family: 'human',
     behavior: 'support',
     life: 140,
@@ -402,11 +402,11 @@ export const ENEMIES: EnemyInput[] = [
     revive: { targets: ['smelter', 'welder'], radius: 12, windup: 1.4, cooldown: 12, lifeFraction: 0.6, uses: 1 },
   },
   // ---- Region 3: The Hydroponic Vaults (docs/regions/hydroponic-vaults.md) ----
-  // No new models: every enemy here is an existing one with a new tint, size and behaviour.
+  // No new full models: every enemy here is a variant (src/data/variants/regions123.ts), an existing model with its own parts, tint, size and behaviour.
   {
     // Charger: a colonist wrapped in vines; every third hit that lands roots you for a moment.
     id: 'overgrown_walker',
-    assetId: 'enemy.infected_colonist',
+    assetId: 'variant.overgrown_walker',
     family: 'infected',
     behavior: 'rusher',
     life: 60,
@@ -423,7 +423,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Kamikaze: bursts in a spore cloud that releases a few Spore Swarms.
     id: 'swarm_bloater',
-    assetId: 'enemy.spore_carrier',
+    assetId: 'variant.swarm_bloater',
     family: 'infected',
     behavior: 'kamikaze',
     life: 46,
@@ -445,7 +445,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Tank / support: a Slagborn body grown over with fungus; it mends the Lumen creatures around it.
     id: 'mossborn',
-    assetId: 'enemy.slagborn',
+    assetId: 'variant.mossborn',
     family: 'lumen',
     behavior: 'tank',
     life: 430,
@@ -463,7 +463,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Controller: a crawling knot of vines; lashes from a distance and drags you in.
     id: 'vine_weaver',
-    assetId: 'enemy.lumen_tentacle',
+    assetId: 'variant.vine_weaver',
     family: 'lumen',
     behavior: 'rusher',
     life: 150,
@@ -480,9 +480,9 @@ export const ENEMIES: EnemyInput[] = [
     pull: { every: 6, range: 11, minRange: 4.5, windup: 0.8, width: 1.4, coefficient: 0.5 },
   },
   {
-    // Swarm: a cloud of flying insects (a small drone in green as a stand-in); hard to hit, poisons.
+    // Swarm: a cloud of flying insects (a small drone with insect wings); hard to hit, poisons.
     id: 'spore_swarm',
-    assetId: 'enemy.security_drone',
+    assetId: 'variant.spore_swarm',
     family: 'insect',
     behavior: 'flanker',
     life: 22,
@@ -502,7 +502,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Guard: a hulking soldier grown into a cocoon; calls more of the brood if not killed quickly.
     id: 'cocoon_warden',
-    assetId: 'enemy.sergeant',
+    assetId: 'variant.cocoon_warden',
     family: 'infected',
     behavior: 'tank',
     life: 260,
@@ -522,7 +522,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Shooter: a former researcher; sprays spores at close range and lobs lingering spore clouds.
     id: 'mutated_botanist',
-    assetId: 'enemy.smelter',
+    assetId: 'variant.mutated_botanist',
     family: 'human',
     behavior: 'ranged',
     life: 120,
@@ -541,7 +541,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Elite: an enormous creature of fungus and crystal. Slow, devastating; regrows while its fungi stand.
     id: 'lumen_giant',
-    assetId: 'boss.the_first',
+    assetId: 'variant.lumen_giant',
     family: 'lumen',
     behavior: 'tank',
     life: 1500,
@@ -598,7 +598,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Shooter: a drone in the governor's colours; it hardens the nearest ally.
     id: 'governor_drone',
-    assetId: 'enemy.security_drone',
+    assetId: 'variant.governor_drone',
     family: 'machine',
     behavior: 'ranged',
     life: 36,
@@ -618,7 +618,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Heavy: a bigger, slower loader that slams the ground in a wide arc.
     id: 'ore_crusher',
-    assetId: 'enemy.cargo_loader',
+    assetId: 'variant.ore_crusher',
     family: 'machine',
     behavior: 'tank',
     life: 560,
@@ -636,7 +636,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Kamikaze: bursts in a ring of crystal shards.
     id: 'shard_bloater',
-    assetId: 'enemy.spore_carrier',
+    assetId: 'variant.shard_bloater',
     family: 'infected',
     behavior: 'kamikaze',
     life: 50,
@@ -654,7 +654,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Ambusher: tunnels under the ground and bursts up beneath you.
     id: 'burrower',
-    assetId: 'enemy.lumen_tentacle',
+    assetId: 'variant.burrower',
     family: 'lumen',
     behavior: 'rusher',
     life: 90,
@@ -673,7 +673,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Tank: living crystal. The shell ignores elemental damage and throws hits back until it breaks.
     id: 'crystal_sentinel',
-    assetId: 'enemy.slagborn',
+    assetId: 'variant.crystal_sentinel',
     family: 'lumen',
     behavior: 'tank',
     life: 420,
@@ -691,7 +691,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Brawler / thrower: a miner with a drill who lunges and lobs dynamite.
     id: 'infected_miner',
-    assetId: 'enemy.welder',
+    assetId: 'variant.infected_miner',
     family: 'infected',
     behavior: 'rusher',
     life: 85,
@@ -709,7 +709,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Skirmisher: a ghost of the elder civilisation. Blinks beside you; the light tears it apart.
     id: 'echo',
-    assetId: 'char.spectre',
+    assetId: 'variant.echo',
     family: 'lumen',
     behavior: 'rusher',
     life: 55,
@@ -729,7 +729,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Human soldier: the governor's security, firing bursts.
     id: 'security_trooper',
-    assetId: 'enemy.sergeant',
+    assetId: 'variant.security_trooper',
     family: 'human',
     behavior: 'ranged',
     life: 140,
@@ -747,7 +747,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Human support: raises a dome that soaks up shots for everyone inside.
     id: 'shield_officer',
-    assetId: 'enemy.sergeant',
+    assetId: 'variant.shield_officer',
     family: 'human',
     behavior: 'ranged',
     life: 200,
@@ -768,7 +768,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Elite: a mining machine taken over by Lumen; its drill spins all the way round.
     id: 'drill_colossus',
-    assetId: 'enemy.cargo_loader',
+    assetId: 'variant.drill_colossus',
     family: 'machine',
     behavior: 'tank',
     life: 1700,
@@ -788,7 +788,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Charger: on death it splits into two short-lived, weaker echoes.
     id: 'shade_walker',
-    assetId: 'enemy.infected_colonist',
+    assetId: 'variant.shade_walker',
     family: 'lumen',
     behavior: 'rusher',
     look: 'shade',
@@ -806,7 +806,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // What a Shade Walker leaves behind: smaller, frailer, gone after a few seconds. Pays nothing.
     id: 'shade_echo',
-    assetId: 'enemy.infected_colonist',
+    assetId: 'variant.shade_echo',
     family: 'lumen',
     behavior: 'rusher',
     look: 'shade',
@@ -826,7 +826,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Flanker: flickers, blinks in front of you and leaps.
     id: 'shade_hound',
-    assetId: 'enemy.spore_hound',
+    assetId: 'variant.shade_hound',
     family: 'lumen',
     behavior: 'flanker',
     look: 'shade',
@@ -844,7 +844,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Heavy: a smelter's flames and shield; the pools it leaves drift with Unstable Gravity.
     id: 'shade_smelter',
-    assetId: 'enemy.smelter',
+    assetId: 'variant.shade_smelter',
     family: 'lumen',
     behavior: 'ranged',
     look: 'shade',
@@ -874,7 +874,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Controller: roots whoever its vines drag in.
     id: 'shade_weaver',
-    assetId: 'enemy.lumen_tentacle',
+    assetId: 'variant.shade_weaver',
     family: 'lumen',
     behavior: 'rusher',
     look: 'shade',
@@ -893,7 +893,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Tank: Region 4's crystal shell, and while it holds the shell throws your bolts back at you.
     id: 'shade_sentinel',
-    assetId: 'enemy.slagborn',
+    assetId: 'variant.shade_sentinel',
     family: 'lumen',
     behavior: 'tank',
     look: 'shade',
@@ -911,7 +911,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Shooter: its shots bend toward you, so sidestepping late is not enough.
     id: 'shade_drone',
-    assetId: 'enemy.security_drone',
+    assetId: 'variant.shade_drone',
     family: 'lumen',
     behavior: 'ranged',
     look: 'shade',
@@ -1033,7 +1033,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Ostrow, the Mines' survey lead: a geologist's hammer slammed down in a wide arc.
     id: 'absorbed_ostrow',
-    assetId: 'npc.blacksmith',
+    assetId: 'variant.absorbed_ostrow',
     family: 'lumen',
     behavior: 'tank',
     look: 'lumen',
@@ -1053,7 +1053,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Brother Lenn, the Refinery's preacher: the pyre torch of the burnings, a censer raised against yours.
     id: 'absorbed_lenn',
-    assetId: 'npc.cook',
+    assetId: 'variant.absorbed_lenn',
     family: 'lumen',
     behavior: 'ranged',
     look: 'lumen',
@@ -1075,7 +1075,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Dr. Halvorsen, the Vaults' researcher: roots that pull you in, and spore darts.
     id: 'absorbed_halvorsen',
-    assetId: 'npc.pump_engineer',
+    assetId: 'variant.absorbed_halvorsen',
     family: 'lumen',
     behavior: 'ranged',
     look: 'lumen',
@@ -1097,7 +1097,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Rhee, the Refinery's crane operator: sets up turrets as the fight goes on (two at a time).
     id: 'absorbed_rhee',
-    assetId: 'npc.technician',
+    assetId: 'variant.absorbed_rhee',
     family: 'lumen',
     behavior: 'ranged',
     look: 'lumen',
@@ -1119,7 +1119,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Pvt. Danner, Cinder Flats' deserter: a trooper's bursts and thrown grenades.
     id: 'absorbed_danner',
-    assetId: 'npc.defector',
+    assetId: 'variant.absorbed_danner',
     family: 'lumen',
     behavior: 'ranged',
     look: 'lumen',
@@ -1141,7 +1141,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The technician's turret: stays where it was set up and shoots.
     id: 'lumen_turret',
-    assetId: 'prop.lumen_wrath',
+    assetId: 'enemy.lumen_turret',
     family: 'machine',
     behavior: 'ranged',
     look: 'lumen',
@@ -1183,7 +1183,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Crystal Labyrinth: a Crystal Sentinel grown huge; its shell bends light into beams.
     id: 'the_prism',
-    assetId: 'enemy.slagborn',
+    assetId: 'variant.the_prism',
     family: 'lumen',
     behavior: 'tank',
     life: 1600,
@@ -1202,7 +1202,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Sunken Drill: the machine that drowned with its crew; the drill turns all the way round.
     id: 'drowned_engine',
-    assetId: 'enemy.cargo_loader',
+    assetId: 'variant.drowned_engine',
     family: 'machine',
     behavior: 'tank',
     life: 2800,
@@ -1221,7 +1221,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Archive: an Echo that keeps the elder memories; it blinks and splits into copies.
     id: 'archivist',
-    assetId: 'char.spectre',
+    assetId: 'variant.archivist',
     family: 'lumen',
     behavior: 'rusher',
     life: 1400,
@@ -1242,7 +1242,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Burial Chamber: the guardian of the elder dead. Hard: beams, blinks, then a sweeping storm.
     id: 'elder_guardian',
-    assetId: 'boss.the_first',
+    assetId: 'variant.elder_guardian',
     family: 'lumen',
     behavior: 'tank',
     life: 3600,
@@ -1261,7 +1261,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Mining Station Aurum: the governor's head of security. Bursts, a dome and grenade barrages.
     id: 'security_chief_holm',
-    assetId: 'enemy.sergeant',
+    assetId: 'variant.security_chief_holm',
     family: 'human',
     behavior: 'ranged',
     life: 1700,
@@ -1283,7 +1283,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Region boss: the governor in Lumen-amplifying powered armour. Shielded from the front.
     id: 'governor_kade',
-    assetId: 'char.bastion',
+    assetId: 'variant.governor_kade',
     family: 'human',
     behavior: 'tank',
     life: 6000,
@@ -1305,7 +1305,7 @@ export const ENEMIES: EnemyInput[] = [
     // The Heart: Lumen as a gigantic structure of light, rooted at the arena centre. Its own bolts are the slow
     // background; the attacks that matter come from its script ('lumen' in src/data/bosses.ts).
     id: 'lumen',
-    assetId: 'prop.lumen_wrath',
+    assetId: 'enemy.lumen_heart',
     family: 'lumen',
     behavior: 'ranged',
     look: 'lumen',
@@ -1330,7 +1330,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Drainage Tunnels: a swollen spore-mother that slams and births Bloaters.
     id: 'brood_mother',
-    assetId: 'enemy.spore_carrier',
+    assetId: 'variant.brood_mother',
     family: 'infected',
     behavior: 'tank',
     life: 900,
@@ -1349,7 +1349,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Checkpoint Sierra: Commandant Hale, half-consumed by Lumen.
     id: 'commandant_hale',
-    assetId: 'enemy.sergeant',
+    assetId: 'variant.commandant_hale',
     family: 'infected',
     behavior: 'tank',
     life: 1100,
@@ -1388,7 +1388,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Pump Station Delta: the Smelter commander. Burns, shields himself and raises his fallen.
     id: 'brother_ash',
-    assetId: 'enemy.smelter',
+    assetId: 'variant.brother_ash',
     family: 'human',
     behavior: 'ranged',
     life: 1300,
@@ -1410,7 +1410,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Cathedral Crypt: the keeper of the pyres.
     id: 'pyre_warden',
-    assetId: 'enemy.smelter',
+    assetId: 'variant.pyre_warden',
     family: 'human',
     behavior: 'ranged',
     life: 1150,
@@ -1431,7 +1431,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Cold Hall: a welder frozen into the failed cooling plant, still cutting.
     id: 'frozen_welder',
-    assetId: 'enemy.welder',
+    assetId: 'variant.frozen_welder',
     family: 'human',
     behavior: 'rusher',
     life: 1050,
@@ -1486,7 +1486,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Seed Bank Depths: a Mossborn frozen into the gene vault, still tending it.
     id: 'the_keeper',
-    assetId: 'enemy.slagborn',
+    assetId: 'variant.the_keeper',
     family: 'lumen',
     behavior: 'tank',
     life: 1500,
@@ -1506,7 +1506,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Cocoon Chamber: the brood's oldest warden.
     id: 'brood_warden',
-    assetId: 'enemy.sergeant',
+    assetId: 'variant.brood_warden',
     family: 'infected',
     behavior: 'tank',
     life: 1400,
@@ -1527,7 +1527,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Irrigation System: a great knot of vines in the flooded pump hall.
     id: 'vine_matriarch',
-    assetId: 'enemy.lumen_tentacle',
+    assetId: 'variant.vine_matriarch',
     family: 'lumen',
     behavior: 'rusher',
     life: 1500,
@@ -1547,7 +1547,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Sleeping Lab: Dr. Ilse Varga, Okafor's colleague, who never woke up the same.
     id: 'ilse_varga',
-    assetId: 'enemy.smelter',
+    assetId: 'variant.ilse_varga',
     family: 'human',
     behavior: 'ranged',
     life: 1300,
@@ -1568,7 +1568,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Dome Gamma: the bloom at the heart of the nest.
     id: 'gamma_bloom',
-    assetId: 'boss.the_first',
+    assetId: 'variant.gamma_bloom',
     family: 'lumen',
     behavior: 'tank',
     life: 2600,
@@ -1588,7 +1588,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Great Dome: an old harvesting machine fused with Lumen, guarding the Mother Tree.
     id: 'warden',
-    assetId: 'enemy.cargo_loader',
+    assetId: 'variant.warden',
     family: 'machine',
     behavior: 'tank',
     life: 5400,
@@ -1607,7 +1607,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Warden's third phase: the Mother Tree's roots burst up and lash out.
     id: 'mother_root',
-    assetId: 'enemy.lumen_tentacle',
+    assetId: 'variant.mother_root',
     family: 'lumen',
     behavior: 'rusher',
     life: 140,
@@ -1627,7 +1627,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Memory of Ember: the Shade of The First. The Maw's attacks, drawn as a memory; it also blinks (bosses.ts).
     id: 'shade_the_first',
-    assetId: 'boss.the_first',
+    assetId: 'variant.shade_the_first',
     family: 'lumen',
     behavior: 'tank',
     look: 'shade',
@@ -1645,7 +1645,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Singing Halls: the Choir Mother, a singer grown huge. Rooted in the middle of her choir, she empowers everything near.
     id: 'choir_mother',
-    assetId: 'enemy.choir_singer',
+    assetId: 'variant.choir_mother',
     family: 'light',
     behavior: 'ranged',
     look: 'lumen',
@@ -1667,7 +1667,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Chamber of Creation: the machine that hatched Lumen's memories. A Core Guardian grown over everything.
     id: 'brood_engine',
-    assetId: 'enemy.core_guardian',
+    assetId: 'variant.brood_engine',
     family: 'machine',
     behavior: 'tank',
     look: 'lumen',
@@ -1687,7 +1687,7 @@ export const ENEMIES: EnemyInput[] = [
   // The Elevator Base's Memory Shade minibosses: the originals' attacks, the shade look, about 40 % of their life.
   {
     id: 'shade_vire',
-    assetId: 'boss.vire',
+    assetId: 'variant.shade_vire',
     family: 'lumen',
     behavior: 'support',
     look: 'shade',
@@ -1705,7 +1705,7 @@ export const ENEMIES: EnemyInput[] = [
   },
   {
     id: 'shade_warden',
-    assetId: 'enemy.cargo_loader',
+    assetId: 'variant.shade_warden',
     family: 'lumen',
     behavior: 'tank',
     look: 'shade',
@@ -1723,7 +1723,7 @@ export const ENEMIES: EnemyInput[] = [
   },
   {
     id: 'shade_kade',
-    assetId: 'char.bastion',
+    assetId: 'variant.shade_kade',
     family: 'lumen',
     behavior: 'tank',
     look: 'shade',

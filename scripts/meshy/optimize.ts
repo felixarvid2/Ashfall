@@ -131,6 +131,8 @@ async function simplifyTo(doc: Document, target: number): Promise<void> {
       if (result.length > targetIndices * 1.25) {
         [result] = MeshoptSimplifier.simplifySloppy(indices, positions, 3, null, targetIndices, 1);
       }
+      // A tiny primitive (one colour of a Blender model) can simplify to nothing: keep it whole, an empty one cannot be written.
+      if (result.length < 3) continue;
       idx.setArray(new Uint32Array(result));
       compactPrimitive(prim);
     }

@@ -29,7 +29,8 @@ describe('variant data', () => {
   it('every variant passes the data validation (base, parts and joints exist) and its files are on disk', () => {
     expect(validateGameData()).toEqual([]);
     for (const def of VARIANTS.values()) {
-      expect(byId.get(def.base)?.rig, `${def.id}: ${def.base} is rigged`).toBeTruthy();
+      // Only parts on a bone need a rig; unrigged bases (drones, hound, Slagborn, loader, tentacle, the First) take root parts.
+      if (def.parts.some((p) => p.bone)) expect(byId.get(def.base)?.rig, `${def.id}: ${def.base} is rigged`).toBeTruthy();
       for (const part of def.parts) {
         const entry = byId.get(part.asset)!;
         expect(entry.category).toBe('part');

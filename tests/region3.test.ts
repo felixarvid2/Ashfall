@@ -4,6 +4,7 @@ import { emptyAccount } from '../src/core/account';
 import { World, type Entity } from '../src/core/ecs';
 import { ENEMY_DEFS } from '../src/data/db';
 import { PACK_TEMPLATES } from '../src/data/packs';
+import { VARIANTS } from '../src/data/variants';
 import { ZONES, zoneDef } from '../src/data/zones';
 import { AIR_FILTERS, FILTER_RADIUS, HYDROPONIC_VAULTS, VAULTS_GATE } from '../src/data/zones/hydroponicVaults';
 import { REFINERY_DISTRICT, VAULTS_ROAD_GATE } from '../src/data/zones/refineryDistrict';
@@ -168,8 +169,11 @@ describe('water and crystals', () => {
 describe('Region 3 roster', () => {
   const ids = ['overgrown_walker', 'spore_hound', 'swarm_bloater', 'mossborn', 'vine_weaver', 'spore_swarm', 'cocoon_warden', 'mutated_botanist', 'lumen_giant'];
 
-  it('uses only existing models, 40–60 % returning, every type in a pack', () => {
-    for (const id of ids) expect(ENEMY_DEFS.get(id)!.assetId.match(/^(enemy|boss)\./), id).toBeTruthy();
+  it('uses only existing models (as a variant: base + parts), 40–60 % returning, every type in a pack', () => {
+    for (const id of ids) {
+      const asset = ENEMY_DEFS.get(id)!.assetId;
+      expect((VARIANTS.get(asset)?.base ?? asset).match(/^(enemy|boss)\./), id).toBeTruthy();
+    }
     const packed = new Set(PACK_TEMPLATES.filter((p) => p.id.startsWith('hv_')).flatMap((p) => p.members.map((m) => m.enemy)));
     for (const id of ids) expect(packed.has(id), id).toBe(true);
     const returning = ['overgrown_walker', 'spore_hound', 'swarm_bloater', 'mossborn'];

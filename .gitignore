@@ -19,3 +19,4 @@ assets-src/third-party/
 coverage/
 assets/source/blender-report.json
 assets/source/blender-spec.json
+scripts/blender/__pycache__/

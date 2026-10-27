@@ -9,6 +9,7 @@ import { TIER_TABLE } from '../src/data/endgame/tiers';
 import { WORLD_BOSSES, WORLD_BOSS, WORLD_BOSS_ENEMIES, worldBossPortrait } from '../src/data/endgame/worldBosses';
 import { t } from '../src/data/i18n';
 import { ENEMY_DEFS } from '../src/data/db';
+import { assetIdsOf } from '../src/data/variants';
 import { PROGRESSION } from '../src/data/loot/db';
 import { ZONES, zoneDef } from '../src/data/zones';
 import { caveGrid, openAt } from '../src/data/zones/caves';
@@ -114,11 +115,15 @@ describe('data', () => {
     expect(zones).toEqual(new Set(ZONES.map((z) => z.id)));
   });
 
-  it('the bodies reuse the existing large models', () => {
-    expect(ENEMY_DEFS.get('world_ashen_colossus')!.assetId).toBe('enemy.cargo_loader');
-    expect(ENEMY_DEFS.get('world_mother_of_spores')!.assetId).toBe('enemy.spore_carrier');
+  it('the bodies are runtime variants (src/data/variants/deepCore.ts) of the existing large models', () => {
+    const baseOf = (id: string) => assetIdsOf(ENEMY_DEFS.get(id)!.assetId)[0];
+    expect(ENEMY_DEFS.get('world_ashen_colossus')!.assetId).toBe('variant.ashen_colossus');
+    expect(baseOf('world_ashen_colossus')).toBe('enemy.cargo_loader');
+    expect(baseOf('world_mother_of_spores')).toBe('enemy.spore_carrier');
     const engine = ENEMY_DEFS.get('world_hollow_engine')!;
-    expect(engine.assetId).toBe('enemy.core_guardian');
+    expect(baseOf('world_hollow_engine')).toBe('enemy.core_guardian');
+    expect(baseOf('world_echo_engine')).toBe('enemy.core_guardian');
+    expect(baseOf('world_choir_of_stone')).toBe('enemy.choir_singer');
     expect(engine.look).toBe('lumen');
     // Only existing portraits are reused (the portrait files are listed in artFiles).
     expect(worldBossPortrait('world_mother_of_spores')).toBe('brood_mother');

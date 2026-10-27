@@ -157,7 +157,7 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
   {
     // enemy.cargo_loader × 3: heavy claw slams, a throw every third swing, burning ground behind it.
     id: 'world_ashen_colossus',
-    assetId: 'enemy.cargo_loader',
+    assetId: 'variant.ashen_colossus',
     family: 'machine',
     behavior: 'tank',
     life: 4200,
@@ -177,7 +177,7 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
   {
     // enemy.spore_carrier × 3: a swollen mother that slams in a wide arc and births the brood.
     id: 'world_mother_of_spores',
-    assetId: 'enemy.spore_carrier',
+    assetId: 'variant.mother_of_spores',
     family: 'infected',
     behavior: 'tank',
     life: 4000,
@@ -196,7 +196,7 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
   {
     // enemy.core_guardian × 2.5, Lumen look: slow and stately, wards the adds it brings.
     id: 'world_hollow_engine',
-    assetId: 'enemy.core_guardian',
+    assetId: 'variant.hollow_engine',
     family: 'machine',
     behavior: 'tank',
     look: 'lumen',
@@ -216,7 +216,7 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
   {
     // enemy.choir_singer × 2.4, Lumen look: walks, keeps its distance and fires three-shot bursts.
     id: 'world_choir_of_stone',
-    assetId: 'enemy.choir_singer',
+    assetId: 'variant.choir_of_stone',
     family: 'light',
     behavior: 'ranged',
     look: 'lumen',
@@ -237,7 +237,7 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
   {
     // enemy.core_guardian × 1.1, Lumen look: the Hollow Engine's cousin, heavier and bluer.
     id: 'world_echo_engine',
-    assetId: 'enemy.core_guardian',
+    assetId: 'variant.echo_engine',
     family: 'machine',
     behavior: 'tank',
     look: 'lumen',
