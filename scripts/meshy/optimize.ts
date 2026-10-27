@@ -25,11 +25,14 @@ const FOLDERS: Record<AssetEntry['category'], string> = {
   prop: 'props',
   environment: 'environment',
   icon: 'icons',
+  part: 'parts',
 };
 
 export function outputPath(entry: AssetEntry, suffix = ''): { rel: string; abs: string } {
   const name = entry.id.split('.').slice(1).join('_');
-  const rel = `${FOLDERS[entry.category]}/${name}${suffix}.glb`;
+  // Blender-made whole models live apart from the Meshy ones (scripts/blender); parts have their own folder.
+  const folder = entry.source === 'blender' && entry.category !== 'part' ? 'blender' : FOLDERS[entry.category];
+  const rel = `${folder}/${name}${suffix}.glb`;
   return { rel, abs: resolve(PUBLIC_ASSETS_DIR, rel) };
 }
 
@@ -54,7 +57,7 @@ export function countTriangles(doc: Document): number {
   return tris;
 }
 
-async function io(): Promise<NodeIO> {
+export async function io(): Promise<NodeIO> {
   await MeshoptEncoder.ready;
   await MeshoptSimplifier.ready;
   return new NodeIO()
@@ -206,7 +209,8 @@ export async function optimizeAssets(_manifest: AssetManifest, entries: AssetEnt
     await simplifyTo(doc, entry.targetPolycount);
     // Rigged models are already sized by Meshy (height_meters); their bind-pose bounds ignore the
     // skeleton (centimetre bones under a 0.01-scaled armature), so measuring them would be wrong.
-    if (!skinned) normalise(doc, entry.heightMeters);
+    // Parts keep their origin at the attach point and their authored size (scripts/blender).
+    if (!skinned && entry.category !== 'part') normalise(doc, entry.heightMeters);
     const clips = renameClips(doc, entry, log);
     if (doc.getRoot().listAnimations().length) await doc.transform(resample());
     await doc.transform(
@@ -214,9 +218,9 @@ export async function optimizeAssets(_manifest: AssetManifest, entries: AssetEnt
       textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [entry.textureSize ?? GAME_TEXTURE_SIZE, entry.textureSize ?? GAME_TEXTURE_SIZE] }),
     );
 
-    // LODs for static meshes only (skinned characters use one level; see docs/decisions.md).
+    // LODs for static meshes only (skinned characters use one level; see docs/decisions.md). Parts are tiny: none.
     const lods: string[] = [];
-    if (!skinned) {
+    if (!skinned && entry.category !== 'part') {
       for (const [i, ratio] of LOD_RATIOS.entries()) {
         const lodDoc = await nodeIO.readBinary(await nodeIO.writeBinary(doc));
         lodDoc.setLogger(new Logger(Logger.Verbosity.WARN));

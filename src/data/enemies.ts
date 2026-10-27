@@ -561,7 +561,8 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Charger: an Ash Walker grown through with crystal; the growths throw some shots back.
     id: 'crystal_walker',
-    assetId: 'enemy.infected_colonist',
+    // A colonist with Lumen crystal growing out of the back, shoulder and head (src/data/variants.ts).
+    assetId: 'variant.crystal_walker',
     family: 'infected',
     behavior: 'rusher',
     life: 70,

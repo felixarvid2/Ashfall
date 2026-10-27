@@ -17,6 +17,7 @@ import { TEST_ARENA, type ArenaDef } from './zones/testArena';
 import { ZONES } from './zones';
 import { PACK_TEMPLATES } from './packs';
 import { NPCS, QUESTS } from './quests/db';
+import { RIG_JOINTS, VARIANTS } from './variants';
 
 export function validateGameData(): string[] {
   const errors: string[] = [];
@@ -31,40 +32,56 @@ export function validateGameData(): string[] {
     if (ids.has(asset.id)) errors.push(`manifest: duplicate asset id ${asset.id}`);
     ids.add(asset.id);
     if (asset.status === 'optimized' && !asset.file) errors.push(`manifest: ${asset.id} is optimized but has no file`);
-    if (asset.category !== 'icon' && !asset.placeholder) errors.push(`manifest: ${asset.id} needs a placeholder`);
+    // Parts are only ever attached to a variant's bones, never shown on their own: no placeholder.
+    if (asset.category !== 'icon' && asset.category !== 'part' && !asset.placeholder) errors.push(`manifest: ${asset.id} needs a placeholder`);
+    if (asset.source === 'blender' && asset.status === 'optimized' && !asset.stats) errors.push(`manifest: ${asset.id} is built by Blender but has no stats (run npm run blender:build)`);
+  }
+  // Runtime variants (src/data/variants.ts): a variant id stands wherever an asset id does.
+  const byId = new Map(manifest.data.assets.map((a) => [a.id, a]));
+  const known = (id: string): boolean => ids.has(id) || VARIANTS.has(id);
+  for (const variant of VARIANTS.values()) {
+    if (ids.has(variant.id)) errors.push(`variant ${variant.id}: the id is also in the manifest`);
+    const base = byId.get(variant.base);
+    if (!base || base.category === 'part' || base.category === 'icon') errors.push(`variant ${variant.id}: base ${variant.base} is not a model in the manifest`);
+    if (variant.parts.length === 0 && !variant.look) errors.push(`variant ${variant.id}: no parts and no look, nothing differs from ${variant.base}`);
+    for (const part of variant.parts) {
+      if (byId.get(part.asset)?.category !== 'part') errors.push(`variant ${variant.id}: ${part.asset} is not a part in the manifest`);
+      if (part.bone && !RIG_JOINTS.includes(part.bone)) errors.push(`variant ${variant.id}: unknown bone ${part.bone}`);
+      if (part.bone && base && !base.rig) errors.push(`variant ${variant.id}: bone ${part.bone} but ${variant.base} is not rigged`);
+    }
   }
 
   const arenas: ArenaDef[] = [TEST_ARENA, ...ZONES];
   for (const arena of arenas) {
     for (const prop of arena.props) {
-      if (!ids.has(prop.asset)) errors.push(`${arena.id}: unknown asset ${prop.asset}`);
+      if (!known(prop.asset)) errors.push(`${arena.id}: unknown asset ${prop.asset}`);
       if (!prop.landmark && (Math.abs(prop.x) > arena.halfSize || Math.abs(prop.z) > arena.halfSize)) {
         errors.push(`${arena.id}: ${prop.asset} at (${prop.x}, ${prop.z}) is outside the arena`);
       }
     }
-    for (const s of arena.scatter) if (!ids.has(s.asset)) errors.push(`${arena.id}: unknown scatter asset ${s.asset}`);
+    for (const s of arena.scatter) if (!known(s.asset)) errors.push(`${arena.id}: unknown scatter asset ${s.asset}`);
   }
 
   // Quests and NPCs: models, enemies and people they mention must exist.
-  for (const npc of NPCS.values()) if (!ids.has(npc.asset)) errors.push(`npc ${npc.id}: unknown asset ${npc.asset}`);
+  for (const npc of NPCS.values()) if (!known(npc.asset)) errors.push(`npc ${npc.id}: unknown asset ${npc.asset}`);
   for (const q of QUESTS.values()) {
     if (q.giver && !NPCS.has(q.giver)) errors.push(`quest ${q.id}: unknown giver ${q.giver}`);
     for (const a of q.after) if (!QUESTS.has(a)) errors.push(`quest ${q.id}: unknown prerequisite ${a}`);
     const objects = q.trigger && 'object' in q.trigger ? [q.trigger.object] : [];
     for (const step of q.steps) {
       if (step.kind === 'interact') objects.push(...step.objects);
-      if (step.kind === 'escort' && !ids.has(step.asset)) errors.push(`quest ${q.id}: unknown asset ${step.asset}`);
+      if (step.kind === 'escort' && !known(step.asset)) errors.push(`quest ${q.id}: unknown asset ${step.asset}`);
       if ((step.kind === 'talk' || step.kind === 'choice') && !NPCS.has(step.npc)) errors.push(`quest ${q.id}: unknown npc ${step.npc}`);
       if (step.kind === 'kill') {
         for (const enemy of [step.enemy, step.spawn?.enemy]) if (enemy && !ENEMY_DEFS.has(enemy)) errors.push(`quest ${q.id}: unknown enemy ${enemy}`);
       }
     }
-    for (const o of objects) if (!ids.has(o.asset)) errors.push(`quest ${q.id}: unknown asset ${o.asset}`);
+    for (const o of objects) if (!known(o.asset)) errors.push(`quest ${q.id}: unknown asset ${o.asset}`);
   }
 
   // Combat data (schemas are enforced when db.ts loads; these are cross-references).
   for (const cls of CLASSES.values()) {
-    if (!ids.has(cls.assetId)) errors.push(`class ${cls.id}: unknown asset ${cls.assetId}`);
+    if (!known(cls.assetId)) errors.push(`class ${cls.id}: unknown asset ${cls.assetId}`);
     for (const id of cls.actionBar) {
       if (id === null) continue;
       const def = SKILLS.get(id);
@@ -73,7 +90,7 @@ export function validateGameData(): string[] {
     }
   }
   for (const enemy of ENEMY_DEFS.values()) {
-    if (!ids.has(enemy.assetId)) errors.push(`enemy ${enemy.id}: unknown asset ${enemy.assetId}`);
+    if (!known(enemy.assetId)) errors.push(`enemy ${enemy.id}: unknown asset ${enemy.assetId}`);
     const [min, max] = enemy.preferredRange ?? [0, 0];
     if (min > max) errors.push(`enemy ${enemy.id}: preferredRange min > max`);
   }

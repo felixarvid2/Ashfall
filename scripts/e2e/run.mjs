@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Headless-browser check kit: `node scripts/e2e/run.mjs --scenario <name> --out <dir> [options]`.
 // Prints one JSON summary line; exit code 1 on page errors or a timeout. See README.md.
-import { resolve } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { hideHud, launch, shot, startGame } from './lib.mjs';
 
 const ARGS = {
   scenario: { value: true }, out: { value: true }, url: { value: true }, viewport: { value: true },
-  class: { value: true }, poi: { value: true }, zone: { value: true }, at: { value: true }, timeout: { value: true }, mobile: {},
+  class: { value: true }, enemy: { value: true }, poi: { value: true }, zone: { value: true }, at: { value: true }, timeout: { value: true }, mobile: {},
 };
 
 function parseArgs(argv) {
@@ -118,6 +119,98 @@ const SCENARIOS = {
     return { screenshots: [await shot(page, out, `zone-${id}`)], notes: { zone: zoneId } };
   },
 
+  // A runtime variant (src/data/variants.ts) in the real page: `--enemy` (default crystal_walker) is spawned next to the
+  // hero in `--zone` (default zone.deep_mines). Checks that each part mesh is a child of its bone and that bones and
+  // parts move together over a few seconds of animation. Dev server only (it imports /src/world/spawn.ts).
+  async variant({ page, errors, out, opts, start }) {
+    const zone = opts.zone ?? 'zone.deep_mines';
+    const enemy = opts.enemy ?? 'crystal_walker';
+    // console.error (data validation, model load failures) counts as a failure here, not only uncaught page errors.
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(`console.error: ${m.text()}`); });
+    await start();
+    const [ax = 0, az = 0] = (opts.at ?? '0,0').split(',').map(Number);
+    await page.evaluate(([id, x, z]) => { const g = window.ashfall; g.ctx.debug.godMode = true; g.enterZone(id, x, z); }, [zone, ax, az]);
+    await wait(page, 9000);
+    const spawned = await page.evaluate(async (defId) => {
+      const g = window.ashfall;
+      g.killAllEnemies();
+      const { spawnEnemy } = await import('/src/world/spawn.ts');
+      const tr = g.playerTransform;
+      // Up the screen from the hero (the camera looks toward -x,-z), so the HUD does not cover it.
+      const e = spawnEnemy(g.world, defId, tr.x - 4, tr.z - 4, { aggro: true });
+      g.renderer.rig.zoom(-12);
+      return { entity: e, assetId: g.world.req(e, (await import('/src/core/components.ts')).Renderable).assetId };
+    }, enemy);
+    // The variant counts as loaded when base and parts are; until then the object is the placeholder.
+    await page.waitForFunction((id) => window.ashfall.renderer.assets.hasModel(id), spawned.assetId, { timeout: 120000 });
+    await page.waitForFunction((e) => { const o = window.ashfall.renderer.objects.get(e); return o && !o.userData.placeholder; }, spawned.entity, { timeout: 120000 });
+    // The whole DOM overlay goes: the picture is the world only.
+    await page.evaluate(() => {
+      for (let n = document.querySelector('canvas'); n && n !== document.body; n = n.parentElement) {
+        for (const sib of n.parentElement.children) if (sib !== n) sib.style.display = 'none';
+      }
+      // The hero stays out of the picture too.
+      window.ashfall.renderer.objects.get(window.ashfall.playerEntity).visible = false;
+    });
+    // A close-up around the creature, from its projected position.
+    const closeUp = async (name) => {
+      const c = await page.evaluate((entity) => {
+        const g = window.ashfall;
+        const o = g.renderer.objects.get(entity);
+        const p = o.position.clone(); p.y += 1;
+        p.project(g.renderer.rig.camera);
+        return [(p.x * 0.5 + 0.5) * innerWidth, (-p.y * 0.5 + 0.5) * innerHeight];
+      }, spawned.entity);
+      const half = 170;
+      const x = Math.max(0, Math.min(1100 - 2 * half, c[0] - half)), y = Math.max(0, Math.min(760 - 2 * half, c[1] - half));
+      mkdirSync(out, { recursive: true });
+      const path = join(out, `${name}.png`);
+      await page.screenshot({ path, clip: { x, y, width: 2 * half, height: 2 * half } });
+      return path;
+    };
+    // Sample the same object a few times: bone and part positions in the creature's own space, bone-relative offset.
+    const sample = (e) => page.evaluate((entity) => {
+      const obj = window.ashfall.renderer.objects.get(entity);
+      obj.updateMatrixWorld(true);
+      const inv = obj.matrixWorld.clone().invert();
+      const parts = [];
+      obj.traverse((o) => {
+        if (!o.name.startsWith('part:')) return;
+        const at = (n) => n.getWorldPosition(o.position.clone()).applyMatrix4(inv).toArray();
+        const bone = o.parent;
+        const meshes = [];
+        o.traverse((m) => m.isMesh && meshes.push(m));
+        parts.push({ name: o.name, parent: bone.name, parentIsBone: !!bone.isBone, meshes: meshes.length, visible: meshes.every((m) => m.visible), part: at(o), bone: at(bone) });
+      });
+      return { t: performance.now(), tick: window.ashfall.ctx.tick, parts, placeholder: !!obj.userData.placeholder };
+    }, e);
+    const frames = [];
+    const screenshots = [];
+    for (let i = 0; i < 4; i++) {
+      frames.push(await sample(spawned.entity));
+      if (i === 0 || i === 3) screenshots.push(await shot(page, out, `variant-${enemy}-${i}`), await closeUp(`variant-${enemy}-${i}-close`));
+      await wait(page, 1200);
+    }
+    const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+    const notes = { assetId: spawned.assetId, ticks: frames.map((f) => f.tick), parts: [] };
+    for (let k = 0; k < frames[0].parts.length; k++) {
+      const series = frames.map((f) => f.parts[k]);
+      const first = series[0];
+      notes.parts.push({
+        name: first.name, parent: first.parent, parentIsBone: first.parentIsBone, meshes: first.meshes,
+        boneMoved: Math.max(...series.map((s) => dist(s.bone, first.bone))),
+        partMoved: Math.max(...series.map((s) => dist(s.part, first.part))),
+        // The part must stay rigidly where it was relative to its bone's joint (same length, bone moved).
+        offsetDrift: Math.max(...series.map((s) => Math.abs(dist(s.part, s.bone) - dist(first.part, first.bone)))),
+      });
+    }
+    const bad = notes.parts.filter((p) => !(p.parentIsBone || p.parent === spawned.assetId) || p.meshes < 1);
+    if (frames.some((f) => f.placeholder)) throw new Error('the variant is still a placeholder');
+    if (bad.length) throw new Error(`parts not attached as expected: ${JSON.stringify(bad)}`);
+    if (!notes.parts.some((p) => p.boneMoved > 0.003 && p.partMoved > 0.003)) throw new Error('no bone moved over the samples: ' + JSON.stringify(notes.parts));
+    return { screenshots, notes };
+  },
+
   async audio({ page, out, start, mobile }) {
     const screenshots = [];
     const notes = { notFound: [] };
@@ -218,13 +311,14 @@ const DEFAULTS = {
   panels: { viewport: '390x844', mobile: true },
   landscape: { viewport: '844x390', mobile: true },
   audio: { viewport: '1280x720', mobile: false },
+  variant: { viewport: '1100x760', mobile: false },
 };
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const name = opts.scenario;
   if (!name || !SCENARIOS[name] || !opts.out) {
-    console.error(`Usage: run.mjs --scenario <${Object.keys(SCENARIOS).join('|')}> --out <dir> [--url U] [--viewport WxH] [--mobile] [--class bastion|spectre|xenomant|lightbearer] [--poi id] [--zone id] [--at x,z] [--timeout seconds]`);
+    console.error(`Usage: run.mjs --scenario <${Object.keys(SCENARIOS).join('|')}> --out <dir> [--url U] [--viewport WxH] [--mobile] [--class bastion|spectre|xenomant|lightbearer] [--enemy id] [--poi id] [--zone id] [--at x,z] [--timeout seconds]`);
     process.exit(2);
   }
   const out = resolve(opts.out);

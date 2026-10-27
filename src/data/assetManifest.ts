@@ -54,15 +54,17 @@ export const MeshyStateSchema = z
 
 export const AssetEntrySchema = z.object({
   id: z.string().regex(/^[a-z]+(\.[a-z0-9_]+)+$/),
-  category: z.enum(['character', 'enemy', 'prop', 'environment', 'icon']),
+  category: z.enum(['character', 'enemy', 'prop', 'environment', 'icon', 'part']),
   prompt: z.string(),
   /**
    * "text": text-to-3D preview → refine. "image": a concept image (text-to-image) is the cheap
    * preview; image-to-3D with textures is the refine step. Use "image" for creatures that
    * text-to-3D keeps turning into plain humans. "external": a free model from elsewhere (see
-   * `credit` and scripts/assets/thirdParty.ts), optimized like the rest.
+   * `credit` and scripts/assets/thirdParty.ts), optimized like the rest. "blender": built by
+   * scripts/blender (npm run blender:build) from scripts/blender/spec.json; category "part" is a small
+   * attachment for runtime variants (src/data/variants.ts), not a model of its own.
    */
-  source: z.enum(['text', 'image', 'external']).default('text'),
+  source: z.enum(['text', 'image', 'external', 'blender']).default('text'),
   /** Where an external model comes from and its licence, e.g. "Poly Haven barrel_03 (CC0)". */
   credit: z.string().optional(),
   /** Prompt for the concept image when source is "image". */

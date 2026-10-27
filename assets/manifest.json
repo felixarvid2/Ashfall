@@ -4861,6 +4861,54 @@
         "triangles": 0,
         "bytes": 5396
       }
+    },
+    {
+      "id": "part.crystal_cluster_large",
+      "category": "part",
+      "prompt": "Lumen crystal cluster, large: nine faceted cyan crystals fanning out of a low dark rock base (Blender, crystal_cluster seed 3). Grows along +Y from its base.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 500,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/crystal_cluster_large.glb",
+      "stats": {
+        "triangles": 334,
+        "bytes": 9804,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.crystal_cluster_small",
+      "category": "part",
+      "prompt": "Lumen crystal cluster, small: five faceted cyan crystals on a low dark base (Blender, crystal_cluster seed 7). Grows along +Y from its base.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/crystal_cluster_small.glb",
+      "stats": {
+        "triangles": 198,
+        "bytes": 7008,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.crystal_shard",
+      "category": "part",
+      "prompt": "Lumen crystal shard: one faceted cyan crystal, five-sided, slightly leaning (Blender, crystal_shard seed 11). Grows along +Y from its base.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 80,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/crystal_shard.glb",
+      "stats": {
+        "triangles": 28,
+        "bytes": 2724,
+        "textures": 0
+      }
     }
   ]
 }

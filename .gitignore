@@ -17,3 +17,5 @@ assets-src/third-party/
 
 # vitest coverage report (npm run coverage)
 coverage/
+assets/source/blender-report.json
+assets/source/blender-spec.json

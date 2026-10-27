@@ -627,3 +627,31 @@ in `docs/balance.md`. Real decisions:
   offers "Take all materials" to bring them into any character (crafting reads the character's own).
 - **Salvage junk now pays Lumen Dust** for marked legendaries (it paid gold only), and every salvage confirmation
   names the dust before the player confirms.
+
+### 2026-10-27 — Runtime variants and Blender parts instead of more full GLBs
+- **Problem.** About 70 enemy and boss ids and 37 NPC ids reuse another id's model (`assetId` in `src/data/enemies.ts`,
+  `asset` in the NPC data). A new full Meshy GLB is 150-450 KB and a zone has only 1.2-1.5 MB of headroom
+  (`tests/zoneBudget.test.ts`), so a few dozen own looks would not fit, and they cost credits.
+- **Decision.** Compose the look when the creature is created (`src/data/variants.ts`, `AssetLibrary.create`): the base
+  model cloned (SkeletonUtils for rigged ones), a material look (tint multiplies the texture; or a `LOOKS` key), and
+  small Blender-made parts (category `part`, 3-10 KB each, colours only, no textures) attached to named bones. A variant id
+  (`variant.<name>`) is valid wherever an asset id is. It is not a manifest entry: its base and parts are, and
+  `assetSets.ts` lists them, so a zone's byte budget counts both. Nothing runs per frame: the parts are children of the
+  bones and animate with them.
+- **Bone-relative, in model axes.** A part's `position`/`rotation` are measured from the joint along the model's axes in the
+  default pose, not in the bone's own axes: Meshy bones are rolled and sit under a 0.01-scaled armature, so bone-local
+  numbers could not be written or read by hand. The library converts into the bone's frame once at create. The same
+  convention puts the part in the Blender contact sheet (`npm run blender:build -- --sheet variant.<name>`).
+- **Parts share, the base is painted.** Parts share geometry and materials across all instances and are left out of the
+  tint slots (`userData.noTint`), so a hit flash and status tints do not light the crystals. The base's materials get the
+  variant look once per variant and are cloned per entity as before when it needs to flash.
+- **Placeholders.** A variant shows its base's placeholder (named with the variant id) until the base and every part are
+  loaded, then swaps in; a part whose file fails to load is left off instead of keeping the placeholder forever.
+- **Why not full GLBs or runtime geometry.** A full GLB per look blows the zone budgets and the Meshy budget; building
+  geometry in code gives no art control and cannot be reviewed in a contact sheet. Parts are authored in Blender
+  (`scripts/blender`, deterministic seeds, spec in `spec.json`), optimized by the repo's own optimizer and committed like every
+  other model, so the game never needs Blender.
+- **Limits.** Variants change colour and add attachments; they do not change the silhouette of the base mesh, its
+  animations or its rig. Unrigged models can only take root parts. First user: the Deep Mines crystal walker
+  (`variant.crystal_walker`: infected colonist + crystal cluster on the back, a smaller one on the left shoulder, shards on the head and
+  right forearm, cold blue-grey tint), +19 KB of parts and no change to the budget (the colonist was already in the set).
