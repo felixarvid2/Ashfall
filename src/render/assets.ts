@@ -13,6 +13,7 @@ import runtimeManifest from 'virtual:asset-manifest';
 import { RuntimeManifestSchema, type RuntimeEntry } from '../data/assetManifest';
 import { VARIANTS, assetIdsOf, type VariantDef, type VariantMaterialLook, type VariantPart } from '../data/variants';
 import { applyLookMaterials } from './looks';
+import { ModelPacks, type Pack } from './modelPack';
 
 type Placeholder = NonNullable<RuntimeEntry['placeholder']>;
 
@@ -280,7 +281,8 @@ export class AssetLibrary {
         return { name: 'ashfall_image_element_textures' };
       });
     }
-    return (url) => loadModel(loader, url);
+    const packs = EMBEDDED ? new ModelPacks(fetchPack) : null;
+    return (url) => loadModel(loader, url, packs);
   }
 
   /** One file, retried once after a pause; the failure is recorded when the retry fails too. */
@@ -615,11 +617,18 @@ function modelFile(file: string): string {
   return EMBEDDED ? file.replace(/\.glb$/, '.glb.json') : file;
 }
 
-async function loadModel(loader: GLTFLoader, url: string) {
-  if (!EMBEDDED) return loader.loadAsync(url);
+async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-  const { glb } = (await res.json()) as { glb: string };
+  return (await res.json()) as T;
+}
+
+const fetchPack = (url: string) => fetchJson<Pack>(url);
+
+async function loadModel(loader: GLTFLoader, url: string, packs: ModelPacks | null) {
+  if (!EMBEDDED) return loader.loadAsync(url);
+  // Small models come from their folder's pack (modelPack.ts); the rest are their own `.glb.json`.
+  const glb = (await packs?.get(url)) ?? (await fetchJson<{ glb: string }>(url)).glb;
   const bin = atob(glb);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
