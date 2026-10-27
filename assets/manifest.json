@@ -5487,22 +5487,6 @@
       }
     },
     {
-      "id": "part.dc_dynamite",
-      "category": "part",
-      "prompt": "A bundle of four red dynamite sticks tied with a band, a fuse with a spark. Origin at the centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 200,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_dynamite.glb",
-      "stats": {
-        "triangles": 148,
-        "bytes": 7016,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.dc_crystal_pauldron",
       "category": "part",
       "prompt": "Crystal pauldron: a flat dark rock slab with three Lumen crystals. Origin at the middle of the slab, grows up.",
@@ -5647,22 +5631,6 @@
       }
     },
     {
-      "id": "part.dc_shoulder_plate_blue",
-      "category": "part",
-      "prompt": "Armoured shoulder plate, security blue with a glow stud. Origin at the middle.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 250,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_shoulder_plate_blue.glb",
-      "stats": {
-        "triangles": 80,
-        "bytes": 5020,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.dc_shoulder_plate_gold",
       "category": "part",
       "prompt": "Armoured shoulder plate, gold with spikes (officers and governors). Origin at the middle.",
@@ -5675,38 +5643,6 @@
       "stats": {
         "triangles": 92,
         "bytes": 4196,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_peaked_cap",
-      "category": "part",
-      "prompt": "Security chief peaked cap: a navy crown with a gold cord, a stiff brim on the front (+Z) and a gold badge. Origin at the brim centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 250,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_peaked_cap.glb",
-      "stats": {
-        "triangles": 132,
-        "bytes": 7496,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_grenade_belt",
-      "category": "part",
-      "prompt": "Grenade bandolier: a strap across the chest with five grenades. Origin at the middle of the chest, faces +Z.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_grenade_belt.glb",
-      "stats": {
-        "triangles": 192,
-        "bytes": 6104,
         "textures": 0
       }
     },
@@ -6843,22 +6779,6 @@
       }
     },
     {
-      "id": "part.npc_respirator_white",
-      "category": "part",
-      "prompt": "White half-mask respirator with two filters (Dr. Okafor).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/npc_respirator_white.glb",
-      "stats": {
-        "triangles": 140,
-        "bytes": 5540,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.npc_respirator_rust",
       "category": "part",
       "prompt": "Rusted half-mask respirator with two glowing cyan filter lamps (Gerd).",
@@ -6871,22 +6791,6 @@
       "stats": {
         "triangles": 188,
         "bytes": 7436,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.npc_glasses_white",
-      "category": "part",
-      "prompt": "Round spectacles in a pale frame (Dr. Okafor).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/npc_glasses_white.glb",
-      "stats": {
-        "triangles": 396,
-        "bytes": 6600,
         "textures": 0
       }
     },
@@ -7353,22 +7257,6 @@
       }
     },
     {
-      "id": "part.npc_labcoat",
-      "category": "part",
-      "prompt": "Pale lab-coat skirt: a flared cone of cloth round the hips with a green hem (Dr. Okafor). Origin at the hips.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/npc_labcoat.glb",
-      "stats": {
-        "triangles": 180,
-        "bytes": 4420,
-        "textures": 0
-      }
-    },
-    {
       "id": "boss.governor_kade",
       "category": "enemy",
       "prompt": "colony governor in ornate gold-trimmed heavy powered armour amplified by glowing Lumen crystal conduits, tall high collar like a crown, long tattered governor's coat over the armour, massive tower shield on the left forearm, corporate seal on the chest, scarred grey-haired face with a cold stare, empty right hand, full body, T-pose",
@@ -7669,6 +7557,7 @@
       "category": "character",
       "prompt": "calm female field botanist scientist with dark skin and short cropped hair, round glasses, white respirator mask pulled down to the neck, clean white lab coat over practical field clothes, rubber gloves, seed pouches and sample vials on a belt, empty hands, full body, T-pose",
       "source": "image",
+      "credit": "Rigged in Blender (npm run blender:autorig): the Meshy mesh with the skeleton and clips of enemies/vire.glb",
       "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, calm female field botanist scientist in her forties with dark skin and short cropped greying hair, round wire glasses, white respirator mask pulled down around her neck, a clean white lab coat over practical olive field clothes, long rubber gloves, a belt of seed pouches and glass sample vials, sturdy boots, empty hands, a few tiny glowing green sprouts on her shoulder, dark sci-fi industrial, plain background",
       "targetPolycount": 8000,
       "heightMeters": 1.75,
@@ -7699,14 +7588,26 @@
           }
         ]
       },
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a17d48-8d97-7164-b107-66142d48d934",
         "refineTaskId": "01a17d4a-275d-7603-90ef-b766320707e4",
         "previewApproved": true,
-        "creditsSpent": 36
+        "creditsSpent": 36,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "hit": "hit",
+          "death": "death"
+        }
       },
       "file": "characters/okafor.glb",
+      "stats": {
+        "triangles": 8195,
+        "bytes": 790352,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#e7ece3",
@@ -7722,6 +7623,7 @@
       "category": "enemy",
       "prompt": "infected colony miner in a battered hard hat with a headlamp and orange high-visibility work suit, heavy hand drill in the right hand, dynamite bandolier across the chest, glowing amber crystal growths on the back and arm, full body, T-pose",
       "source": "image",
+      "credit": "Rigged in Blender (npm run blender:autorig): the Meshy mesh with the skeleton and clips of enemies/sergeant.glb",
       "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, infected colony miner in a battered yellow hard hat with a cracked headlamp, torn orange high-visibility work suit caked in rock dust, heavy hand drill in the right hand, bandolier of dynamite sticks across the chest, clusters of glowing amber crystal growing out of his back, neck and left forearm, hunched and gaunt, dark sci-fi industrial, plain background",
       "targetPolycount": 8000,
       "textureSize": 1024,
@@ -7757,14 +7659,27 @@
           }
         ]
       },
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a17d48-8f52-74fd-b37b-99f94926ae3e",
         "refineTaskId": "01a17d4a-29b0-708e-b338-0097fe589e5b",
         "previewApproved": true,
-        "creditsSpent": 36
+        "creditsSpent": 36,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
       },
       "file": "enemies/infected_miner.glb",
+      "stats": {
+        "triangles": 8171,
+        "bytes": 942052,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#8a5a2a",
@@ -7782,6 +7697,7 @@
       "category": "enemy",
       "prompt": "colony security trooper in sleek blue-grey combat armour and a full helmet with a glowing blue visor, compact assault rifle in the right hand, corporate insignia on the shoulder, full body, T-pose",
       "source": "image",
+      "credit": "Rigged in Blender (npm run blender:autorig): the Meshy mesh with the skeleton and clips of enemies/sergeant.glb",
       "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, colony security trooper in sleek blue-grey corporate combat armour with numbered plates, full helmet with a narrow glowing blue visor, compact assault rifle in the right hand, ammunition pouches, corporate gear insignia on the shoulder pad, disciplined stance, dark sci-fi industrial, plain background",
       "targetPolycount": 8000,
       "textureSize": 1024,
@@ -7817,14 +7733,27 @@
           }
         ]
       },
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a17d48-9029-7433-ad41-037c80ae0da4",
         "refineTaskId": "01a17d4a-29ec-771c-a056-dc6c7037f028",
         "previewApproved": true,
-        "creditsSpent": 36
+        "creditsSpent": 36,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
       },
       "file": "enemies/security_trooper.glb",
+      "stats": {
+        "triangles": 8279,
+        "bytes": 848600,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#3a4a6a",
@@ -7842,6 +7771,7 @@
       "category": "enemy",
       "prompt": "colony security chief in heavy blue-grey officer armour with gold rank plates, peaked officer cap, grenade bandolier, portable shield generator on the back, heavy rifle in the right hand, full body, T-pose",
       "source": "image",
+      "credit": "Rigged in Blender (npm run blender:autorig): the Meshy mesh with the skeleton and clips of enemies/sergeant.glb",
       "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, stern colony security chief in heavy blue-grey officer armour with gold rank plates on the shoulders, peaked officer cap, scarred clean-shaven face, grenade bandolier across the chest, a humming portable shield generator with blue emitters on the back, heavy rifle in the right hand, long dark officer's coat, dark sci-fi industrial, plain background",
       "targetPolycount": 15000,
       "heightMeters": 2,
@@ -7876,14 +7806,27 @@
           }
         ]
       },
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a17d48-8f11-7256-abed-48ee619c47b3",
         "refineTaskId": "01a17d4a-2951-7587-bead-8d2f6cc45519",
         "previewApproved": true,
-        "creditsSpent": 36
+        "creditsSpent": 36,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
       },
       "file": "enemies/security_chief_holm.glb",
+      "stats": {
+        "triangles": 14982,
+        "bytes": 997108,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#3a4a6a",
@@ -7901,6 +7844,7 @@
       "category": "enemy",
       "prompt": "fire cult commander of the Smelters in heavy blackened foundry armour, molten orange cracks glowing through the plates, a hood and a soot-black mantle, censer of burning slag on a chain, a mask of riveted iron, full body, T-pose",
       "source": "image",
+      "credit": "Rigged in Blender (npm run blender:autorig): the Meshy mesh with the skeleton and clips of enemies/vire.glb",
       "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, fire cult commander of the Smelters, tall and broad, heavy blackened foundry armour with molten orange cracks glowing through the plates, a deep hood and a ragged soot-black mantle, a riveted iron face mask with glowing eye slits, a burning slag censer hanging on a chain from the belt, heat haze, empty hands, dark sci-fi industrial, plain background",
       "targetPolycount": 15000,
       "heightMeters": 2,
@@ -7935,14 +7879,27 @@
           }
         ]
       },
-      "status": "refined",
+      "status": "optimized",
       "meshy": {
         "previewTaskId": "01a17d48-8f19-7643-9be6-669b6f05da10",
         "refineTaskId": "01a17d4a-291b-718d-994d-f0a88a261f68",
         "previewApproved": true,
-        "creditsSpent": 36
+        "creditsSpent": 36,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
       },
       "file": "enemies/brother_ash.glb",
+      "stats": {
+        "triangles": 15437,
+        "bytes": 947548,
+        "textures": 3
+      },
       "placeholder": {
         "shape": "capsule",
         "color": "#3a2a22",
@@ -7953,93 +7910,6 @@
         ],
         "emissive": "#ffb03a",
         "emissiveIntensity": 0.3
-      }
-    },
-    {
-      "id": "boss.ashen_colossus",
-      "category": "enemy",
-      "prompt": "colossal industrial mining mech walker covered in ash and slag, two huge hydraulic claw arms, furnace glowing orange in the chest, chimney stacks on the back, heavy stomping legs",
-      "source": "image",
-      "conceptPrompt": "full body concept art, three-quarter front view, colossal industrial mining mech walker caked in grey ash and cooled slag, two huge hydraulic claw arms, a furnace glowing orange in its open chest, smoking chimney stacks on its back, heavy stomping legs, hazard stripes worn away, towering and menacing, dark sci-fi industrial, plain background",
-      "targetPolycount": 15000,
-      "heightMeters": 3.2,
-      "status": "preview",
-      "meshy": {
-        "previewTaskId": "01a17d48-8f54-731f-a8c8-e55f734b4c4d",
-        "previewApproved": true,
-        "creditsSpent": 6
-      },
-      "file": "enemies/ashen_colossus.glb",
-      "placeholder": {
-        "shape": "box",
-        "color": "#5a5048",
-        "size": [
-          2.4,
-          3.2,
-          2
-        ],
-        "emissive": "#ff7a2a",
-        "emissiveIntensity": 0.4,
-        "showFacing": true,
-        "facingColor": "#ff7a2a"
-      }
-    },
-    {
-      "id": "boss.mother_of_spores",
-      "category": "enemy",
-      "prompt": "monstrous swollen fungal mother creature, bloated translucent spore sacs on the back, many thin legs, a crown of fleshy fronds, glowing green veins, small spore brood clinging to it",
-      "source": "image",
-      "conceptPrompt": "full body concept art, three-quarter front view, monstrous swollen fungal mother creature, a bloated body with translucent glowing green spore sacs bulging on its back, many thin spindly legs, a crown of fleshy fronds around a small eyeless head, pulsing green veins, tiny spore creatures clinging to its flanks, dark sci-fi industrial, plain background",
-      "targetPolycount": 15000,
-      "heightMeters": 1.9,
-      "status": "preview",
-      "meshy": {
-        "previewTaskId": "01a17d48-be23-712f-a570-cae6e91d759d",
-        "previewApproved": true,
-        "creditsSpent": 6
-      },
-      "file": "enemies/mother_of_spores.glb",
-      "placeholder": {
-        "shape": "sphere",
-        "color": "#3b4a2a",
-        "size": [
-          1.6,
-          1.9,
-          1.6
-        ],
-        "emissive": "#7dff6a",
-        "emissiveIntensity": 0.4,
-        "showFacing": true,
-        "facingColor": "#7dff6a"
-      }
-    },
-    {
-      "id": "boss.hollow_engine",
-      "category": "enemy",
-      "prompt": "giant hollow machine golem of pale gold metal and Lumen light, ring-shaped hollow torso with a floating glowing core, slow heavy limbs, ancient engraved plates, faint light leaking from seams",
-      "source": "image",
-      "conceptPrompt": "full body concept art, three-quarter front view, giant hollow machine golem of pale gold metal and warm Lumen light, a ring-shaped hollow torso with a glowing core floating in the empty centre, long heavy arms, thick legs, ancient engraved plates, faint golden light leaking from every seam, serene and enormous, dark sci-fi industrial, plain background",
-      "targetPolycount": 15000,
-      "heightMeters": 3.5,
-      "status": "preview",
-      "meshy": {
-        "previewTaskId": "01a17d48-c991-73a6-89cf-35b0e6cff75e",
-        "previewApproved": true,
-        "creditsSpent": 6
-      },
-      "file": "enemies/hollow_engine.glb",
-      "placeholder": {
-        "shape": "capsule",
-        "color": "#e8dcae",
-        "size": [
-          2.2,
-          3.5,
-          2.2
-        ],
-        "emissive": "#ffd76a",
-        "emissiveIntensity": 0.4,
-        "showFacing": true,
-        "facingColor": "#ffd76a"
       }
     }
   ]

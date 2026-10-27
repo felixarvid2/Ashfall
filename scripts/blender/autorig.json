@@ -1,0 +1,9 @@
+{
+  "models": [
+    { "id": "npc.okafor", "donor": "enemies/vire.glb", "clips": { "idle": "idle", "walk": "walk", "attack": "cast", "hit": "hit", "death": "death" } },
+    { "id": "enemy.infected_miner", "donor": "enemies/sergeant.glb", "clips": { "idle": "idle", "walk": "walk", "attack": "attack", "attack2": "attack2", "hit": "hit", "death": "death" } },
+    { "id": "enemy.security_trooper", "donor": "enemies/sergeant.glb", "clips": { "idle": "idle", "walk": "walk", "attack": "attack", "attack2": "attack2", "hit": "hit", "death": "death" } },
+    { "id": "boss.security_chief_holm", "donor": "enemies/sergeant.glb", "clips": { "idle": "idle", "walk": "walk", "attack": "attack", "attack2": "attack2", "hit": "hit", "death": "death" } },
+    { "id": "boss.brother_ash", "donor": "enemies/vire.glb", "clips": { "idle": "idle", "walk": "walk", "attack": "cast", "attack2": "cast2", "hit": "hit", "death": "death" } }
+  ]
+}

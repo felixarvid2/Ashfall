@@ -701,7 +701,6 @@ export const ENEMIES: EnemyInput[] = [
     moveSpeed: 4.2,
     turnRate: 9,
     aggroRange: 17,
-    glow: '#ffb23a',
     collider: { radius: 0.42, mass: 1.2 },
     attack: { kind: 'lunge', range: 8, distance: 8, speed: 20, width: 1.6, windup: 0.7, recovery: 0.8, cooldown: 3.2, damageType: 'physical', knockback: 1.2 },
     dynamite: { every: 6, range: 12, radius: 2.8, fuse: 1.4, coefficient: 1.3 },
@@ -740,7 +739,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 6,
     aggroRange: 19,
     preferredRange: [6, 10],
-    glow: '#4a8aff',
     collider: { radius: 0.5, mass: 4 },
     attack: { kind: 'projectile', windup: 0.6, cooldown: 2.4, speed: 18, radius: 0.22, maxRange: 18, damageType: 'physical', burst: 3, burstInterval: 0.12, spreadDeg: 6 },
   },
@@ -1260,7 +1258,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Mining Station Aurum: the governor's head of security. Bursts, a dome and grenade barrages.
     id: 'security_chief_holm',
-    assetId: 'variant.security_chief_holm',
+    assetId: 'boss.security_chief_holm',
     family: 'human',
     behavior: 'ranged',
     life: 1700,
@@ -1272,7 +1270,6 @@ export const ENEMIES: EnemyInput[] = [
     aggroRange: 24,
     preferredRange: [6, 10],
     scale: 1.1,
-    glow: '#7ab8ff',
     frontShield: 0.3,
     collider: { radius: 0.7, mass: 30 },
     dropTable: 'dt.boss',
@@ -1386,7 +1383,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Pump Station Delta: the Smelter commander. Burns, shields himself and raises his fallen.
     id: 'brother_ash',
-    assetId: 'variant.brother_ash',
+    assetId: 'boss.brother_ash',
     family: 'human',
     behavior: 'ranged',
     life: 1300,
@@ -1398,7 +1395,6 @@ export const ENEMIES: EnemyInput[] = [
     aggroRange: 24,
     preferredRange: [3, 6],
     scale: 1.35,
-    glow: '#ffb03a',
     collider: { radius: 0.8, mass: 20 },
     dropTable: 'dt.boss',
     attack: { kind: 'cone', range: 7, arcDeg: 60, windup: 0.8, duration: 1.8, cooldown: 3, coefficient: 0.32, damageType: 'heat', applies: [{ status: 'burning', duration: 3, coefficient: 0.25 }] },

@@ -11,23 +11,19 @@
  * optimizer (scripts/meshy/optimize.ts: weld, simplify to the target, meshopt) writes public/assets/parts/ or
  * public/assets/blender/ → the manifest entry (source "blender") gets its file and stats.
  */
-import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeIO } from '@gltf-transform/core';
-import { ALL_EXTENSIONS, EXTTextureWebP } from '@gltf-transform/extensions';
-import { dequantize } from '@gltf-transform/functions';
-import { MeshoptDecoder } from 'meshoptimizer';
-import sharp from 'sharp';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import type { AssetEntry } from '../../src/data/assetManifest';
 import { VARIANTS } from '../../src/data/variants';
 import { PUBLIC_ASSETS_DIR, SOURCE_DIR, acquireManifestLock, loadManifest, saveManifest } from '../meshy/manifest';
 import { optimizeAssets } from '../meshy/optimize';
+import { decodeGlbForBlender, runBlender } from './decode';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const INSTALL = 'apt-get install -y blender python3-numpy';
 
 interface SpecEntry {
   id: string;
@@ -56,19 +52,9 @@ function arg(name: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-/** Run Blender headless on one of our scripts. Stops with the install line when Blender is missing. */
+/** Run Blender headless on one of our scripts (decode.ts). */
 function blender(script: string, args: string[]): void {
-  const probe = spawnSync('blender', ['--version'], { encoding: 'utf8' });
-  if (probe.error || probe.status !== 0) {
-    throw new Error(`Blender is not installed or not on PATH. Install it with:\n  ${INSTALL}`);
-  }
-  const run = spawnSync('blender', ['-b', '--factory-startup', '--python-exit-code', '1', '-P', join(HERE, script), '--', ...args], { encoding: 'utf8', maxBuffer: 1 << 28 });
-  // Blender prints a harmless "Draco mesh compression is not available" line on every glTF export: only show real failures.
-  if (run.status !== 0) {
-    process.stderr.write(run.stdout + run.stderr);
-    throw new Error(`blender ${script} failed (exit ${run.status})`);
-  }
-  for (const line of run.stdout.split('\n')) if (/^(built |contact sheet|cycles still)/.test(line)) console.log(line);
+  runBlender(script, args, /^(built |contact sheet|cycles still)/);
 }
 
 function manifestEntry(e: SpecEntry, part: boolean): AssetEntry {
@@ -136,22 +122,7 @@ async function build(): Promise<void> {
 }
 
 /** A copy of a shipped GLB that Blender 4.0 can import: no meshopt, no quantization, PNG instead of WebP. */
-async function decodeForBlender(rel: string, out: string): Promise<string> {
-  await MeshoptDecoder.ready;
-  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder });
-  const doc = await io.read(resolve(PUBLIC_ASSETS_DIR, rel));
-  await doc.transform(dequantize());
-  for (const t of doc.getRoot().listTextures()) {
-    const image = t.getImage();
-    if (image && t.getMimeType() !== 'image/png') t.setImage(new Uint8Array(await sharp(image).png().toBuffer())).setMimeType('image/png');
-  }
-  for (const ext of doc.getRoot().listExtensionsUsed()) {
-    if (ext.extensionName === EXTTextureWebP.EXTENSION_NAME || ext.extensionName === 'EXT_meshopt_compression' || ext.extensionName === 'KHR_mesh_quantization') ext.dispose();
-  }
-  mkdirSync(dirname(out), { recursive: true });
-  await io.write(out, doc);
-  return out;
-}
+const decodeForBlender = (rel: string, out: string): Promise<string> => decodeGlbForBlender(resolve(PUBLIC_ASSETS_DIR, rel), out);
 
 /** Where each named node sits in the model's axes (metres, default pose): what the game reads from the cloned bones. */
 async function jointPositions(glb: string): Promise<Record<string, number[]>> {

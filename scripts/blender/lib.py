@@ -383,8 +383,8 @@ def _setup_render(path, size):
     return scene
 
 
-def render_workbench(path, size=(640, 640)):
-    """Fast flat-lit render: shows shape and material colours (not emission)."""
+def render_workbench(path, size=(640, 640), xray=0.0):
+    """Fast flat-lit render: shows shape and material colours (not emission). `xray` (0..1) makes surfaces see-through, to show what is inside."""
     scene = _setup_render(path, size)
     scene.render.engine = "BLENDER_WORKBENCH"
     shading = scene.display.shading
@@ -392,6 +392,9 @@ def render_workbench(path, size=(640, 640)):
     shading.color_type = "TEXTURE"
     shading.show_cavity = False
     shading.show_shadows = False
+    shading.show_xray = xray > 0
+    if xray > 0:
+        shading.xray_alpha = xray
     scene.display.render_aa = "8"
     scene.view_settings.view_transform = "Standard"
     scene.world = scene.world or bpy.data.worlds.new("world")

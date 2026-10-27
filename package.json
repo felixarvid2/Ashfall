@@ -21,6 +21,7 @@
     "balance:check": "BALANCE=1 vitest run tests/balance.test.ts",
     "fixtures:build": "tsx scripts/sim/fixtures.ts",
     "blender:build": "tsx scripts/blender/build.ts",
+    "blender:autorig": "tsx scripts/blender/autorig.ts",
     "assets:check": "tsx scripts/assets/check.ts && tsx scripts/assets/textureCaps.ts",
     "assets:textures": "tsx scripts/assets/textureCaps.ts",
     "assets:strip-lods": "tsx scripts/assets/stripLodTextures.ts",

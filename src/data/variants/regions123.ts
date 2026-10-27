@@ -118,18 +118,6 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
     ],
   },
   {
-    id: 'variant.brother_ash',
-    base: 'enemy.smelter',
-    look: { tint: '#c8a890', emissive: '#a03008', emissiveIntensity: 0.25 },
-    parts: [
-      ...pair('part.pauldron', 'LeftArm', 'RightArm', [0.0, 0.05, 0], [0, 0, -10], 1.1),
-      { asset: 'part.spike_crown', bone: 'Head', position: [0, 0.12, 0.02], scale: 1.2 },
-      { asset: 'part.censer', bone: 'LeftHand', position: [0, 0, 0.04], scale: 1.4 },
-      ...pair('part.robe_flap', 'Hips', 'Hips', [0.09, 0.0, 0.12], [0, 0, 5], [0.75, 1, 1]),
-      { asset: 'part.robe_flap', bone: 'Hips', position: [0, 0.0, -0.14], rotation: [0, 180, 0], scale: [1, 1.1, 1] },
-    ],
-  },
-  {
     id: 'variant.pyre_warden',
     base: 'enemy.smelter',
     look: { tint: '#b8a090', emissive: '#c05a10', emissiveIntensity: 0.25 },

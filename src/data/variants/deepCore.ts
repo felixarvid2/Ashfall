@@ -88,27 +88,16 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     ],
   },
   {
-    // Brawler: a miner with a headlamp hard hat, a drill on the fist and dynamite on the belt.
+    // Brawler: a miner with a headlamp hard hat and a dynamite bandolier (his own model, rigged in Blender) and a drill on the fist.
     id: 'variant.infected_miner',
-    base: 'enemy.welder',
-    look: { tint: '#b4a494' },
-    parts: [
-      { asset: 'part.dc_helmet_lamp', bone: 'Head', position: [0, 0.09, 0.01] },
-      { asset: 'part.dc_drill_arm', bone: 'RightHand', position: [-0.05, 0, 0], rotation: [0, 0, 90], scale: 0.9 },
-      { asset: 'part.dc_dynamite', bone: 'Hips', position: [0.16, 0.0, 0.1], rotation: [0, 0, 12] },
-      { asset: 'part.dc_dynamite', bone: 'Hips', position: [-0.12, 0.02, 0.1], rotation: [0, 0, -8], scale: 0.8 },
-    ],
+    base: 'enemy.infected_miner',
+    parts: [{ asset: 'part.dc_drill_arm', bone: 'RightHand', position: [-0.05, 0, 0], rotation: [0, 0, 90], scale: 0.9 }],
   },
   {
-    // The governor's trooper: blue visor and crest, blue shoulder plates, a generator on the back.
+    // The governor's trooper: blue visor and plates on his own model (rigged in Blender), a generator on the back.
     id: 'variant.security_trooper',
-    base: 'enemy.sergeant',
-    look: { tint: '#a8b8e8' },
-    parts: [
-      { asset: 'part.dc_trooper_visor', bone: 'Head', position: [0, 0.13, 0] },
-      ...pair('part.dc_shoulder_plate_blue', 'LeftShoulder', 'RightShoulder', [0.14, 0.06, 0], [0, 0, -12]),
-      { asset: 'part.dc_backpack_gen', bone: 'Spine01', position: [0, 0.05, -0.17], rotation: [0, 180, 0], scale: 0.8 },
-    ],
+    base: 'enemy.security_trooper',
+    parts: [{ asset: 'part.dc_backpack_gen', bone: 'Spine01', position: [0, 0.05, -0.17], rotation: [0, 180, 0], scale: 0.8 }],
   },
   {
     // Shield officer: an energy shield on the arm, gold plates and a tall generator.
@@ -169,18 +158,6 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
       { asset: 'part.dc_cable_bundle', position: [0.5, 2.5, -0.4], rotation: [0, 120, 0], scale: 1.3 },
       { asset: 'part.dc_moss_mat', position: [0, 3.0, 0], scale: 1.6 },
       { asset: 'part.dc_moss_mat', position: [0.7, 2.4, 0.1], scale: 1.0 },
-    ],
-  },
-  {
-    // Security Chief Holm: peaked cap, gold plates, a grenade bandolier and a generator.
-    id: 'variant.security_chief_holm',
-    base: 'enemy.sergeant',
-    look: { tint: '#a8b4d8' },
-    parts: [
-      { asset: 'part.dc_peaked_cap', bone: 'Head', position: [0, 0.14, 0] },
-      ...pair('part.dc_shoulder_plate_gold', 'LeftShoulder', 'RightShoulder', [0.14, 0.06, 0], [0, 0, -12], 1.15),
-      { asset: 'part.dc_grenade_belt', bone: 'Spine02', position: [0, 0.1, 0.12] },
-      { asset: 'part.dc_backpack_gen', bone: 'Spine01', position: [0, 0.05, -0.17], rotation: [0, 180, 0], scale: 1.1 },
     ],
   },
   {
