@@ -118,7 +118,7 @@ size counts, and a budget is raised in the same change (with the new number in a
 ## Deep Mines and Core looks (`part.dc_*`, `variants/deepCore.ts`)
 
 Every Deep Mines enemy and boss, the Core's shades, the Absorbed, Lumen, the Core bosses and the five world bosses have their own
-silhouette: 41 ids, 56 parts and two whole models. Parts live in `scripts/blender/spec/deep_core.json` and are built by one generic
+silhouette: 41 ids, 58 parts and two whole models. Parts live in `scripts/blender/spec/deep_core.json` and are built by one generic
 builder, `deep_kit` (`builders_deep_core.py`, docstring at the top): a list of primitives (box, cylinder, cone, sphere, crystal
 shard, ring, drill, tube, with a `radial` repeat) written in the **game's axes**, so a part reads like its `position`/`rotation` in
 the variant. Parts are shared across ids with different scale and placement (one violet shade halo on seven bodies, the gold Kade
@@ -133,6 +133,6 @@ plates on Holm, a colour variant is a second spec entry of a few KB).
   object-form variant look (Deep Mines, world bosses) is applied by `AssetLibrary`; a `LOOKS` key there still loses its rim.
   The enemy's `glow` replaces a variant's emissive at runtime (only the tint stays).
 - `enemy.lumen_turret` (the Lumen Turret) and `enemy.lumen_heart` (the Heart, `lumen`) are whole Blender models of primitives
-  (`models` in the spec; 18 and 24 KB with LODs). Their `lumen` look flattens the colours, so the silhouette and the rim carry them.
+  (`models` in the spec; 18 and 24 KB, about 95 KB together with their LODs). Their `lumen` look flattens the colours, so the silhouette and the rim carry them.
 - The optimizer used to write nothing for a model whose smallest colour primitive simplifies to zero triangles in an LOD
   (the meshopt encoder then asserted); `simplifyTo` now keeps such a primitive whole.
