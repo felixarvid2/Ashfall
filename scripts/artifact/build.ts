@@ -1,14 +1,16 @@
 /**
  * npm run build:artifact — a production build for publishing as a claude.ai artifact, in
  * dist-artifact/. Artifacts don't serve .glb and their CSP blocks WebAssembly and data: fetches, so
- * every model becomes a `.glb.json` (see below). Source maps are dropped.
+ * every model becomes a `.glb.json` (see below), and the small ones travel in a few packs (packs.ts) to stay
+ * under the artifact host's file limit. Source maps are dropped.
  */
 import { execSync } from 'node:child_process';
-import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { MeshoptDecoder } from 'meshoptimizer';
+import { MAX_ARTIFACT_FILES, assertFileBudget, buildPacks, isPacked } from './packs';
 
 const root = new URL('../..', import.meta.url).pathname;
 const out = join(root, 'dist-artifact');
@@ -30,6 +32,7 @@ function pad4(buf: Buffer, fill: number): Buffer {
 }
 
 let converted = 0;
+const packedModels = new Map<string, string>();
 for (const file of walk(out)) {
   if (file.endsWith('.map') || file.endsWith('.gitkeep')) {
     rmSync(file);
@@ -73,10 +76,18 @@ for (const file of walk(out)) {
   }
   const body = Buffer.concat(chunks);
   const header = Buffer.from(new Uint32Array([0x46546c67, 2, 12 + body.length]).buffer);
-  writeFileSync(file.replace(/\.glb$/, '.glb.json'), JSON.stringify({ glb: Buffer.concat([header, body]).toString('base64') }));
+  const base64 = Buffer.concat([header, body]).toString('base64');
+  const path = relative(join(out, 'assets'), file).replace(/\.glb$/, '.glb.json');
+  if (isPacked(path, base64)) packedModels.set(path, base64);
+  else writeFileSync(join(out, 'assets', path), JSON.stringify({ glb: base64 }));
   rmSync(file);
   converted++;
 }
+// Small models travel together in assets/packs/<name>.json (src/render/modelPack.ts fetches a pack on the first
+// request for one of its models); that keeps the version under the artifact host's file limit.
+const packs = buildPacks(packedModels);
+mkdirSync(join(out, 'assets', 'packs'), { recursive: true });
+for (const [name, pack] of packs) writeFileSync(join(out, 'assets', 'packs', `${name}.json`), JSON.stringify(pack));
 // The page published as the artifact: the game's markup without the document skeleton (the artifact
 // service adds one), pointing at this build's hashed bundles. Publish it with `file_path` set to
 // dist-artifact/artifact-page.html and the changed assets under `files` (see .claude/agents/shipper.md).
@@ -117,5 +128,7 @@ ${preload}
 );
 
 const files = walk(out);
+assertFileBudget(files.map((f) => relative(out, f)));
 const bytes = files.reduce((s, f) => s + statSync(f).size, 0);
-console.log(`Converted ${converted} models. ${files.length} files, ${(bytes / 1e6).toFixed(1)} MB in dist-artifact/.`);
+const packNote = [...packs].map(([n, p]) => `${n}: ${Object.keys(p).length} models, ${(statSync(join(out, 'assets', 'packs', `${n}.json`)).size / 1e6).toFixed(1)} MB`).join('; ');
+console.log(`Converted ${converted} models (packed: ${packNote}). ${files.length} of max ${MAX_ARTIFACT_FILES} files, ${(bytes / 1e6).toFixed(1)} MB in dist-artifact/.`);

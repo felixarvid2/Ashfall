@@ -27,7 +27,11 @@ The artifact page runs in a sandboxed iframe under a strict CSP. Most surprises 
    the hashed `index-*.js` / `index-*.css` read from the built `index.html`.
 2. Keep **one CSS bundle**: import all stylesheets from the JS entry in a fixed order (not extra `<link>` tags),
    so the page wrapper only has to reference one hashed CSS file.
-3. Remove PWA files (manifest, icons) from the artifact output; they belong to the standalone build only.
+3. **File limit**: a version holds at most 511 files. The build packs small models (all of `parts/` and `blender/`,
+   `props/` and `environment/` up to ~450 KB) into `assets/packs/<name>.json` (`{ path: base64 GLB }`); the runtime
+   fetches a folder's pack on the first request for one of its models (`src/render/modelPack.ts`, `scripts/artifact/packs.ts`)
+   and the build fails above 500 files. When it does, pack more models or drop assets.
+4. Remove PWA files (manifest, icons) from the artifact output; they belong to the standalone build only.
 
 ## Publish (update in place)
 
