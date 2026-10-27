@@ -148,6 +148,16 @@ describe('AssetLibrary variants', () => {
     expect([...library.clips('variant.spiky').keys()]).toEqual(['idle']);
   });
 
+  it('gives a variant no clips while it still shows the placeholder (base loaded, a part pending)', async () => {
+    const { library } = fakeLibrary();
+    await library.ensure(['enemy.rigged']);
+    expect(library.hasModel('variant.spiky')).toBe(false);
+    expect(library.clips('variant.spiky').size).toBe(0);
+    expect(library.clips('enemy.rigged').size).toBe(1);
+    await library.ensure(['variant.spiky']);
+    expect([...library.clips('variant.spiky').keys()]).toEqual(['idle']);
+  });
+
   it('loads the base and each part once for a variant id, and counts as loaded when all are', async () => {
     const { library, loads } = fakeLibrary(FAKE_VARIANT, true);
     expect(library.hasModel('variant.spiky')).toBe(false);

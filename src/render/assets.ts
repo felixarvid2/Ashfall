@@ -375,9 +375,13 @@ export class AssetLibrary {
     return this.models.has(variant.base) && variant.parts.every((p) => this.models.has(p.asset) || this.gaveUp.has(p.asset));
   }
 
-  /** Animation clips by game state name ("idle", "run", "attack", …). */
+  /**
+   * Animation clips by game state name ("idle", "run", "attack", …). Empty while the id still shows its placeholder
+   * (a variant whose base is loaded but a part is not): a mixer on a bone-less placeholder only warns about every track.
+   */
   clips(id: string): Map<string, THREE.AnimationClip> {
     const map = new Map<string, THREE.AnimationClip>();
+    if (!this.hasModel(id)) return map;
     const baseId = this.variants.get(id)?.base ?? id;
     const model = this.models.get(baseId);
     if (!model) return map;

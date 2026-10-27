@@ -9,6 +9,7 @@ choices: docs/decisions.md (2026-10-18, endgame).
 - **Diablo UI pass ✅:** 87 of 100 audit items done, 13 partial (rules and deviations in docs/ui/diablo-status.md); save v8 adds item locks and junk marks.
 - **Improvement pass ✅:** 84 of 100 items done, 16 partial, none skipped (gameplay, content, tech and feel specs in docs/improvements/; status and deviations in docs/improvements/status.md).
 - **Improvement round 3 ✅:** 50 of 50 items done, none partial or skipped (gamepad, UI leftovers, tech, content; items in docs/improvements/round3.md, status in docs/improvements/round3-status.md).
+- **Own looks for reused models:** about 70 enemies and bosses, 28 NPC looks and the ground loot, keycard and rift obelisk were built in Blender (`npm run blender:build`, `docs/blender.md`): runtime variants are a base model, a tint and small parts on bones (about 1 MB in total, zone budgets unchanged).
 - **AYN Thor APK:** `android/` hosts the web build in a WebView with the built-in controller, the Back button and a status/command panel on the bottom screen (`docs/android.md`); `npm run build:android` builds `dist-android/ashfall-thor.apk`, and releases attach `ashfall-vX.Y.Z-thor.apk`.
 - **World Tiers:** defeating Lumen unlocks Veteran (tier 2); Deep Rift 20 and 40 unlock Nightmare and Apocalypse.
   Switch at the Tier Beacon in any hub (out of combat); the tier shows under the region name. Tiers scale enemy life
@@ -504,9 +505,9 @@ Shift + left-click to attack in place.
   is untested beyond unit tests; leaving the district mid-escort or mid-event restarts it next time;
   the zone change destroys loot left on the ground in the zone you leave.
 - Region 2 boss arenas (and The Maw) are rings of wall segments with gaps; you can step out of them.
-- Region 3 uses only placeholder models (no Meshy credits); the Service Road walk is shorter than the
+- Region 3 enemies and bosses are runtime variants (a shared base model plus Blender parts, docs/blender.md); the Service Road walk is shorter than the
   5–7 minute target (see the playtest report); the bot does not cover levels 20–30.
-- Region 4 uses only placeholder models too; the walk through is ≈ 4 min.
+- Region 4 enemies and bosses are runtime variants too; the walk through is ≈ 4 min.
 - Music tracks were chosen by title, not by ear. Swapping one is an edit in `src/data/audio.ts` and the mapping
   in `scripts/audio/build.ts`.
 - **60 FPS not verified**: only measured in a headless CPU-rendered browser (4–6 FPS there — not
@@ -522,8 +523,7 @@ Shift + left-click to attack in place.
 - Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 - Endgame: balance is unplayed. Tier multipliers, matrix costs, rift timing (600 s, 120 points), glyph odds,
   shard and cache costs and the crafting prices are first guesses, only unit-tested.
-- Endgame: the three world boss models (Ashen Colossus, Mother of Spores, Hollow Engine) are reused models in the
-  Lumen look and have not been checked on screen.
+- Endgame: the world bosses are runtime variants with their own parts; only checked from a contact sheet, not fought on screen.
 - Endgame: pinch-zoom on the matrix panel is untested on a real phone.
 - Endgame: Ash Shards are lost for good when you die (half of them); there is no pickup on the ground.
 - Endgame: a world boss that was killed comes back after a reload within its 15-minute window (the kill is not saved).
@@ -531,8 +531,8 @@ Shift + left-click to attack in place.
 
 ## Next steps
 - **Your playtest feedback on the endgame (and the earlier regions)** → then a balance pass on tiers, matrix
-  and rifts, and a look at the world boss models on screen. Replace the placeholder models of regions 3–5 when
-  Meshy credits are available.
+  and rifts, and a look at the world boss models on screen. Regions 3–5 now use Blender-made variants; replace them with
+  dedicated Meshy models later if wanted.
 - Endgame follow-ups if wanted: a shard pickup on death, saving a killed world boss, a Swedish interface.
 - Your playtest feedback on Phase 1 → tune numbers in `src/data/` (all values are data-driven).
 - FPS measurement on real hardware (closes Phase 2).

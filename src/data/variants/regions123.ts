@@ -48,7 +48,7 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
     // Checkpoint Sierra: Commandant Hale, an officer's cap, coat tails and Lumen growing through the coat.
     id: 'variant.commandant_hale',
     base: 'enemy.sergeant',
-    look: { tint: '#c8d4c0', emissive: '#1f7a30', emissiveIntensity: 0.2 },
+    look: { tint: '#e2eada', emissive: '#1f7a30', emissiveIntensity: 0.2 },
     parts: [
       { asset: 'part.officer_cap', bone: 'Head', position: [0, 0.22, 0.01], scale: 1.1 },
       ...pair('part.epaulette', 'LeftShoulder', 'RightShoulder', [0.12, 0.08, 0], [0, 0, -10], 1.6),
