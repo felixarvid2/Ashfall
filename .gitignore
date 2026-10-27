@@ -20,3 +20,7 @@ coverage/
 assets/source/blender-report.json
 assets/source/blender-spec.json
 scripts/blender/__pycache__/
+
+# Ubuntu/Debian package (npm run build:deb)
+dist-linux/
+linux/node_modules/

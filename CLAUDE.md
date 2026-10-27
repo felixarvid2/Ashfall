@@ -14,6 +14,7 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
 - `assets/manifest.json` every 3D asset; `public/assets/` the optimized game files
 - `tests/` vitest; `docs/credits.md` third-party credits and licences
 - `android/` the AYN Thor APK: a plain-Java WebView host for the web build (`docs/android.md`); `src/core/host.ts` the game side
+- `linux/` the Ubuntu/Debian desktop app: an Electron shell (`main.js`) serving the web build on `app://ashfall/` (`docs/linux.md`)
 
 ## Commands
 
@@ -22,10 +23,11 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
 - `npm run build:artifact` the self-contained build for a claude.ai artifact (`dist-artifact/`) and the page to
   publish (`dist-artifact/artifact-page.html`)
 - `npm run build:android` the AYN Thor APK in `dist-android/ashfall-thor.apk` (needs the Android SDK; `docs/android.md`)
+- `npm run build:deb [-- --version X.Y.Z]` the Ubuntu/Debian package `dist-linux/ashfall_<version>_amd64.deb` (needs `dpkg-deb`; `docs/linux.md`)
 - `npm run e2e -- --scenario <boot|portrait|tooltip|instance|zone|landscape> --out <dir>` headless
   browser checks with screenshots (`scripts/e2e/README.md`; start `npm run dev` first)
 - Releases: merge a notes file `docs/releases/vX.Y.Z.md` to main (or push a tag / run the workflow by
-  hand); `.github/workflows/release.yml` builds the game, attaches `ashfall-vX.Y.Z-web.zip` and uses the
+  hand); `.github/workflows/release.yml` builds the game, attaches `ashfall-vX.Y.Z-web.zip`, the Thor APK and the Ubuntu `.deb`, and uses the
   notes file as the release text. Cloud sessions can't push tags or edit releases, so use the notes file
 
 ## Rules

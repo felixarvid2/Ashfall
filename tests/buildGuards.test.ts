@@ -77,8 +77,18 @@ describe('workflows (C11, C12)', () => {
     expect(release).toMatch(/exit 1/);
   });
 
-  it('package.json has the scripts the workflows call', () => {
-    const scripts = (JSON.parse(read('package.json')) as { scripts: Record<string, string> }).scripts;
-    for (const name of ['build', 'assets:check', 'perf:quick']) expect(scripts[name], name).toBeTruthy();
+  it('the release builds the Ubuntu/Debian package and attaches it next to the zip and the APK', () => {
+    const release = read('.github/workflows/release.yml');
+    expect(release).toContain('npm run build:deb -- --version "${TAG#v}"');
+    expect(release).toContain('cp "dist-linux/ashfall_${TAG#v}_amd64.deb" "ashfall-${TAG}-ubuntu-amd64.deb"');
+    expect(release).toMatch(/files: \|[^]*ashfall-\$\{\{ env\.TAG \}\}-ubuntu-amd64\.deb/);
+    expect(release).toContain('sudo apt install ./ashfall-${TAG}-ubuntu-amd64.deb');
+  });
+
+  it('package.json has the scripts the workflows call and an exactly pinned Electron for the .deb', () => {
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string>; devDependencies: Record<string, string> };
+    expect(pkg.devDependencies.electron).toMatch(/^\d+\.\d+\.\d+$/);
+    const scripts = pkg.scripts;
+    for (const name of ['build', 'build:deb', 'assets:check', 'perf:quick']) expect(scripts[name], name).toBeTruthy();
   });
 });

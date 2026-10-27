@@ -1,0 +1,12 @@
+{
+  "name": "ashfall",
+  "productName": "Ashfall",
+  "version": "0.0.0",
+  "description": "Ashfall - a dark sci-fi isometric action RPG.",
+  "main": "main.js",
+  "desktopName": "ashfall.desktop",
+  "author": "Felix Arvid",
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/felixarvid2/Ashfall",
+  "private": true
+}

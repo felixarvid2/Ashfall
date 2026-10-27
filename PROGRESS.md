@@ -11,6 +11,7 @@ choices: docs/decisions.md (2026-10-18, endgame).
 - **Improvement round 3 ✅:** 50 of 50 items done, none partial or skipped (gamepad, UI leftovers, tech, content; items in docs/improvements/round3.md, status in docs/improvements/round3-status.md).
 - **Own looks for reused models:** about 70 enemies and bosses, 28 NPC looks and the ground loot, keycard and rift obelisk were built in Blender (`npm run blender:build`, `docs/blender.md`): runtime variants are a base model, a tint and small parts on bones (about 1 MB in total, zone budgets unchanged).
 - **AYN Thor APK:** `android/` hosts the web build in a WebView with the built-in controller, the Back button and a status/command panel on the bottom screen (`docs/android.md`); `npm run build:android` builds `dist-android/ashfall-thor.apk`, and releases attach `ashfall-vX.Y.Z-thor.apk`.
+- **Ubuntu/Debian package:** `linux/` is a small Electron shell that serves the web build on `app://ashfall/` (fixed origin, so saves persist); `npm run build:deb` assembles `dist-linux/ashfall_<version>_amd64.deb` by hand (`docs/linux.md`), and releases attach `ashfall-vX.Y.Z-ubuntu-amd64.deb`.
 - **World Tiers:** defeating Lumen unlocks Veteran (tier 2); Deep Rift 20 and 40 unlock Nightmare and Apocalypse.
   Switch at the Tier Beacon in any hub (out of combat); the tier shows under the region name. Tiers scale enemy life
   and damage, XP, gold, item power, greater-affix chance and unique drops, and also the trader's stock, rerolls and
