@@ -13,10 +13,10 @@ const DANNER = at(-80, -196);
 
 /** Hub NPCs stand relative to Outpost Ember's centre; −x/−z is screen-up. */
 export const CINDER_FLATS_NPCS: NpcInput[] = [
-  { id: 'benny', asset: 'npc.cook', x: HUB.x + 6, z: HUB.z - 5, facing: -2.4, service: 'vendor' },
-  { id: 'hekla', asset: 'npc.blacksmith', x: HUB.x + 11, z: HUB.z + 6, facing: -2, service: 'blacksmith' },
-  { id: 'pell', asset: 'npc.technician', x: HUB.x - 8, z: HUB.z + 7, facing: 2.6, service: 'technician' },
-  { id: 'tomas', asset: 'npc.blacksmith', x: HUB.x + 15, z: HUB.z - 7, facing: -1.6, scale: 0.94 },
+  { id: 'benny', asset: 'variant.npc_benny', x: HUB.x + 6, z: HUB.z - 5, facing: -2.4, service: 'vendor' },
+  { id: 'hekla', asset: 'variant.npc_hekla', x: HUB.x + 11, z: HUB.z + 6, facing: -2, service: 'blacksmith' },
+  { id: 'pell', asset: 'variant.npc_pell', x: HUB.x - 8, z: HUB.z + 7, facing: 2.6, service: 'technician' },
+  { id: 'tomas', asset: 'variant.npc_tomas', x: HUB.x + 15, z: HUB.z - 7, facing: -1.6, scale: 0.94 },
   // Quest-only: the deserter hiding by the southern bunker.
   { id: 'danner', asset: 'enemy.sergeant', x: DANNER[0], z: DANNER[1], facing: 0.6, scale: 0.92, questOnly: true },
 ];

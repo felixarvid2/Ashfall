@@ -19,6 +19,7 @@ import { BOSS_SCRIPTS } from './bosses';
 import { WORLD_BOSSES } from './endgame/worldBosses';
 import { INSTANCES, type InstanceDef } from './instances';
 import { PACK_TEMPLATES } from './packs';
+import { LOOT_ASSET_IDS } from './loot/lootModels';
 import { expandAssetIds } from './variants';
 import { NPCS, QUESTS } from './quests/db';
 import type { ZoneDef } from './zones/zoneTypes';
@@ -32,7 +33,7 @@ import { GAMMA_TUNING } from '../world/vaultSetPieces';
 export const BOOT_ASSET_IDS: readonly string[] = [];
 
 /** Props every dungeon builds from, whatever its theme (src/world/instance.ts, instanceObjectives.ts). */
-const INSTANCE_SHARED = ['env.wall_segment', 'prop.barricade', 'prop.spore_nest', 'prop.teleporter'];
+const INSTANCE_SHARED = ['env.wall_segment', 'prop.barricade', 'prop.spore_nest', 'prop.teleporter', 'prop.keycard', ...LOOT_ASSET_IDS];
 
 /** The player's own model, hand-held weapons and the motorbike; the same for every zone. */
 export function classAssetIds(classId: string): string[] {
@@ -151,6 +152,7 @@ export function zoneAssetIds(zone: ZoneDef): string[] {
     ...interactableAssetIds(zone),
     ...questAssetIds(zone.id),
     ...(SET_PIECES[zone.id]?.props ?? []),
+    ...LOOT_ASSET_IDS,
   ]);
   return ids;
 }

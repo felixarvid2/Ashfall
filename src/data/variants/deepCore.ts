@@ -167,7 +167,7 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
       { asset: 'part.dc_drill_arm', position: [-0.85, 1.35, 0.45], rotation: [90, 0, 0], scale: 2.2 },
       { asset: 'part.dc_cable_bundle', position: [0, 2.9, 0.3], scale: 1.6 },
       { asset: 'part.dc_cable_bundle', position: [0.5, 2.5, -0.4], rotation: [0, 120, 0], scale: 1.3 },
-      { asset: 'part.dc_moss_mat', position: [0, 3.2, 0], scale: 1.6 },
+      { asset: 'part.dc_moss_mat', position: [0, 3.0, 0], scale: 1.6 },
       { asset: 'part.dc_moss_mat', position: [0.7, 2.4, 0.1], scale: 1.0 },
     ],
   },
@@ -200,7 +200,7 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     base: 'char.bastion',
     look: { tint: '#dccaa0', emissive: '#6a5010', emissiveIntensity: 0.25 },
     parts: [
-      { asset: 'part.dc_kade_crown', bone: 'Head', position: [0, 0.13, 0], scale: 1.1 },
+      { asset: 'part.dc_kade_crown', bone: 'Head', position: [0, 0.13, 0], scale: 1.4 },
       ...pair('part.dc_shoulder_plate_gold', 'LeftShoulder', 'RightShoulder', [0.16, 0.07, 0], [0, 0, -12], 1.4),
       { asset: 'part.dc_conduit_pack', bone: 'Spine01', position: [0, 0.05, -0.2], rotation: [0, 180, 0], scale: 1.1 },
     ],
@@ -308,7 +308,7 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     id: 'variant.shade_kade',
     base: 'char.bastion',
     parts: [
-      { asset: 'part.dc_kade_crown_violet', bone: 'Head', position: [0, 0.13, 0], scale: 1.1 },
+      { asset: 'part.dc_kade_crown_violet', bone: 'Head', position: [0, 0.13, 0], scale: 1.4 },
       ...pair('part.dc_shoulder_plate_violet', 'LeftShoulder', 'RightShoulder', [0.16, 0.07, 0], [0, 0, -12], 1.4),
       { asset: 'part.dc_conduit_pack_violet', bone: 'Spine01', position: [0, 0.05, -0.2], rotation: [0, 180, 0], scale: 1.1 },
     ],
@@ -376,12 +376,12 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     ],
   },
   {
-    // The Brood Engine: hatch pods on its back and shoulders (parts follow the root: the engine's idle is slow).
+    // The Brood Engine: hatch pods stacked on its back (root parts do not follow the clips, so they sit on the torso, not on the arms).
     id: 'variant.brood_engine',
     base: 'enemy.core_guardian',
     parts: [
-      { asset: 'part.dc_hatch_pods', position: [0, 3.6, -1.1], rotation: [-12, 0, 0], scale: 2.2 },
-      ...pair('part.dc_hatch_pods', undefined, undefined, [1.4, 4.9, -0.6], [0, 0, -25], 1.4),
+      { asset: 'part.dc_hatch_pods', position: [0, 3.5, -1.15], rotation: [-12, 0, 0], scale: 2.8 },
+      { asset: 'part.dc_hatch_pods', position: [0, 5.0, -0.95], rotation: [-30, 0, 0], scale: 1.5 },
     ],
   },
   {
@@ -397,8 +397,8 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     id: 'variant.echo_engine',
     base: 'enemy.core_guardian',
     parts: [
-      ...pair('part.dc_glitch_fan', undefined, undefined, [1.0, 4.6, -0.8], [-15, 0, -40], 4),
-      { asset: 'part.dc_prism', position: [0, 6.6, 0], scale: 3 },
+      ...pair('part.dc_glitch_fan_core', undefined, undefined, [1.0, 4.6, -0.8], [-15, 0, -40], 4),
+      { asset: 'part.dc_prism_core', position: [0, 6.6, 0], scale: 3 },
     ],
   },
   {

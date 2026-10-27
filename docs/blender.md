@@ -72,6 +72,23 @@ In `src/data/variants.ts` add a `VariantDef` and use its id (`variant.<name>`) a
 `validate.ts` checks that the base is a rigged manifest model, every part a `part` entry, and every bone a joint. Nothing else is needed: `assetSets.ts` expands a variant into its base and
 parts (so prefetching, `Game.settleAssets` and the budgets see them), and `AssetLibrary.has/entry/ensure/hasModel/clips/create` accept the variant id.
 
+## Named NPCs, ground loot and interactable models (`spec/npcs_loot.json`)
+
+- **NPCs** (`src/data/variants/npcs.ts`, `part.npc_*`, builders in `builders_npcs_loot.py`): every named NPC is one variant of one of the five bodies (`npc.cook`,
+  `blacksmith`, `technician`, `pump_engineer`, `defector`): a pale `look.tint` plus one to three accessories (caps, hard hats, headsets, goggles, scarves,
+  packs, tool belts, lab-coat skirt...). One person is one variant wherever they stand (Hekla in Ember and the Last Camp, the three Okafors, Lumen's phase-3
+  form). The quest files, `elevatorBase.ts` allies and `worldEvents.ts` survivors use the `variant.npc_*` id. Frames: head parts hang on `Head` (head centre
+  y 0.12, brow y about 0.17), chest and back parts on `Spine01`, belt parts on `Hips`; body surfaces are bulkier than they look (hip items sit at x 0.25).
+  Pvt. Danner and the two Ruizes are on `enemy.sergeant`, not one of the five bodies, and are unchanged. Tints multiply dark bodies: keep them pale.
+- **Ground loot** (`prop.loot_cache`, `prop.loot_crystal`, `prop.loot_gold`, about 120-380 triangles, colours only; `src/render/lootVisuals.ts`, ids in
+  `src/data/loot/lootModels.ts`, prefetched through `zoneAssetIds`/`INSTANCE_SHARED`): the box and cylinder stay as the stand-in until the model has loaded.
+  The cache's trim (the one material painted `#c8c8c8`) and the crystal's `lumen_crystal` material are cloned once per rarity/crystal colour and tinted in code.
+- **Interactables**: `prop.keycard` (keycard poi and the dungeon collect objective) and `prop.rift_obelisk` replace a scaled cargo crate and `core_column`.
+  They carry their own emissive parts, so their VISUAL entries have no `glow` (a Renderable `glow` overwrites every material's emissive). The `data` objective
+  still uses `prop.control_terminal`: a terminal reads as data, no extra model.
+- Contact sheets of many variants: render each with the game camera from the decoded GLBs (see `sheet.py`); `look.tint` is not drawn by the shipped sheet,
+  multiply it into the base colour texture first (what the NPC sheet did).
+
 ## Budget rule
 
 A zone's byte budget (`tests/zoneBudget.test.ts`, `tests/assetSets.test.ts`) counts a variant as its base plus the **distinct** part files. Parts are 3-10 KB; the
@@ -97,3 +114,25 @@ size counts, and a budget is raised in the same change (with the new number in a
 - Blender writes a harmless "Draco mesh compression is not available" error line on every glTF export, and exits 0 when a script raises
   unless `--python-exit-code 1` is passed (`build.ts` passes it).
 - The optimizer re-centred every static model on x/z with its lowest point at y = 0: parts are exempt (that would destroy the attach point).
+
+## Deep Mines and Core looks (`part.dc_*`, `variants/deepCore.ts`)
+
+Every Deep Mines enemy and boss, the Core's shades, the Absorbed, Lumen, the Core bosses and the five world bosses have their own
+silhouette: 41 ids, 56 parts and two whole models. Parts live in `scripts/blender/spec/deep_core.json` and are built by one generic
+builder, `deep_kit` (`builders_deep_core.py`, docstring at the top): a list of primitives (box, cylinder, cone, sphere, crystal
+shard, ring, drill, tube, with a `radial` repeat) written in the **game's axes**, so a part reads like its `position`/`rotation` in
+the variant. Parts are shared across ids with different scale and placement (one violet shade halo on seven bodies, the gold Kade
+plates on Holm, a colour variant is a second spec entry of a few KB).
+
+- Unrigged bases (drone, loader, Slagborn, tentacle, the First, the hound) and the Core's imported models take root parts, measured
+  from the model's feet. `enemy.core_guardian` and `enemy.choir_singer` are not Meshy rigs and have no `rig`: root parts only, so
+  they do not follow the clips (keep them on the torso or above the head), and their models are *not* normalised to
+  `heightMeters` (the def's `scale` 0.55 / 1.45 does that): design the part in model units and compensate with the variant's `scale`.
+- Shades (`look: 'shade'`), the Absorbed and the Core machines (`look: 'lumen'`) keep the look on the `EnemyDef`: the renderer
+  repaints the base after `create` (fresnel rim intact) and leaves parts alone, so the variants carry no `look`. Only an
+  object-form variant look (Deep Mines, world bosses) is applied by `AssetLibrary`; a `LOOKS` key there still loses its rim.
+  The enemy's `glow` replaces a variant's emissive at runtime (only the tint stays).
+- `enemy.lumen_turret` (the Lumen Turret) and `enemy.lumen_heart` (the Heart, `lumen`) are whole Blender models of primitives
+  (`models` in the spec; 18 and 24 KB with LODs). Their `lumen` look flattens the colours, so the silhouette and the rim carry them.
+- The optimizer used to write nothing for a model whose smallest colour primitive simplifies to zero triangles in an LOD
+  (the meshopt encoder then asserted); `simplifyTo` now keeps such a primitive whole.

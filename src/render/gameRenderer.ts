@@ -44,7 +44,7 @@ export class GameRenderer {
   readonly assets = new AssetLibrary();
   private readonly ash = new AshFall();
   readonly vfx = new VfxSystem();
-  readonly loot = new LootVisuals();
+  readonly loot = new LootVisuals(this.assets);
   private readonly postfx: PostFx;
   private readonly objects = new Map<Entity, THREE.Object3D>();
   /** "!" and "?" over enemies; the wayfinding debug overlay when switched on. */

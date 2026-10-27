@@ -44,10 +44,10 @@ export const BASE_TUNING = {
   ] as BaseWave[],
   /** Friends from the earlier regions: a model and a name (language key) each. */
   allies: [
-    { asset: 'npc.defector', name: 'setPieces.base.ally.ember' },
-    { asset: 'npc.technician', name: 'setPieces.base.ally.refinery' },
-    { asset: 'npc.pump_engineer', name: 'setPieces.base.ally.vaults' },
-    { asset: 'npc.blacksmith', name: 'setPieces.base.ally.mines' },
+    { asset: 'variant.npc_militia', name: 'setPieces.base.ally.ember' },
+    { asset: 'variant.npc_osei', name: 'setPieces.base.ally.refinery' },
+    { asset: 'variant.npc_dace', name: 'setPieces.base.ally.vaults' },
+    { asset: 'variant.npc_gerd', name: 'setPieces.base.ally.mines' },
   ],
   /** Allies' life as a share of the player's, and the hit they land (a share of the player's weapon damage). */
   allyLife: 0.6,

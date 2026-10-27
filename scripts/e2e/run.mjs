@@ -207,7 +207,8 @@ const SCENARIOS = {
     const bad = notes.parts.filter((p) => !(p.parentIsBone || p.parent === spawned.assetId) || p.meshes < 1);
     if (frames.some((f) => f.placeholder)) throw new Error('the variant is still a placeholder');
     if (bad.length) throw new Error(`parts not attached as expected: ${JSON.stringify(bad)}`);
-    if (!notes.parts.some((p) => p.boneMoved > 0.003 && p.partMoved > 0.003)) throw new Error('no bone moved over the samples: ' + JSON.stringify(notes.parts));
+    // (A variant of an unrigged model only has root parts: nothing to follow.)
+    if (notes.parts.some((p) => p.parentIsBone) && !notes.parts.some((p) => p.boneMoved > 0.003 && p.partMoved > 0.003)) throw new Error('no bone moved over the samples: ' + JSON.stringify(notes.parts));
     return { screenshots, notes };
   },
 

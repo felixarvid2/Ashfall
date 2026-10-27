@@ -325,7 +325,7 @@ export const BOSS_SCRIPTS: Record<string, BossPhase[]> = {
       banner: 'bosses.lumen.phase3',
       tempo: 0,
       transform: { scale: 0.35, glow: '#fff0c8' },
-      beat: { id: 'lumen.choice', form: { asset: 'npc.technician', glow: '#fff0c8', scale: 1.2, name: 'npcs.okafor.name' } },
+      beat: { id: 'lumen.choice', form: { asset: 'variant.npc_okafor', glow: '#fff0c8', scale: 1.2, name: 'npcs.okafor.name' } },
     },
     // Phase 4: the core is exposed. Short and intense: Kade's drill sweep with every other attack at once.
     {

@@ -26,15 +26,15 @@ const BELT_END = p(-326, -64);
 
 /** Hub NPCs around the Coolant Works' centre; −x/−z is screen-up. */
 export const REFINERY_NPCS: NpcInput[] = [
-  { id: 'mara', zone: ZONE, asset: 'npc.pump_engineer', x: HUB.x - 8, z: HUB.z + 6, facing: 2.4, service: 'technician' },
-  { id: 'gus', zone: ZONE, asset: 'npc.cook', x: HUB.x + 6, z: HUB.z - 5, facing: -2.4, scale: 1.05, service: 'vendor' },
-  { id: 'ines', zone: ZONE, asset: 'npc.blacksmith', x: HUB.x + 4, z: HUB.z + 11, facing: -2.8, scale: 0.96, service: 'blacksmith' },
-  { id: 'tobin', zone: ZONE, asset: 'npc.defector', x: HUB.x + 14, z: HUB.z - 8, facing: -1.6 },
+  { id: 'mara', zone: ZONE, asset: 'variant.npc_mara', x: HUB.x - 8, z: HUB.z + 6, facing: 2.4, service: 'technician' },
+  { id: 'gus', zone: ZONE, asset: 'variant.npc_gus', x: HUB.x + 6, z: HUB.z - 5, facing: -2.4, scale: 1.05, service: 'vendor' },
+  { id: 'ines', zone: ZONE, asset: 'variant.npc_ines', x: HUB.x + 4, z: HUB.z + 11, facing: -2.8, scale: 0.96, service: 'blacksmith' },
+  { id: 'tobin', zone: ZONE, asset: 'variant.npc_tobin', x: HUB.x + 14, z: HUB.z - 8, facing: -1.6 },
   // Pump Station Delta's engineer moves in once the station is reclaimed.
-  { id: 'osei', zone: ZONE, asset: 'npc.technician', x: DELTA.x + 8, z: DELTA.z + 4, facing: -2, requires: 'rd.stronghold.delta' },
+  { id: 'osei', zone: ZONE, asset: 'variant.npc_osei', x: DELTA.x + 8, z: DELTA.z + 4, facing: -2, requires: 'rd.stronghold.delta' },
   // Quest-only.
-  { id: 'rhee', zone: ZONE, asset: 'npc.technician', x: CRANE.x + 22, z: CRANE.z - 16, facing: -0.6, scale: 0.92, questOnly: true },
-  { id: 'lenn', zone: ZONE, asset: 'npc.defector', x: PREACHER.x, z: PREACHER.z, facing: 0.8, scale: 0.94, questOnly: true },
+  { id: 'rhee', zone: ZONE, asset: 'variant.npc_rhee', x: CRANE.x + 22, z: CRANE.z - 16, facing: -0.6, scale: 0.92, questOnly: true },
+  { id: 'lenn', zone: ZONE, asset: 'variant.npc_lenn', x: PREACHER.x, z: PREACHER.z, facing: 0.8, scale: 0.94, questOnly: true },
 ];
 
 export const REFINERY_QUESTS: QuestInput[] = [

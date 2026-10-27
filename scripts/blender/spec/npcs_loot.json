@@ -1,0 +1,593 @@
+{
+  "parts": [
+    {
+      "id": "part.npc_toque",
+      "builder": "toque",
+      "params": {},
+      "prompt": "Tall puffed cream cook's toque (Benny Rusk). Origin at the Head joint.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_pot_hip",
+      "builder": "pot_hip",
+      "params": {},
+      "prompt": "Cooking pot with a lid and a ladle hung from the belt (Benny Rusk). Origin at the hips, left side.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_goggles_amber",
+      "builder": "goggles_up",
+      "params": {
+        "lens": "#e8a020"
+      },
+      "prompt": "Goggles pushed up on the forehead, amber lenses (Hekla Strand).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_goggles_blue",
+      "builder": "goggles_up",
+      "params": {
+        "lens": "#6aa0d0",
+        "rim": "#5a6a78"
+      },
+      "prompt": "Goggles pushed up on the forehead, steel-blue lenses (Ines Varro).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_goggles_green",
+      "builder": "goggles_up",
+      "params": {
+        "glow": "#8aff5a",
+        "rim": "#4a5a3a"
+      },
+      "prompt": "Goggles pushed up on the forehead, glowing green lenses (Brann).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_goggles_cyan",
+      "builder": "goggles_up",
+      "params": {
+        "glow": "#5ac8ff",
+        "rim": "#5a6068"
+      },
+      "prompt": "Goggles pushed up on the forehead, glowing Lumen-cyan lenses (Gerd).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_belt_hammer",
+      "builder": "toolbelt",
+      "params": {
+        "tool": "hammer"
+      },
+      "prompt": "Tool belt with pouches and a hammer on the left hip (Hekla Strand, Gerd).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_belt_wrench",
+      "builder": "toolbelt",
+      "params": {
+        "tool": "wrench",
+        "belt": "#3a342c",
+        "pouch": "#5a4a36"
+      },
+      "prompt": "Tool belt with pouches and a pipe wrench on the left hip (Mara Kowal, Foreman Brask).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_belt_pouches",
+      "builder": "toolbelt",
+      "params": {
+        "tool": "none",
+        "belt": "#2e3238",
+        "pouch": "#4a5058"
+      },
+      "prompt": "Tool belt with pouches only (Ines Varro, Maren Sol).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_shoulder_leather",
+      "builder": "shoulder_guard",
+      "params": {},
+      "prompt": "Leather shoulder guard with brass studs (Hekla Strand, Ines Varro).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_shoulder_green",
+      "builder": "shoulder_guard",
+      "params": {
+        "color": "#3f5230",
+        "stud": "#a8a060"
+      },
+      "prompt": "Moss-green leather shoulder guard with brass studs (Brann).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_headset_teal",
+      "builder": "headset",
+      "params": {
+        "cup": "#2a8a9a",
+        "glow": "#5ae0ff"
+      },
+      "prompt": "Headset with a mic boom, teal ear cups (Pell Varga).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_headset_blue",
+      "builder": "headset",
+      "params": {
+        "cup": "#3a6ac0",
+        "glow": "#7ab0ff"
+      },
+      "prompt": "Headset with a mic boom, blue ear cups (Dace, Aspect technician).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_headset_amber",
+      "builder": "headset",
+      "params": {
+        "cup": "#d8a020",
+        "glow": "#ffc84a"
+      },
+      "prompt": "Headset with a mic boom, amber ear cups (Maren Sol, Nils).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_headphones",
+      "builder": "headset",
+      "params": {
+        "cup": "#5a6068",
+        "mic": false,
+        "big": true,
+        "band": "#3a3d42"
+      },
+      "prompt": "Large studio headphones, grey (Idris Vale, the Listener).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_radio_pack",
+      "builder": "antenna_pack",
+      "params": {},
+      "prompt": "Radio pack with a dial and a tall antenna (Pell Varga).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_cap_brown",
+      "builder": "cap",
+      "params": {
+        "color": "#5a4632",
+        "brim": "#3a2c1e"
+      },
+      "prompt": "Brown cabbie cap with a short peak (Tomas Reyes, Ember militia).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_cap_grey",
+      "builder": "cap",
+      "params": {
+        "color": "#6a6e72",
+        "brim": "#3a3d40"
+      },
+      "prompt": "Grey cabbie cap with a short peak (Gus Abara).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_cap_green",
+      "builder": "cap",
+      "params": {
+        "color": "#4a5a3a",
+        "brim": "#2a3224"
+      },
+      "prompt": "Olive cabbie cap with a short peak (Maren Sol, survivors).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_beanie_blue",
+      "builder": "cap",
+      "params": {
+        "kind": "beanie",
+        "color": "#3a5a8a",
+        "brim": "#2a4468"
+      },
+      "prompt": "Blue knit beanie with a turned-up cuff (Mara Kowal).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_beanie_grey",
+      "builder": "cap",
+      "params": {
+        "kind": "beanie",
+        "color": "#4a4d52",
+        "brim": "#34373b"
+      },
+      "prompt": "Dark grey knit beanie (Quill, Tobin).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_beanie_orange",
+      "builder": "cap",
+      "params": {
+        "kind": "beanie",
+        "color": "#c8661a",
+        "brim": "#8a4410"
+      },
+      "prompt": "Orange knit beanie (Oona).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_beanie_mustard",
+      "builder": "cap",
+      "params": {
+        "kind": "beanie",
+        "color": "#c8a020",
+        "brim": "#8a6c10"
+      },
+      "prompt": "Mustard knit beanie (Tam).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_scarf_red",
+      "builder": "scarf",
+      "params": {
+        "color": "#c0281c",
+        "trim": "#8a1a12"
+      },
+      "prompt": "Red scarf with tails (Tomas Reyes: the red jacket he keeps looking for).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_scarf_blue",
+      "builder": "scarf",
+      "params": {
+        "color": "#4a6a9a",
+        "trim": "#34507a",
+        "tails": 1
+      },
+      "prompt": "Blue-grey wool scarf with one tail (Mara Kowal).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_scarf_smelter",
+      "builder": "scarf",
+      "params": {
+        "color": "#7a1a12",
+        "trim": "#c9a23a"
+      },
+      "prompt": "Dark red smelter's sash worn as a scarf (Tobin, the Smelter defector).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_scarf_amber",
+      "builder": "scarf",
+      "params": {
+        "color": "#d8901a",
+        "trim": "#a8680a"
+      },
+      "prompt": "Amber scarf with tails (Tam).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_scarf_slate",
+      "builder": "scarf",
+      "params": {
+        "color": "#6a727c",
+        "trim": "#4a5058",
+        "tails": 1
+      },
+      "prompt": "Slate-grey muffler (Idris Vale).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_rucksack_roll",
+      "builder": "backpack",
+      "params": {
+        "color": "#4a5a3a",
+        "roll": "#8a6a3a"
+      },
+      "prompt": "Canvas rucksack with a bedroll on top (Tomas, Gus, militia).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_rucksack_battery",
+      "builder": "backpack",
+      "params": {
+        "color": "#34383c",
+        "trim": "#1e2022"
+      },
+      "prompt": "Dark canvas pack with pockets, no roll (Oona's stock).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_crate_pack",
+      "builder": "backpack",
+      "params": {
+        "kind": "crate",
+        "color": "#d8dad4",
+        "band": "#b02a20",
+        "trim": "#34383c"
+      },
+      "prompt": "Sealed white hard crate on the back with a red hazard band (Quill: sealed twice).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_respirator_white",
+      "builder": "respirator",
+      "params": {
+        "color": "#d8d8cc"
+      },
+      "prompt": "White half-mask respirator with two filters (Dr. Okafor).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_respirator_rust",
+      "builder": "respirator",
+      "params": {
+        "color": "#7a4a2a",
+        "lamp": "#5ac8ff"
+      },
+      "prompt": "Rusted half-mask respirator with two glowing cyan filter lamps (Gerd).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_glasses_white",
+      "builder": "glasses",
+      "params": {
+        "frame": "#d8d8d0"
+      },
+      "prompt": "Round spectacles in a pale frame (Dr. Okafor).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_glasses_cracked",
+      "builder": "glasses",
+      "params": {
+        "frame": "#3a3430",
+        "crack": true
+      },
+      "prompt": "Cracked round spectacles (Dr. Halvorsen).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_glasses_gold",
+      "builder": "glasses",
+      "params": {
+        "frame": "#c9a23a"
+      },
+      "prompt": "Round gold spectacles (Wren the Scribe).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_filter_pack",
+      "builder": "filter_pack",
+      "params": {},
+      "prompt": "Filter pack with three canisters and a hose loop (Dace).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_tuning_fork",
+      "builder": "tuning_fork",
+      "params": {},
+      "prompt": "A big steel tuning fork on the back with a glowing hum (Nils).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_pick_back",
+      "builder": "pick_back",
+      "params": {},
+      "prompt": "A pickaxe strapped across the back (Teo Vasquez).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_satchel",
+      "builder": "satchel",
+      "params": {},
+      "prompt": "Leather shoulder satchel with scroll tubes (Wren the Scribe).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_flare_bandolier",
+      "builder": "flare_bandolier",
+      "params": {},
+      "prompt": "Bandolier of red flares across the chest (Oona).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_lantern",
+      "builder": "lantern",
+      "params": {},
+      "prompt": "Hand lantern hung from the belt (Tam).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_armband_red",
+      "builder": "armband",
+      "params": {},
+      "prompt": "Red armband with a white stripe (Foreman Brask, militia).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_armband_blue",
+      "builder": "armband",
+      "params": {
+        "color": "#2a5ab0"
+      },
+      "prompt": "Blue armband with a white stripe (Kofi Osei).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_armband_yellow",
+      "builder": "armband",
+      "params": {
+        "color": "#d8b020",
+        "stripe": "#2a2a2a"
+      },
+      "prompt": "Yellow armband with a white stripe (Teo Vasquez).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_prayer_beads",
+      "builder": "prayer_beads",
+      "params": {},
+      "prompt": "Wooden prayer beads with an ember charm (Brother Lenn).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_wisp_motes",
+      "builder": "wisp_motes",
+      "params": {},
+      "prompt": "A ring of glowing motes floating over the head (the Whisper).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_cloak_pale",
+      "builder": "cloak",
+      "params": {},
+      "prompt": "Ragged pale cloak with a glowing hem (the Whisper).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_vest_orange",
+      "builder": "vest",
+      "params": {},
+      "prompt": "Orange hi-vis vest with reflective stripes (Rhee, crane operator).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_labcoat",
+      "builder": "coat_skirt",
+      "params": {},
+      "prompt": "Pale lab-coat skirt: a flared cone of cloth round the hips with a green hem (Dr. Okafor). Origin at the hips.",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_hardhat_white",
+      "builder": "hardhat",
+      "params": {
+        "color": "#e8e8e0",
+        "lamp": "#5ac8ff"
+      },
+      "prompt": "White hard hat with a blue headlamp (Kofi Osei).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_hardhat_muffs",
+      "builder": "hardhat",
+      "params": {
+        "color": "#e86a10",
+        "muffs": "#2a2a2a",
+        "stripe": "#e8e8d8"
+      },
+      "prompt": "Orange hard hat with ear defenders (Rhee, crane operator).",
+      "targetPolycount": 700
+    },
+    {
+      "id": "part.npc_hardhat_yellow",
+      "builder": "hardhat",
+      "params": {
+        "color": "#e8b020",
+        "stripe": "#2a2a2a"
+      },
+      "prompt": "Plain yellow hard hat with a dark band (Teo Vasquez).",
+      "targetPolycount": 700
+    }
+  ],
+  "models": [
+    {
+      "id": "prop.loot_cache",
+      "builder": "loot_cache",
+      "params": {},
+      "prompt": "Ground loot: a small strapped item cache with a wrapped gear bundle; trim and clasps are the rarity colour slot.",
+      "targetPolycount": 400,
+      "category": "prop",
+      "heightMeters": 0.26,
+      "placeholder": {
+        "shape": "box",
+        "color": "#2a2622",
+        "size": [
+          0.42,
+          0.26,
+          0.3
+        ]
+      }
+    },
+    {
+      "id": "prop.loot_crystal",
+      "builder": "loot_crystal",
+      "params": {},
+      "prompt": "Ground loot: a Lumen crystal pickup, a cluster of glowing faceted shards on a rock stub.",
+      "targetPolycount": 400,
+      "category": "prop",
+      "heightMeters": 0.36,
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#2a6a8a",
+        "size": [
+          0.2,
+          0.36,
+          0.2
+        ],
+        "emissive": "#5ac8ff",
+        "emissiveIntensity": 1.0
+      }
+    },
+    {
+      "id": "prop.loot_gold",
+      "builder": "loot_gold",
+      "params": {},
+      "prompt": "Ground loot: a pile of scrap-credit coins and a small pouch.",
+      "targetPolycount": 400,
+      "category": "prop",
+      "heightMeters": 0.13,
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#d9a640",
+        "size": [
+          0.3,
+          0.1,
+          0.3
+        ],
+        "emissive": "#7a5410",
+        "emissiveIntensity": 0.5
+      }
+    },
+    {
+      "id": "prop.keycard",
+      "builder": "keycard",
+      "params": {},
+      "prompt": "Interactable: an access keycard standing on a small cradle, glowing cyan stripe.",
+      "targetPolycount": 1500,
+      "category": "prop",
+      "heightMeters": 0.55,
+      "placeholder": {
+        "shape": "box",
+        "color": "#2a3238",
+        "size": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "emissive": "#3ad2ff",
+        "emissiveIntensity": 0.8
+      }
+    },
+    {
+      "id": "prop.rift_obelisk",
+      "builder": "rift_obelisk",
+      "params": {},
+      "prompt": "Interactable: a rift obelisk, a dark stone pillar with glowing violet rune bands and floating shards.",
+      "targetPolycount": 1500,
+      "category": "prop",
+      "heightMeters": 2.1,
+      "placeholder": {
+        "shape": "box",
+        "color": "#2a2833",
+        "size": [
+          0.8,
+          2.1,
+          0.8
+        ],
+        "emissive": "#b48cff",
+        "emissiveIntensity": 0.8
+      }
+    }
+  ]
+}

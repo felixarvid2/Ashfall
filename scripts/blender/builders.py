@@ -67,3 +67,7 @@ BUILDERS.update(builders_regions123.BUILDERS)
 import builders_deep_core  # noqa: E402  (Deep Mines and Core variants)
 
 BUILDERS.update(builders_deep_core.BUILDERS)
+
+import builders_npcs_loot  # noqa: E402  (named NPC accessories, ground loot, interactable models)
+
+BUILDERS.update(builders_npcs_loot.BUILDERS)

@@ -1,13 +1,25 @@
 /**
- * Loot on the ground: a small glowing item per drop with a rarity-coloured light beam
- * (taller for rarer items) and a pop-out arc when it drops; gold piles glint.
+ * Loot on the ground: a small item cache per drop (a Lumen crystal for crystals) with a rarity-coloured light beam
+ * (taller for rarer items) and a pop-out arc when it drops; gold is a pile of coins. The models are Blender-made
+ * (src/data/loot/lootModels.ts); until one has loaded, or without an AssetLibrary, the old box and disc stand in.
  */
 import * as THREE from 'three';
 import { GroundGold, GroundItem, PlayerControlled, Resource, Transform } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import { CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
+import { LOOT_MODELS } from '../data/loot/lootModels';
+import type { AssetLibrary } from './assets';
 
 const POP_TIME = 0.45;
+
+/** Where a model's base sits above the ground, and how much to scale it (the old box and disc were about this size). */
+const MODEL_FIT = {
+  item: { base: 0.02, scale: 1.1 },
+  crystal: { base: 0.02, scale: 1.1 },
+  gold: { base: 0.01, scale: 1.35 },
+};
+/** The cache's trim material is the one painted this grey (builders_npcs_loot.loot_cache): it takes the rarity colour. */
+const TRIM_MATERIAL = 'painted_metalc8c8c8';
 
 /** Beams are quiet by default: dim for magic and rare, shorter, and fainter near the hero and in a fight (A038). */
 export const BEAM = {
@@ -36,13 +48,17 @@ export function beamLook(rarity: string, dataHeight: number, dist: number, inCom
 export class LootVisuals {
   readonly root = new THREE.Group();
   private readonly items = new Map<Entity, THREE.Group>();
-  private readonly gold = new Map<Entity, THREE.Mesh>();
+  private readonly gold = new Map<Entity, THREE.Group>();
   private readonly itemGeo = new THREE.BoxGeometry(0.42, 0.12, 0.3);
   private readonly beamGeo = new THREE.CylinderGeometry(0.08, 0.22, 1, 12, 1, true).translate(0, 0.5, 0);
   private readonly ringGeo = new THREE.RingGeometry(0.28, 0.4, 24).rotateX(-Math.PI / 2);
   private readonly goldGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.08, 10);
   private readonly goldMat = new THREE.MeshStandardMaterial({ color: '#d9a640', emissive: '#7a5410', metalness: 0.9, roughness: 0.35 });
+  /** One cloned material per rarity colour (cache trim) and per crystal colour, shared by every drop of it. */
+  private readonly retinted = new Map<string, THREE.Material>();
   private time = 0;
+
+  constructor(private readonly assets?: AssetLibrary) {}
 
   update(world: World, dt: number): void {
     this.time += dt;
@@ -55,16 +71,17 @@ export class LootVisuals {
       const g = world.req(e, GroundItem);
       let obj = this.items.get(e);
       if (!obj) {
-        obj = this.build(g.item.rarity, g.item.crystal ? (CRYSTAL_DEFS.get(g.item.crystal.id)?.color ?? null) : null);
+        obj = this.build(g.item.rarity, g.item.crystal ? (CRYSTAL_DEFS.get(g.item.crystal.id)?.color ?? null) : null, !!g.item.crystal);
         this.items.set(e, obj);
         this.root.add(obj);
       }
+      this.upgradeModel(obj);
       const tr = world.req(e, Transform);
       const t = Math.min(1, g.age / POP_TIME);
       const body = obj.children[0]!;
       // A crystal pulled by the loot magnet (F020) rises a little as it flies in.
       const lift = g.magnet === undefined ? 0 : Math.min(0.5, g.magnet * 2.5);
-      body.position.y = 0.08 + lift + Math.sin(t * Math.PI) * 1.1 + (t >= 1 ? Math.sin(this.time * 2 + e) * 0.02 : 0);
+      body.position.y = (obj.userData.base as number) + lift + Math.sin(t * Math.PI) * 1.1 + (t >= 1 ? Math.sin(this.time * 2 + e) * 0.02 : 0);
       body.rotation.y = tr.facing + (t < 1 ? t * 8 : 0);
       obj.position.set(tr.x, 0, tr.z);
       const beam = obj.children[1];
@@ -87,16 +104,17 @@ export class LootVisuals {
       goldSeen.add(e);
       let mesh = this.gold.get(e);
       if (!mesh) {
-        mesh = new THREE.Mesh(this.goldGeo, this.goldMat);
+        mesh = this.buildGold();
         this.gold.set(e, mesh);
         this.root.add(mesh);
       }
+      this.upgradeModel(mesh);
       const tr = world.req(e, Transform);
       const g = world.req(e, GroundGold);
       const t = Math.min(1, g.age / POP_TIME);
       // Gold pulled by the loot magnet (F020) rises a little as it flies in.
       const lift = g.magnet === undefined ? 0 : Math.min(0.5, g.magnet * 2.5);
-      mesh.position.set(tr.x, 0.05 + lift + Math.sin(t * Math.PI) * 0.8, tr.z);
+      mesh.position.set(tr.x, MODEL_FIT.gold.base + lift + Math.sin(t * Math.PI) * 0.8, tr.z);
       mesh.rotation.y = this.time * 1.5;
     }
     for (const [e, mesh] of this.gold) {
@@ -106,14 +124,75 @@ export class LootVisuals {
     }
   }
 
-  private build(rarity: Parameters<typeof rarityDef>[0], tint: string | null): THREE.Group {
+  /** A body that is the model when it is loaded and the old stand-in shape until then (`upgradeModel` swaps it in). */
+  private body(kind: keyof typeof LOOT_MODELS, tint: string | null, rarity: string | null, fallback: () => THREE.Object3D): THREE.Group {
+    const holder = new THREE.Group();
+    holder.userData = { kind, tint, rarity, standIn: true, base: MODEL_FIT[kind].base };
+    holder.add(fallback());
+    return holder;
+  }
+
+  /** Replace the stand-in with the model once the library has it. */
+  private upgradeModel(obj: THREE.Object3D): void {
+    const holder = obj.userData.standIn === undefined ? obj.children[0]! : obj;
+    if (!holder.userData.standIn || !this.assets) return;
+    const kind = holder.userData.kind as keyof typeof LOOT_MODELS;
+    const id = LOOT_MODELS[kind];
+    if (!this.assets.has(id) || !this.assets.hasModel(id)) return;
+    holder.userData.standIn = false;
+    holder.clear();
+    const model = this.assets.create(id);
+    model.scale.setScalar(MODEL_FIT[kind].scale);
+    this.retint(model, kind, holder.userData.tint as string | null, holder.userData.rarity as string | null);
+    holder.add(model);
+  }
+
+  private retint(model: THREE.Object3D, kind: keyof typeof LOOT_MODELS, tint: string | null, rarity: string | null): void {
+    const color = kind === 'item' ? (tint ?? rarityDef(rarity as Parameters<typeof rarityDef>[0]).color) : tint;
+    model.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+      const name = mesh.material.name;
+      const trim = kind === 'item' && name === TRIM_MATERIAL;
+      const crystal = kind === 'crystal' && color !== null && name.startsWith('lumen_crystal');
+      if (kind === 'gold') {
+        mesh.material = this.retinted.get('gold:' + name) ?? this.cache('gold:' + name, mesh.material as THREE.MeshStandardMaterial, (m) => {
+          m.emissive.set('#7a5410');
+          m.emissiveIntensity = 0.6;
+        });
+      } else if ((trim || crystal) && color) {
+        mesh.material = this.cache(`${kind}:${color}`, mesh.material as THREE.MeshStandardMaterial, (m) => {
+          m.color.set(color);
+          m.emissive.set(color);
+          m.emissiveIntensity = trim ? 0.9 : 1.4;
+        });
+      }
+    });
+  }
+
+  private cache(key: string, source: THREE.MeshStandardMaterial, tweak: (m: THREE.MeshStandardMaterial) => void): THREE.Material {
+    let m = this.retinted.get(key);
+    if (!m) {
+      const clone = source.clone();
+      tweak(clone);
+      this.retinted.set(key, (m = clone));
+    }
+    return m;
+  }
+
+  private buildGold(): THREE.Group {
+    return this.body('gold', null, null, () => new THREE.Mesh(this.goldGeo, this.goldMat));
+  }
+
+  private build(rarity: Parameters<typeof rarityDef>[0], tint: string | null, crystal: boolean): THREE.Group {
     const def = rarityDef(rarity);
     const color = new THREE.Color(tint ?? def.color);
     const group = new THREE.Group();
-    const body = new THREE.Mesh(
+    const body = this.body(crystal ? 'crystal' : 'item', tint, rarity, () => new THREE.Mesh(
       this.itemGeo,
       new THREE.MeshStandardMaterial({ color: '#2a2622', emissive: color, emissiveIntensity: 0.9, roughness: 0.6 }),
-    );
+    ));
+    group.userData.base = body.userData.base;
     group.add(body);
     if (def.beam > 0) {
       const beam = new THREE.Mesh(

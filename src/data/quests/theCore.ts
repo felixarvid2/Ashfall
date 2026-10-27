@@ -49,15 +49,15 @@ export const EMPTY_CAB_PATH: [number, number][] = [
 /** The Last Camp's people; −z is screen-up. Old friends from every hub, and the two who held the camp. */
 export const CORE_NPCS: NpcInput[] = [
   // The camp's own.
-  { id: 'maren', zone: ZONE, asset: 'npc.technician', x: HUB.x + 4, z: HUB.z + 3, facing: 2.4 },
+  { id: 'maren', zone: ZONE, asset: 'variant.npc_maren', x: HUB.x + 4, z: HUB.z + 3, facing: 2.4 },
   // Who comes to the camp when the letters were kept (sq.last_letters).
-  { id: 'wren', zone: ZONE, asset: 'npc.technician', x: HUB.x - 8, z: HUB.z + 6, facing: 1.4, scale: 0.94, choice: { quest: 'sq.last_letters', option: 'keep' } },
-  { id: 'idris', zone: ZONE, asset: 'npc.defector', x: HUB.x - 2, z: HUB.z - 9, facing: 0.4, scale: 0.94 },
+  { id: 'wren', zone: ZONE, asset: 'variant.npc_wren', x: HUB.x - 8, z: HUB.z + 6, facing: 1.4, scale: 0.94, choice: { quest: 'sq.last_letters', option: 'keep' } },
+  { id: 'idris', zone: ZONE, asset: 'variant.npc_idris', x: HUB.x - 2, z: HUB.z - 9, facing: 0.4, scale: 0.94 },
   // Who came down the bore behind you, one from each hub.
-  { id: 'hekla_core', zone: ZONE, asset: 'npc.blacksmith', x: HUB.x + 9, z: HUB.z - 1, facing: -2.2, service: 'blacksmith' },
-  { id: 'gus_core', zone: ZONE, asset: 'npc.cook', x: HUB.x - 6, z: HUB.z, facing: 1.8, scale: 1.05, service: 'vendor' },
-  { id: 'dace_core', zone: ZONE, asset: 'npc.pump_engineer', x: HUB.x - 11, z: HUB.z + 3, facing: 1.4, scale: 0.95, service: 'technician' },
-  { id: 'brask_core', zone: ZONE, asset: 'npc.pump_engineer', x: HUB.x + 6, z: HUB.z + 9, facing: -2.6 },
+  { id: 'hekla_core', zone: ZONE, asset: 'variant.npc_hekla', x: HUB.x + 9, z: HUB.z - 1, facing: -2.2, service: 'blacksmith' },
+  { id: 'gus_core', zone: ZONE, asset: 'variant.npc_gus', x: HUB.x - 6, z: HUB.z, facing: 1.8, scale: 1.05, service: 'vendor' },
+  { id: 'dace_core', zone: ZONE, asset: 'variant.npc_dace', x: HUB.x - 11, z: HUB.z + 3, facing: 1.4, scale: 0.95, service: 'technician' },
+  { id: 'brask_core', zone: ZONE, asset: 'variant.npc_brask', x: HUB.x + 6, z: HUB.z + 9, facing: -2.6 },
 ];
 
 export const CORE_QUESTS: QuestInput[] = [

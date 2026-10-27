@@ -5530,7 +5530,7 @@
       "file": "parts/dc_helmet_lamp.glb",
       "stats": {
         "triangles": 136,
-        "bytes": 6724,
+        "bytes": 6720,
         "textures": 0
       }
     },
@@ -5626,7 +5626,7 @@
       "file": "parts/dc_shard_sac.glb",
       "stats": {
         "triangles": 222,
-        "bytes": 6944,
+        "bytes": 6964,
         "textures": 0
       }
     },
@@ -5722,7 +5722,7 @@
       "file": "parts/dc_shoulder_plate_blue.glb",
       "stats": {
         "triangles": 80,
-        "bytes": 4992,
+        "bytes": 5020,
         "textures": 0
       }
     },
@@ -5738,14 +5738,14 @@
       "file": "parts/dc_shoulder_plate_gold.glb",
       "stats": {
         "triangles": 92,
-        "bytes": 4232,
+        "bytes": 4196,
         "textures": 0
       }
     },
     {
       "id": "part.dc_peaked_cap",
       "category": "part",
-      "prompt": "Security chief peaked cap: a flat dark crown, a stiff brim on the front (+Z) and a gold badge. Origin at the brim centre.",
+      "prompt": "Security chief peaked cap: a navy crown with a gold cord, a stiff brim on the front (+Z) and a gold badge. Origin at the brim centre.",
       "source": "blender",
       "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
       "targetPolycount": 250,
@@ -5753,8 +5753,8 @@
       "meshy": {},
       "file": "parts/dc_peaked_cap.glb",
       "stats": {
-        "triangles": 96,
-        "bytes": 5600,
+        "triangles": 132,
+        "bytes": 7496,
         "textures": 0
       }
     },
@@ -5786,7 +5786,7 @@
       "file": "parts/dc_kade_crown.glb",
       "stats": {
         "triangles": 178,
-        "bytes": 6064,
+        "bytes": 6076,
         "textures": 0
       }
     },
@@ -5898,7 +5898,7 @@
       "file": "parts/dc_cable_bundle.glb",
       "stats": {
         "triangles": 304,
-        "bytes": 6152,
+        "bytes": 7360,
         "textures": 0
       }
     },
@@ -5930,7 +5930,7 @@
       "file": "parts/dc_shade_halo.glb",
       "stats": {
         "triangles": 238,
-        "bytes": 8028,
+        "bytes": 7876,
         "textures": 0
       }
     },
@@ -5946,7 +5946,7 @@
       "file": "parts/dc_shade_fan.glb",
       "stats": {
         "triangles": 60,
-        "bytes": 2968,
+        "bytes": 2872,
         "textures": 0
       }
     },
@@ -5962,7 +5962,7 @@
       "file": "parts/dc_shade_crown.glb",
       "stats": {
         "triangles": 258,
-        "bytes": 8788,
+        "bytes": 8636,
         "textures": 0
       }
     },
@@ -5978,7 +5978,7 @@
       "file": "parts/dc_shade_drift.glb",
       "stats": {
         "triangles": 110,
-        "bytes": 6004,
+        "bytes": 5820,
         "textures": 0
       }
     },
@@ -5994,7 +5994,7 @@
       "file": "parts/dc_shade_spine.glb",
       "stats": {
         "triangles": 132,
-        "bytes": 6288,
+        "bytes": 6108,
         "textures": 0
       }
     },
@@ -6010,7 +6010,7 @@
       "file": "parts/dc_shade_wing.glb",
       "stats": {
         "triangles": 36,
-        "bytes": 2676,
+        "bytes": 2580,
         "textures": 0
       }
     },
@@ -6026,7 +6026,7 @@
       "file": "parts/dc_kade_crown_violet.glb",
       "stats": {
         "triangles": 178,
-        "bytes": 6084,
+        "bytes": 5980,
         "textures": 0
       }
     },
@@ -6042,7 +6042,7 @@
       "file": "parts/dc_conduit_pack_violet.glb",
       "stats": {
         "triangles": 176,
-        "bytes": 4964,
+        "bytes": 4876,
         "textures": 0
       }
     },
@@ -6058,7 +6058,7 @@
       "file": "parts/dc_shoulder_plate_violet.glb",
       "stats": {
         "triangles": 92,
-        "bytes": 4220,
+        "bytes": 4096,
         "textures": 0
       }
     },
@@ -6074,7 +6074,7 @@
       "file": "parts/dc_vines_violet.glb",
       "stats": {
         "triangles": 284,
-        "bytes": 6220,
+        "bytes": 6124,
         "textures": 0
       }
     },
@@ -6090,7 +6090,7 @@
       "file": "parts/dc_abs_crown.glb",
       "stats": {
         "triangles": 258,
-        "bytes": 8776,
+        "bytes": 8608,
         "textures": 0
       }
     },
@@ -6106,7 +6106,7 @@
       "file": "parts/dc_abs_wings.glb",
       "stats": {
         "triangles": 48,
-        "bytes": 2740,
+        "bytes": 2636,
         "textures": 0
       }
     },
@@ -6122,7 +6122,7 @@
       "file": "parts/dc_abs_hammer.glb",
       "stats": {
         "triangles": 88,
-        "bytes": 4412,
+        "bytes": 4328,
         "textures": 0
       }
     },
@@ -6138,7 +6138,7 @@
       "file": "parts/dc_abs_toque.glb",
       "stats": {
         "triangles": 104,
-        "bytes": 4244,
+        "bytes": 2816,
         "textures": 0
       }
     },
@@ -6154,7 +6154,7 @@
       "file": "parts/dc_abs_pipes.glb",
       "stats": {
         "triangles": 208,
-        "bytes": 5324,
+        "bytes": 5220,
         "textures": 0
       }
     },
@@ -6170,7 +6170,7 @@
       "file": "parts/dc_abs_dish.glb",
       "stats": {
         "triangles": 72,
-        "bytes": 5332,
+        "bytes": 5180,
         "textures": 0
       }
     },
@@ -6186,7 +6186,7 @@
       "file": "parts/dc_abs_helm.glb",
       "stats": {
         "triangles": 72,
-        "bytes": 5112,
+        "bytes": 4924,
         "textures": 0
       }
     },
@@ -6202,7 +6202,7 @@
       "file": "parts/dc_choir_crown.glb",
       "stats": {
         "triangles": 298,
-        "bytes": 8828,
+        "bytes": 9896,
         "textures": 0
       }
     },
@@ -6218,7 +6218,7 @@
       "file": "parts/dc_veil.glb",
       "stats": {
         "triangles": 208,
-        "bytes": 3180,
+        "bytes": 3184,
         "textures": 0
       }
     },
@@ -6234,7 +6234,7 @@
       "file": "parts/dc_stone_crown.glb",
       "stats": {
         "triangles": 178,
-        "bytes": 7292,
+        "bytes": 7204,
         "textures": 0
       }
     },
@@ -6250,7 +6250,7 @@
       "file": "parts/dc_stone_orbit.glb",
       "stats": {
         "triangles": 408,
-        "bytes": 10700,
+        "bytes": 10612,
         "textures": 0
       }
     },
@@ -6266,7 +6266,7 @@
       "file": "parts/dc_hatch_pods.glb",
       "stats": {
         "triangles": 276,
-        "bytes": 6840,
+        "bytes": 6864,
         "textures": 0
       }
     },
@@ -6282,7 +6282,7 @@
       "file": "parts/dc_hollow_ring.glb",
       "stats": {
         "triangles": 280,
-        "bytes": 7508,
+        "bytes": 7424,
         "textures": 0
       }
     },
@@ -6399,7 +6399,7 @@
       ],
       "stats": {
         "triangles": 602,
-        "bytes": 18664,
+        "bytes": 18632,
         "textures": 0
       },
       "placeholder": {
@@ -6429,7 +6429,7 @@
       ],
       "stats": {
         "triangles": 1170,
-        "bytes": 24840,
+        "bytes": 24844,
         "textures": 0
       },
       "placeholder": {
@@ -6440,6 +6440,1044 @@
           4.5,
           3.2
         ]
+      }
+    },
+    {
+      "id": "part.npc_toque",
+      "category": "part",
+      "prompt": "Tall puffed cream cook's toque (Benny Rusk). Origin at the Head joint.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_toque.glb",
+      "stats": {
+        "triangles": 118,
+        "bytes": 4172,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_goggles_amber",
+      "category": "part",
+      "prompt": "Goggles pushed up on the forehead, amber lenses (Hekla Strand).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_goggles_amber.glb",
+      "stats": {
+        "triangles": 212,
+        "bytes": 6672,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_headset_teal",
+      "category": "part",
+      "prompt": "Headset with a mic boom, teal ear cups (Pell Varga).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_headset_teal.glb",
+      "stats": {
+        "triangles": 464,
+        "bytes": 10680,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_scarf_red",
+      "category": "part",
+      "prompt": "Red scarf with tails (Tomas Reyes: the red jacket he keeps looking for).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_scarf_red.glb",
+      "stats": {
+        "triangles": 320,
+        "bytes": 6620,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_rucksack_roll",
+      "category": "part",
+      "prompt": "Canvas rucksack with a bedroll on top (Tomas, Gus, militia).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_rucksack_roll.glb",
+      "stats": {
+        "triangles": 340,
+        "bytes": 8700,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_hardhat_white",
+      "category": "part",
+      "prompt": "White hard hat with a blue headlamp (Kofi Osei).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_hardhat_white.glb",
+      "stats": {
+        "triangles": 226,
+        "bytes": 6620,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_pot_hip",
+      "category": "part",
+      "prompt": "Cooking pot with a lid and a ladle hung from the belt (Benny Rusk). Origin at the hips, left side.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_pot_hip.glb",
+      "stats": {
+        "triangles": 216,
+        "bytes": 7872,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_goggles_blue",
+      "category": "part",
+      "prompt": "Goggles pushed up on the forehead, steel-blue lenses (Ines Varro).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_goggles_blue.glb",
+      "stats": {
+        "triangles": 212,
+        "bytes": 6668,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_goggles_green",
+      "category": "part",
+      "prompt": "Goggles pushed up on the forehead, glowing green lenses (Brann).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_goggles_green.glb",
+      "stats": {
+        "triangles": 212,
+        "bytes": 6756,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_goggles_cyan",
+      "category": "part",
+      "prompt": "Goggles pushed up on the forehead, glowing Lumen-cyan lenses (Gerd).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_goggles_cyan.glb",
+      "stats": {
+        "triangles": 212,
+        "bytes": 6756,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_belt_hammer",
+      "category": "part",
+      "prompt": "Tool belt with pouches and a hammer on the left hip (Hekla Strand, Gerd).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_belt_hammer.glb",
+      "stats": {
+        "triangles": 384,
+        "bytes": 11744,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_belt_wrench",
+      "category": "part",
+      "prompt": "Tool belt with pouches and a pipe wrench on the left hip (Mara Kowal, Foreman Brask).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_belt_wrench.glb",
+      "stats": {
+        "triangles": 420,
+        "bytes": 10068,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_belt_pouches",
+      "category": "part",
+      "prompt": "Tool belt with pouches only (Ines Varro, Maren Sol).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_belt_pouches.glb",
+      "stats": {
+        "triangles": 276,
+        "bytes": 7316,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_shoulder_leather",
+      "category": "part",
+      "prompt": "Leather shoulder guard with brass studs (Hekla Strand, Ines Varro).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_shoulder_leather.glb",
+      "stats": {
+        "triangles": 234,
+        "bytes": 5584,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_shoulder_green",
+      "category": "part",
+      "prompt": "Moss-green leather shoulder guard with brass studs (Brann).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_shoulder_green.glb",
+      "stats": {
+        "triangles": 234,
+        "bytes": 5584,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_headset_blue",
+      "category": "part",
+      "prompt": "Headset with a mic boom, blue ear cups (Dace, Aspect technician).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_headset_blue.glb",
+      "stats": {
+        "triangles": 464,
+        "bytes": 10676,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_headset_amber",
+      "category": "part",
+      "prompt": "Headset with a mic boom, amber ear cups (Maren Sol, Nils).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_headset_amber.glb",
+      "stats": {
+        "triangles": 464,
+        "bytes": 10680,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_headphones",
+      "category": "part",
+      "prompt": "Large studio headphones, grey (Idris Vale, the Listener).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_headphones.glb",
+      "stats": {
+        "triangles": 428,
+        "bytes": 9052,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_radio_pack",
+      "category": "part",
+      "prompt": "Radio pack with a dial and a tall antenna (Pell Varga).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_radio_pack.glb",
+      "stats": {
+        "triangles": 256,
+        "bytes": 7212,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_cap_brown",
+      "category": "part",
+      "prompt": "Brown cabbie cap with a short peak (Tomas Reyes, Ember militia).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_cap_brown.glb",
+      "stats": {
+        "triangles": 130,
+        "bytes": 4440,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_cap_grey",
+      "category": "part",
+      "prompt": "Grey cabbie cap with a short peak (Gus Abara).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_cap_grey.glb",
+      "stats": {
+        "triangles": 130,
+        "bytes": 4440,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_cap_green",
+      "category": "part",
+      "prompt": "Olive cabbie cap with a short peak (Maren Sol, survivors).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_cap_green.glb",
+      "stats": {
+        "triangles": 130,
+        "bytes": 4440,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_beanie_blue",
+      "category": "part",
+      "prompt": "Blue knit beanie with a turned-up cuff (Mara Kowal).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_beanie_blue.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 3904,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_beanie_grey",
+      "category": "part",
+      "prompt": "Dark grey knit beanie (Quill, Tobin).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_beanie_grey.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 3872,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_beanie_orange",
+      "category": "part",
+      "prompt": "Orange knit beanie (Oona).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_beanie_orange.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 3868,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_beanie_mustard",
+      "category": "part",
+      "prompt": "Mustard knit beanie (Tam).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_beanie_mustard.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 3876,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_scarf_blue",
+      "category": "part",
+      "prompt": "Blue-grey wool scarf with one tail (Mara Kowal).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_scarf_blue.glb",
+      "stats": {
+        "triangles": 232,
+        "bytes": 5260,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_scarf_smelter",
+      "category": "part",
+      "prompt": "Dark red smelter's sash worn as a scarf (Tobin, the Smelter defector).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_scarf_smelter.glb",
+      "stats": {
+        "triangles": 320,
+        "bytes": 6620,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_scarf_amber",
+      "category": "part",
+      "prompt": "Amber scarf with tails (Tam).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_scarf_amber.glb",
+      "stats": {
+        "triangles": 320,
+        "bytes": 6620,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_scarf_slate",
+      "category": "part",
+      "prompt": "Slate-grey muffler (Idris Vale).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_scarf_slate.glb",
+      "stats": {
+        "triangles": 232,
+        "bytes": 5264,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_rucksack_battery",
+      "category": "part",
+      "prompt": "Dark canvas pack with pockets, no roll (Oona's stock).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_rucksack_battery.glb",
+      "stats": {
+        "triangles": 308,
+        "bytes": 7344,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_crate_pack",
+      "category": "part",
+      "prompt": "Sealed white hard crate on the back with a red hazard band (Quill: sealed twice).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_crate_pack.glb",
+      "stats": {
+        "triangles": 220,
+        "bytes": 7188,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_respirator_white",
+      "category": "part",
+      "prompt": "White half-mask respirator with two filters (Dr. Okafor).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_respirator_white.glb",
+      "stats": {
+        "triangles": 140,
+        "bytes": 5540,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_respirator_rust",
+      "category": "part",
+      "prompt": "Rusted half-mask respirator with two glowing cyan filter lamps (Gerd).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_respirator_rust.glb",
+      "stats": {
+        "triangles": 188,
+        "bytes": 7436,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_glasses_white",
+      "category": "part",
+      "prompt": "Round spectacles in a pale frame (Dr. Okafor).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_glasses_white.glb",
+      "stats": {
+        "triangles": 396,
+        "bytes": 6600,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_glasses_cracked",
+      "category": "part",
+      "prompt": "Cracked round spectacles (Dr. Halvorsen).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_glasses_cracked.glb",
+      "stats": {
+        "triangles": 440,
+        "bytes": 8408,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_glasses_gold",
+      "category": "part",
+      "prompt": "Round gold spectacles (Wren the Scribe).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_glasses_gold.glb",
+      "stats": {
+        "triangles": 396,
+        "bytes": 6604,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_filter_pack",
+      "category": "part",
+      "prompt": "Filter pack with three canisters and a hose loop (Dace).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_filter_pack.glb",
+      "stats": {
+        "triangles": 300,
+        "bytes": 8316,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_tuning_fork",
+      "category": "part",
+      "prompt": "A big steel tuning fork on the back with a glowing hum (Nils).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_tuning_fork.glb",
+      "stats": {
+        "triangles": 220,
+        "bytes": 7128,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_pick_back",
+      "category": "part",
+      "prompt": "A pickaxe strapped across the back (Teo Vasquez).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_pick_back.glb",
+      "stats": {
+        "triangles": 152,
+        "bytes": 6496,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_satchel",
+      "category": "part",
+      "prompt": "Leather shoulder satchel with scroll tubes (Wren the Scribe).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_satchel.glb",
+      "stats": {
+        "triangles": 224,
+        "bytes": 9148,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_flare_bandolier",
+      "category": "part",
+      "prompt": "Bandolier of red flares across the chest (Oona).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_flare_bandolier.glb",
+      "stats": {
+        "triangles": 244,
+        "bytes": 6980,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_lantern",
+      "category": "part",
+      "prompt": "Hand lantern hung from the belt (Tam).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_lantern.glb",
+      "stats": {
+        "triangles": 132,
+        "bytes": 4852,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_armband_red",
+      "category": "part",
+      "prompt": "Red armband with a white stripe (Foreman Brask, militia).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_armband_red.glb",
+      "stats": {
+        "triangles": 72,
+        "bytes": 2964,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_armband_blue",
+      "category": "part",
+      "prompt": "Blue armband with a white stripe (Kofi Osei).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_armband_blue.glb",
+      "stats": {
+        "triangles": 72,
+        "bytes": 2964,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_armband_yellow",
+      "category": "part",
+      "prompt": "Yellow armband with a white stripe (Teo Vasquez).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_armband_yellow.glb",
+      "stats": {
+        "triangles": 72,
+        "bytes": 2972,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_prayer_beads",
+      "category": "part",
+      "prompt": "Wooden prayer beads with an ember charm (Brother Lenn).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_prayer_beads.glb",
+      "stats": {
+        "triangles": 300,
+        "bytes": 6148,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_wisp_motes",
+      "category": "part",
+      "prompt": "A ring of glowing motes floating over the head (the Whisper).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_wisp_motes.glb",
+      "stats": {
+        "triangles": 260,
+        "bytes": 4744,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_cloak_pale",
+      "category": "part",
+      "prompt": "Ragged pale cloak with a glowing hem (the Whisper).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_cloak_pale.glb",
+      "stats": {
+        "triangles": 192,
+        "bytes": 4344,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_vest_orange",
+      "category": "part",
+      "prompt": "Orange hi-vis vest with reflective stripes (Rhee, crane operator).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_vest_orange.glb",
+      "stats": {
+        "triangles": 352,
+        "bytes": 7444,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_hardhat_muffs",
+      "category": "part",
+      "prompt": "Orange hard hat with ear defenders (Rhee, crane operator).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_hardhat_muffs.glb",
+      "stats": {
+        "triangles": 530,
+        "bytes": 12068,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_hardhat_yellow",
+      "category": "part",
+      "prompt": "Plain yellow hard hat with a dark band (Teo Vasquez).",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_hardhat_yellow.glb",
+      "stats": {
+        "triangles": 210,
+        "bytes": 5224,
+        "textures": 0
+      }
+    },
+    {
+      "id": "prop.loot_cache",
+      "category": "prop",
+      "prompt": "Ground loot: a small strapped item cache with a wrapped gear bundle; trim and clasps are the rarity colour slot.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "heightMeters": 0.26,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/loot_cache.glb",
+      "lods": [
+        "blender/loot_cache_lod1.glb",
+        "blender/loot_cache_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 248,
+        "bytes": 7588,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#2a2622",
+        "size": [
+          0.42,
+          0.26,
+          0.3
+        ]
+      }
+    },
+    {
+      "id": "prop.loot_crystal",
+      "category": "prop",
+      "prompt": "Ground loot: a Lumen crystal pickup, a cluster of glowing faceted shards on a rock stub.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "heightMeters": 0.36,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/loot_crystal.glb",
+      "lods": [
+        "blender/loot_crystal_lod1.glb",
+        "blender/loot_crystal_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 120,
+        "bytes": 5380,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#2a6a8a",
+        "size": [
+          0.2,
+          0.36,
+          0.2
+        ],
+        "emissive": "#5ac8ff",
+        "emissiveIntensity": 1
+      }
+    },
+    {
+      "id": "prop.loot_gold",
+      "category": "prop",
+      "prompt": "Ground loot: a pile of scrap-credit coins and a small pouch.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "heightMeters": 0.13,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/loot_gold.glb",
+      "lods": [
+        "blender/loot_gold_lod1.glb",
+        "blender/loot_gold_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 378,
+        "bytes": 8340,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#d9a640",
+        "size": [
+          0.3,
+          0.1,
+          0.3
+        ],
+        "emissive": "#7a5410",
+        "emissiveIntensity": 0.5
+      }
+    },
+    {
+      "id": "prop.keycard",
+      "category": "prop",
+      "prompt": "Interactable: an access keycard standing on a small cradle, glowing cyan stripe.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 1500,
+      "heightMeters": 0.55,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/keycard.glb",
+      "lods": [
+        "blender/keycard_lod1.glb",
+        "blender/keycard_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 416,
+        "bytes": 12320,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#2a3238",
+        "size": [
+          0.3,
+          0.55,
+          0.12
+        ],
+        "emissive": "#3ad2ff",
+        "emissiveIntensity": 0.8
+      }
+    },
+    {
+      "id": "prop.rift_obelisk",
+      "category": "prop",
+      "prompt": "Interactable: a rift obelisk, a dark stone pillar with glowing violet rune bands and floating shards.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 1500,
+      "heightMeters": 2.1,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/rift_obelisk.glb",
+      "lods": [
+        "blender/rift_obelisk_lod1.glb",
+        "blender/rift_obelisk_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 316,
+        "bytes": 8232,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#2a2833",
+        "size": [
+          0.8,
+          2.1,
+          0.8
+        ],
+        "emissive": "#b48cff",
+        "emissiveIntensity": 0.8
+      }
+    },
+    {
+      "id": "part.dc_glitch_fan_core",
+      "category": "part",
+      "prompt": "Echo Engine blades: five flat blue blades fanned out, dimmer than the Mines ones (the Core ground is pale). Origin at the root, spreads in the XY plane.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 200,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_glitch_fan_core.glb",
+      "stats": {
+        "triangles": 60,
+        "bytes": 2808,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.dc_prism_core",
+      "category": "part",
+      "prompt": "A floating triangular bipyramid of blue crystal with a thin ring, dim enough for the pale Core ground. Origin at the bottom tip, grows up.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 300,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/dc_prism_core.glb",
+      "stats": {
+        "triangles": 80,
+        "bytes": 4672,
+        "textures": 0
+      }
+    },
+    {
+      "id": "part.npc_labcoat",
+      "category": "part",
+      "prompt": "Pale lab-coat skirt: a flared cone of cloth round the hips with a green hem (Dr. Okafor). Origin at the hips.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/npc_labcoat.glb",
+      "stats": {
+        "triangles": 180,
+        "bytes": 4420,
+        "textures": 0
       }
     }
   ]
