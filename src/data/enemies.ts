@@ -1294,7 +1294,7 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 3,
     aggroRange: 30,
     scale: 1.35,
-    glow: '#ffd23a',
+    // No `glow`: his own model's gold trim reads on its own; the old gold glow washed the textures out flat.
     frontShield: 0.6,
     collider: { radius: 1, mass: 200 },
     dropTable: 'dt.boss',
