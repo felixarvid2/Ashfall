@@ -172,17 +172,6 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     ],
   },
   {
-    // Echo champion: memory tablets circling it, a halo ring behind the head and trailing blades.
-    id: 'variant.archivist',
-    base: 'char.spectre',
-    look: { tint: '#c0d0ec' },
-    parts: [
-      { asset: 'part.dc_tablets', bone: 'Spine02', position: [0, 0.05, 0], scale: 1.3 },
-      { asset: 'part.dc_elder_ring', bone: 'Head', position: [0, 0.08, -0.16], scale: 0.28 },
-      { asset: 'part.dc_glitch_fan', bone: 'Spine01', position: [0, 0.02, -0.16], rotation: [-18, 0, 0], scale: 1.0 },
-    ],
-  },
-  {
     // Security Chief Holm: peaked cap, gold plates, a grenade bandolier and a generator.
     id: 'variant.security_chief_holm',
     base: 'enemy.sergeant',
@@ -197,13 +186,9 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
   {
     // Governor Kade: Lumen-amplifying armour with a grim crown, great gold pauldrons and a conduit pack.
     id: 'variant.governor_kade',
-    base: 'char.bastion',
-    look: { tint: '#dccaa0', emissive: '#6a5010', emissiveIntensity: 0.25 },
-    parts: [
-      { asset: 'part.dc_kade_crown', bone: 'Head', position: [0, 0.13, 0], scale: 1.4 },
-      ...pair('part.dc_shoulder_plate_gold', 'LeftShoulder', 'RightShoulder', [0.16, 0.07, 0], [0, 0, -12], 1.4),
-      { asset: 'part.dc_conduit_pack', bone: 'Spine01', position: [0, 0.05, -0.2], rotation: [0, 180, 0], scale: 1.1 },
-    ],
+    // His own Meshy model (crown collar, coat, tower shield); the Lumen pack on his back drives the armour.
+    base: 'boss.governor_kade',
+    parts: [{ asset: 'part.dc_conduit_pack', bone: 'Spine01', position: [0, 0.05, -0.2], rotation: [0, 180, 0], scale: 1.1 }],
   },
   // ---- The Core: returning enemies as shades (their EnemyDef look 'shade' repaints the base; the parts stay violet and solid) ----
   {
@@ -306,12 +291,8 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
   {
     // Kade's shade: the same crown, plates and conduits, gone violet.
     id: 'variant.shade_kade',
-    base: 'char.bastion',
-    parts: [
-      { asset: 'part.dc_kade_crown_violet', bone: 'Head', position: [0, 0.13, 0], scale: 1.4 },
-      ...pair('part.dc_shoulder_plate_violet', 'LeftShoulder', 'RightShoulder', [0.16, 0.07, 0], [0, 0, -12], 1.4),
-      { asset: 'part.dc_conduit_pack_violet', bone: 'Spine01', position: [0, 0.05, -0.2], rotation: [0, 180, 0], scale: 1.1 },
-    ],
+    base: 'boss.governor_kade',
+    parts: [{ asset: 'part.dc_conduit_pack_violet', bone: 'Spine01', position: [0, 0.05, -0.2], rotation: [0, 180, 0], scale: 1.1 }],
   },
 
   // ---- The Core: the Absorbed (Lumen look on the body; gold-white crystal growth and what each of them did) ----

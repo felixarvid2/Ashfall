@@ -5151,70 +5151,6 @@
       }
     },
     {
-      "id": "part.officer_cap",
-      "category": "part",
-      "prompt": "Peaked officer's cap with a gold badge (Commandant Hale).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/officer_cap.glb",
-      "stats": {
-        "triangles": 196,
-        "bytes": 6136,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.coat_flap",
-      "category": "part",
-      "prompt": "Long flared officer's coat tail with a gold hem (Commandant Hale).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/coat_flap.glb",
-      "stats": {
-        "triangles": 132,
-        "bytes": 5000,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.lab_coat_flap",
-      "category": "part",
-      "prompt": "Long pale lab-coat tail with a green hem (Ilse Varga).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/lab_coat_flap.glb",
-      "stats": {
-        "triangles": 132,
-        "bytes": 5000,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.epaulette",
-      "category": "part",
-      "prompt": "Gold officer's epaulette with fringe (Commandant Hale).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/epaulette.glb",
-      "stats": {
-        "triangles": 172,
-        "bytes": 5252,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.frost_cluster",
       "category": "part",
       "prompt": "Frost: a cluster of pale blue ice crystals on a frosted base (Frozen Welder, The Keeper). Grows up.",
@@ -5775,22 +5711,6 @@
       }
     },
     {
-      "id": "part.dc_kade_crown",
-      "category": "part",
-      "prompt": "Governor Kade grim crown: a gold band with six tall spikes round a glowing Lumen crystal. Origin at the band centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_kade_crown.glb",
-      "stats": {
-        "triangles": 178,
-        "bytes": 6076,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.dc_conduit_pack",
       "category": "part",
       "prompt": "Lumen conduit pack: a dark backpack with three tall glowing cyan conduits and two cables to the shoulders. Origin at the centre of the back, faces -Z.",
@@ -5819,22 +5739,6 @@
       "stats": {
         "triangles": 60,
         "bytes": 2896,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_tablets",
-      "category": "part",
-      "prompt": "Memory tablets: five thin glowing slabs floating in a ring. Origin at the ring centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_tablets.glb",
-      "stats": {
-        "triangles": 144,
-        "bytes": 5344,
         "textures": 0
       }
     },
@@ -6011,22 +5915,6 @@
       "stats": {
         "triangles": 36,
         "bytes": 2580,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_kade_crown_violet",
-      "category": "part",
-      "prompt": "The shade of Kade crown: a violet band with six tall spikes round a glowing crystal. Origin at the band centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_kade_crown_violet.glb",
-      "stats": {
-        "triangles": 178,
-        "bytes": 5980,
         "textures": 0
       }
     },
@@ -7478,6 +7366,302 @@
         "triangles": 180,
         "bytes": 4420,
         "textures": 0
+      }
+    },
+    {
+      "id": "boss.governor_kade",
+      "category": "enemy",
+      "prompt": "colony governor in ornate gold-trimmed heavy powered armour amplified by glowing Lumen crystal conduits, tall high collar like a crown, long tattered governor's coat over the armour, massive tower shield on the left forearm, corporate seal on the chest, scarred grey-haired face with a cold stare, empty right hand, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, ruthless sci-fi colony governor in ornate heavy powered armour of dark gunmetal with gold trim, pulsing gold and cyan Lumen crystal conduits running along the arms and spine, tall armoured high collar shaped like a crown, long tattered dark red governor's coat over the armour, massive tower shield strapped to the left forearm with a corporate seal, scarred grey-haired man with a cold stare, no helmet, empty right hand, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17cdf-474a-7545-bd53-e6764fd8f07c",
+        "refineTaskId": "01a17cdf-aac1-745d-bb94-13bc19b94caa",
+        "rigTaskId": "01a17ce2-4281-76b6-87ad-a9126c532d3d",
+        "animationTaskId": "01a17ce2-be75-767a-a111-c2edec20f557",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/governor_kade.glb",
+      "stats": {
+        "triangles": 15492,
+        "bytes": 1079120,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#5a4a2a",
+        "size": [
+          1,
+          2,
+          1
+        ],
+        "emissive": "#ffd23a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.commandant_hale",
+      "category": "enemy",
+      "prompt": "colony security commandant in heavy battered riot armour half consumed by glowing green Lumen crystal growth, officer's cap and long coat, large riot shield on the left forearm, heavy rifle in the right hand, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, grim middle-aged colony security commandant in heavy battered riot armour with olive-drab plates, an officer's peaked cap and a long torn command coat, large riot shield strapped to the left forearm, heavy rifle in the right hand, glowing pale green Lumen crystal growth bursting through the right side of his chest, shoulder and half of his face, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17cf0-e6ae-7535-a9a3-09ff8c9aba4e",
+        "refineTaskId": "01a17cf1-f536-71d4-8e61-66ba87b6bbc4",
+        "rigTaskId": "01a17cf4-8a72-758e-846c-eb621584af4a",
+        "animationTaskId": "01a17cf5-0456-7483-8652-ee722fc5beef",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/commandant_hale.glb",
+      "stats": {
+        "triangles": 15477,
+        "bytes": 1055364,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4a5040",
+        "size": [
+          0.9,
+          2,
+          0.9
+        ],
+        "emissive": "#7dff8a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.ilse_varga",
+      "category": "enemy",
+      "prompt": "gaunt female botanist scientist in a stained white lab coat overgrown by glowing plants, vines and small flowers, spore canisters and tubes on her back, cracked respirator around the neck, empty hands, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, gaunt female botanist scientist with long tangled grey hair, stained white lab coat torn at the hem and overgrown with glowing pale green vines, moss and small white flowers, glass spore canisters and tubes strapped to her back, a cracked respirator hanging at her neck, roots growing down her legs, calm unsettling smile, dark sci-fi bio-lab, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 125
+          },
+          {
+            "state": "attack2",
+            "actionId": 131
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17cf0-e832-7596-8b45-691ab3428446",
+        "refineTaskId": "01a17cf1-f739-75fe-896f-02929bdb0b5d",
+        "rigTaskId": "01a17cf4-8c24-70c8-a82a-1a5c31aebd18",
+        "animationTaskId": "01a17cf5-05cf-7472-8572-601bdbef56ea",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/ilse_varga.glb",
+      "stats": {
+        "triangles": 15232,
+        "bytes": 1280624,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#c8d0c0",
+        "size": [
+          0.9,
+          2,
+          0.9
+        ],
+        "emissive": "#c8ff7a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.archivist",
+      "category": "enemy",
+      "prompt": "ghostly archivist of translucent cyan crystal light standing on two legs, deep hood, knee-length robe with glyphs, crystal legs and feet visible, memory glass shards at the shoulders, glowing white eyes, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, ghostly archivist made of translucent cyan crystal and light, tall and slender humanoid standing on two legs, deep hood, a knee-length robe with ragged hem, slim legs and bare feet of glowing crystal clearly visible below the robe, small shards of old memory glass orbiting its shoulders, glowing empty white eyes, faint lines of ancient glyphs across the robe, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17cf1-8332-7119-b34a-b8d9dfe0a4e1",
+        "refineTaskId": "01a17cf1-f729-771e-8f40-7a288ea7520d",
+        "rigTaskId": "01a17cf4-8c88-7051-b383-d0680a5e70d1",
+        "animationTaskId": "01a17cf4-ecdb-74e2-af72-801570aacd84",
+        "previewApproved": true,
+        "creditsSpent": 65,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/archivist.glb",
+      "stats": {
+        "triangles": 15489,
+        "bytes": 800748,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#2a4a5a",
+        "size": [
+          0.9,
+          2,
+          0.9
+        ],
+        "emissive": "#6ad8ff",
+        "emissiveIntensity": 0.3
       }
     }
   ]

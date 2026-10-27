@@ -164,7 +164,7 @@ describe('asset sets (T003)', () => {
   it('world bosses, boss adds and quest bosses resolve to real models', () => {
     for (const def of ZONES) for (const id of zoneLaterAssetIds(def)) expect(byId.has(id), id).toBe(true);
     // Hale brings his own model and the colonists his script summons; Lumen's phases bring shades.
-    expect(enemyAssetIds(['commandant_hale'], ['hale'])).toEqual(expect.arrayContaining(['enemy.sergeant', 'enemy.infected_colonist']));
+    expect(enemyAssetIds(['commandant_hale'], ['hale'])).toEqual(expect.arrayContaining(['boss.commandant_hale', 'enemy.infected_colonist']));
     expect(enemyAssetIds(['lumen'], ['lumen']).length).toBeGreaterThan(2);
   });
 });
