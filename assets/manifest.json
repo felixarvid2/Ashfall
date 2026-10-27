@@ -5775,22 +5775,6 @@
       }
     },
     {
-      "id": "part.dc_kade_crown",
-      "category": "part",
-      "prompt": "Governor Kade grim crown: a gold band with six tall spikes round a glowing Lumen crystal. Origin at the band centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_kade_crown.glb",
-      "stats": {
-        "triangles": 178,
-        "bytes": 6076,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.dc_conduit_pack",
       "category": "part",
       "prompt": "Lumen conduit pack: a dark backpack with three tall glowing cyan conduits and two cables to the shoulders. Origin at the centre of the back, faces -Z.",
@@ -6011,22 +5995,6 @@
       "stats": {
         "triangles": 36,
         "bytes": 2580,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_kade_crown_violet",
-      "category": "part",
-      "prompt": "The shade of Kade crown: a violet band with six tall spikes round a glowing crystal. Origin at the band centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_kade_crown_violet.glb",
-      "stats": {
-        "triangles": 178,
-        "bytes": 5980,
         "textures": 0
       }
     },
@@ -7478,6 +7446,80 @@
         "triangles": 180,
         "bytes": 4420,
         "textures": 0
+      }
+    },
+    {
+      "id": "boss.governor_kade",
+      "category": "enemy",
+      "prompt": "colony governor in ornate gold-trimmed heavy powered armour amplified by glowing Lumen crystal conduits, tall high collar like a crown, long tattered governor's coat over the armour, massive tower shield on the left forearm, corporate seal on the chest, scarred grey-haired face with a cold stare, empty right hand, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, ruthless sci-fi colony governor in ornate heavy powered armour of dark gunmetal with gold trim, pulsing gold and cyan Lumen crystal conduits running along the arms and spine, tall armoured high collar shaped like a crown, long tattered dark red governor's coat over the armour, massive tower shield strapped to the left forearm with a corporate seal, scarred grey-haired man with a cold stare, no helmet, empty right hand, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17cdf-474a-7545-bd53-e6764fd8f07c",
+        "refineTaskId": "01a17cdf-aac1-745d-bb94-13bc19b94caa",
+        "rigTaskId": "01a17ce2-4281-76b6-87ad-a9126c532d3d",
+        "animationTaskId": "01a17ce2-be75-767a-a111-c2edec20f557",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/governor_kade.glb",
+      "stats": {
+        "triangles": 15492,
+        "bytes": 1079120,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#5a4a2a",
+        "size": [
+          1,
+          2,
+          1
+        ],
+        "emissive": "#ffd23a",
+        "emissiveIntensity": 0.3
       }
     }
   ]
