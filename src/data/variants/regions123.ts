@@ -44,20 +44,6 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
       { asset: 'part.spike_crown', bone: 'Head', position: [0, 0.1, 0], scale: 1.3 },
     ],
   },
-  {
-    // Checkpoint Sierra: Commandant Hale, an officer's cap, coat tails and Lumen growing through the coat.
-    id: 'variant.commandant_hale',
-    base: 'enemy.sergeant',
-    look: { tint: '#e2eada', emissive: '#1f7a30', emissiveIntensity: 0.2 },
-    parts: [
-      { asset: 'part.officer_cap', bone: 'Head', position: [0, 0.22, 0.01], scale: 1.1 },
-      ...pair('part.epaulette', 'LeftShoulder', 'RightShoulder', [0.12, 0.08, 0], [0, 0, -10], 1.6),
-      ...pair('part.coat_flap', 'Hips', 'Hips', [0.09, 0.0, 0.12], [0, 0, 5], [0.75, 1, 1]),
-      { asset: 'part.coat_flap', bone: 'Hips', position: [0, 0.0, -0.14], rotation: [0, 180, 0], scale: [1, 1.05, 1] },
-      { asset: 'part.crystal_green', bone: 'Spine02', position: [0.04, 0.1, -0.12], rotation: [-45, 0, 12], scale: 1.4 },
-      { asset: 'part.crystal_green', bone: 'RightShoulder', position: [-0.12, 0.05, 0], rotation: [-10, 0, 45], scale: 0.9 },
-    ],
-  },
   // ---- Region 2: Refinery District ----
   {
     id: 'variant.ash_thrower',
@@ -308,21 +294,6 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
       { asset: 'part.vine_short', position: [0.1, 2.3, 0.1], rotation: [0, 100, -50], scale: 1.1 },
       { asset: 'part.flower_bloom', position: [0, 2.5, 0], scale: 2.2 },
       { asset: 'part.flower_bloom', position: [0.2, 1.6, 0.2], rotation: [30, 0, -60], scale: 1.2 },
-    ],
-  },
-  {
-    // The Sleeping Lab: Dr. Ilse Varga in her lab coat, a spore rig on her back, flowers in her hair.
-    id: 'variant.ilse_varga',
-    base: 'enemy.smelter',
-    look: { tint: '#d8e0cc', emissive: '#4a8a1a', emissiveIntensity: 0.15 },
-    parts: [
-      ...pair('part.lab_coat_flap', 'Hips', 'Hips', [0.09, 0.0, 0.12], [0, 0, 5], [0.75, 1, 1]),
-      { asset: 'part.lab_coat_flap', bone: 'Hips', position: [0, 0.0, -0.14], rotation: [0, 180, 0], scale: [1, 1.2, 1] },
-      { asset: 'part.goggles', bone: 'Head', position: [0, 0.08, 0.02], rotation: [-15, 0, 0], scale: 1.1 },
-      { asset: 'part.spore_tank', bone: 'Spine02', position: [0, 0.02, -0.06], scale: 1.4 },
-      { asset: 'part.flower_bloom', bone: 'Head', position: [0.08, 0.14, -0.03], rotation: [0, 0, -25], scale: 0.9 },
-      { asset: 'part.flower_bloom', bone: 'LeftShoulder', position: [0.12, 0.08, 0], rotation: [0, 0, -20], scale: 0.9 },
-      { asset: 'part.vine_short', bone: 'LeftForeArm', position: [0.02, 0, 0], rotation: [180, 0, 0] },
     ],
   },
   {

@@ -1221,7 +1221,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Archive: an Echo that keeps the elder memories; it blinks and splits into copies.
     id: 'archivist',
-    assetId: 'variant.archivist',
+    assetId: 'boss.archivist',
     family: 'lumen',
     behavior: 'rusher',
     life: 1400,
@@ -1231,7 +1231,6 @@ export const ENEMIES: EnemyInput[] = [
     moveSpeed: 4,
     turnRate: 8,
     aggroRange: 24,
-    glow: '#6ad8ff',
     hologram: true,
     collider: { radius: 0.6, mass: 20 },
     dropTable: 'dt.boss',
@@ -1349,7 +1348,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Checkpoint Sierra: Commandant Hale, half-consumed by Lumen.
     id: 'commandant_hale',
-    assetId: 'variant.commandant_hale',
+    assetId: 'boss.commandant_hale',
     family: 'infected',
     behavior: 'tank',
     life: 1100,
@@ -1361,7 +1360,6 @@ export const ENEMIES: EnemyInput[] = [
     aggroRange: 24,
     preferredRange: [4, 9],
     scale: 1.4,
-    glow: '#7dff8a',
     frontShield: 0.7,
     collider: { radius: 0.8, mass: 20 },
     dropTable: 'dt.boss',
@@ -1547,7 +1545,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Sleeping Lab: Dr. Ilse Varga, Okafor's colleague, who never woke up the same.
     id: 'ilse_varga',
-    assetId: 'variant.ilse_varga',
+    assetId: 'boss.ilse_varga',
     family: 'human',
     behavior: 'ranged',
     life: 1300,
@@ -1559,7 +1557,6 @@ export const ENEMIES: EnemyInput[] = [
     aggroRange: 24,
     preferredRange: [4, 8],
     scale: 1.3,
-    glow: '#c8ff7a',
     collider: { radius: 0.8, mass: 20 },
     dropTable: 'dt.boss',
     attack: { kind: 'cone', range: 6.5, arcDeg: 60, windup: 0.8, duration: 1.6, cooldown: 3, coefficient: 0.32, damageType: 'toxic', applies: [{ status: 'poisoned', duration: 3, coefficient: 0.25 }] },

@@ -174,30 +174,6 @@
       "targetPolycount": 700
     },
     {
-      "id": "part.officer_cap",
-      "builder": "officer_cap",
-      "params": {},
-      "prompt": "Peaked officer's cap with a gold badge (Commandant Hale).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.coat_flap",
-      "builder": "coat_flap",
-      "params": {},
-      "prompt": "Long flared officer's coat tail with a gold hem (Commandant Hale).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.lab_coat_flap",
-      "builder": "coat_flap",
-      "params": {
-        "color": "#a9b09c",
-        "trim": "#6a8a5a"
-      },
-      "prompt": "Long pale lab-coat tail with a green hem (Ilse Varga).",
-      "targetPolycount": 700
-    },
-    {
       "id": "part.robe_flap",
       "builder": "coat_flap",
       "params": {
@@ -205,13 +181,6 @@
         "trim": "#ffb03a"
       },
       "prompt": "Long dark-red smelter robe tail with an ember hem (Brother Ash, Pyre Warden).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.epaulette",
-      "builder": "epaulette",
-      "params": {},
-      "prompt": "Gold officer's epaulette with fringe (Commandant Hale).",
       "targetPolycount": 700
     },
     {

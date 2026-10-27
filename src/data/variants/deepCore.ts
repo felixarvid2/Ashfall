@@ -172,17 +172,6 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     ],
   },
   {
-    // Echo champion: memory tablets circling it, a halo ring behind the head and trailing blades.
-    id: 'variant.archivist',
-    base: 'char.spectre',
-    look: { tint: '#c0d0ec' },
-    parts: [
-      { asset: 'part.dc_tablets', bone: 'Spine02', position: [0, 0.05, 0], scale: 1.3 },
-      { asset: 'part.dc_elder_ring', bone: 'Head', position: [0, 0.08, -0.16], scale: 0.28 },
-      { asset: 'part.dc_glitch_fan', bone: 'Spine01', position: [0, 0.02, -0.16], rotation: [-18, 0, 0], scale: 1.0 },
-    ],
-  },
-  {
     // Security Chief Holm: peaked cap, gold plates, a grenade bandolier and a generator.
     id: 'variant.security_chief_holm',
     base: 'enemy.sergeant',
