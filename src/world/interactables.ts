@@ -53,7 +53,8 @@ import { openHarvestCache } from './harvest';
 const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: number; glow?: string; collider?: number }>> = {
   chest: { asset: 'prop.supply_chest', collider: 0.7 },
   lockedChest: { asset: 'prop.supply_chest', scale: 1.25, glow: '#ffb43a', collider: 0.85 },
-  keycard: { asset: 'prop.cargo_crate', scale: 0.3, glow: '#3ad2ff' },
+  // Own models (Blender, npcs_loot): their emissive parts carry the glow, so no `glow` override (it would flatten them).
+  keycard: { asset: 'prop.keycard', scale: 0.8 },
   pylon: { asset: 'prop.stim_pylon', collider: 0.6 },
   relic: { asset: 'prop.echo_relic', glow: '#9fb8ff', collider: 0.5 },
   lore: { asset: 'prop.control_terminal', scale: 0.8, glow: '#2a6a8a', collider: 0.45 },
@@ -62,7 +63,7 @@ const VISUAL: Partial<Record<Interactable['kind'], { asset: string; scale?: numb
   dungeon: { asset: 'prop.teleporter', scale: 0.3, glow: '#ff8a3a' },
   bunker: { asset: 'prop.teleporter', scale: 0.26, glow: '#c8a060' },
   stash: { asset: 'prop.supply_chest', scale: 1.1, glow: '#7dd8a0', collider: 0.8 },
-  riftObelisk: { asset: 'prop.core_column', scale: 0.8, glow: '#b48cff', collider: 0.8 },
+  riftObelisk: { asset: 'prop.rift_obelisk', scale: 1.3, collider: 0.8 },
   beacon: { asset: 'prop.signal_tower', scale: 0.55, glow: '#ff8a3a', collider: 0.7 },
 };
 

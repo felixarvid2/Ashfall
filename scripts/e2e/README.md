@@ -35,6 +35,7 @@ scenario that needs `import('/src/...')` (a module `window.ashfall` does not exp
 | `zone` | 1100x760 | `--zone <id>` (for example `zone.deep_mines` or `zone.the_core`, required; `--at x,z` picks where to stand, default 0,0): `enterZone(id, x, z)`, kills enemies, zooms in, hides the HUD, screenshot. |
 | `panels` | 390x844 touch | The shared panel framework: inventory, Back (`history`), the bottom tab bar, the header close button (`panel-close`, size), the settings panel and Escape. Notes: root classes, open panels and close button sizes after each step. |
 | `landscape` | 844x390 touch | HUD screenshot in landscape. |
+| `variant` | 1100x760 | `--enemy` (default `crystal_walker`) and `--zone` (default `zone.deep_mines`): spawns the enemy next to the hero (dev server only: it imports `/src/world/spawn.ts`), hides the HUD and the hero, and over ~5 s checks that each part of a runtime variant (`src/data/variants.ts`, `docs/blender.md`) is a mesh child of its bone and that bone and part move together. Screenshots: full frame and a close-up, first and last sample. |
 | `audio` | 1280x720 | Chromium with `--autoplay-policy=no-user-gesture-required`; fight, sound panel, `enterZone('zone.deep_mines')`, mute, reload. Notes: `audioDebug` snapshots, `/assets/audio/` 4xx responses, stored settings. Add `--mobile --viewport 390x844` for the touch menu. |
 
 `lib.mjs` has the helpers for new scenarios: `launch`, `startGame`, `hideHud`, `shot`.

@@ -26,15 +26,15 @@ const GARDEN = p(-64, -214);
 
 /** Lab 9's people around the hub centre; −x/−z is screen-up. */
 export const VAULTS_NPCS: NpcInput[] = [
-  { id: 'okafor', zone: ZONE, asset: 'npc.technician', x: HUB.x - 7, z: HUB.z + 6, facing: 2.4 },
-  { id: 'quill', zone: ZONE, asset: 'npc.cook', x: HUB.x + 7, z: HUB.z - 4, facing: -2.4, scale: 1.04, service: 'vendor' },
-  { id: 'brann', zone: ZONE, asset: 'npc.blacksmith', x: HUB.x + 5, z: HUB.z + 10, facing: -2.8, service: 'blacksmith' },
-  { id: 'dace', zone: ZONE, asset: 'npc.pump_engineer', x: HUB.x - 12, z: HUB.z + 0.5, facing: 0, scale: 0.95, service: 'technician' },
+  { id: 'okafor', zone: ZONE, asset: 'variant.npc_okafor', x: HUB.x - 7, z: HUB.z + 6, facing: 2.4 },
+  { id: 'quill', zone: ZONE, asset: 'variant.npc_quill', x: HUB.x + 7, z: HUB.z - 4, facing: -2.4, scale: 1.04, service: 'vendor' },
+  { id: 'brann', zone: ZONE, asset: 'variant.npc_brann', x: HUB.x + 5, z: HUB.z + 10, facing: -2.8, service: 'blacksmith' },
+  { id: 'dace', zone: ZONE, asset: 'variant.npc_dace', x: HUB.x - 12, z: HUB.z + 0.5, facing: 0, scale: 0.95, service: 'technician' },
   // Corporal Ruiz and his squad hold Dome Gamma once it is reclaimed.
   { id: 'ruiz', zone: ZONE, asset: 'enemy.sergeant', x: GAMMA.x + 8, z: GAMMA.z + 4, facing: -2, scale: 0.9, requires: GAMMA.id },
   // Quest-only.
-  { id: 'halvorsen', zone: ZONE, asset: 'npc.defector', x: RESEARCHER.x, z: RESEARCHER.z, facing: 0.6, scale: 0.94, questOnly: true },
-  { id: 'okafor_tree', zone: ZONE, asset: 'npc.technician', x: TREE_FOOT.x + 3, z: TREE_FOOT.z - 2, facing: 0, questOnly: true },
+  { id: 'halvorsen', zone: ZONE, asset: 'variant.npc_halvorsen', x: RESEARCHER.x, z: RESEARCHER.z, facing: 0.6, scale: 0.94, questOnly: true },
+  { id: 'okafor_tree', zone: ZONE, asset: 'variant.npc_okafor', x: TREE_FOOT.x + 3, z: TREE_FOOT.z - 2, facing: 0, questOnly: true },
 ];
 
 export const VAULTS_QUESTS: QuestInput[] = [

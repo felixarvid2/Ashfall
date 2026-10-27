@@ -93,7 +93,7 @@ describe('Lumen: the arena', () => {
         expect(t(m.banner), m.banner).not.toBe(m.banner);
         for (const s of m.shades) expect(ENEMY_DEFS.has(s.enemy), s.enemy).toBe(true);
       }
-      if (ph.beat) expect(ph.beat.form.asset).toBe('npc.technician');
+      if (ph.beat) expect(ph.beat.form.asset).toBe('variant.npc_okafor');
     }
     for (const k of ['bosses.lumen.speech', 'bosses.lumen.role', 'bosses.lumen.choice.listen', 'bosses.lumen.choice.fight', 'bosses.lumen.reply.listen', 'bosses.lumen.reply.fight', 'enemies.named.lumen', 'setPieces.lumen.defeated']) {
       expect(t(k), k).not.toBe(k);
@@ -127,7 +127,7 @@ describe('Lumen: phases by health', () => {
     expect(b.damageTaken).toBe(0);
     expect(b.adds).toHaveLength(0);
     expect(b.form).toBeDefined();
-    expect(world.req(b.form!, Renderable).assetId).toBe('npc.technician');
+    expect(world.req(b.form!, Renderable).assetId).toBe('variant.npc_okafor');
     expect(world.req(b.form!, Renderable).look).toBe('lumen');
     expect(events(ctx).filter((e) => e.type === 'beat')).toEqual([{ type: 'beat', id: 'lumen.choice' }]);
     const before = h.current;

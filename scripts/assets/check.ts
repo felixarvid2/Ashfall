@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { CLASSES, SKILLS } from '../../src/data/db';
 import { AMBIENCE_IDS, MUSIC_IDS, SFX_IDS } from '../../src/audio/soundIds';
 import { ZONES } from '../../src/data/zones';
+import { VARIANTS } from '../../src/data/variants';
 
 const root = new URL('../..', import.meta.url).pathname;
 const manifest = JSON.parse(readFileSync(join(root, 'assets/manifest.json'), 'utf8')) as { assets: { id: string; category: string }[] };
@@ -23,7 +24,8 @@ function files(dir: string): string[] {
 
 const sources = files(join(root, 'src')).map((f) => readFileSync(f, 'utf8'));
 const text = sources.join('\n');
-const ids = new Set(manifest.assets.map((a) => a.id));
+// Runtime variants (src/data/variants.ts) are valid ids too; their parts and bases must be in the manifest.
+const ids = new Set([...manifest.assets.map((a) => a.id), ...VARIANTS.keys()]);
 
 // Ids built at runtime: skill icons (icon.skill_<name>) and class portraits (icon.portrait_<class>).
 const derived = new Set<string>([
@@ -36,10 +38,10 @@ const unused = manifest.assets.filter((a) => !used(a.id)).map((a) => `${a.id} ($
 const notAssets = new Set<string>([...ZONES.flatMap((z) => z.pois.map((p) => p.id)), ...SFX_IDS, ...AMBIENCE_IDS, ...MUSIC_IDS]);
 
 const mentioned = new Set<string>();
-for (const m of text.matchAll(/['"]((?:prop|env|npc|boss|enemy|char|icon)\.[a-z0-9_]+)['"]/g)) mentioned.add(m[1]!);
+for (const m of text.matchAll(/['"]((?:prop|env|npc|boss|enemy|char|icon|part|variant)\.[a-z0-9_]+)['"]/g)) mentioned.add(m[1]!);
 const missing = [...mentioned].filter((id) => !ids.has(id) && !notAssets.has(id));
 
-console.log(`Assets in manifest: ${ids.size}`);
+console.log(`Assets in manifest: ${manifest.assets.length} (plus ${VARIANTS.size} runtime variant(s))`);
 console.log(`Unused (orphans): ${unused.length}`);
 for (const u of unused) console.log(`  - ${u}`);
 console.log(`Referenced but missing from the manifest: ${missing.length}`);

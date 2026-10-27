@@ -27,19 +27,19 @@ const WORKINGS = p(80, -120);
 
 /** Station Zero's people; −x/−z is screen-up. */
 export const MINES_NPCS: NpcInput[] = [
-  { id: 'brask', zone: ZONE, asset: 'npc.pump_engineer', x: HUB.x + 2, z: HUB.z + 3, facing: 2.6 },
-  { id: 'oona', zone: ZONE, asset: 'npc.cook', x: HUB.x - 6, z: HUB.z + 8, facing: 2, scale: 1.02, service: 'vendor' },
-  { id: 'gerd', zone: ZONE, asset: 'npc.blacksmith', x: HUB.x + 9, z: HUB.z + 1, facing: -2.2, service: 'blacksmith' },
-  { id: 'nils', zone: ZONE, asset: 'npc.technician', x: HUB.x - 5, z: HUB.z - 1, facing: 1.6, scale: 0.96, service: 'technician' },
+  { id: 'brask', zone: ZONE, asset: 'variant.npc_brask', x: HUB.x + 2, z: HUB.z + 3, facing: 2.6 },
+  { id: 'oona', zone: ZONE, asset: 'variant.npc_oona', x: HUB.x - 6, z: HUB.z + 8, facing: 2, scale: 1.02, service: 'vendor' },
+  { id: 'gerd', zone: ZONE, asset: 'variant.npc_gerd', x: HUB.x + 9, z: HUB.z + 1, facing: -2.2, service: 'blacksmith' },
+  { id: 'nils', zone: ZONE, asset: 'variant.npc_nils', x: HUB.x - 5, z: HUB.z - 1, facing: 1.6, scale: 0.96, service: 'technician' },
   // Who followed you down from the Vaults (the Mother Tree choice).
-  { id: 'okafor_mines', zone: ZONE, asset: 'npc.technician', x: HUB.x + 7, z: HUB.z + 9, facing: -2.6, choice: { quest: 'mq.mother_tree', option: 'spare' } },
+  { id: 'okafor_mines', zone: ZONE, asset: 'variant.npc_okafor', x: HUB.x + 7, z: HUB.z + 9, facing: -2.6, choice: { quest: 'mq.mother_tree', option: 'spare' } },
   { id: 'ruiz_mines', zone: ZONE, asset: 'enemy.sergeant', x: HUB.x + 7, z: HUB.z + 9, facing: -2.6, scale: 0.9, choice: { quest: 'mq.mother_tree', option: 'burn' } },
   // The miners move into Mining Station Aurum once it is reclaimed.
   // Who comes to Station Zero when the ledger was shared (sq.foremans_ledger).
-  { id: 'tam', zone: ZONE, asset: 'npc.defector', x: HUB.x - 10, z: HUB.z + 3, facing: 1.2, scale: 0.95, choice: { quest: 'sq.foremans_ledger', option: 'share' } },
+  { id: 'tam', zone: ZONE, asset: 'variant.npc_tam', x: HUB.x - 10, z: HUB.z + 3, facing: 1.2, scale: 0.95, choice: { quest: 'sq.foremans_ledger', option: 'share' } },
   // Heard before it is seen (my.whisper).
-  { id: 'whisper_voice', zone: ZONE, asset: 'npc.defector', ...p(-102, 298), facing: 1.2, scale: 0.9, questOnly: true },
-  { id: 'vasquez', zone: ZONE, asset: 'npc.defector', x: AURUM.x + 7, z: AURUM.z - 4, facing: -1.8, requires: AURUM.id },
+  { id: 'whisper_voice', zone: ZONE, asset: 'variant.npc_whisper', ...p(-102, 298), facing: 1.2, scale: 0.9, questOnly: true },
+  { id: 'vasquez', zone: ZONE, asset: 'variant.npc_vasquez', x: AURUM.x + 7, z: AURUM.z - 4, facing: -1.8, requires: AURUM.id },
 ];
 
 export const MINES_QUESTS: QuestInput[] = [

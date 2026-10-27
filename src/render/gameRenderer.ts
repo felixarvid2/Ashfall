@@ -44,7 +44,7 @@ export class GameRenderer {
   readonly assets = new AssetLibrary();
   private readonly ash = new AshFall();
   readonly vfx = new VfxSystem();
-  readonly loot = new LootVisuals();
+  readonly loot = new LootVisuals(this.assets);
   private readonly postfx: PostFx;
   private readonly objects = new Map<Entity, THREE.Object3D>();
   /** "!" and "?" over enemies; the wayfinding debug overlay when switched on. */
@@ -1469,7 +1469,7 @@ export class GameRenderer {
   private addDroneMarks(obj: THREE.Object3D, hover: number, color: string): void {
     const s = obj.scale.x || 1;
     obj.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(obj);
+    const box = bodyBounds(obj);
     const top = (box.max.y - obj.position.y) / s;
     const beaconMat = new THREE.SpriteMaterial({ map: this.glowTexture(), color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false });
     const beacon = new THREE.Sprite(beaconMat);
@@ -1506,7 +1506,7 @@ export class GameRenderer {
   /** Two small glowing points near the top of an enemy (dark zones). */
   private addEyes(obj: THREE.Object3D, scale: number): void {
     obj.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(obj);
+    const box = bodyBounds(obj);
     const top = (box.max.y / scale) * 0.86;
     const front = (box.max.z / scale) * 0.6;
     const mat = (this.eyeMaterial ??= new THREE.SpriteMaterial({ map: this.glowTexture(), color: '#ff4a2a', blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
@@ -1982,6 +1982,23 @@ const ENV_LIGHT = { surface: 0.35, dark: 0.05 };
 
 /** Drones are drawn a little larger than their model so they read at gameplay distance. */
 const DRONE_SCALE = 1.25;
+
+/**
+ * Bounds of a creature's own body: variant parts (`part:` children, crystals growing past the head) stay out, so the eyes
+ * and drone marks are placed on the model, not on the attachments.
+ */
+function bodyBounds(obj: THREE.Object3D): THREE.Box3 {
+  const parts: { part: THREE.Object3D; parent: THREE.Object3D }[] = [];
+  obj.traverse((o) => {
+    if (o.name.startsWith('part:') && o.parent) parts.push({ part: o, parent: o.parent });
+  });
+  for (const { part } of parts) part.removeFromParent();
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj);
+  for (const { part, parent } of parts) parent.add(part);
+  obj.updateMatrixWorld(true);
+  return box;
+}
 
 /** Fresnel rim on a character's (own, cloned) standard materials. */
 function addRim(obj: THREE.Object3D, color: string, strength: number): void {

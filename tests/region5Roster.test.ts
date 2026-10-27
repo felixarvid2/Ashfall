@@ -9,6 +9,7 @@ import { CHOIR, FADE_DEATH } from '../src/data/core';
 import { ENEMY_DEFS, STATUS_DEFS } from '../src/data/db';
 import { t } from '../src/data/i18n';
 import { PACK_TEMPLATES } from '../src/data/packs';
+import { assetIdsOf } from '../src/data/variants';
 import { ENEMY_FAMILIES, ENEMY_LOOKS, type EnemyDef } from '../src/data/schemas';
 import { CORE_ENV, THE_CORE } from '../src/data/zones/theCore';
 import { LOOKS, deathFade, fadesOnDeath, lookState } from '../src/render/looks';
@@ -28,6 +29,8 @@ import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
 import { createZoneRuntime } from '../src/world/zone';
 import { learnSkills, makeCtx, run, type SystemFn } from './helpers';
 
+/** The model a def's asset id is built on: a runtime variant (src/data/variants) stands for its base model. */
+const modelOf = (assetId: string): string => assetIdsOf(assetId)[0]!;
 const SHADES = ['shade_walker', 'shade_hound', 'shade_smelter', 'shade_weaver', 'shade_sentinel', 'shade_drone'];
 const NEW_REGULAR = ['light_being', 'light_mote', 'core_guardian', 'guardian_lancer'];
 const ABSORBED = ['absorbed_ostrow', 'absorbed_lenn', 'absorbed_halvorsen', 'absorbed_rhee', 'absorbed_danner'];
@@ -66,7 +69,7 @@ describe('Core roster: definitions', () => {
       expect(d, id).toBeDefined();
       expect(ENEMY_FAMILIES, id).toContain(d.family);
       expect(d.look, id).toBeDefined();
-      expect(ids.has(d.assetId), `${id}: ${d.assetId}`).toBe(true);
+      expect(assetIdsOf(d.assetId).every((piece) => ids.has(piece)), `${id}: ${d.assetId}`).toBe(true);
       expect(t(`enemies.${id}`), id).not.toBe(`enemies.${id}`);
     }
   });
@@ -80,7 +83,7 @@ describe('Core roster: definitions', () => {
   it('third-party models get the Lumen look, returning models the shade look', () => {
     for (const id of ALL_NEW) {
       const d = def(id);
-      const imported = IMPORTED.includes(d.assetId);
+      const imported = IMPORTED.includes(modelOf(d.assetId));
       const returning = SHADES.includes(id) || id === 'shade_echo';
       if (imported) expect(d.look, id).toBe('lumen');
       if (returning) expect(d.look, id).toBe('shade');
@@ -90,7 +93,7 @@ describe('Core roster: definitions', () => {
   });
 
   it('all five imported models are used', () => {
-    const used = new Set(ALL_NEW.map((id) => def(id).assetId));
+    const used = new Set(ALL_NEW.map((id) => modelOf(def(id).assetId)));
     for (const a of IMPORTED) expect(used.has(a), a).toBe(true);
   });
 
@@ -199,7 +202,7 @@ describe('Looks and the fade-and-shrink death', () => {
 
   it('the manifest says which new models lack a death clip (singers, the Absorbed)', () => {
     for (const id of ALL_NEW) {
-      const clips = assetEntry(def(id).assetId)?.meshy?.clips;
+      const clips = assetEntry(modelOf(def(id).assetId))?.meshy?.clips;
       if (!clips) continue;
       expect(fadesOnDeath(true, 'death' in clips), id).toBe(!('death' in clips));
     }
@@ -528,7 +531,7 @@ describe('The Absorbed', () => {
       expect(t(d.named!.line), id).not.toBe(d.named!.line);
       expect(t(d.named!.line).split('.').length, `${id}: one short line`).toBeLessThanOrEqual(3);
       expect(d.life, id).toBeGreaterThan(1000);
-      expect(['npc.blacksmith', 'npc.cook', 'npc.pump_engineer', 'npc.technician', 'npc.defector']).toContain(d.assetId);
+      expect(['npc.blacksmith', 'npc.cook', 'npc.pump_engineer', 'npc.technician', 'npc.defector']).toContain(modelOf(d.assetId));
     }
   });
 

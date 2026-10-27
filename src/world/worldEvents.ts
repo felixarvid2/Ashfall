@@ -234,7 +234,7 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
         const a = (i / T.rescue.survivors) * Math.PI * 2;
         const x = ev.x + Math.sin(a) * 12;
         const z = ev.z + Math.cos(a) * 12;
-        ev.objects.push(eventObject(world, `${id}.survivor.${i}`, x, z, 'npc.technician', 0.9, '#7dd8ff'));
+        ev.objects.push(eventObject(world, `${id}.survivor.${i}`, x, z, 'variant.npc_survivor', 0.9, '#7dd8ff'));
         wave(world, ctx, x, z, 3, level, 4);
       }
       break;

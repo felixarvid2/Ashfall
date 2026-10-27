@@ -171,8 +171,8 @@ export function instanceDef(id: string): InstanceDef {
 }
 
 /** What the collect objective's objects look like. */
-const COLLECT_LOOK: Record<'keycard' | 'seed' | 'data' | 'memory', { asset: string; scale: number; glow: string }> = {
-  keycard: { asset: 'prop.cargo_crate', scale: 0.3, glow: '#3ad2ff' },
+const COLLECT_LOOK: Record<'keycard' | 'seed' | 'data' | 'memory', { asset: string; scale: number; glow?: string }> = {
+  keycard: { asset: 'prop.keycard', scale: 0.8 },
   // The Archive: memory crystals of the elder civilisation.
   memory: { asset: 'prop.lumen_growth', scale: 0.9, glow: '#6ad8ff' },
   seed: { asset: 'prop.echo_relic', scale: 0.7, glow: '#9fffd8' },

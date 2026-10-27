@@ -10,7 +10,8 @@
  * zone is showing, so the fade does not wait on ~6 MB of bosses. Whatever both miss is loaded from the entities
  * actually spawned (`Game.settleAssets`), and a model asked for before it is loaded shows its placeholder and swaps
  * itself in (`AssetLibrary.create`). tests/assetSets.test.ts spawns a zone's entities and fails when one has a model
- * the sets miss.
+ * the sets miss. A runtime variant (src/data/variants.ts) is listed as the manifest ids it is built from, its base
+ * and its parts, so the byte budgets count both.
  */
 import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from './weapons';
 import { CLASSES, ENEMY_DEFS } from './db';
@@ -18,6 +19,8 @@ import { BOSS_SCRIPTS } from './bosses';
 import { WORLD_BOSSES } from './endgame/worldBosses';
 import { INSTANCES, type InstanceDef } from './instances';
 import { PACK_TEMPLATES } from './packs';
+import { LOOT_ASSET_IDS } from './loot/lootModels';
+import { expandAssetIds } from './variants';
 import { NPCS, QUESTS } from './quests/db';
 import type { ZoneDef } from './zones/zoneTypes';
 import { interactableAssetIds } from '../world/interactables';
@@ -30,7 +33,7 @@ import { GAMMA_TUNING } from '../world/vaultSetPieces';
 export const BOOT_ASSET_IDS: readonly string[] = [];
 
 /** Props every dungeon builds from, whatever its theme (src/world/instance.ts, instanceObjectives.ts). */
-const INSTANCE_SHARED = ['env.wall_segment', 'prop.barricade', 'prop.spore_nest', 'prop.teleporter'];
+const INSTANCE_SHARED = ['env.wall_segment', 'prop.barricade', 'prop.spore_nest', 'prop.teleporter', 'prop.keycard', ...LOOT_ASSET_IDS];
 
 /** The player's own model, hand-held weapons and the motorbike; the same for every zone. */
 export function classAssetIds(classId: string): string[] {
@@ -38,7 +41,7 @@ export function classAssetIds(classId: string): string[] {
   const ids = ['prop.motorbike'];
   if (cls) ids.push(cls.assetId);
   for (const mount of CLASS_WEAPONS[classId] ?? []) if (!mount.asset.startsWith(PROCEDURAL_PREFIX)) ids.push(mount.asset);
-  return ids;
+  return expandAssetIds(ids);
 }
 
 function templateEnemyAssets(templateIds: Iterable<string>): string[] {
@@ -47,7 +50,7 @@ function templateEnemyAssets(templateIds: Iterable<string>): string[] {
     const template = PACK_TEMPLATES.find((t) => t.id === id);
     for (const member of template?.members ?? []) {
       const asset = ENEMY_DEFS.get(member.enemy)?.assetId;
-      if (asset) ids.push(asset);
+      if (asset) ids.push(...expandAssetIds([asset]));
     }
   }
   return ids;
@@ -101,15 +104,15 @@ export function enemyAssetIds(enemyIds: Iterable<string>, scripts: Iterable<stri
     seen.add(id);
     const def = ENEMY_DEFS.get(id);
     if (!def) return;
-    ids.add(def.assetId);
+    for (const piece of expandAssetIds([def.assetId])) ids.add(piece);
     if (def.onDeath?.spawn) addEnemy(def.onDeath.spawn.enemy);
     if (def.reinforce) addEnemy(def.reinforce.enemy);
   };
   const addScript = (name: string): void => {
     for (const phase of BOSS_SCRIPTS[name] ?? []) {
       for (const spec of [phase.adds, phase.guards, phase.tentacles]) if (spec) addEnemy(spec.enemy);
-      if (phase.rooted?.asset) ids.add(phase.rooted.asset);
-      if (phase.beat) ids.add(phase.beat.form.asset);
+      if (phase.rooted?.asset) for (const piece of expandAssetIds([phase.rooted.asset])) ids.add(piece);
+      if (phase.beat) for (const piece of expandAssetIds([phase.beat.form.asset])) ids.add(piece);
       for (const memory of phase.memories ?? []) {
         for (const spec of [memory.adds, memory.tentacles, ...memory.shades]) if (spec) addEnemy(spec.enemy);
       }
@@ -142,15 +145,16 @@ function questAssetIds(zoneId: string): string[] {
  * interactables, NPCs, quest targets and the props of its set pieces.
  */
 export function zoneAssetIds(zone: ZoneDef): string[] {
-  const ids = [
+  const ids = expandAssetIds([
     ...zone.props.map((p) => p.asset),
     ...zone.scatter.map((s) => s.asset),
     ...templateEnemyAssets(zone.packs.map((p) => p.template)),
     ...interactableAssetIds(zone),
     ...questAssetIds(zone.id),
     ...(SET_PIECES[zone.id]?.props ?? []),
-  ];
-  return [...new Set(ids)];
+    ...LOOT_ASSET_IDS,
+  ]);
+  return ids;
 }
 
 /** The zone's set-piece bosses, their adds and the monsters of their waves. */
@@ -166,7 +170,7 @@ export function instanceAssetIds(def: InstanceDef): string[] {
     const asset = ENEMY_DEFS.get(def.boss.enemy)?.assetId;
     if (asset) ids.push(asset);
   }
-  return [...new Set(ids)];
+  return expandAssetIds(ids);
 }
 
 /** Dungeons and bunkers whose entrance stands in this zone (prefetched quietly after arriving). */
@@ -203,5 +207,5 @@ export function zoneLaterAssetIds(zone: ZoneDef): string[] {
   for (const poi of zone.pois) if (poi.kind === 'event') ids.push(...(EVENT_ASSETS[String(poi.data?.event)] ?? []));
   const bosses = WORLD_BOSSES.filter((b) => b.spots.some((spot) => spot.zone === zone.id));
   ids.push(...enemyAssetIds(bosses.map((b) => b.enemy), bosses.map((b) => b.script)));
-  return [...new Set(ids)];
+  return expandAssetIds(ids);
 }

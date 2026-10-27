@@ -11,6 +11,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import runtimeManifest from 'virtual:asset-manifest';
 import { RuntimeManifestSchema, type RuntimeEntry } from '../data/assetManifest';
+import { VARIANTS, assetIdsOf, type VariantDef, type VariantMaterialLook, type VariantPart } from '../data/variants';
+import { applyLookMaterials } from './looks';
 
 type Placeholder = NonNullable<RuntimeEntry['placeholder']>;
 
@@ -50,6 +52,8 @@ export interface AssetLibraryOptions {
    * caller gets the placeholder now and `onModelLoaded` fires when the real one arrives.
    */
   lazy?: boolean;
+  /** Variant definitions (default: src/data/variants.ts); tests pass their own. */
+  variants?: ReadonlyMap<string, VariantDef>;
 }
 
 /** Distances (metres from the camera) at which LOD 1 and LOD 2 take over. */
@@ -92,7 +96,66 @@ export function shareLodTextures(levels: THREE.Object3D[]): void {
   }
 }
 
+const DEG = Math.PI / 180;
+
+/**
+ * Attach variant parts under `root`. Each part sits where its def says in the model's own axes in the bind pose
+ * (so the bone's roll and the armature's centimetre scale do not matter), as a child of the named bone (found in
+ * `root`) or of `root`; from then on it moves with the bone for free. Returns the parts that found no bone.
+ */
+export function attachVariantParts(root: THREE.Object3D, parts: readonly { def: VariantPart; object: THREE.Object3D }[]): VariantPart[] {
+  root.updateMatrixWorld(true);
+  const rootInverse = root.matrixWorld.clone().invert();
+  const missing: VariantPart[] = [];
+  const offset = new THREE.Matrix4();
+  const euler = new THREE.Euler();
+  const quat = new THREE.Quaternion();
+  const pos = new THREE.Vector3();
+  const scale = new THREE.Vector3();
+  for (const { def, object } of parts) {
+    const bone = def.bone ? root.getObjectByName(def.bone) : undefined;
+    if (def.bone && !bone) missing.push(def);
+    const [px, py, pz] = def.position ?? [0, 0, 0];
+    const [rx, ry, rz] = def.rotation ?? [0, 0, 0];
+    const s = def.scale ?? 1;
+    pos.set(px, py, pz);
+    quat.setFromEuler(euler.set(rx * DEG, ry * DEG, rz * DEG, 'XYZ'));
+    if (typeof s === 'number') scale.setScalar(s);
+    else scale.set(s[0], s[1], s[2]);
+    offset.compose(pos, quat, scale);
+    object.userData.noTint = true;
+    object.traverse((o) => (o.userData.noTint = true));
+    if (!bone) {
+      offset.decompose(object.position, object.quaternion, object.scale);
+      root.add(object);
+      continue;
+    }
+    // The joint in root space (bind pose), then the wanted placement from there, then back into the bone's frame.
+    const boneInRoot = rootInverse.clone().multiply(bone.matrixWorld);
+    const joint = new THREE.Matrix4().makeTranslation(...new THREE.Vector3().setFromMatrixPosition(boneInRoot).toArray());
+    const local = boneInRoot.clone().invert().multiply(joint).multiply(offset);
+    local.decompose(object.position, object.quaternion, object.scale);
+    bone.add(object);
+  }
+  return missing;
+}
+
+/** The look of a variant's base materials: `tint` multiplies the colour (textures stay), the rest replaces. */
+function paintVariantMaterial(m: THREE.MeshStandardMaterial, look: VariantMaterialLook): void {
+  if (look.tint) m.color.multiply(new THREE.Color(look.tint));
+  if (look.emissive) m.emissive.set(look.emissive);
+  if (look.emissiveIntensity !== undefined) m.emissiveIntensity = look.emissiveIntensity;
+  if (look.roughness !== undefined) m.roughness = look.roughness;
+  if (look.metalness !== undefined) m.metalness = look.metalness;
+}
+
 export class AssetLibrary {
+  private readonly variants: ReadonlyMap<string, VariantDef>;
+  /** Variants that need a given manifest id (base or part), to announce them when their last piece arrives. */
+  private readonly dependents = new Map<string, string[]>();
+  /** Per variant: the base's materials with the variant's look, shared by every instance. */
+  private readonly variantMaterials = new Map<string, Map<THREE.Material, THREE.Material>>();
+  private readonly variantEntries = new Map<string, RuntimeEntry>();
   private readonly entries = new Map<string, RuntimeEntry>();
   private readonly geometryCache = new Map<string, THREE.BufferGeometry>();
   private readonly materialCache = new Map<string, THREE.Material>();
@@ -110,18 +173,34 @@ export class AssetLibrary {
 
   constructor(manifest: unknown = runtimeManifest, private readonly options: AssetLibraryOptions = {}) {
     this.baseUrl = options.baseUrl ?? import.meta.env.BASE_URL;
+    this.variants = options.variants ?? VARIANTS;
     const parsed = RuntimeManifestSchema.parse(manifest);
     for (const entry of parsed.assets) {
       if (this.entries.has(entry.id)) throw new Error(`Duplicate asset id: ${entry.id}`);
       this.entries.set(entry.id, entry);
     }
+    for (const def of this.variants.values()) {
+      if (this.entries.has(def.id)) throw new Error(`Variant id ${def.id} is also a manifest asset id`);
+      for (const piece of new Set([def.base, ...def.parts.map((p) => p.asset)])) this.dependents.set(piece, [...(this.dependents.get(piece) ?? []), def.id]);
+    }
   }
 
+  /** Is this a known asset id: a manifest asset or a variant? */
   has(id: string): boolean {
-    return this.entries.has(id);
+    return this.entries.has(id) || this.variants.has(id);
   }
 
+  /** The manifest entry; a variant answers with its base's (placeholder, height, clips) under its own id. */
   entry(id: string): RuntimeEntry {
+    const variant = this.variants.get(id);
+    if (variant) {
+      let entry = this.variantEntries.get(id);
+      if (!entry) {
+        entry = { ...this.entry(variant.base), id };
+        this.variantEntries.set(id, entry);
+      }
+      return entry;
+    }
     const entry = this.entries.get(id);
     if (!entry) throw new Error(`Unknown asset id: ${id}`);
     return entry;
@@ -150,7 +229,10 @@ export class AssetLibrary {
    * missing leaves the placeholder, a missing LOD just drops that level, and `failed` says what went wrong.
    */
   async ensure(ids: Iterable<string>, onProgress?: (done: number, total: number) => void): Promise<void> {
-    const todo = [...new Set(ids)].map((id) => this.entries.get(id)).filter((e): e is RuntimeEntry => !!e && isModel(e) && !this.models.has(e.id));
+    // A variant stands for its base and its parts.
+    const pieces = new Set<string>();
+    for (const id of ids) for (const piece of assetIdsOf(id, this.variants)) pieces.add(piece);
+    const todo = [...pieces].map((id) => this.entries.get(id)).filter((e): e is RuntimeEntry => !!e && isModel(e) && !this.models.has(e.id));
     for (const e of todo) this.gaveUp.delete(e.id);
     let done = 0;
     await Promise.all(
@@ -158,7 +240,10 @@ export class AssetLibrary {
         try {
           let job = this.pending.get(entry.id);
           if (!job) {
-            job = this.limited(() => this.loadEntry(entry)).finally(() => this.pending.delete(entry.id));
+            job = this.limited(() => this.loadEntry(entry)).finally(() => {
+              this.pending.delete(entry.id);
+              this.announceVariants(entry.id);
+            });
             this.pending.set(entry.id, job);
           }
           await job;
@@ -269,23 +354,38 @@ export class AssetLibrary {
     }
   }
 
+  /** A piece of a variant finished (or gave up): tell the listeners about every variant that is now complete. */
+  private announceVariants(pieceId: string): void {
+    for (const id of this.dependents.get(pieceId) ?? []) if (this.hasModel(id)) for (const cb of this.listeners) cb(id);
+  }
+
   /** URL of an optimized 2D icon (category "icon"), or null if it hasn't been generated yet. */
   iconUrl(id: string, baseUrl: string): string | null {
     const entry = this.entries.get(id);
     return entry && entry.status === 'optimized' && entry.file ? `${baseUrl}assets/${entry.file}` : null;
   }
 
-  /** True once a real (Meshy) model is loaded for this id. */
+  /**
+   * True once a real model is loaded for this id. A variant counts when its base is loaded and each part is loaded
+   * or given up on (a part that cannot be fetched is left off rather than keeping the placeholder forever).
+   */
   hasModel(id: string): boolean {
-    return this.models.has(id);
+    const variant = this.variants.get(id);
+    if (!variant) return this.models.has(id);
+    return this.models.has(variant.base) && variant.parts.every((p) => this.models.has(p.asset) || this.gaveUp.has(p.asset));
   }
 
-  /** Animation clips by game state name ("idle", "run", "attack", …). */
+  /**
+   * Animation clips by game state name ("idle", "run", "attack", …). Empty while the id still shows its placeholder
+   * (a variant whose base is loaded but a part is not): a mixer on a bone-less placeholder only warns about every track.
+   */
   clips(id: string): Map<string, THREE.AnimationClip> {
     const map = new Map<string, THREE.AnimationClip>();
-    const model = this.models.get(id);
+    if (!this.hasModel(id)) return map;
+    const baseId = this.variants.get(id)?.base ?? id;
+    const model = this.models.get(baseId);
     if (!model) return map;
-    const names = this.entry(id).meshy.clips ?? {};
+    const names = this.entry(baseId).meshy.clips ?? {};
     for (const [state, clipName] of Object.entries(names)) {
       const clip = model.animations.find((c) => c.name === clipName);
       if (clip) map.set(state, clip);
@@ -299,25 +399,19 @@ export class AssetLibrary {
    * materials so it can flash and tint (listed in userData.tint).
    */
   create(id: string, uniqueMaterial = false): THREE.Object3D {
-    const model = this.models.get(id);
+    const variant = this.variants.get(id);
     let obj: THREE.Object3D;
-    if (model) {
-      if (model.skinned || model.levels.length === 1) {
-        obj = new THREE.Group();
-        obj.add(model.skinned ? cloneSkinned(model.levels[0]!) : model.levels[0]!.clone());
-      } else {
-        const lod = new THREE.LOD();
-        model.levels.forEach((level, i) => lod.addLevel(level.clone(), model.distances[i] ?? 50 * i));
-        obj = lod;
-      }
+    if (variant ? this.hasModel(id) : this.models.has(id)) {
+      obj = variant ? this.createVariant(variant) : this.instantiate(id);
       obj.name = id;
     } else {
+      // (A variant shows its base's placeholder until the base and every part are loaded.)
       const entry = this.entry(id);
       const placeholder = entry.placeholder;
       if (!placeholder) throw new Error(`Asset ${id} has no placeholder`);
       obj = this.buildPlaceholder(id, placeholder);
       // A model nobody prefetched: show the placeholder now, swap when it arrives.
-      if (this.options.lazy !== false && isModel(entry) && !this.gaveUp.has(id)) void this.ensure([id]);
+      if (this.options.lazy !== false && isModel(entry) && !this.gaveUp.has(variant ? variant.base : id)) void this.ensure([id]);
     }
     if (uniqueMaterial) {
       const tint: TintSlot[] = [];
@@ -333,6 +427,63 @@ export class AssetLibrary {
       obj.userData.tint = tint;
     }
     return obj;
+  }
+
+  /** A fresh copy of a loaded model: a Group around the clone, or a LOD of the levels of a static prop. */
+  private instantiate(id: string): THREE.Object3D {
+    const model = this.models.get(id)!;
+    if (model.skinned || model.levels.length === 1) {
+      const group = new THREE.Group();
+      group.add(model.skinned ? cloneSkinned(model.levels[0]!) : model.levels[0]!.clone());
+      return group;
+    }
+    const lod = new THREE.LOD();
+    model.levels.forEach((level, i) => lod.addLevel(level.clone(), model.distances[i] ?? 50 * i));
+    return lod;
+  }
+
+  /**
+   * The base clone with the variant's look and its parts attached to their bones, once, here: nothing runs per
+   * frame. Parts share geometry and materials with every other instance (and are left out of the tint slots, so
+   * they do not flash with a hit); the base's materials carry the look, shared per variant until `create` clones
+   * them for an entity that flashes.
+   */
+  private createVariant(def: VariantDef): THREE.Object3D {
+    const base = this.instantiate(def.base);
+    // Parts need a Group to hang from; a static prop's LOD gets one around it.
+    const root = base instanceof THREE.Group ? base : new THREE.Group().add(base);
+    if (def.look) this.paintVariant(root, def);
+    const parts: { def: VariantPart; object: THREE.Object3D }[] = [];
+    for (const part of def.parts) {
+      const model = this.models.get(part.asset);
+      if (!model) continue;
+      const object = model.levels[0]!.clone();
+      object.name = `part:${part.asset}`;
+      parts.push({ def: part, object });
+    }
+    for (const part of attachVariantParts(root, parts)) console.warn(`[assets] ${def.id}: no bone ${part.bone} on ${def.base}, ${part.asset} attached to the root`);
+    return root;
+  }
+
+  private paintVariant(root: THREE.Object3D, def: VariantDef): void {
+    let swaps = this.variantMaterials.get(def.id);
+    if (!swaps) this.variantMaterials.set(def.id, (swaps = new Map()));
+    root.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+      let painted = swaps!.get(mesh.material);
+      if (!painted) {
+        const source = mesh.material;
+        painted = source.clone();
+        painted.name = `${source.name}:${def.id}`;
+        if (painted instanceof THREE.MeshStandardMaterial && def.look) {
+          if (typeof def.look === 'string') applyLookMaterials([{ material: painted }], def.look);
+          else paintVariantMaterial(painted, def.look);
+        }
+        swaps!.set(source, painted);
+      }
+      mesh.material = painted;
+    });
   }
 
   /** Shared geometry + material, for InstancedMesh use (debris, rocks, scrap). */

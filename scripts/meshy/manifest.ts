@@ -63,7 +63,8 @@ export function sourcePath(entry: AssetEntry, file: string): string {
 
 /** Select assets by comma-separated ids or prefixes ("enemy." matches all enemies); empty = all. */
 export function selectAssets(manifest: AssetManifest, ids: string[] | undefined): AssetEntry[] {
-  if (!ids || ids.length === 0 || ids.includes('all')) return manifest.assets;
+  // Blender-made assets have no Meshy stages to run (scripts/blender builds them).
+  if (!ids || ids.length === 0 || ids.includes('all')) return manifest.assets.filter((a) => a.source !== 'blender');
   const out = manifest.assets.filter((a) => ids.some((id) => a.id === id || (id.endsWith('.') && a.id.startsWith(id))));
   const unknown = ids.filter((id) => !id.endsWith('.') && !manifest.assets.some((a) => a.id === id));
   if (unknown.length) throw new Error(`Unknown asset id(s): ${unknown.join(', ')}`);

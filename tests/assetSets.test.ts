@@ -16,6 +16,7 @@ import { createZoneRuntime } from '../src/world/zone';
 import { makeCtx } from './helpers';
 import { INSTANCES } from '../src/data/instances';
 import { ZONES } from '../src/data/zones';
+import { assetIdsOf, expandAssetIds } from '../src/data/variants';
 
 const manifest = JSON.parse(readFileSync(new URL('../assets/manifest.json', import.meta.url), 'utf8')) as {
   assets: { id: string; category: string; status: string; file?: string; lods?: string[] }[];
@@ -127,7 +128,8 @@ describe('asset sets (T003)', () => {
       rebuildQuestWorld(world, ctx);
       collect();
       const set = new Set(zoneAssetIds(def));
-      const missing = [...spawned].filter((id) => !set.has(id));
+      // A runtime variant (src/data/variants.ts) is in the set as its base and parts.
+      const missing = expandAssetIds(spawned).filter((id) => !set.has(id));
       expect(missing, `${def.id}: spawned but not in its asset set`).toEqual([]);
     }
   });
@@ -148,7 +150,7 @@ describe('asset sets (T003)', () => {
         const src = read(name);
         const literals = [...src.matchAll(/assetId: '([\w.]+)'/g)].map((m) => m[1]!);
         const enemies = [...src.matchAll(/(?:enemy: |spawnEnemy\(world, )'(\w+)'/g)].map((m) => m[1]!);
-        for (const id of literals) expect(have.has(id), `${zoneId}: ${name} spawns ${id}`).toBe(true);
+        for (const id of literals) for (const piece of assetIdsOf(id)) expect(have.has(piece), `${zoneId}: ${name} spawns ${id}`).toBe(true);
         for (const enemy of enemies) for (const id of enemyAssetIds([enemy])) expect(have.has(id), `${zoneId}: ${name} spawns ${enemy} (${id})`).toBe(true);
         // Scripted bosses bring their adds.
         for (const m of src.matchAll(/script: '(\w+)'/g)) for (const id of enemyAssetIds([], [m[1]!])) expect(have.has(id), `${zoneId}: script ${m[1]} brings ${id}`).toBe(true);

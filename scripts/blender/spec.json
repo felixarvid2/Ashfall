@@ -1,0 +1,27 @@
+{
+  "$comment": "What npm run blender:build makes. parts: small attachments (category part, no LODs, origin = attach point). models: whole assets (category + heightMeters + placeholder as for any manifest entry; optimized with LODs into public/assets/blender/). builders live in builders.py.",
+  "parts": [
+    {
+      "id": "part.crystal_cluster_large",
+      "builder": "crystal_cluster",
+      "params": { "count": 9, "height": 0.56, "radius": 0.062, "spread": 0.13, "seed": 3, "tilt": 0.4 },
+      "prompt": "Lumen crystal cluster, large: nine faceted cyan crystals fanning out of a low dark rock base (Blender, crystal_cluster seed 3). Grows along +Y from its base.",
+      "targetPolycount": 500
+    },
+    {
+      "id": "part.crystal_cluster_small",
+      "builder": "crystal_cluster",
+      "params": { "count": 5, "height": 0.3, "radius": 0.04, "spread": 0.075, "seed": 7, "tilt": 0.45 },
+      "prompt": "Lumen crystal cluster, small: five faceted cyan crystals on a low dark base (Blender, crystal_cluster seed 7). Grows along +Y from its base.",
+      "targetPolycount": 300
+    },
+    {
+      "id": "part.crystal_shard",
+      "builder": "crystal_shard",
+      "params": { "height": 0.22, "radius": 0.032, "seed": 11, "lean": 0.12 },
+      "prompt": "Lumen crystal shard: one faceted cyan crystal, five-sided, slightly leaning (Blender, crystal_shard seed 11). Grows along +Y from its base.",
+      "targetPolycount": 80
+    }
+  ],
+  "models": []
+}
