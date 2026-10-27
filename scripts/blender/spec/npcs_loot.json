@@ -309,15 +309,6 @@
       "targetPolycount": 700
     },
     {
-      "id": "part.npc_respirator_white",
-      "builder": "respirator",
-      "params": {
-        "color": "#d8d8cc"
-      },
-      "prompt": "White half-mask respirator with two filters (Dr. Okafor).",
-      "targetPolycount": 700
-    },
-    {
       "id": "part.npc_respirator_rust",
       "builder": "respirator",
       "params": {
@@ -325,15 +316,6 @@
         "lamp": "#5ac8ff"
       },
       "prompt": "Rusted half-mask respirator with two glowing cyan filter lamps (Gerd).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.npc_glasses_white",
-      "builder": "glasses",
-      "params": {
-        "frame": "#d8d8d0"
-      },
-      "prompt": "Round spectacles in a pale frame (Dr. Okafor).",
       "targetPolycount": 700
     },
     {
@@ -449,13 +431,6 @@
       "builder": "vest",
       "params": {},
       "prompt": "Orange hi-vis vest with reflective stripes (Rhee, crane operator).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.npc_labcoat",
-      "builder": "coat_skirt",
-      "params": {},
-      "prompt": "Pale lab-coat skirt: a flared cone of cloth round the hips with a green hem (Dr. Okafor). Origin at the hips.",
       "targetPolycount": 700
     },
     {

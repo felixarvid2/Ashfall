@@ -655,3 +655,16 @@ in `docs/balance.md`. Real decisions:
   animations or its rig. Unrigged models can only take root parts. First user: the Deep Mines crystal walker
   (`variant.crystal_walker`: infected colonist + crystal cluster on the back, a smaller one on the left shoulder, shards on the head and
   right forearm, cold blue-grey tint), +19 KB of parts and no change to the budget (the colonist was already in the set).
+
+### 2026-10-27 — Rigging Meshy models in Blender when the credits are out
+- **Problem.** Five textured models (Okafor, the miner, the trooper, Chief Holm, Brother Ash) existed only as unrigged `refined.glb`; Meshy's rig and
+  animation stages cost credits that were gone, and the variants (a body plus parts) could not show their silhouettes.
+- **Decision.** Fit the shared 24-joint skeleton of an already rigged donor (sergeant, Vire) to each model in Blender and retarget the donor's clips by
+  *world orientation* (the clips are absolute local rotations, so the rest pose does not matter; an A-pose is swung to the T-pose through the skin).
+  Weights come from bone heat on a voxel proxy, transferred and smoothed. Output is `animated.glb` like Meshy's, so the existing optimizer, manifest
+  fields and runtime are unchanged (`npm run blender:autorig`, docs/blender.md).
+- **Cost.** One model is 0.8-1.0 MB (the Meshy ones were already 0.9-1.1 MB) where a variant cost a few KB of parts on a base already in the zone. Deep
+  Mines went from 18.3 to 20.2 MB and the Hydroponic Vaults from 17.2 to 18.8 MB, so those two zone budgets in `tests/zoneBudget.test.ts` and the shared
+  ceiling in `tests/assetSets.test.ts` (18 to 20 MB) were raised with the new numbers in a comment.
+- **Limits.** Only bipeds, only the donor's moves. The three world bosses (colossus, spore mother, hollow engine) stay on variants; their prompts are in
+  `docs/meshy-pending.md` for when there are credits.

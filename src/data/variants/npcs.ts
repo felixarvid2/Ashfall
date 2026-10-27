@@ -137,16 +137,12 @@ export const NPC_VARIANTS: readonly VariantDef[] = [
 
   // ---- Lab 9 (Hydroponic Vaults) ----
   {
-    // Dr. Amara Okafor, botanist ("mask on, gloves on"): a respirator, pale spectacles, a lab coat. Also at the Mother Tree,
-    // below in Station Zero and as the face Lumen takes.
+    // Dr. Amara Okafor, botanist ("mask on, gloves on"): her own model (respirator, spectacles, lab coat, rigged in Blender, docs/blender.md).
+    // Also at the Mother Tree, below in Station Zero and as the face Lumen takes.
     id: 'variant.npc_okafor',
-    base: 'npc.technician',
+    base: 'npc.okafor',
     look: { tint: '#e7ece3' },
-    parts: [
-      { asset: 'part.npc_respirator_white', ...HEAD },
-      { asset: 'part.npc_glasses_white', ...HEAD, position: [0, 0, 0.03] },
-      { asset: 'part.npc_labcoat', ...HIPS },
-    ],
+    parts: [],
   },
   {
     // Quill, quartermaster ("sealed twice"): a dark beanie and a sealed hazard crate on the back.

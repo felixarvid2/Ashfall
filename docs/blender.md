@@ -20,6 +20,7 @@ apt-get install -y libegl1 libgl1-mesa-dri        # only for the contact sheet (
 | `npm run blender:build` | Builds every entry of `scripts/blender/spec.json` in Blender, optimizes the GLBs with the repo's optimizer and registers them in `assets/manifest.json` (`source: "blender"`). |
 | `npm run blender:build -- --only part.crystal_shard,part.x` | The same for some ids. |
 | `npm run blender:build -- --sheet variant.crystal_walker [--out <dir>] [--glow]` | Contact sheet (6 views, the first at the game camera: pitch 55, yaw 45, FOV 38) of a variant's base with its parts, from the files in `public/assets`. `--glow` adds a Cycles still (24 samples, CPU, no denoiser). Default folder `$TMPDIR/ashfall-blender`. Changes no files in the repo. |
+| `npm run blender:autorig -- --ids <id>` | Rigs and animates an unrigged Meshy model with a donor's skeleton and clips, optimizes it and renders a contact sheet ("Rigging without Meshy" below). |
 | `npm run assets:check` | Parts used by a variant count as used; `part.*` and `variant.*` ids written in code must exist. |
 | `npm run e2e -- --scenario variant --out <dir> [--enemy crystal_walker] [--zone zone.deep_mines]` | Spawns the enemy in the real page (dev server running), checks that every part mesh is a child of its bone and moves with it, screenshots. |
 
@@ -76,10 +77,12 @@ parts (so prefetching, `Game.settleAssets` and the budgets see them), and `Asset
 
 - **NPCs** (`src/data/variants/npcs.ts`, `part.npc_*`, builders in `builders_npcs_loot.py`): every named NPC is one variant of one of the five bodies (`npc.cook`,
   `blacksmith`, `technician`, `pump_engineer`, `defector`): a pale `look.tint` plus one to three accessories (caps, hard hats, headsets, goggles, scarves,
-  packs, tool belts, lab-coat skirt...). One person is one variant wherever they stand (Hekla in Ember and the Last Camp, the three Okafors, Lumen's phase-3
+  packs, tool belts, aprons...). One person is one variant wherever they stand (Hekla in Ember and the Last Camp, the three Okafors, Lumen's phase-3
   form). The quest files, `elevatorBase.ts` allies and `worldEvents.ts` survivors use the `variant.npc_*` id. Frames: head parts hang on `Head` (head centre
   y 0.12, brow y about 0.17), chest and back parts on `Spine01`, belt parts on `Hips`; body surfaces are bulkier than they look (hip items sit at x 0.25).
   Pvt. Danner and the two Ruizes are on `enemy.sergeant`, not one of the five bodies, and are unchanged. Tints multiply dark bodies: keep them pale.
+  Dr. Okafor has her own model since the Blender rig (`npc.okafor`, below): `variant.npc_okafor` is that model with its old tint and no parts (the id stays valid
+  for the quests and Lumen's form).
 - **Ground loot** (`prop.loot_cache`, `prop.loot_crystal`, `prop.loot_gold`, about 120-380 triangles, colours only; `src/render/lootVisuals.ts`, ids in
   `src/data/loot/lootModels.ts`, prefetched through `zoneAssetIds`/`INSTANCE_SHARED`): the box and cylinder stay as the stand-in until the model has loaded.
   The cache's trim (the one material painted `#c8c8c8`) and the crystal's `lumen_crystal` material are cloned once per rarity/crystal colour and tinted in code.
@@ -118,11 +121,11 @@ size counts, and a budget is raised in the same change (with the new number in a
 ## Deep Mines and Core looks (`part.dc_*`, `variants/deepCore.ts`)
 
 Every Deep Mines enemy and boss, the Core's shades, the Absorbed, Lumen, the Core bosses and the five world bosses have their own
-silhouette: 41 ids, 58 parts and two whole models. Parts live in `scripts/blender/spec/deep_core.json` and are built by one generic
+silhouette: 40 ids, 54 parts and two whole models (the miner, the trooper and Holm now have their own models, see "Rigging without Meshy"). Parts live in `scripts/blender/spec/deep_core.json` and are built by one generic
 builder, `deep_kit` (`builders_deep_core.py`, docstring at the top): a list of primitives (box, cylinder, cone, sphere, crystal
 shard, ring, drill, tube, with a `radial` repeat) written in the **game's axes**, so a part reads like its `position`/`rotation` in
 the variant. Parts are shared across ids with different scale and placement (one violet shade halo on seven bodies, the gold Kade
-plates on Holm, a colour variant is a second spec entry of a few KB).
+plates on the shield officer, a colour variant is a second spec entry of a few KB).
 
 - Unrigged bases (drone, loader, Slagborn, tentacle, the First, the hound) and the Core's imported models take root parts, measured
   from the model's feet. `enemy.core_guardian` and `enemy.choir_singer` are not Meshy rigs and have no `rig`: root parts only, so
@@ -136,3 +139,64 @@ plates on Holm, a colour variant is a second spec entry of a few KB).
   (`models` in the spec; 18 and 24 KB, about 95 KB together with their LODs). Their `lumen` look flattens the colours, so the silhouette and the rim carry them.
 - The optimizer used to write nothing for a model whose smallest colour primitive simplifies to zero triangles in an LOD
   (the meshopt encoder then asserted); `simplifyTo` now keeps such a primitive whole.
+
+## Rigging without Meshy (`autorig.py`)
+
+When the Meshy credits are out, a textured, unrigged Meshy model (`assets/source/<id>/refined.glb`) can be rigged and animated for free:
+the skeleton and clips of a model that is already rigged (the donor) are fitted to it. Five models were done this way: `npc.okafor`,
+`enemy.infected_miner`, `enemy.security_trooper`, `boss.security_chief_holm`, `boss.brother_ash`.
+
+```sh
+npm run blender:autorig -- --ids npc.okafor,boss.brother_ash   # rig + optimize + contact sheet (needs Blender and libegl1, see Install)
+npm run blender:autorig -- --ids boss.brother_ash --raw        # rig only (animated.glb + a sheet of it), nothing optimized or written to the manifest
+npm run blender:autorig -- --ids boss.brother_ash --sheet      # only the contact sheet of the shipped file
+#   --out <dir>   sheets and landmark pictures (default $TMPDIR/ashfall-autorig);   --debug   landmark picture of the fitted skeleton
+```
+
+Which model gets which donor and which of its clips play for which state is in `scripts/blender/autorig.json` (`donor`: a rigged GLB under
+`public/assets`, `clips`: game state to donor clip, `hints`: overrides). The states must be the `rig.actions` of the manifest entry. The donors:
+`enemies/sergeant.glb` (idle, walk, attack, attack2, hit, death) for soldiers, `enemies/vire.glb` (the same with cast and cast2 played as `attack`
+and `attack2`) for robed figures and civilians.
+
+Files: `autorig.ts` (decodes the GLBs, runs Blender, puts the clips in the order of `rig.actions` because the optimizer names them by index, then
+runs the same `optimizeAssets` as `npm run meshy -- optimize`), `autorig.py` (the rig, in Blender), `autorig_sheet.py` (the contact sheet),
+`autorig.json` (the jobs), `decode.ts` (shared with `build.ts`). It writes `assets/source/<id>/animated.glb` (git-ignored, like the Meshy one) and
+sets what the optimizer sets (`file`, `stats`, `meshy.clips`, status `optimized`) plus a `credit` line saying how the rig was made.
+
+Method (`autorig.py`):
+
+1. **Normalise** the mesh: uniform scale to the manifest `heightMeters`, feet on y = 0, centred between the feet, facing +z like the donor (Meshy models do).
+2. **Landmarks** from the mesh, starting from the donor's proportions: feet and ankles from cross-sections of area-weighted surface samples, the arm axis
+   from a line fit through the points beyond the torso (so it follows a T-pose and an A-pose alike), elbow and wrist along it. The result is symmetrical.
+   `--debug` draws the fitted skeleton over the see-through mesh (front, side, game camera). Wrong joint? Put it in the job's `hints.joints`
+   (`{"LeftLeg": [x, y, z]}`, metres, x = the creature's left); `hints.ratios`, `ankle_x`, `hip_x`, `arm_cut` ... are listed in `landmarks()`.
+3. **Skeleton**: the donor's 24 joints, names and hierarchy, in centimetres under an armature object scaled 0.01, like the Meshy rigs (so
+   `RIG_JOINTS`, variants and the animator work unchanged).
+4. **Clips by world orientation.** The donor's glTF clips set absolute local rotations, so each joint has a world orientation per frame that does not
+   depend on the rest pose. The target gets exactly those orientations (positions follow from its own bone offsets, the hips' travel is scaled by the leg
+   length). The skin deformation of a joint is then `Ra(t) * Rbind_target^-1`; as the target's bind pose differs from the donor's by the shortest-arc
+   rotation `D` of each bone direction, that is "swing the A-pose arm up to the T-pose, then animate". That is why an A-pose (trooper, Holm) needs
+   no repose and no clip compensation. The 30 Hz keys are baked into actions, one per state.
+5. **Skinning**: bone heat on a voxel-remeshed proxy (1.2 cm; Meshy meshes are non-manifold), the weights transferred to the real mesh (nearest face,
+   barycentric), then cleaned: seams welded by position, vertices without weight filled from their neighbours (otherwise the exporter adds a
+   `neutral_bone` joint), two smoothing passes (shards, chains and cloth edges the proxy missed take their neighbours' weights; without it a
+   crystal shard stretches over the whole body), optional `hints.pins` (a box in fractions of the height that follows one bone), four influences, normalised.
+6. **Floor**: where the posed mesh dips below the floor (a lying body is thicker than the donor's) the hips are lifted for those frames.
+7. **Export** with Blender's glTF exporter (skin, the original three textures, one animation per state, 72 channels each like the donor).
+
+Checks: the sheet (`<out>/<id>-sheet.png`) has rest pose front and side, idle, walk at two phases, the attack at its peak, the last frame of the death,
+and the game camera; the script also prints `feet <clip>: lowest ... m` (the lowest vertex over the clip: about 0 is planted, negative is through the floor).
+Look at it for candy-wrapper twists at shoulders and hips, stretched shards, torn coats and the feet.
+
+Limits:
+
+- Bipeds with a donor body plan only: the clips are the donor's (the walk is the Meshy hunched walk, a cast is a cast), nothing is authored. Quadrupeds,
+  machines and anything with extra limbs have no donor.
+- The skeleton is fitted to landmarks found by proportions and cross-sections: a very unusual build (huge pauldrons, a tail, a skirt hiding the legs) may
+  need `hints`. Loose parts fused to the body (a slung rifle, a censer) follow the nearest bones; pin them with `hints.pins` if they stretch.
+- Textures are the Meshy model's, untouched (the normal and metal-roughness maps survive the export); the optimizer resizes them to `textureSize`.
+- The rig is made from `refined.glb`, so a new Meshy generation needs the command again; nothing is kept in the repo but the optimized GLB.
+- A model's default pose is its own bind pose: the trooper and Holm are A-posed, so parts placed on their arm bones are measured from the A-pose, not the T-pose
+  this document assumes for Meshy rigs.
+- The hips are lifted wherever any vertex of the posed mesh dips below the floor: a planted foot may float up to 4 cm for a few frames of a walk, and a lying
+  body rests on whatever pokes lowest (an arm, a generator). Invisible at the game camera, but a trade, not a fix.

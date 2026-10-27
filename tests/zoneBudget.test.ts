@@ -1,6 +1,6 @@
 /**
  * C08: what a zone fetches before it shows (its models, LODs and ground textures, plus the playing class) stays
- * under a per-zone byte budget. `assetSets.test.ts` holds the shared 18 MB ceiling; these are tighter numbers
+ * under a per-zone byte budget. `assetSets.test.ts` holds the shared 20 MB ceiling; these are tighter numbers
  * set from the sizes at the time (about 8 % headroom), so one zone cannot quietly grow by several megabytes.
  * Raise a budget on purpose, in the same change that adds the assets.
  */
@@ -34,8 +34,8 @@ function entryBytes(zoneId: string, classId: string): number {
 const BUDGET_MB: Record<string, number> = {
   'zone.cinder_flats': 15.1, // 13.93
   'zone.refinery_district': 20.1, // 18.58
-  'zone.hydroponic_vaults': 18.6, // 17.20
-  'zone.deep_mines': 19.8, // 18.31
+  'zone.hydroponic_vaults': 20.3, // 18.77 (was 17.20; Dr. Okafor's own Blender-rigged model, 0.8 MB)
+  'zone.deep_mines': 21.9, // 20.24 (was 18.31; the miner, the trooper and Chief Holm are their own Blender-rigged models, 0.8-1.0 MB each)
   'zone.the_core': 18.9, // 17.48
 };
 
