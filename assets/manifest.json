@@ -7663,6 +7663,384 @@
         "emissive": "#6ad8ff",
         "emissiveIntensity": 0.3
       }
+    },
+    {
+      "id": "npc.okafor",
+      "category": "character",
+      "prompt": "calm female field botanist scientist with dark skin and short cropped hair, round glasses, white respirator mask pulled down to the neck, clean white lab coat over practical field clothes, rubber gloves, seed pouches and sample vials on a belt, empty hands, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, calm female field botanist scientist in her forties with dark skin and short cropped greying hair, round wire glasses, white respirator mask pulled down around her neck, a clean white lab coat over practical olive field clothes, long rubber gloves, a belt of seed pouches and glass sample vials, sturdy boots, empty hands, a few tiny glowing green sprouts on her shoulder, dark sci-fi industrial, plain background",
+      "targetPolycount": 8000,
+      "heightMeters": 1.75,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.75,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 125
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "refined",
+      "meshy": {
+        "previewTaskId": "01a17d48-8d97-7164-b107-66142d48d934",
+        "refineTaskId": "01a17d4a-275d-7603-90ef-b766320707e4",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "characters/okafor.glb",
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#e7ece3",
+        "size": [
+          0.8,
+          1.75,
+          0.8
+        ]
+      }
+    },
+    {
+      "id": "enemy.infected_miner",
+      "category": "enemy",
+      "prompt": "infected colony miner in a battered hard hat with a headlamp and orange high-visibility work suit, heavy hand drill in the right hand, dynamite bandolier across the chest, glowing amber crystal growths on the back and arm, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, infected colony miner in a battered yellow hard hat with a cracked headlamp, torn orange high-visibility work suit caked in rock dust, heavy hand drill in the right hand, bandolier of dynamite sticks across the chest, clusters of glowing amber crystal growing out of his back, neck and left forearm, hunched and gaunt, dark sci-fi industrial, plain background",
+      "targetPolycount": 8000,
+      "textureSize": 1024,
+      "heightMeters": 1.8,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "refined",
+      "meshy": {
+        "previewTaskId": "01a17d48-8f52-74fd-b37b-99f94926ae3e",
+        "refineTaskId": "01a17d4a-29b0-708e-b338-0097fe589e5b",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/infected_miner.glb",
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#8a5a2a",
+        "size": [
+          0.8,
+          1.8,
+          0.8
+        ],
+        "emissive": "#ffb23a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "enemy.security_trooper",
+      "category": "enemy",
+      "prompt": "colony security trooper in sleek blue-grey combat armour and a full helmet with a glowing blue visor, compact assault rifle in the right hand, corporate insignia on the shoulder, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, colony security trooper in sleek blue-grey corporate combat armour with numbered plates, full helmet with a narrow glowing blue visor, compact assault rifle in the right hand, ammunition pouches, corporate gear insignia on the shoulder pad, disciplined stance, dark sci-fi industrial, plain background",
+      "targetPolycount": 8000,
+      "textureSize": 1024,
+      "heightMeters": 1.85,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.85,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "refined",
+      "meshy": {
+        "previewTaskId": "01a17d48-9029-7433-ad41-037c80ae0da4",
+        "refineTaskId": "01a17d4a-29ec-771c-a056-dc6c7037f028",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/security_trooper.glb",
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3a4a6a",
+        "size": [
+          0.8,
+          1.85,
+          0.8
+        ],
+        "emissive": "#4a8aff",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.security_chief_holm",
+      "category": "enemy",
+      "prompt": "colony security chief in heavy blue-grey officer armour with gold rank plates, peaked officer cap, grenade bandolier, portable shield generator on the back, heavy rifle in the right hand, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, stern colony security chief in heavy blue-grey officer armour with gold rank plates on the shoulders, peaked officer cap, scarred clean-shaven face, grenade bandolier across the chest, a humming portable shield generator with blue emitters on the back, heavy rifle in the right hand, long dark officer's coat, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "refined",
+      "meshy": {
+        "previewTaskId": "01a17d48-8f11-7256-abed-48ee619c47b3",
+        "refineTaskId": "01a17d4a-2951-7587-bead-8d2f6cc45519",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/security_chief_holm.glb",
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3a4a6a",
+        "size": [
+          0.8,
+          2,
+          0.8
+        ],
+        "emissive": "#7ab8ff",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.brother_ash",
+      "category": "enemy",
+      "prompt": "fire cult commander of the Smelters in heavy blackened foundry armour, molten orange cracks glowing through the plates, a hood and a soot-black mantle, censer of burning slag on a chain, a mask of riveted iron, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, fire cult commander of the Smelters, tall and broad, heavy blackened foundry armour with molten orange cracks glowing through the plates, a deep hood and a ragged soot-black mantle, a riveted iron face mask with glowing eye slits, a burning slag censer hanging on a chain from the belt, heat haze, empty hands, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 125
+          },
+          {
+            "state": "attack2",
+            "actionId": 131
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "refined",
+      "meshy": {
+        "previewTaskId": "01a17d48-8f19-7643-9be6-669b6f05da10",
+        "refineTaskId": "01a17d4a-291b-718d-994d-f0a88a261f68",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/brother_ash.glb",
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3a2a22",
+        "size": [
+          0.8,
+          2,
+          0.8
+        ],
+        "emissive": "#ffb03a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.ashen_colossus",
+      "category": "enemy",
+      "prompt": "colossal industrial mining mech walker covered in ash and slag, two huge hydraulic claw arms, furnace glowing orange in the chest, chimney stacks on the back, heavy stomping legs",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, colossal industrial mining mech walker caked in grey ash and cooled slag, two huge hydraulic claw arms, a furnace glowing orange in its open chest, smoking chimney stacks on its back, heavy stomping legs, hazard stripes worn away, towering and menacing, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3.2,
+      "status": "preview",
+      "meshy": {
+        "previewTaskId": "01a17d48-8f54-731f-a8c8-e55f734b4c4d",
+        "previewApproved": true,
+        "creditsSpent": 6
+      },
+      "file": "enemies/ashen_colossus.glb",
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a5048",
+        "size": [
+          2.4,
+          3.2,
+          2
+        ],
+        "emissive": "#ff7a2a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ff7a2a"
+      }
+    },
+    {
+      "id": "boss.mother_of_spores",
+      "category": "enemy",
+      "prompt": "monstrous swollen fungal mother creature, bloated translucent spore sacs on the back, many thin legs, a crown of fleshy fronds, glowing green veins, small spore brood clinging to it",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, monstrous swollen fungal mother creature, a bloated body with translucent glowing green spore sacs bulging on its back, many thin spindly legs, a crown of fleshy fronds around a small eyeless head, pulsing green veins, tiny spore creatures clinging to its flanks, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.9,
+      "status": "preview",
+      "meshy": {
+        "previewTaskId": "01a17d48-be23-712f-a570-cae6e91d759d",
+        "previewApproved": true,
+        "creditsSpent": 6
+      },
+      "file": "enemies/mother_of_spores.glb",
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#3b4a2a",
+        "size": [
+          1.6,
+          1.9,
+          1.6
+        ],
+        "emissive": "#7dff6a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#7dff6a"
+      }
+    },
+    {
+      "id": "boss.hollow_engine",
+      "category": "enemy",
+      "prompt": "giant hollow machine golem of pale gold metal and Lumen light, ring-shaped hollow torso with a floating glowing core, slow heavy limbs, ancient engraved plates, faint light leaking from seams",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, giant hollow machine golem of pale gold metal and warm Lumen light, a ring-shaped hollow torso with a glowing core floating in the empty centre, long heavy arms, thick legs, ancient engraved plates, faint golden light leaking from every seam, serene and enormous, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3.5,
+      "status": "preview",
+      "meshy": {
+        "previewTaskId": "01a17d48-c991-73a6-89cf-35b0e6cff75e",
+        "previewApproved": true,
+        "creditsSpent": 6
+      },
+      "file": "enemies/hollow_engine.glb",
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#e8dcae",
+        "size": [
+          2.2,
+          3.5,
+          2.2
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ffd76a"
+      }
     }
   ]
 }
