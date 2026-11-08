@@ -29,7 +29,11 @@ const skipStages = process.argv.includes('--skip-stages');
 const SECONDS = 60;
 const NEUTRAL = 'security_trooper';
 
-const clock = (s: number | undefined) => (s === undefined ? 'never' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`);
+const clock = (s: number | undefined) => {
+  if (s === undefined) return 'never';
+  const whole = Math.round(s);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+};
 const dps = (b: Build, dummy: string | undefined, pack?: number) => simulate(b, SECONDS, 'sim', { ...(dummy !== undefined && { dummy }), ...(pack !== undefined && { pack }) }).dps;
 const n0 = (v: number) => Math.round(v).toLocaleString('en-US');
 

@@ -29,6 +29,7 @@
     "assets:export": "tsx scripts/assets/exportLibrary.ts",
     "assets:third-party": "NODE_USE_ENV_PROXY=1 tsx scripts/assets/thirdParty.ts",
     "region:report": "tsx scripts/sim/regionReport.ts",
+    "docs:decisions": "tsx scripts/docs/decisionsIndex.ts",
     "bundle:analyze": "tsx scripts/bundle/analyze.ts",
     "build:artifact": "tsx scripts/artifact/build.ts",
     "build:android": "tsx scripts/android/build.ts",

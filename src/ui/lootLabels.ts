@@ -142,6 +142,7 @@ export class LootLabels {
   private readonly labels = new Map<Entity, HTMLDivElement>();
   private readonly screen = { x: 0, y: 0 };
   private chip: HTMLDivElement | null = null;
+  private shapesOn = false;
   private chipTarget: Entity | null = null;
   /** Touch auto-pickup: items asked for (with the time), and how many were taken since the last toast. */
   private readonly asked = new Map<Entity, number>();
@@ -204,6 +205,16 @@ export class LootLabels {
     const now = performance.now();
     const min = this.minRarity();
     const hideLow = this.hideLow();
+    // Rarity shapes add a mark in front of every label (CSS): measure the widths again when the setting flips (C04).
+    const shapes = this.root.classList.contains('rarity-shapes');
+    if (shapes !== this.shapesOn) {
+      this.shapesOn = shapes;
+      for (const label of this.labels.values()) {
+        label.dataset.w = '';
+        label.dataset.h = '';
+      }
+      if (this.chip) this.chip.dataset.w = '';
+    }
     const seen = new Set<Entity>();
     const cands: (LabelCandidate & { e: Entity; g: GroundItem; sx: number; sy: number })[] = [];
     const autoPick: Entity[] = [];
@@ -255,6 +266,10 @@ export class LootLabels {
           fresh.classList.add('loot-fresh');
           setTimeout(() => fresh.classList.remove('loot-fresh'), 1400);
         }
+      }
+      if (!label.dataset.w) {
+        label.dataset.w = String(label.offsetWidth || 120);
+        label.dataset.h = String(label.offsetHeight || 19);
       }
       pending.push({ label, x: c.sx, y: c.sy, w: Number(label.dataset.w) });
     }

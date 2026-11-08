@@ -9,6 +9,9 @@ choices: docs/decisions.md (2026-10-18, endgame).
 - **Diablo UI pass ✅:** 87 of 100 audit items done, 13 partial (rules and deviations in docs/ui/diablo-status.md); save v8 adds item locks and junk marks.
 - **Improvement pass ✅:** 84 of 100 items done, 16 partial, none skipped (gameplay, content, tech and feel specs in docs/improvements/; status and deviations in docs/improvements/status.md).
 - **Improvement round 3 ✅:** 50 of 50 items done, none partial or skipped (gamepad, UI leftovers, tech, content; items in docs/improvements/round3.md, status in docs/improvements/round3-status.md).
+- **Improvement round 4, tech (B01–B20):** render LOD (animation and shadows), a crowd perf budget and a zone-leak test (it found and fixed a decal leak), save backups and a checked import in Settings > Data, a problem-log copy, FPS cap, first-run graphics benchmark, zone loading progress and gate prefetch, an offline/installable web build (service worker, plain web build only), Android back-to-quit, Linux byte ranges and window state, the level 10–50 bot and fighting dummies in `npm run balance:report`. Status: docs/improvements/round4-status.md.
+- **Improvement round 4, group A (gameplay and world) ✅:** shards, loot, escorts and events survive leaving a zone; saves keep life, resource and buffs; sealed boss arenas; borrowed clips for idle-only rigs; physical Force Wall and Laser Grid; four Core events; Hardcore characters; durability and repair; Lumen always on screen; weapon in hand by item; four rift modifiers (items in docs/improvements/round4.md, choices in docs/decisions.md 2026-11-08).
+- **Improvement round 4, group C (interface and feel):** loot filter (hide common/magic drops, Alt shows all), stash search, compare-on-hover in stash and vendor, damage number modes, pickup log, minimap zoom (wheel, `-`/`+`, map buttons, pad bumpers on the map), quest pinning (three pins), boss phase label, subtitles for NPC barks, photo mode (F8 or the pause menu), UI scale, rarity shapes, "Don't show again" and map/stash hints, accessible names for every control and panel, set bonus tooltip block (no sets in the data yet); new tests are `tests/round4*.test.ts`.
 - **Own looks for reused models:** about 70 enemies and bosses, 28 NPC looks and the ground loot, keycard and rift obelisk were built in Blender (`npm run blender:build`, `docs/blender.md`): runtime variants are a base model, a tint and small parts on bones (about 1 MB in total, zone budgets unchanged).
 - **AYN Thor APK:** `android/` hosts the web build in a WebView with the built-in controller, the Back button and a status/command panel on the bottom screen (`docs/android.md`); `npm run build:android` builds `dist-android/ashfall-thor.apk`, and releases attach `ashfall-vX.Y.Z-thor.apk`.
 - **Ubuntu/Debian package:** `linux/` is a small Electron shell that serves the web build on `app://ashfall/` (fixed origin, so saves persist); `npm run build:deb` assembles `dist-linux/ashfall_<version>_amd64.deb` by hand (`docs/linux.md`), and releases attach `ashfall-vX.Y.Z-ubuntu-amd64.deb`.
@@ -499,29 +502,27 @@ Shift + left-click to attack in place.
   full exploration takes ≈ 5 h 19 min (target 3–5 h).
 - Region 5: the themed Core events (bridge collapse, choir awakening, memory surge, gravity storm) are not built.
 - Region 5: Absorbed NPC models only have idle clips; Lumen is only partly on screen from parts of the arena edge.
-- Region 5: balance at levels 40–50 is only unit-tested.
+- Region 5: the bot plays levels 40–50 (balance report): it dies a lot in the Core, a first sign the region is hard for the simple bot, not yet checked by a person.
 - Region 1: no durability on death (§13); Force Wall and Laser Grid elite affixes come later.
 - Region 1: dungeons are a bit short (~6 min) and road packs a bit dense — see the playtest report.
-- Region 2: the bot's balance playthrough covers levels 1–10 only, so district difficulty (levels 10–20)
-  is untested beyond unit tests; leaving the district mid-escort or mid-event restarts it next time;
+- Region 2: the bot now plays levels 10–20 too (`npm run balance:report`, docs/balance-report.md); leaving the district mid-escort or mid-event restarts it next time;
   the zone change destroys loot left on the ground in the zone you leave.
 - Region 2 boss arenas (and The Maw) are rings of wall segments with gaps; you can step out of them.
 - Region 3 enemies and bosses are runtime variants (a shared base model plus Blender parts, docs/blender.md); the Service Road walk is shorter than the
-  5–7 minute target (see the playtest report); the bot does not cover levels 20–30.
+  5–7 minute target (see the playtest report); the bot covers levels 20–30 in the balance report.
 - Region 4 enemies and bosses are runtime variants too; the walk through is ≈ 4 min.
 - Music tracks were chosen by title, not by ear. Swapping one is an edit in `src/data/audio.ts` and the mapping
   in `scripts/audio/build.ts`.
 - **60 FPS not verified**: only measured in a headless CPU-rendered browser (4–6 FPS there — not
-  representative). Skinned enemies are not instanced (one draw call each + shadows); if 100 enemies is too
-  slow, next steps are GPU-instanced crowd animation (vertex-baked) and shadow LOD.
+  representative). Skinned enemies are not instanced (one draw call each); animation LOD and shadow LOD are in (round 4: far
+  mixers tick at 30/15 Hz, off-screen ones not at all, only the nearest 10 enemies cast shadows), and `npm run perf:quick` guards the
+  CPU side (sim + render prep for 100 enemies). If 100 enemies is still too slow on the device, the next step is GPU-instanced crowd animation (vertex-baked).
 - Textures are WebP, not KTX2 (no `toktx` binary here) — see docs/decisions.md.
 - The drone was asked for "no rotors" but has small ones; acceptable for now.
-- The balance simulator's dummy doesn't fight back, so it only measures damage, not survivability.
+- The balance simulator's DPS dummy still doesn't fight back; the survivability table uses separate fight-back runs (three Security Troopers, round 4 B06).
 - Minions are re-raised enemy bodies, so their look depends on what died (colonists, drones, carriers).
 - Weapons in hand are one model per class (hammer, pistols, scalpel), not the equipped item's model yet.
 - Raw Meshy downloads (`assets/source/**/*.glb`) are not in git; re-download within 3 days or regenerate.
-- Saves store position only; health/heat/waves reset on load (fine until progression exists in Phase 3).
-- Settings UI (key rebinding, text size) is not built yet; settings exist in data and are persisted.
 - Endgame: balance is unplayed. Tier multipliers, matrix costs, rift timing (600 s, 120 points), glyph odds,
   shard and cache costs and the crafting prices are first guesses, only unit-tested.
 - Endgame: the world bosses are runtime variants with their own parts; only checked from a contact sheet, not fought on screen.

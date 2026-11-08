@@ -146,11 +146,11 @@ describe('The Core lore and events', () => {
     }
   });
 
-  it('has five world events of existing kinds', () => {
+  it('has nine world events: five of existing kinds and the Core\'s own four (A01-A04)', () => {
     const events = THE_CORE.pois.filter((p) => p.kind === 'event');
-    expect(events).toHaveLength(5);
+    expect(events).toHaveLength(9);
     for (const e of events) {
-      expect(['signalJam', 'rescue', 'eliteHunt', 'supplyDrop']).toContain(e.data!.event);
+      expect(['signalJam', 'rescue', 'eliteHunt', 'supplyDrop', 'bridgeCollapse', 'choirAwakening', 'memorySurge', 'gravityStorm']).toContain(e.data!.event);
       expect(walkableAt(grid, e.x, e.z), e.id).toBe(true);
     }
   });

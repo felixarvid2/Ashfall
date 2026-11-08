@@ -86,7 +86,8 @@ describe('High Priestess Vire', () => {
     run(world, ctx, [setPieceSystem]);
     const st = zone.setPieces.district!.vire;
     expect(st.state).toBe('fight');
-    expect(st.gates.length).toBe(2);
+    // The two entrance gates plus the energy barrier that seals the ring's seams (A07).
+    expect(st.gates.length).toBeGreaterThan(2);
     const boss = st.boss!;
     run(world, ctx, [spatialSystem, bossSystem], 2);
     const b = world.req(boss, Boss);

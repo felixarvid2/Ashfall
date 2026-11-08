@@ -1254,7 +1254,7 @@ html.touch-device .hint-mouse { display: none; }
 
 /* C04: rarity shapes. With the setting on, `#ui.rarity-shapes` gives every rarity its own border pattern and a corner
    mark on frames, ground labels and tooltips, so rarity does not depend on colour alone. Beams get polygon outlines
-   (src/render/lootVisuals.ts). Marks: magic ▪, rare ▪▪, legendary ◆, unique ★, mythic ✦. */
+   (src/render/lootVisuals.ts). Marks: magic ●, rare ●●, legendary ◆, unique ★, mythic ✦. */
 #ui.rarity-shapes .inv-cell { position: relative; }
 #ui.rarity-shapes .inv-cell.r-magic { border-style: dashed; }
 #ui.rarity-shapes .inv-cell.r-rare { border-style: double; border-width: 3px; }
@@ -1264,31 +1264,37 @@ html.touch-device .hint-mouse { display: none; }
 #ui.rarity-shapes .inv-cell.r-unique::before, #ui.rarity-shapes .inv-cell.r-mythic::before {
   position: absolute; left: 2px; top: 0; z-index: 3; font-size: 11px; line-height: 12px; color: var(--rarity, #fff); text-shadow: 0 0 2px #000, 0 0 2px #000; pointer-events: none;
 }
-#ui.rarity-shapes .inv-cell.r-magic::before { content: '\25AA'; }
-#ui.rarity-shapes .inv-cell.r-rare::before { content: '\25AA\25AA'; }
+#ui.rarity-shapes .inv-cell.r-magic::before { content: '\25CF'; }
+#ui.rarity-shapes .inv-cell.r-rare::before { content: '\25CF\25CF'; }
 #ui.rarity-shapes .inv-cell.r-legendary::before { content: '\25C6'; }
 #ui.rarity-shapes .inv-cell.r-unique::before { content: '\2605'; }
 #ui.rarity-shapes .inv-cell.r-mythic::before { content: '\2726'; }
-#ui.rarity-shapes .loot-label[data-rarity='magic']::before { content: '\25AA '; }
-#ui.rarity-shapes .loot-label[data-rarity='rare']::before { content: '\25AA\25AA '; }
+#ui.rarity-shapes .loot-label[data-rarity='magic']::before { content: '\25CF '; }
+#ui.rarity-shapes .loot-label[data-rarity='rare']::before { content: '\25CF\25CF '; }
 #ui.rarity-shapes .loot-label[data-rarity='legendary']::before { content: '\25C6 '; }
 #ui.rarity-shapes .loot-label[data-rarity='unique']::before { content: '\2605 '; }
 #ui.rarity-shapes .loot-label[data-rarity='mythic']::before { content: '\2726 '; }
 #ui.rarity-shapes .loot-label[data-rarity='rare'] { border-style: double; }
 #ui.rarity-shapes .loot-label[data-rarity='magic'] { border-style: dashed; }
-#ui.rarity-shapes .item-tip.r-magic .item-tip-name::before { content: '\25AA '; }
-#ui.rarity-shapes .item-tip.r-rare .item-tip-name::before { content: '\25AA\25AA '; }
+#ui.rarity-shapes .item-tip.r-magic .item-tip-name::before { content: '\25CF '; }
+#ui.rarity-shapes .item-tip.r-rare .item-tip-name::before { content: '\25CF\25CF '; }
 #ui.rarity-shapes .item-tip.r-legendary .item-tip-name::before { content: '\25C6 '; }
 #ui.rarity-shapes .item-tip.r-unique .item-tip-name::before { content: '\2605 '; }
 #ui.rarity-shapes .item-tip.r-mythic .item-tip-name::before { content: '\2726 '; }
 
 /* C05: UI scale. `--ui-scale` (Settings > Display, 80-140 %) zooms the HUD and the panels, separate from the text
    size. The world layers (ground labels, damage numbers, enemy bars, NPC plates, prompts) and the tooltips, which
-   are placed in screen pixels by script, stay at their size. Direct children only, so nothing zooms twice. */
-#ui.ui-scaled > :is(.action-bar, .hud-left, .hud-title, .level-chip, .boss-card, .center-banner, .death-screen, .exposure-meter,
-  .sound-hud, .touch-menu, .touch-fab, .touch-stick-zone, .quest-tracker, .toast-stack, .pickup-log, .panel, .map-panel, .inventory-panel,
-  .panel-tabbar, .fps-meter, canvas.minimap, .rift-strip, .rift-pin, .endgame-stack) {
+   are placed in screen pixels by script, stay at their size. Direct children only, so nothing zooms twice.
+   Touch layouts are laid out to the pixel (the portrait HUD chain, the thumb zones) and their sheets fill the screen,
+   so there the scale reaches only the banners, toasts, boss card and log (held to 85-115 %); the thumb buttons and
+   the rest follow the Text size and Button size settings. */
+#ui.ui-scaled:not(.touch-ui) > :is(.action-bar, .hud-left, .hud-title, .level-chip, .boss-card, .center-banner, .death-screen, .exposure-meter,
+  .sound-hud, .quest-tracker, .toast-stack, .pickup-log, .panel, .map-panel, .inventory-panel, .panel-tabbar, .fps-meter, canvas.minimap,
+  .rift-strip, .rift-pin, .endgame-stack) {
   zoom: var(--ui-scale, 1);
+}
+#ui.ui-scaled.touch-ui > :is(.boss-card, .center-banner, .toast-stack, .pickup-log, .fps-meter) {
+  zoom: clamp(0.85, var(--ui-scale, 1), 1.15);
 }
 
 /* C15: subtitles above the action bar. */
@@ -1322,6 +1328,6 @@ html.touch-device .hint-mouse { display: none; }
    in landscape the subtitles use the gap between the joystick and the buttons. */
 #ui.touch-ui .pickup-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 170px); left: calc(env(safe-area-inset-left, 0px) + 12px); max-width: 46vw; }
 #ui.touch-ui .pickup-log .pickup-line:nth-last-child(n + 4) { display: none; }
-#ui.touch-ui.portrait .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 250px); width: 92vw; }
+#ui.touch-ui.portrait .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 290px); width: 92vw; }
 #ui.touch-ui:not(.portrait) .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); width: min(460px, 44vw); }
 #ui.touch-ui:not(.portrait) .pickup-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); }

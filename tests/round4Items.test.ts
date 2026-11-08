@@ -121,3 +121,43 @@ describe('rarity shapes (C04)', () => {
     expect(hiddenByLootFilter('rare', false, true)).toBe(false);
   });
 });
+
+import { GroundItem, makeTransform, Transform } from '../src/core/components';
+import { World } from '../src/core/ecs';
+import { LootLabels } from '../src/ui/lootLabels';
+
+describe('loot filter on ground labels (C01)', () => {
+  function setup(hideLow: boolean) {
+    document.body.replaceChildren();
+    const root = document.createElement('div');
+    document.body.append(root);
+    const world = new World();
+    const base = generateItem(new Rng('r4-loot'), { itemPower: 50, classId: 'bastion', uid: 'g0', rarity: 'rare' });
+    for (const [i, rarity] of (['common', 'magic', 'rare', 'legendary'] as const).entries()) {
+      const e = world.create();
+      world.add(e, GroundItem, { item: { ...base, uid: `g${i}`, rarity }, age: 5 });
+      world.add(e, Transform, makeTransform(1 + i, 0, 1));
+    }
+    const labels = new LootLabels(root, () => {}, () => {}, () => 'all', () => hideLow);
+    const project = (x: number, _y: number, z: number, out: { x: number; y: number }) => {
+      out.x = 100 + x * 40;
+      out.y = 300 + z * 10;
+      return true;
+    };
+    return { root, world, labels, project };
+  }
+
+  it('shows every label when off', () => {
+    const { root, world, labels, project } = setup(false);
+    labels.update(world, 0, 0, false, project);
+    expect([...root.querySelectorAll<HTMLElement>('.loot-label')].map((l) => l.dataset.rarity).sort()).toEqual(['common', 'legendary', 'magic', 'rare']);
+  });
+
+  it('drops common and magic labels when on, and Alt (show all) brings them back', () => {
+    const { root, world, labels, project } = setup(true);
+    labels.update(world, 0, 0, false, project);
+    expect([...root.querySelectorAll<HTMLElement>('.loot-label')].map((l) => l.dataset.rarity).sort()).toEqual(['legendary', 'rare']);
+    labels.update(world, 0, 0, true, project);
+    expect(root.querySelectorAll('.loot-label').length).toBeGreaterThanOrEqual(4);
+  });
+});
