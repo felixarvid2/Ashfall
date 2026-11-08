@@ -2,6 +2,7 @@
  * In-game HUD: life and resource orbs, action bar with cooldowns, wave tracker,
  * target frame and death screen. DOM is only touched when a value changes.
  */
+import { statusIconUrl } from './statusIcons';
 import { cssUrl } from './art';
 import { BannerQueue, type BannerItem } from './bannerQueue';
 import { LOW_LIFE_SHARE } from '../audio/heartbeat';
@@ -51,7 +52,7 @@ export interface SlotState {
 
 /** One status tile above the action bar. */
 /** A status effect's icon (public/assets/ui/status/, from game-icons.net). */
-export const statusIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/status/${id}.svg`;
+export { statusIconUrl };
 
 export interface HudStatus {
   id: string;

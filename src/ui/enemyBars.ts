@@ -8,6 +8,7 @@
  *   above the HUD band at the bottom of the screen.
  * The selection is pure (`selectBars`, `clampPlateY`); the DOM is written only when a value changes.
  */
+import { statusIconUrl as hudStatusIconUrl } from './statusIcons';
 import type { GameEvent } from '../core/events';
 
 export type EnemyTier = 'normal' | 'champion' | 'rare' | 'named' | 'boss';
@@ -140,7 +141,7 @@ export function clampPlateY(y: number, viewportH: number): number {
   return Math.min(viewportH - PLATE_BOTTOM_MARGIN, Math.max(40, y));
 }
 
-const statusIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/status/${id}.svg`;
+const statusIconUrl = hudStatusIconUrl;
 
 /** Affix chips: an existing status icon where one fits, else a two-letter glyph. */
 export const AFFIX_CHIPS: Record<string, { icon?: string; glyph: string }> = {
