@@ -4,6 +4,7 @@
  * Every id is prefixed `hv.`. No new 3D models: fungal trees, roots, crystals and the Mother Tree are
  * existing models at new sizes and tints; the glass domes are drawn by the renderer.
  */
+import { round4Props } from './round4Props';
 import { Rng } from '../../core/rng';
 import { alongRoad, clearOfProps, distanceToRoad as roadDistance, line } from './layout';
 import type { GroundDef, GroundPatch } from './testArena';
@@ -366,6 +367,8 @@ function buildProps(): PropPlacement[] {
     else if (r < 0.85) props.push(tree(x, z, rng.range(2.4, 4)));
     else props.push({ asset: 'prop.spore_nest', x, z, scale: rng.range(0.7, 1.1), collider: 1 });
   }
+  // Round 4 (D16): ten Blender set-dressing props.
+  props.push(...round4Props('zone.hydroponic_vaults', HALF, (x, z) => distanceToRoad(x, z) > 6 && !nearPlace(x, z, 6) && !onEnv(x, z, 2)));
   return props;
 }
 
@@ -477,7 +480,7 @@ function buildPois(): PoiDef[] {
   );
   for (const f of AIR_FILTERS) pois.push({ id: f.id, kind: 'feature', x: f.x, z: f.z, data: { feature: 'airFilter', radius: FILTER_RADIUS } });
   const events: [string, number, number][] = [
-    ['sporeBloom', -200, 40], ['swarmMigration', 0, -120], ['rootEruption', -140, 240], ['rescue', 230, 160], ['eliteHunt', 120, -120], ['supplyDrop', -60, 140],
+    ['sporeBloom', -200, 40], ['swarmMigration', 0, -120], ['rootEruption', -140, 240], ['rescue', 230, 160], ['eliteHunt', 120, -120], ['supplyDrop', -60, 140], ['pollenRun', -155, -65],
   ];
   events.forEach(([type, x, z]) => pois.push({ id: `hv.event.${type}`, kind: 'event', x: x * S, z: z * S, data: { event: type } }));
   return pois;

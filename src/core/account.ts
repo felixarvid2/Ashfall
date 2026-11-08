@@ -19,6 +19,8 @@ export const AccountSchema = z.object({
   restoration: z.record(z.string(), z.object({ points: z.array(z.string()).default([]), tiers: z.number().int().default(0) })).default({}),
   /** Shared stash (all characters). */
   stash: z.array(ItemSchema.nullable()).default([]),
+  /** A13: the stash of Hardcore characters, kept apart from the normal one. */
+  hardcoreStash: z.array(ItemSchema.nullable()).default([]),
   /**
    * Account-wide endgame state (docs/endgame.md): the highest World Tier unlocked and the one chosen,
    * aspects unlocked in the Codex, the best Deep Rift cleared, and total play time in seconds (the
@@ -56,6 +58,11 @@ export const AccountSchema = z.object({
     .prefault({}),
 });
 export type AccountData = z.infer<typeof AccountSchema>;
+
+/** A13: the stash a character uses: the Hardcore one for Hardcore characters, the shared one otherwise. */
+export function stashOf(account: AccountData, hardcore: boolean): AccountData['stash'] {
+  return hardcore ? account.hardcoreStash : account.stash;
+}
 
 export function emptyAccount(): AccountData {
   return AccountSchema.parse({ version: ACCOUNT_VERSION });

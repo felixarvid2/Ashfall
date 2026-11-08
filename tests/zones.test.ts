@@ -96,7 +96,7 @@ describe('Refinery District layout', () => {
     expect(count('bunker')).toBe(6);
     expect(count('lockedChest')).toBe(6);
     expect(count('dungeon')).toBe(4);
-    expect(count('event')).toBe(6);
+    expect(count('event')).toBe(7);
     expect(count('stronghold')).toBe(1);
     expect(count('boss')).toBe(1);
     // The Crane and three coolant valves.

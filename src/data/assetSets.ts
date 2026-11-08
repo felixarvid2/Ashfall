@@ -200,6 +200,10 @@ const EVENT_ASSETS: Record<string, string[]> = {
   sporeBloom: ['prop.spore_nest'],
   caveRescue: ['env.slag_rock'],
   lightsOut: ['prop.generator'],
+  // The Core's own (A01-A04)
+  choirAwakening: ['prop.core_column'],
+  memorySurge: ['prop.core_column'],
+  gravityStorm: ['prop.core_column'],
 };
 
 /**

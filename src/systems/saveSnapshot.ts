@@ -16,6 +16,9 @@ export interface SnapshotInfo {
   name: string;
   position: { x: number; z: number };
   facing: number;
+  /** A13: Hardcore characters, and one that has died. */
+  hardcore?: boolean;
+  fallen?: boolean;
   /** ISO time; the clock when omitted. */
   savedAt?: string;
 }
@@ -30,7 +33,7 @@ export function buildSaveData(world: World, player: Entity, ctx: GameContext, in
     seed: ctx.rng.seed,
     rngState: [...ctx.rng.getState()],
     tick: ctx.tick,
-    character: { name: info.name, classId: user.classId },
+    character: { name: info.name, classId: user.classId, ...(info.hardcore && { hardcore: true }), ...(info.fallen && { fallen: true }) },
     player: { position: { x: info.position.x, y: 0, z: info.position.z }, facing: info.facing },
     progression: { ...prog, restorationGranted: prog.restorationGranted ?? 0 },
     inventory: structuredClone({ gold: inv.gold, grid: inv.grid, equipped: inv.equipped, aspects: inv.aspects ?? [] }),

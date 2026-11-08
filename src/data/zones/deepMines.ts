@@ -6,6 +6,7 @@
  * Every id is prefixed `dm.`. No new 3D models: the Main Drill, the crystal pillar and the Elder
  * Gate are existing models at new sizes and tints.
  */
+import { round4Props } from './round4Props';
 import { Rng } from '../../core/rng';
 import { caveGrid, nearestWalkable, openAt, type Cavern } from './caves';
 import { alongRoad, clearOfProps, line } from './layout';
@@ -277,6 +278,8 @@ function buildProps(): PropPlacement[] {
     lamp(DRILL_BORE.x - 9, DRILL_BORE.z + 3, '#ffe2b0', 90),
     lamp(DRILL_BORE.x + 9, DRILL_BORE.z + 3, '#ffe2b0', 90),
   );
+  // Round 4 (D16): ten Blender set-dressing props.
+  props.push(...round4Props('zone.deep_mines', HALF, (x, z) => clear(x, z, 3)));
   return props;
 }
 
@@ -405,7 +408,7 @@ function buildPois(): PoiDef[] {
   );
   for (const f of FLOODLIGHTS) pois.push({ id: f.id, kind: 'feature', ...place(f.x, f.z), data: { feature: 'floodlight' } });
   const events: [string, number, number][] = [
-    ['caveRescue', -62, -62], ['burrowerSwarm', -152, 96], ['lightsOut', 80, -120], ['securityPatrol', 130, -210], ['eliteHunt', -262, -40], ['supplyDrop', 64, 184],
+    ['caveRescue', -62, -62], ['burrowerSwarm', -152, 96], ['lightsOut', 80, -120], ['securityPatrol', 130, -210], ['eliteHunt', -262, -40], ['supplyDrop', 64, 184], ['cartRescue', 66, -132],
   ];
   events.forEach(([type, x, z]) => pois.push({ id: `dm.event.${type}`, kind: 'event', ...place(...dm(x, z)), data: { event: type } }));
   return pois;

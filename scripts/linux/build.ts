@@ -12,7 +12,8 @@ import { join, relative } from 'node:path';
 import sharp from 'sharp';
 
 const root = new URL('../..', import.meta.url).pathname;
-const run = (cmd: string, cwd = root) => execSync(cmd, { cwd, stdio: 'inherit' });
+// ASHFALL_TARGET keeps the service worker out of the packaged app (B09).
+const run = (cmd: string, cwd = root) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, ASHFALL_TARGET: 'linux' } });
 const out = join(root, 'dist-linux');
 const stage = join(out, 'stage');
 const pkg = join(out, 'pkg');

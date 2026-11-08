@@ -70,7 +70,7 @@ export const KEY_GROUPS: { id: 'movement' | 'combat' | 'panels' | 'system'; acti
   { id: 'movement', actions: ['moveUp', 'moveDown', 'moveLeft', 'moveRight', 'dodge', 'forceStand'] },
   { id: 'combat', actions: ['skill1', 'skill2', 'skill3', 'skill4', 'potion', 'pickup', 'showLabels', 'mount', 'flare', 'respawn'] },
   { id: 'panels', actions: ['inventory', 'character', 'skills', 'map', 'quests'] },
-  { id: 'system', actions: ['quickSave', 'quickLoad', 'toggleMute', 'toggleDebug'] },
+  { id: 'system', actions: ['quickSave', 'quickLoad', 'toggleMute', 'photoMode', 'toggleDebug'] },
 ];
 
 /**

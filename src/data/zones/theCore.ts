@@ -7,6 +7,7 @@
  * R5-A is the greybox: zone, gate, hazards, hub, markers and packs of existing enemies; the
  * dungeons, mirrors, the Elevator Base and Lumen are markers until R5-C.
  */
+import { round4Props } from './round4Props';
 import { Rng } from '../../core/rng';
 import { caveGrid, nearestWalkable, openAt, type Bridge, type Cavern, type CaveDef } from './caves';
 import { alongRoad, clearOfProps, line } from './layout';
@@ -439,6 +440,8 @@ function buildProps(): PropPlacement[] {
     if (!clear(x, z, 3) || onPool(x, z, 3) || Math.hypot(x - H.x, z - H.z) < H.radius) continue;
     props.push({ asset: 'env.slag_rock', x, z, rot: rng.range(0, 6.28), scale: rng.range(0.5, 1.4), collider: 0.7 * 1.4 });
   }
+  // Round 4 (D16): ten Blender set-dressing props.
+  props.push(...round4Props('zone.the_core', HALF, (x, z) => clear(x, z, 3) && !onPool(x, z, 3)));
   return props;
 }
 
@@ -595,6 +598,16 @@ function buildPois(): PoiDef[] {
     ['supplyDrop', 'supplyDrop', -60, 240],
   ];
   events.forEach(([type, key, x, z]) => pois.push({ id: `core.event.${key}`, kind: 'event', ...place(...cr(x, z)), data: { event: type } }));
+  // Round 4 (A01-A04, src/world/coreEvents.ts): the Core's own four.
+  const g4g7 = BRIDGES.find((b) => b.id === 'core.bridge.g4g7')!;
+  pois.push({ id: 'core.event.bridgeCollapse', kind: 'event', x: (g4g7.a[0] + g4g7.b[0]) / 2, z: (g4g7.a[1] + g4g7.b[1]) / 2, data: { event: 'bridgeCollapse' } });
+  (
+    [
+      ['choirAwakening', 'choirAwakening', 135, -45],
+      ['memorySurge', 'memorySurge', 170, 85],
+      ['gravityStorm', 'gravityStorm', 40, 70],
+    ] as [string, string, number, number][]
+  ).forEach(([type, key, x, z]) => pois.push({ id: `core.event.${key}`, kind: 'event', ...place(...cr(x, z)), data: { event: type } }));
   return pois;
 }
 

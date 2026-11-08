@@ -294,6 +294,32 @@ const SCENARIOS = {
     return { screenshots, notes };
   },
 
+  // B09: the service worker of the plain web build. Loads the page online, waits for the worker to take control, goes
+  // offline, reloads and expects the character select again. Point --url at a static server of dist/ (`npx vite preview
+  // --port 4173`); the artifact, Android and Linux builds have no sw.js and fail the first check on purpose.
+  async offline({ page, out, opts }) {
+    const base = opts.url ?? 'http://localhost:4173/';
+    const screenshots = [];
+    const notes = {};
+    await page.goto(base);
+    await page.waitForSelector('[data-testid=slot-0]', { timeout: 180000 });
+    notes.workerFile = (await page.evaluate(async () => (await fetch('./sw.js', { cache: 'no-store' })).status));
+    await page.waitForFunction(async () => !!(await navigator.serviceWorker?.getRegistration())?.active, null, { timeout: 60000 });
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 60000 });
+    notes.caches = await page.evaluate(async () => {
+      const out = {};
+      for (const k of await caches.keys()) out[k] = (await (await caches.open(k)).keys()).length;
+      return out;
+    });
+    await page.context().setOffline(true);
+    await page.reload();
+    await page.waitForSelector('[data-testid=slot-0]', { timeout: 120000 });
+    notes.offlineReload = 'character select shown with no network';
+    screenshots.push(await shot(page, out, 'offline-select'));
+    await page.context().setOffline(false);
+    return { screenshots, notes };
+  },
+
   async landscape({ page, out, start }) {
     await start();
     await page.evaluate(() => { const g = window.ashfall; g.ctx.debug.godMode = true; g.killAllEnemies(); });
@@ -313,6 +339,7 @@ const DEFAULTS = {
   landscape: { viewport: '844x390', mobile: true },
   audio: { viewport: '1280x720', mobile: false },
   variant: { viewport: '1100x760', mobile: false },
+  offline: { viewport: '1100x760', mobile: false },
 };
 
 async function main() {

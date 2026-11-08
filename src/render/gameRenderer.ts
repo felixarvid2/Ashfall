@@ -24,6 +24,8 @@ import { scatterInstances } from '../world/arena';
 import { gravityFields } from '../world/theCore';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
+import { AmbientLayers } from './atmosphere';
+import { atmosphereFor } from '../data/atmosphere';
 import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
 import { CoreLook, blurCut, cutCells, cutTexture, ghostMaterial, type CutField } from './coreLook';
@@ -47,6 +49,10 @@ export class GameRenderer {
   readonly rig: CameraRig;
   readonly assets = new AssetLibrary();
   private readonly ash = new AshFall();
+  /** Ambient life and weather of the current zone (D10, D11). */
+  private readonly atmosphere = new AmbientLayers();
+  private atmosphereZone = '';
+  private quality: GraphicsQuality = 'high';
   readonly vfx = new VfxSystem();
   readonly loot = new LootVisuals(this.assets);
   private readonly postfx: PostFx;
@@ -124,7 +130,7 @@ export class GameRenderer {
     this.rig = new CameraRig(1);
     this.postfx = new PostFx(this.renderer, this.scene, this.rig.camera);
     this.moon = new THREE.DirectionalLight();
-    this.scene.add(this.ash.points, this.vfx.root, this.loot.root);
+    this.scene.add(this.ash.points, this.atmosphere.root, this.vfx.root, this.loot.root);
     this.assets.onModelLoaded((id) => this.swapPlaceholders(id));
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -142,6 +148,8 @@ export class GameRenderer {
     this.scene.background = new THREE.Color(arena.fog.color);
     this.scene.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
     this.ash.setColor(arena.particles ?? '#b8b2aa');
+    this.atmosphereZone = arena.id;
+    this.atmosphere.set(atmosphereFor(arena.id, this.quality));
     this.postfx.setGrade(arena.grade?.saturation, arena.grade?.tint);
     this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
     this.zoneAtmosphere = { fog: arena.fog, ambient: arena.ambient, playerLight: arena.playerLight, hemisphere: arena.hemisphere, grade: arena.grade, dark: arena.dark };
@@ -1797,6 +1805,7 @@ export class GameRenderer {
     this.moon.position.set(f.x - 12, 30, f.z + 6);
     this.moon.target.position.set(f.x, 0, f.z);
     this.ash.update(frameDt, f);
+    this.atmosphere.update(frameDt, f);
     // Belts scroll at 3.2 m/s (one chevron per 2 m); molten metal breathes.
     if (this.beltTexture) this.beltTexture.offset.y = (this.beltTexture.offset.y - frameDt * 1.6 * this.animationTimeScale) % 1;
     // Post-processing tone-maps the scene: a moderate colour stays orange instead of washing out.
@@ -1818,6 +1827,8 @@ export class GameRenderer {
   }
 
   setQuality(quality: GraphicsQuality): void {
+    this.quality = quality;
+    this.atmosphere.set(atmosphereFor(this.atmosphereZone, quality));
     this.postfx.setQuality(quality);
     this.silhouettes = silhouetteEnabled(quality);
     this.vfx.sprites.setQuality(quality);

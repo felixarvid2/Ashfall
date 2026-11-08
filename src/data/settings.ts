@@ -30,6 +30,7 @@ export const ACTIONS = [
   'mount',
   'flare',
   'toggleMute',
+  'photoMode',
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -62,6 +63,8 @@ export const DEFAULT_KEYBINDINGS: Record<Action, string[]> = {
   flare: ['KeyF'],
   // M is the map; N toggles all sound.
   toggleMute: ['KeyN'],
+  // Photo mode (C06): hides the HUD, pauses and frees the camera.
+  photoMode: ['F8'],
 };
 
 export const MoveModeSchema = z.enum(['wasd', 'click']);

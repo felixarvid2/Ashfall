@@ -264,7 +264,7 @@ describe('desktop coach marks (F006, F025, F004)', () => {
       const n = s.next();
       if (!n) break;
       seen.push(n);
-      s.signal(({ skill: 'skillSpent', potion: 'potionUsed', dodge: 'dodged', loot: 'pickedUp', bag: 'bagOpened', click: 'clicked', strike: 'attacked' } as const)[n]);
+      s.signal(({ skill: 'skillSpent', potion: 'potionUsed', dodge: 'dodged', loot: 'pickedUp', bag: 'bagOpened', click: 'clicked', strike: 'attacked', map: 'mapOpened', stash: 'stashUsed' } as const)[n]);
     }
     expect(seen).toEqual(['skill', 'potion', 'dodge', 'loot', 'bag', 'click', 'strike']);
     expect(DESKTOP_ORDER.indexOf('skill')).toBeLessThan(DESKTOP_ORDER.indexOf('click'));

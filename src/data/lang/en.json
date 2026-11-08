@@ -2235,6 +2235,9 @@
     }
   },
   "select": {
+    "hardcore": "Hardcore",
+    "hardcoreHint": "One life. If this character dies it is gone for good. It has a stash of its own.",
+    "fallen": "Fallen",
     "title": "Choose your character",
     "new": "New character",
     "corrupt": "Damaged save – create a new character",
@@ -5279,6 +5282,23 @@
       "objective": "Free the survivors: {n}/{count} · {s}s",
       "freed": "Survivor freed ({n}/{count})"
     },
+    "beaconRelight": {
+      "title": "Relight the Beacon",
+      "objective": "Defend the old beacon while it relights: {s}s"
+    },
+    "foundryAmbush": {
+      "title": "Foundry Ambush",
+      "objective": "Keep the slag pump alive against the ambush: {s}s"
+    },
+    "pollenRun": {
+      "title": "Pollen Run",
+      "objective": "Cut down the pollen pods before they burst: {n}/{count} · {s}s"
+    },
+    "cartRescue": {
+      "title": "Ore Cart Rescue",
+      "objective": "Pull the stranded carters clear: {n}/{count} · {s}s",
+      "freed": "Carter pulled clear ({n}/{count})"
+    },
     "signalJam": {
       "title": "Signal Jam",
       "objective": "Defend the transmitter while it charges: {s}s"
@@ -5343,6 +5363,26 @@
     "securityPatrol": {
       "title": "Security Patrol",
       "objective": "Stop the patrol before it gets away: {s}s"
+    },
+    "bridgeCollapse": {
+      "title": "Collapsing Bridge",
+      "objective": "The bridge is crackling. Get across: {s}s",
+      "down": "The bridge is gone. It rebuilds soon.",
+      "fell": "The bridge gives way!"
+    },
+    "choirAwakening": {
+      "title": "Choir Awakening",
+      "objective": "Break the resonance stone before the song ends: {s}s"
+    },
+    "memorySurge": {
+      "title": "Memory Surge",
+      "objective": "Close the memory rift: {n}/{count} · {s}s",
+      "closing": "The rift shudders ({n}/{count}).",
+      "closed": "The memory rift closes."
+    },
+    "gravityStorm": {
+      "title": "Gravity Storm",
+      "objective": "Destroy the anchors: {n}/{count} · {s}s"
     }
   },
   "storm": {
@@ -5618,6 +5658,22 @@
       "loot": "Item power +{power}, greater affix chance +{greater}%, unique and mythic drops ×{rare}."
     }
   },
+  "durability": {
+    "worn": "Your gear is worn ({n} pieces, -10%). The blacksmith can repair it.",
+    "broke": "{n} of your items broke. They give only their base stats until repaired.",
+    "note": "Worn gear is repaired for gold.",
+    "noteBroken": "{n} broken: no affixes until repaired.",
+    "repairAll": "Repair all ({gold} gold)",
+    "repaired": "Everything repaired for {gold} gold.",
+    "repairedSome": "Repaired what you could afford ({gold} gold).",
+    "cannotAfford": "Not enough gold to repair.",
+    "tag": "Durability {n}%",
+    "brokenTag": "Broken"
+  },
+  "hardcore": {
+    "fell": "Your Hardcore character has fallen. There is no coming back.",
+    "fallenSlot": "This character has fallen. It can only be deleted."
+  },
   "harvest": {
     "line": "Ash Harvest: {region} — {time} left",
     "shards": "Ash Shards: {n}",
@@ -5691,7 +5747,8 @@
     "tabs": "Panels"
   },
   "host": {
-    "quitHint": "Press Back again to quit"
+    "quitHint": "Press Back again to quit",
+    "updateReady": "A new version was installed. Reload the page to play it."
   },
   "saveData": {
     "backups": {
@@ -5826,6 +5883,7 @@
       "skills": "Skills",
       "map": "Map",
       "quests": "Quest log",
+      "photoMode": "Photo mode",
       "quickSave": "Quick save",
       "quickLoad": "Quick load",
       "toggleMute": "Mute sound",
@@ -5952,6 +6010,11 @@
       "worn": "worn",
       "missing": "not worn",
       "bonus": "({n}) {text}"
+    },
+    "photo": {
+      "hint": "Photo mode: drag to turn the camera, scroll or pinch to zoom. Esc to return.",
+      "exit": "Exit",
+      "button": "Photo mode"
     }
   }
 }

@@ -16,6 +16,8 @@ export interface PauseMenuDeps {
   toCharacterSelect: () => void;
   /** False before the game has started (character select) so Escape does nothing there. */
   canOpen: () => boolean;
+  /** Photo mode (C06): leaves the menu and starts it; the menu is the way in for touch and pad. */
+  photoMode?: () => void;
 }
 
 export class PauseMenu {
@@ -53,7 +55,13 @@ export class PauseMenu {
       });
     });
     const exportBtn = button('export', t('pause.exportSave'), () => this.deps.exportSave());
-    this.root.append(title, this.resume, settings, select, exportBtn);
+    const photo = this.deps.photoMode
+      ? button('photo', t('ux.photo.button'), () => {
+          panelStack.close('pause');
+          this.deps.photoMode?.();
+        })
+      : null;
+    this.root.append(title, this.resume, settings, ...(photo ? [photo] : []), select, exportBtn);
     parent.append(this.root);
     // Settings opened from here closed again: bring the menu back.
     panelStack.onChange((open) => {

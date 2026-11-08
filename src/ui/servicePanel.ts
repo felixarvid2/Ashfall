@@ -11,6 +11,7 @@
  *    two-tap `armConfirm`; "salvage all" asks first and lists what it takes;
  *  - the blacksmith is three accordion sections under a pinned item card.
  */
+import { isBroken } from '../systems/loot/durability';
 import type { Inventory } from '../core/components';
 import { t, touchText } from '../data/i18n';
 import { PERCENT_STATS, slotsFor, type Item, type Slot, type StatKey } from '../data/loot/schemas';
@@ -81,6 +82,9 @@ export interface ServiceActions {
   reroll(gridIndex: number, affixIndex: number): void;
   /** Salvage the common and magic items of the backpack, except the grid indexes in `keep`. */
   salvageJunk(keep?: ReadonlySet<number>): void;
+  /** A12: gold to repair everything worn, and the repair itself. */
+  repairCost?(): number;
+  repairAll?(): void;
   extract(gridIndex: number): void;
   imprint(cacheIndex: number, gridIndex: number): void;
   toStash(gridIndex: number): void;
@@ -730,8 +734,22 @@ export class ServicePanel {
         this.accordion('master', t('crafting.masterwork.title'), masterSummary, () => this.masterwork(inv, item)),
       );
     }
-    out.push(this.salvageAll());
+    out.push(...this.repairRow(inv), this.salvageAll());
     return out;
+  }
+
+  /** A12: one button that repairs every worn item (broken ones first) for gold. */
+  private repairRow(inv: Inventory): HTMLElement[] {
+    const cost = this.actions.repairCost?.() ?? 0;
+    if (cost <= 0) return [];
+    const broken = [...Object.values(inv.equipped), ...inv.grid].filter((i) => i && isBroken(i)).length;
+    const row = div('service-repair', '');
+    row.append(div('service-note', t(broken > 0 ? 'durability.noteBroken' : 'durability.note', { n: broken })));
+    const btn = button(t('durability.repairAll', { gold: cost.toLocaleString('en-US') }), () => this.actions.repairAll?.());
+    btn.dataset.testid = 'repair-all';
+    btn.disabled = inv.gold < cost;
+    row.append(btn);
+    return [row];
   }
 
   /** One collapsible section; opening one closes the others (P088). */

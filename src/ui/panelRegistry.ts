@@ -66,6 +66,8 @@ export interface GamePanels {
   tier: { open: boolean; close(): void };
   rift: { open: boolean; close(): void };
   lore: { open: boolean; close(): void };
+  /** Photo mode (C06): Escape and the pad's B end it before anything else. */
+  photo?: { active: boolean; exit(): void };
   /** Ends a conversation (the dialogue panel's own buttons do the same). */
   closeDialogue: () => void;
 }
@@ -133,6 +135,11 @@ export function registerGamePanels(root: HTMLElement, p: GamePanels): void {
   });
   // Escape with nothing open pauses (desktop; touch screens have no Escape key).
   panelStack.setEscapeFallback(() => {
+    // Photo mode (C06) ends first: Escape and the pad's B both land here.
+    if (p.photo?.active) {
+      p.photo.exit();
+      return true;
+    }
     if (!p.pause.canOpen()) return false;
     panelStack.open('pause');
     return true;

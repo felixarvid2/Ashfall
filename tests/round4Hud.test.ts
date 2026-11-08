@@ -151,7 +151,7 @@ describe('low-life feedback (C12)', () => {
 });
 
 // ---- C10 boss phases ---------------------------------------------------------------------------------------
-import { bossPhaseTicks } from '../src/ui/hud';
+import { bossPhaseLabel, bossPhaseTicks } from '../src/ui/hud';
 import { BOSS_SCRIPTS } from '../src/data/bosses';
 import { t } from '../src/data/i18n';
 
@@ -159,7 +159,9 @@ describe('boss bar phases (C10)', () => {
   it('reports the tick positions and the current phase of a scripted boss, and nothing for others', () => {
     expect(bossPhaseTicks(undefined)).toEqual({});
     expect(bossPhaseTicks('no_such_script')).toEqual({});
-    expect(bossPhaseTicks('the_first', 1)).toEqual({ phases: [0.6, 0.25], phase: { index: 1, count: 3 } });
+    expect(bossPhaseTicks('the_first')).toEqual({ phases: [0.6, 0.25] });
+    expect(bossPhaseLabel('the_first', 1)).toEqual({ phase: { index: 1, count: 3 } });
+    expect(bossPhaseLabel(undefined)).toEqual({});
   });
 
   it('every phase after the first of every boss script has a banner that resolves to text', () => {

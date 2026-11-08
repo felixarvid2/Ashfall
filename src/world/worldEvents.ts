@@ -53,9 +53,23 @@ export type EventType =
   | 'burrowerSwarm'
   | 'lightsOut'
   | 'securityPatrol'
+  // Round 4 (D14): one more per region 1-4, each running on an existing event's logic with its own place and text (EVENT_BASE).
+  | 'beaconRelight'
+  | 'foundryAmbush'
+  | 'pollenRun'
+  | 'cartRescue'
   // The Core (A01-A04, src/world/coreEvents.ts)
   | CoreEventType;
 export type Tier = 'gold' | 'silver' | 'bronze';
+
+/** The existing event whose logic a round 4 event reuses (the strings and place are its own). */
+export const EVENT_BASE: Readonly<Partial<Record<EventType, EventType>>> = {
+  beaconRelight: 'signalJam',
+  foundryAmbush: 'smelterRaid',
+  pollenRun: 'sporeBloom',
+  cartRescue: 'caveRescue',
+};
+export const baseType = (type: EventType): EventType => EVENT_BASE[type] ?? type;
 
 export const EVENT_TUNING = {
   triggerRadius: 22,
@@ -225,7 +239,7 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
     ctx.events.push({ type: 'banner', key: `worldEvents.${ev.type}.title`, seconds: 2.4 });
     return;
   }
-  switch (ev.type) {
+  switch (baseType(ev.type)) {
     case 'convoy': {
       const [x, z] = T.convoy.path[0]!;
       const truck = world.create();
@@ -363,7 +377,7 @@ function resumeEvent(world: World, ev: EventState, m: NonNullable<EventState['pa
   ev.banked = m.banked;
   const first = ev.objects[0];
   const h = first !== undefined ? world.get(first, Health) : undefined;
-  if (h && (ev.type === 'convoy' || ev.type === 'signalJam')) h.current = Math.max(1, h.max * m.hp);
+  if (h && (ev.type === 'convoy' || baseType(ev.type) === 'signalJam')) h.current = Math.max(1, h.max * m.hp);
   if (ev.type === 'convoy' && first !== undefined) {
     // The truck stands at the last waypoint it passed.
     const [x, z] = EVENT_TUNING.convoy.path[Math.max(0, Math.min(m.progress, EVENT_TUNING.convoy.path.length) - 1)]!;
@@ -424,7 +438,7 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
       stepCoreEvent(world, ctx, ev, dt, ptr, (result) => finish(world, ctx, zone, id, ev, result));
       continue;
     }
-    switch (ev.type) {
+    switch (baseType(ev.type)) {
       case 'convoy': {
         const truck = ev.objects[0];
         if (!alive(world, truck)) {
@@ -716,7 +730,7 @@ export function eventInteract(world: World, ctx: GameContext, target: Entity, it
       ctx.events.push({ type: 'banner', key: 'worldEvents.rescue.freed', params: { n: ev.progress, count: EVENT_TUNING.rescue.survivors }, seconds: 1.6 });
       return true;
     }
-    if (ev.type === 'caveRescue') {
+    if (baseType(ev.type) === 'caveRescue') {
       it.used = true;
       ev.progress++;
       world.destroyDeferred(target);
@@ -762,7 +776,13 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
   const T = EVENT_TUNING;
   const left = (limit: number) => Math.max(0, Math.ceil(limit - best!.elapsed));
   if (isCoreEvent(best.type)) return { type: best.type, ...coreEventObjective(best) };
-  switch (best.type) {
+  const base = baseType(best.type);
+  const r = objective(best, base, T, left);
+  return r && base !== best.type ? { ...r, text: r.text.replace(`.${base}.`, `.${best.type}.`) } : r;
+}
+
+function objective(best: EventState, base: EventType, T: typeof EVENT_TUNING, left: (limit: number) => number): { type: EventType; text: string; params: Record<string, number> } | null {
+  switch (base) {
     case 'convoy':
       return { type: best.type, text: 'worldEvents.convoy.objective', params: { n: best.progress, count: T.convoy.path.length } };
     case 'sporeNest':
@@ -797,6 +817,8 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
       return { type: best.type, text: 'worldEvents.securityPatrol.objective', params: { s: left(T.securityPatrol.time) } };
     case 'rootEruption':
       return { type: best.type, text: 'worldEvents.rootEruption.objective', params: { n: best.progress, count: T.rootEruption.roots, s: left(T.rootEruption.time) } };
+    default:
+      return null;
   }
 }
 

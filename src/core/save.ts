@@ -22,7 +22,13 @@ export const SaveDataSchema = z.object({
   rngState: z.tuple([z.number(), z.number(), z.number(), z.number()]),
   tick: z.number().int().nonnegative(),
   /** Who this save belongs to (character select). */
-  character: z.object({ name: z.string().min(1).max(24), classId: z.string() }),
+  character: z.object({
+    name: z.string().min(1).max(24),
+    classId: z.string(),
+    /** A13: a Hardcore character has one life and its own stash; `fallen` once it has died (the slot keeps a skull, the save cannot be played). */
+    hardcore: z.boolean().optional(),
+    fallen: z.boolean().optional(),
+  }),
   player: z.object({
     position: Vec3Schema,
     facing: z.number(),

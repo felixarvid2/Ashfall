@@ -3,6 +3,7 @@
  * interest, rotated to match the camera. Clicking a discovered teleporter on the full map travels there;
  * tabs switch between the regions you have visited.
  */
+import { getPref, setPref } from '../core/localPrefs';
 import { t, touchText } from '../data/i18n';
 import type { PoiKind } from '../data/zones/zoneTypes';
 import { revealedFraction, type ZoneRuntime } from '../world/zone';
@@ -421,11 +422,7 @@ export class MapUi {
     this.mini.setAttribute('aria-label', t('map.title'));
     this.mini.addEventListener('click', () => this.onMiniTap());
     this.miniCtx = this.mini.getContext('2d')!;
-    try {
-      this.miniStepValue = parseMiniStep(localStorage.getItem(MINI_ZOOM_KEY));
-    } catch {
-      // Storage blocked: the default zoom.
-    }
+    this.miniStepValue = parseMiniStep(getPref(MINI_ZOOM_KEY));
     this.installMiniZoom();
 
     this.full = document.createElement('div');
@@ -475,11 +472,7 @@ export class MapUi {
 
   setMiniStep(step: number): number {
     this.miniStepValue = parseMiniStep(String(step));
-    try {
-      localStorage.setItem(MINI_ZOOM_KEY, String(this.miniStepValue));
-    } catch {
-      // Storage blocked: the zoom just does not persist.
-    }
+    setPref(MINI_ZOOM_KEY, String(this.miniStepValue));
     if (this.miniZoomLabel) this.miniZoomLabel.textContent = t('ux.map.miniZoom', { n: this.miniStepValue + 1, max: MINI_RANGES.length });
     this.mini.dataset.zoom = String(this.miniStepValue);
     const zone = this.zone();

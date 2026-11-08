@@ -195,6 +195,8 @@ export class CharacterPanel {
 
     this.featsBlock.dataset.testid = 'char-feats';
     this.featsHead.type = 'button';
+    // Named before the first refresh fills in the count (C14).
+    this.featsHead.textContent = t('feats.heading', { done: 0, total: 0 });
     this.featsHead.addEventListener('click', () => {
       this.featsOpen = !this.featsOpen;
       this.applyFeatsOpen();

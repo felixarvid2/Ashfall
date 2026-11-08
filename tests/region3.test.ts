@@ -61,7 +61,7 @@ describe('The Hydroponic Vaults zone', () => {
     const count = (kind: string) => HYDROPONIC_VAULTS.pois.filter((p) => p.kind === kind).length;
     expect(count('dungeon')).toBe(4);
     expect(count('bunker')).toBe(6);
-    expect(count('event')).toBe(6);
+    expect(count('event')).toBe(7);
     expect(count('relic')).toBe(10);
     expect(count('lore')).toBe(15);
     expect(count('signalTower')).toBe(3);

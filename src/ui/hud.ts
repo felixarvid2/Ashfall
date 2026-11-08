@@ -21,11 +21,16 @@ import { actionLabel, keyLabel, padPrompts } from '../core/inputLabels';
 export { keyLabel, actionLabel };
 
 /** Life fractions where the boss script changes phase (tick marks on its bar); `{}` for a script with one phase. */
-export function bossPhaseTicks(script: string | undefined, phase = 0): { phases?: number[]; phase?: { index: number; count: number } } {
+export function bossPhaseTicks(script: string | undefined): { phases?: number[] } {
   if (!script) return {};
-  const list = BOSS_SCRIPTS[script] ?? [];
-  const phases = list.map((p) => p.below).filter((b) => b < 1);
-  return phases.length > 0 ? { phases, phase: { index: Math.min(phase, list.length - 1), count: list.length } } : {};
+  const phases = (BOSS_SCRIPTS[script] ?? []).map((p) => p.below).filter((b) => b < 1);
+  return phases.length > 0 ? { phases } : {};
+}
+
+/** The boss's current phase (0-based) and how many it has, for the "Phase 2/3" label on its bar (C10); `{}` for a one-phase script. */
+export function bossPhaseLabel(script: string | undefined, phase = 0): { phase?: { index: number; count: number } } {
+  const list = script ? (BOSS_SCRIPTS[script] ?? []) : [];
+  return list.length > 1 ? { phase: { index: Math.min(phase, list.length - 1), count: list.length } } : {};
 }
 
 /**

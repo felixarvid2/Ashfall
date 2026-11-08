@@ -3,6 +3,7 @@
  * Hand-placed anchors (roads, hub, landmarks, POIs) plus deterministic, seeded decoration along
  * the roads and inside each subzone, so the layout is identical every time.
  */
+import { round4Props } from './round4Props';
 import { Rng } from '../../core/rng';
 import type { GroundDef, GroundPatch } from './testArena';
 import type { PoiDef, PackSpawn, PropPlacement, Road, ZoneDef } from './zoneTypes';
@@ -226,8 +227,13 @@ function buildProps(): PropPlacement[] {
   props.push({ asset: 'prop.elevator_foundation', x: 318 * S, z: 268 * S, landmark: true, collider: 12 });
   // Beyond the north-east edge, pointing the way to region 2.
   props.push({ asset: 'prop.refinery_silhouette', x: HALF + 150, z: HALF + 100, rot: -0.7, landmark: true });
+  // Round 4 (D16): ten Blender set-dressing props.
+  props.push(...round4Props('zone.cinder_flats', HALF, (x, z) => distanceToRoad(x, z) > 6 && Math.hypot(x - hub.x, z - hub.z) > hub.radius + 6));
   return props;
 }
+
+/** Metres between road packs: 26 before round 4, 31 now (about 15 % fewer). */
+export const ROAD_PACK_SPACING = 31;
 
 function buildPacks(): PackSpawn[] {
   const rng = new Rng('cinder-flats-packs');
@@ -243,7 +249,8 @@ function buildPacks(): PackSpawn[] {
   };
   let n = 0;
   for (const road of ROADS) {
-    alongRoad(road.points, 26, 18).forEach((p) => {
+    // Round 4 (A15): 15 % fewer road packs (the spacing grew from 26 m to 31 m).
+    alongRoad(road.points, ROAD_PACK_SPACING, 18).forEach((p) => {
       const side = rng.chance(0.5) ? 1 : -1;
       const off = rng.range(4, 12) * side;
       const x = p.x - p.dz * off;
@@ -318,7 +325,7 @@ function buildPois(): PoiDef[] {
   const bunkers: [number, number][] = scaled([[-250, -110], [-80, -200], [110, -50], [-190, 120], [150, 150], [320, 10]]);
   bunkers.forEach(([x, z], i) => pois.push({ id: `bunker.${i}`, kind: 'bunker', x, z, data: { bunker: i } }));
   const events: [string, number, number][] = [
-    ['convoy', 40, 18], ['sporeNest', -170, 210], ['rescue', 60, -160], ['signalJam', -20, -20], ['eliteHunt', -40, 220], ['supplyDrop', 100, 100],
+    ['convoy', 40, 18], ['sporeNest', -170, 210], ['rescue', 60, -160], ['signalJam', -20, -20], ['eliteHunt', -40, 220], ['supplyDrop', 100, 100], ['beaconRelight', -195, -100],
   ];
   events.forEach(([type, x, z]) => pois.push({ id: `event.${type}`, kind: 'event', x: x * S, z: z * S, data: { event: type } }));
   return pois;

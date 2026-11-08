@@ -16,7 +16,7 @@ import { getPref, setPref } from '../core/localPrefs';
 export interface SlotSummary {
   index: number;
   /** null = empty slot. */
-  character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null;
+  character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number; hardcore?: boolean; fallen?: boolean } | null;
   corrupt?: boolean;
   newer?: boolean;
 }
@@ -37,7 +37,7 @@ export function slotDetail(c: { zoneKey?: string; gear?: number }): string {
 
 export interface CharacterSelectActions {
   play(slot: number): void;
-  create(slot: number, classId: string, name: string): void;
+  create(slot: number, classId: string, name: string, hardcore?: boolean): void;
   remove(slot: number): void;
   portraitUrl(classId: string): string | null;
   /** D13: the cosmetic title earned from feats, shown under each hero's name. */
@@ -203,6 +203,17 @@ export class CharacterSelect {
     const info = document.createElement('div');
     info.className = 'char-slot-info';
     info.textContent = `${t(`items.classes.${c.classId}`)} · ${t('ui.level', { level: c.level })}`;
+    // A13: a skull on Hardcore characters; a fallen one cannot be played, only deleted.
+    if (c.hardcore) {
+      const skull = document.createElement('span');
+      skull.className = `char-skull${c.fallen ? ' fallen' : ''}`;
+      skull.dataset.testid = `slot-${slot.index}-skull`;
+      skull.textContent = '\u2620';
+      skull.title = t(c.fallen ? 'select.fallen' : 'select.hardcore');
+      skull.setAttribute('aria-label', skull.title);
+      name.append(' ', skull);
+      if (c.fallen) info.textContent += ` · ${t('select.fallen')}`;
+    }
     const title = this.actions.title?.();
     const titleEl = document.createElement('div');
     titleEl.className = 'char-slot-title';
@@ -391,6 +402,14 @@ export class CharacterSelect {
       classes.appendChild(card);
     }
 
+    // A13: Hardcore: one life, a skull on the slot, a stash of its own.
+    const hcLabel = document.createElement('label');
+    hcLabel.className = 'char-hardcore';
+    const hcBox = document.createElement('input');
+    hcBox.type = 'checkbox';
+    hcBox.dataset.testid = 'char-hardcore';
+    hcLabel.append(hcBox, ` \u2620 ${t('select.hardcore')}`);
+    hcLabel.title = t('select.hardcoreHint');
     const create = document.createElement('button');
     create.type = 'button';
     create.className = 'char-create';
@@ -399,7 +418,7 @@ export class CharacterSelect {
     const submit = () => {
       const name = nameInput.value.trim() || t(`items.classes.${chosen}`);
       writeLastSlot(slot);
-      this.actions.create(slot, chosen, name);
+      this.actions.create(slot, chosen, name, hcBox.checked);
     };
     create.addEventListener('click', submit);
     nameInput.addEventListener('keydown', (e) => {
@@ -413,7 +432,7 @@ export class CharacterSelect {
     back.addEventListener('click', () => this.showSlots());
     const row = document.createElement('div');
     row.className = 'char-create-row';
-    row.append(nameWrap, create, back);
+    row.append(nameWrap, hcLabel, create, back);
 
     this.body.replaceChildren(heading, classes, details, row);
     this.picker.hidden = false;

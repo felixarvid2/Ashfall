@@ -257,3 +257,73 @@ describe('D04 minion look', () => {
     expect(readFileSync(new URL('../src/systems/minions.ts', import.meta.url), 'utf8')).toContain("r.look = 'minion'");
   });
 });
+
+describe('D10 ambient life and D11 weather', () => {
+  it('every region has ambient life, three regions have weather, and the preset toggles them', async () => {
+    const { ATMOSPHERE, atmosphereFor } = await import('../src/data/atmosphere');
+    const { ZONES } = await import('../src/data/zones');
+    for (const z of ZONES) if (z.id !== 'zone.test_arena' && ATMOSPHERE[z.id] === undefined) expect(z.id.startsWith('zone.')).toBe(true);
+    for (const id of ['zone.cinder_flats', 'zone.refinery_district', 'zone.hydroponic_vaults', 'zone.deep_mines', 'zone.the_core']) expect(ATMOSPHERE[id]!.ambient.count).toBeGreaterThan(0);
+    expect(Object.entries(ATMOSPHERE).filter(([, r]) => r.weather).map(([k]) => k).sort()).toEqual(['zone.cinder_flats', 'zone.hydroponic_vaults', 'zone.the_core']);
+    expect(atmosphereFor('zone.cinder_flats', 'low')).toEqual({ ambient: null, weather: null });
+    const med = atmosphereFor('zone.cinder_flats', 'medium');
+    const high = atmosphereFor('zone.cinder_flats', 'high');
+    expect(med.ambient).not.toBeNull();
+    expect(med.weather!.count).toBe(high.weather!.count / 2);
+    expect(atmosphereFor('zone.deep_mines', 'high').weather).toBeNull();
+  });
+
+  it('a cloud keeps its particles inside the box around the focus and the height band', async () => {
+    const { stepCloud } = await import('../src/render/atmosphere');
+    const { ATMOSPHERE } = await import('../src/data/atmosphere');
+    const def = ATMOSPHERE['zone.cinder_flats']!.weather!;
+    const n = 200;
+    const pos = new Float32Array(n * 3);
+    const phase = new Float32Array(n);
+    for (let i = 0; i < n; i++) { pos[i * 3] = (i % 20) - 10; pos[i * 3 + 1] = 5; pos[i * 3 + 2] = (i % 7) - 3; phase[i] = i; }
+    const focus = { x: 0, z: 0 };
+    for (let s = 0; s < 600; s++) { focus.x += 0.1; stepCloud(pos, phase, def, s / 60, 1 / 60, focus, 40); }
+    for (let i = 0; i < n; i++) {
+      expect(Math.abs(pos[i * 3]! - focus.x)).toBeLessThanOrEqual(20.001);
+      expect(pos[i * 3 + 1]!).toBeGreaterThanOrEqual(def.y[0]);
+      expect(pos[i * 3 + 1]!).toBeLessThanOrEqual(def.y[1]);
+    }
+  });
+});
+
+describe('D14 one more world event per region 1-4', () => {
+  it('has a place in each zone, strings, and an existing event as its logic', async () => {
+    const { EVENT_BASE, baseType } = await import('../src/world/worldEvents');
+    const { ZONES } = await import('../src/data/zones');
+    const en = (await import('../src/data/lang/en.json')).default as unknown as { worldEvents: Record<string, { title: string; objective: string }> };
+    const wanted: Record<string, string> = { 'zone.cinder_flats': 'beaconRelight', 'zone.refinery_district': 'foundryAmbush', 'zone.hydroponic_vaults': 'pollenRun', 'zone.deep_mines': 'cartRescue' };
+    for (const [zone, type] of Object.entries(wanted)) {
+      const z = ZONES.find((x) => x.id === zone)!;
+      expect(z.pois.some((p) => p.kind === 'event' && p.data?.event === type), type).toBe(true);
+      expect(en.worldEvents[type]!.title).toBeTruthy();
+      expect(en.worldEvents[type]!.objective).toContain('{s}');
+      expect(EVENT_BASE[type as keyof typeof EVENT_BASE]).toBeDefined();
+      expect(baseType(type as never)).not.toBe(type);
+    }
+  });
+});
+
+describe('D16 ten Blender props', () => {
+  it('are in the manifest as Blender props and placed in their zones', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { ZONES } = await import('../src/data/zones');
+    const { ROUND4_PROPS } = await import('../src/data/zones/round4Props');
+    const manifest = JSON.parse(readFileSync(new URL('../assets/manifest.json', import.meta.url), 'utf8')) as { assets: { id: string; source?: string; file?: string }[] };
+    const ids = new Set(Object.values(ROUND4_PROPS).flat().map((s) => s.asset));
+    expect(ids.size).toBe(10);
+    for (const id of ids) {
+      const a = manifest.assets.find((x) => x.id === id)!;
+      expect(a?.source, id).toBe('blender');
+      expect(a.file).toMatch(/^blender\//);
+    }
+    for (const [zone, spots] of Object.entries(ROUND4_PROPS)) {
+      const z = ZONES.find((x) => x.id === zone)!;
+      for (const s of spots) expect(z.props.filter((p) => p.asset === s.asset).length, `${zone} ${s.asset}`).toBeGreaterThanOrEqual(Math.min(s.count, 4));
+    }
+  });
+});

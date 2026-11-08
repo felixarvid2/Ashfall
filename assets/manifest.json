@@ -8040,6 +8040,306 @@
         "bytes": 6700,
         "textures": 0
       }
+    },
+    {
+      "id": "prop.crystal_crate",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a wooden-and-steel crate overflowing with raw Lumen crystal.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 0.9,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/crystal_crate.glb",
+      "lods": [
+        "blender/crystal_crate_lod1.glb",
+        "blender/crystal_crate_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 128,
+        "bytes": 6376,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a4036",
+        "size": [
+          1,
+          0.7,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "prop.broken_turret",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a wrecked sentry turret, barrel bent, slumped on its mount.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 1.1,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/broken_turret.glb",
+      "lods": [
+        "blender/broken_turret_lod1.glb",
+        "blender/broken_turret_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 476,
+        "bytes": 13060,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a3f46",
+        "size": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "prop.server_rack",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a dead server rack with a hanging door and a few lit indicator lamps.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 2,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/server_rack.glb",
+      "lods": [
+        "blender/server_rack_lod1.glb",
+        "blender/server_rack_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 456,
+        "bytes": 10880,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#23282e",
+        "size": [
+          0.7,
+          0.9,
+          2
+        ]
+      }
+    },
+    {
+      "id": "prop.spore_pod",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a swollen spore pod on a root stalk, split along one side.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 1.2,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/spore_pod.glb",
+      "lods": [
+        "blender/spore_pod_lod1.glb",
+        "blender/spore_pod_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 358,
+        "bytes": 9976,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#6aa84a",
+        "size": [
+          1.1,
+          1.1,
+          1.2
+        ]
+      }
+    },
+    {
+      "id": "prop.ore_cart",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a rusted mine cart heaped with glowing ore, one wheel off its rail.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 0.9,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/ore_cart.glb",
+      "lods": [
+        "blender/ore_cart_lod1.glb",
+        "blender/ore_cart_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 520,
+        "bytes": 10480,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a4a38",
+        "size": [
+          1.6,
+          1,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "prop.fuel_barrel_stack",
+      "category": "prop",
+      "prompt": "Round 4 (D16): five fuel barrels stacked 3 and 2, one tipped, stencilled hazard bands.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 1.7,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/fuel_barrel_stack.glb",
+      "lods": [
+        "blender/fuel_barrel_stack_lod1.glb",
+        "blender/fuel_barrel_stack_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 624,
+        "bytes": 8892,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#6b3a24",
+        "size": [
+          1,
+          1,
+          1.7
+        ]
+      }
+    },
+    {
+      "id": "prop.cot_bedroll",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a camp cot with a rolled blanket and a folded jacket, left behind.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 0.4,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/cot_bedroll.glb",
+      "lods": [
+        "blender/cot_bedroll_lod1.glb",
+        "blender/cot_bedroll_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 356,
+        "bytes": 10080,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a3d3a",
+        "size": [
+          0.8,
+          1.9,
+          0.4
+        ]
+      }
+    },
+    {
+      "id": "prop.drone_wreck",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a crashed security drone, shell cracked, rotor bent into the ground.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 0.7,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/drone_wreck.glb",
+      "lods": [
+        "blender/drone_wreck_lod1.glb",
+        "blender/drone_wreck_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 290,
+        "bytes": 9432,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#4a4f58",
+        "size": [
+          1,
+          1,
+          0.7
+        ]
+      }
+    },
+    {
+      "id": "prop.vine_planter",
+      "category": "prop",
+      "prompt": "Round 4 (D16): a cracked hydroponic planter overrun with glowing vines.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 0.9,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/vine_planter.glb",
+      "lods": [
+        "blender/vine_planter_lod1.glb",
+        "blender/vine_planter_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 300,
+        "bytes": 10632,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#4a4036",
+        "size": [
+          1.5,
+          0.6,
+          0.9
+        ]
+      }
+    },
+    {
+      "id": "prop.obelisk_stub",
+      "category": "prop",
+      "prompt": "Round 4 (D16): the broken stump of a Lumen obelisk, glowing at the fracture.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 900,
+      "heightMeters": 1.5,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/obelisk_stub.glb",
+      "lods": [
+        "blender/obelisk_stub_lod1.glb",
+        "blender/obelisk_stub_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 206,
+        "bytes": 8324,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#3a3544",
+        "size": [
+          1,
+          1,
+          1.5
+        ]
+      }
     }
   ]
 }

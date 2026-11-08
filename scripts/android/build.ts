@@ -7,7 +7,8 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } fr
 import { join } from 'node:path';
 
 const root = new URL('../..', import.meta.url).pathname;
-const run = (cmd: string, cwd = root) => execSync(cmd, { cwd, stdio: 'inherit' });
+// ASHFALL_TARGET keeps the service worker out of the packaged host (B09).
+const run = (cmd: string, cwd = root) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, ASHFALL_TARGET: 'android' } });
 
 // The WebView serves this folder at https://appassets.androidplatform.net/ (vite.config.ts has base './').
 const www = join(root, 'android/app/src/main/assets/www');

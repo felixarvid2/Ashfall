@@ -91,7 +91,9 @@ import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import type { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
+import { watchAccessibility } from './ui/a11y';
 import { PickupLog } from './ui/pickupLog';
+import { PhotoMode } from './ui/photoMode';
 import { Subtitles } from './ui/subtitles';
 import { setHeartbeat } from './audio/heartbeat';
 import { dropHitstopMs, playDropSound, playGoldSound, playMagnetSound, playPickupSound } from './audio/lootSounds';
@@ -119,14 +121,14 @@ import { playerStatuses } from './ui/statusTiles';
 import { Toasts } from './ui/toast';
 import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
-import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount, type AccountData } from './core/account';
+import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount, stashOf, type AccountData } from './core/account';
 import { runSaveApply, sanitizeSave } from './core/saveRefs';
 import { checkImport, summarizeSave } from './core/saveImport';
 import { copyText, formatLog, logEntries } from './core/errorLog';
 import type { DataTabDeps } from './ui/dataTab';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { deathCauseLine, deathRecap } from './ui/deathCause';
-import { bossPhaseTicks } from './ui/hud';
+import { bossPhaseLabel, bossPhaseTicks } from './ui/hud';
 import { actionLabel, setPromptSource } from './core/inputLabels';
 import { focusNav } from './ui/focusNav';
 import { setRumbleSink } from './ui/haptics';
@@ -193,6 +195,7 @@ import { chooseLumen, lumenCameraFocus } from './world/lumen';
 import type { EpilogueScreen } from './ui/epilogue';
 import { panelStack } from './ui/panelStack';
 import { buildSaveData, restoreVitals } from './systems/saveSnapshot';
+import { repairAll, repairAllCost, wearEquipment } from './systems/loot/durability';
 import { LazyPanel, registerGamePanels, registerServicePanel } from './ui/panelRegistry';
 import { meanItemPower } from './ui/characterSelect';
 import { PauseMenu } from './ui/pauseMenu';
@@ -272,6 +275,7 @@ export class Game {
   private readonly devtools: DevTools;
   private readonly damageNumbers: DamageNumbers;
   private readonly pickupLog: PickupLog;
+  private readonly photoMode: PhotoMode;
   private readonly subtitles: Subtitles;
   private readonly inventoryPanel: InventoryPanel;
   // Character, skills and settings panels are fetched on first use (C02).
@@ -464,6 +468,8 @@ export class Game {
 
     // Panel framework: Back/Escape, the shared header, one panel at a time, the tab bar (src/ui/panelStack.ts).
     this.uiRoot = uiRoot;
+    // Every control and panel has an accessible name, also the ones built later (C14).
+    watchAccessibility(uiRoot);
     uiRoot.classList.toggle('reduce-motion', this.settings.reduceMotion);
     uiRoot.classList.toggle('rarity-shapes', this.settings.rarityShapes);
     this.applyUiScale();
@@ -614,7 +620,7 @@ export class Game {
       classId: () => this.world.req(this.player, SkillUser).classId,
       iconUrl: (id) => this.renderer.assets.iconUrl(id, import.meta.env.BASE_URL),
       stock: () => this.vendorStock,
-      stash: () => stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots),
+      stash: () => stashSlots(stashOf(this.ctx.account!, this.hardcore), restorationBonuses(this.ctx.account!).stashSlots),
       rerollCost: () => vendorRerollCost(this.world.req(this.player, Progression).level, rerollsToday(this.ctx.account!.vendor, dailyKey())),
       rerollStock: () => {
         const r = payVendorReroll(this.world.req(this.player, Inventory), this.world.req(this.player, Progression).level, this.ctx.account!.vendor, dailyKey());
@@ -651,7 +657,7 @@ export class Game {
         this.serviceResult(r);
       },
       sortStash: (mode) => {
-        const slots = stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots);
+        const slots = stashSlots(stashOf(this.ctx.account!, this.hardcore), restorationBonuses(this.ctx.account!).stashSlots);
         slots.splice(0, slots.length, ...sortGrid(slots, mode));
         saveAccount(this.storage, this.ctx.account!);
       },
@@ -685,6 +691,13 @@ export class Game {
         if (dust > 0) this.toasts.show(t('crafting.salvageDust', { n: dust }));
         this.afterInventoryChange();
       },
+      repairCost: () => repairAllCost(this.world.req(this.player, Inventory)),
+      repairAll: () => {
+        const r = repairAll(this.world.req(this.player, Inventory));
+        recomputePlayer(this.world, this.player);
+        this.toasts.show(t(r.repaired === 0 ? 'durability.cannotAfford' : r.ok ? 'durability.repaired' : 'durability.repairedSome', { gold: r.paid }), r.repaired === 0 ? 'error' : 'info');
+        this.afterInventoryChange();
+      },
       extract: (gi) => this.serviceResult(extractAspect(this.world.req(this.player, Inventory), gi)),
       imprint: (ci, gi) => {
         const inv = this.world.req(this.player, Inventory);
@@ -692,14 +705,14 @@ export class Game {
         if (item) this.serviceResult(imprintAspect(inv, ci, item));
       },
       toStash: (gi) => {
-        const r = toStash(this.world.req(this.player, Inventory), gi, stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots));
+        const r = toStash(this.world.req(this.player, Inventory), gi, stashSlots(stashOf(this.ctx.account!, this.hardcore), restorationBonuses(this.ctx.account!).stashSlots));
         this.serviceResult(r);
         if (r.ok) this.toasts.show(t('services.stash.movedIn'));
         saveAccount(this.storage, this.ctx.account!);
         this.autosave();
       },
       fromStash: (i) => {
-        const r = fromStash(this.world.req(this.player, Inventory), stashSlots(this.ctx.account!.stash, restorationBonuses(this.ctx.account!).stashSlots), i);
+        const r = fromStash(this.world.req(this.player, Inventory), stashSlots(stashOf(this.ctx.account!, this.hardcore), restorationBonuses(this.ctx.account!).stashSlots), i);
         this.serviceResult(r);
         if (r.ok) this.toasts.show(t('services.stash.movedOut'));
         saveAccount(this.storage, this.ctx.account!);
@@ -981,6 +994,14 @@ export class Game {
     });
     });
     this.soundUi.openSettings = () => this.settingsPanel.run((p) => p.toggle('sound'));
+    this.photoMode = new PhotoMode(uiRoot, {
+      setPhoto: (on) => this.renderer.rig.setPhoto(on),
+      orbit: (dYaw, dPitch) => this.renderer.rig.orbit(dYaw, dPitch),
+      zoom: (steps) => this.renderer.rig.zoom(steps),
+      onExit: () => this.input.endTick(),
+      canEnter: () => this.playing && panelStack.top() === null && !this.world.has(this.player, Dead) && this.talkingTo === null,
+      isToggleKey: (e) => resolveKeybindings(this.settings).photoMode.includes(e.code),
+    });
     this.pauseMenu = new PauseMenu(uiRoot, {
       exportSave: () => this.exportSave(),
       toCharacterSelect: () => {
@@ -989,6 +1010,7 @@ export class Game {
         location.reload();
       },
       canOpen: () => this.playing,
+      photoMode: () => this.photoMode.enter(),
     });
     registerGamePanels(uiRoot, {
       pause: this.pauseMenu,
@@ -1001,6 +1023,7 @@ export class Game {
       tier: this.tierPanel,
       rift: this.riftPanel,
       lore: this.loreReader,
+      photo: this.photoMode,
       closeDialogue: () => this.closeDialogue(),
     });
     uiRoot.style.setProperty('--paused-label', JSON.stringify(t('panels.paused')));
@@ -1103,7 +1126,7 @@ export class Game {
     return id ? t(`feats.${id}.title`) : null;
   }
 
-  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number } | null; corrupt?: boolean; newer?: boolean }[] {
+  characterSlots(): { index: number; character: { name: string; classId: string; level: number; savedAt: string; zoneKey?: string; gear?: number; hardcore?: boolean; fallen?: boolean } | null; corrupt?: boolean; newer?: boolean }[] {
     return Array.from({ length: CHARACTER_SLOTS }, (_, index) => {
       try {
         const data = this.saves.read(slotKey(index));
@@ -1116,6 +1139,8 @@ export class Game {
             classId: data.character.classId,
             level: data.progression.level,
             savedAt: data.savedAt,
+            ...(data.character.hardcore && { hardcore: true }),
+            ...(data.character.fallen && { fallen: true }),
             ...(hasZone(data.world.zone) && { zoneKey: zoneDef(data.world.zone).key }),
             ...(gear !== undefined && { gear }),
           },
@@ -1127,7 +1152,9 @@ export class Game {
   }
 
   /** Start a brand-new character in a slot (overwrites a corrupt slot). */
-  newCharacter(slot: number, classId: string, name: string): void {
+  newCharacter(slot: number, classId: string, name: string, hardcore = false): void {
+    this.hardcore = hardcore;
+    this.fallen = false;
     this.respawnAs(classId);
     this.resetWorld();
     // A new character starts with empty endgame state (recipes, materials), not the last one's.
@@ -1289,6 +1316,9 @@ export class Game {
   }
 
   private fading = false;
+  /** A13: this character plays Hardcore (one life, its own stash); `fallen` once it has died. */
+  private hardcore = false;
+  private fallen = false;
 
   /**
    * Black fade around a zone change (the swap happens while the screen is dark). The screen stays black for at least
@@ -1330,6 +1360,11 @@ export class Game {
       if (opts.prepare) void Promise.race([opts.prepare.catch(() => undefined) /* prepareZone warned */, wait(ASSET_WAIT_MS)]).then(swapAndShow);
       else swapAndShow();
     }, ZONE_FADE * 1000);
+  }
+
+  /** A new build was installed behind this page (service worker): tell the player it loads on the next start. */
+  notifyUpdate(): void {
+    this.toasts.show(t('host.updateReady'), 'info', 10000);
   }
 
   /** Last-chance save for the crash and context-loss handlers (src/bootGuard.ts). */
@@ -1375,8 +1410,10 @@ export class Game {
   private update(dt: number): void {
     const input = this.input;
     if (input.wasPressed('toggleDebug')) this.devtools.toggle();
+    if (input.wasPressed('photoMode')) this.photoMode.toggle();
     if (input.wasPressed('quickSave')) this.save();
     if (input.wasPressed('quickLoad')) this.load();
+    if (this.hardcore && !this.fallen && this.world.has(this.player, Dead)) this.hardcoreFall();
     if ((input.wasPressed('respawn') || input.wasPadPressed('pickup')) && this.world.has(this.player, Dead) && !this.hud.respawnLocked) this.respawn();
     // Start (pad): the pause menu, like Escape with nothing open. Select toggles the map through the `map` action.
     if (input.wasPadPressed('pause') && this.playing && panelStack.top() === null && this.pauseMenu.canOpen()) panelStack.open('pause');
@@ -1441,6 +1478,8 @@ export class Game {
 
     const zoom = this.input.consumeWheel();
     if (zoom !== 0) this.renderer.rig.zoom(zoom);
+    // Photo mode: the right stick orbits, the left and right triggers zoom in and out (default pad layout).
+    this.photoMode.update(frameDt, this.input.pad?.aim ?? null, (this.input.isPadDown('skill4') ? 1 : 0) - (this.input.isPadDown('skill3') ? 1 : 0));
 
     this.updateStormLook();
     this.updateMemoryLook();
@@ -2487,7 +2526,8 @@ export class Game {
         max: th.max,
         statuses,
         ...(portrait ? { portrait } : {}),
-        ...bossPhaseTicks(w.get(te, Boss)?.script ?? undefined, w.get(te, Boss)?.phase ?? 0),
+        ...bossPhaseTicks(w.get(te, Boss)?.script ?? undefined),
+        ...bossPhaseLabel(w.get(te, Boss)?.script ?? undefined, w.get(te, Boss)?.phase ?? 0),
         ...(elite ? { tier: elite.kind, color: ELITE_COLORS[elite.kind], affixes: elite.affixes.map((a) => t(`elites.affixes.${a}`)), affixIds: [...elite.affixes] } : {}),
       };
     }
@@ -2548,7 +2588,21 @@ export class Game {
   // ---- Player lifecycle -----------------------------------------------------
 
   /** Rise after dying: a short fade out and in around the move, a rising cue, then 2 s of golden grace (F014). */
+  /**
+   * A13: a Hardcore character died. The save is written at once, marked fallen (reloading cannot undo it), and the next
+   * respawn press returns to the character select, where the slot shows a skull until the player deletes it.
+   */
+  private hardcoreFall(): void {
+    this.fallen = true;
+    this.save(true);
+    this.toasts.show(t('hardcore.fell'), 'info', 6000);
+  }
+
   respawn(): void {
+    if (this.hardcore && this.fallen && this.world.has(this.player, Dead)) {
+      location.reload();
+      return;
+    }
     if (!this.world.has(this.player, Dead) || this.fading) return;
     this.fadeTo(
       () => {
@@ -2587,6 +2641,13 @@ export class Game {
     // The death toll (G018): a little gold and half the potion charges.
     const lost = applyDeathPenalty(w, p);
     if (lost.gold > 0 || lost.potions > 0) this.toasts.show(t('death.penalty', { gold: lost.gold, potions: lost.potions }));
+    // A12: the gear wears; at 0 an item is broken until the blacksmith repairs it.
+    const wear = wearEquipment(w.req(p, Inventory));
+    if (wear.worn > 0) {
+      recomputePlayer(w, p);
+      this.toasts.show(t(wear.broken > 0 ? 'durability.broke' : 'durability.worn', { n: wear.broken > 0 ? wear.broken : wear.worn }), 'info');
+      this.inventoryPanel.refresh();
+    }
     // Back at the nearest discovered teleporter (docs/world-and-gameplay.md §13).
     const tr = this.playerTransform;
     // Inside a dungeon you come back at its entrance; bosses reset (docs/world-and-gameplay.md §13).
@@ -2847,10 +2908,14 @@ export class Game {
       // Saving inside a dungeon puts you back at its entrance.
       position: this.ctx.instance ? { x: this.ctx.instance.exit.x, z: this.ctx.instance.exit.z } : { x: tr.x, z: tr.z },
       facing: tr.facing,
+      hardcore: this.hardcore,
+      fallen: this.fallen,
     });
   }
 
   applySave(data: SaveData): void {
+    this.hardcore = data.character.hardcore === true;
+    this.fallen = data.character.fallen === true;
     if (this.world.req(this.player, SkillUser).classId !== data.character.classId) this.respawnAs(data.character.classId);
     this.characterName = data.character.name;
     const rng = new Rng(data.seed);
@@ -3187,6 +3252,10 @@ export class Game {
         this.toasts.show(t('save.noSave'), 'error');
         return false;
       }
+      if (data.character.fallen) {
+        this.toasts.show(t('hardcore.fallenSlot'), 'error');
+        return false;
+      }
       if (!this.applyChecked(data, this.slot)) return false;
       this.toasts.show(t('save.loaded'));
       return true;
@@ -3348,6 +3417,11 @@ export class Game {
 
   /** True while a full-screen menu is open, nothing is close by and the setting asks for a pause. */
   private menuPaused(): boolean {
+    // Photo mode freezes the world like the pause menu does (C06).
+    if (this.photoMode.active) {
+      this.menuPausedNow = false;
+      return true;
+    }
     // The Escape pause menu (and Settings opened from it) always freezes the world, enemies near or not.
     if (this.pauseMenu.pausing) {
       this.menuPausedNow = false;
