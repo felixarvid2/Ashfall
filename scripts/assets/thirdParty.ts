@@ -69,6 +69,10 @@ export const LOCAL_MODELS: Record<string, string> = {
   'prop.core_console': 'quaternius-modular-scifi-megakit/Prop_Computer.gltf',
   'prop.core_cable': 'quaternius-modular-scifi-megakit/Prop_Cable_3.gltf',
   'prop.core_door': 'quaternius-modular-scifi-megakit/Door_Frame_Square.gltf',
+  // Quaternius Sci-Fi Essentials Kit (Standard): robot enemies, rigged and animated
+  'enemy.eye_drone': 'quaternius-sci-fi-essentials-kit/Enemy_EyeDrone.gltf',
+  'enemy.quad_shell': 'quaternius-sci-fi-essentials-kit/Enemy_QuadShell.gltf',
+  'enemy.trilobite': 'quaternius-sci-fi-essentials-kit/Enemy_Trilobite.gltf',
   // Kenney Space Station Kit
   'prop.core_pipe': 'kenney-space-station-kit/pipe.glb',
   'prop.core_pipe_ring': 'kenney-space-station-kit/pipe-ring.glb',
@@ -77,6 +81,7 @@ export const LOCAL_MODELS: Record<string, string> = {
 /** Models whose origin is not at the feet: lift (metres, before the game's scale) so the lowest point is y = 0. */
 const LOCAL_LIFT: Record<string, number> = {
   'enemy.choir_singer': 0.87, // the chrysalis hangs 0.87 m below its origin
+  'enemy.eye_drone': 0.5, // the ball is centred on its origin; the game's `hover` lifts the feet
 };
 
 /** Models that stand upright on Poly Haven but should lie on the ground. */
@@ -226,7 +231,8 @@ async function models(): Promise<void> {
 async function localModels(): Promise<void> {
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
   const src = process.env.THIRD_PARTY_MODELS_SRC ?? join(CACHE, 'models');
-  for (const [assetId, rel] of Object.entries(LOCAL_MODELS)) {
+  const only = process.argv.slice(3); // optional asset ids: convert just these (a fresh clone has few of the source packs)
+  for (const [assetId, rel] of Object.entries(LOCAL_MODELS).filter(([id]) => only.length === 0 || only.includes(id))) {
     const from = join(src, rel);
     if (!existsSync(from)) throw new Error(`${assetId}: missing ${from} (set THIRD_PARTY_MODELS_SRC or add the file, see docs/credits.md)`);
     const doc = await io.read(from);
@@ -286,7 +292,7 @@ async function fonts(): Promise<void> {
   }
 }
 
-// `npm run assets:third-party -- local-models` runs only the local model conversion (no downloads).
+// `npm run assets:third-party -- local-models [asset ids]` runs only the local model conversion (no downloads).
 if (process.argv[2] === 'local-models') {
   await localModels();
 } else {

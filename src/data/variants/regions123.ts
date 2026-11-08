@@ -67,32 +67,31 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
   },
   {
     id: 'variant.rust_drone',
-    base: 'enemy.security_drone',
+    base: 'enemy.eye_drone',
     look: { tint: '#c08a5a', roughness: 0.95, metalness: 0.3 },
     parts: [
-      { asset: 'part.dome_crack', position: [0, 0.5, 0] },
-      { asset: 'part.cable_tangle', position: [0.12, 0.14, -0.06] },
+      { asset: 'part.dome_crack', position: [0, 0.93, 0], scale: 1.0 },
+      { asset: 'part.cable_tangle', position: [0.36, 0.55, 0.12], scale: 1.4 },
     ],
   },
   {
     id: 'variant.flame_drone',
-    base: 'enemy.security_drone',
+    base: 'enemy.eye_drone',
     look: { tint: '#9a8a80', emissive: '#ff4a0a', emissiveIntensity: 0.15 },
     parts: [
-      { asset: 'part.burner_ring', position: [0, 0.36, 0.22], rotation: [90, 0, 0], scale: 0.72 },
-      { asset: 'part.nozzle', position: [0, 0.16, 0.18], rotation: [90, 0, 0], scale: 0.55 },
-      { asset: 'part.tank_pair', position: [0, 0.42, -0.1], scale: 0.7 },
+      { asset: 'part.burner_ring', position: [0, 0.5, 0.4], rotation: [90, 0, 0], scale: 1.2 },
+      { asset: 'part.nozzle', position: [0, 0.15, 0.3], rotation: [90, 0, 0], scale: 0.8 },
+      { asset: 'part.tank_pair', position: [0, 0.72, -0.25], scale: 1.0 },
     ],
   },
   {
     id: 'variant.slag_hound',
-    base: 'enemy.spore_hound',
+    base: 'enemy.quad_shell',
     look: { tint: '#a08a76', emissive: '#ff5a1a', emissiveIntensity: 0.3 },
     parts: [
-      { asset: 'part.charred_plate', position: [0, 0.8, 0.3], rotation: [-60, 0, 0], scale: 0.5 },
-      { asset: 'part.charred_plate', position: [0, 0.82, 0.08], rotation: [-60, 8, 0], scale: 0.55 },
-      { asset: 'part.charred_plate', position: [0, 0.8, -0.14], rotation: [-60, -8, 0], scale: 0.55 },
-      { asset: 'part.charred_plate', position: [0, 0.76, -0.36], rotation: [-60, 6, 0], scale: 0.45 },
+      { asset: 'part.charred_plate', position: [0, 1.42, 0.38], rotation: [-60, 0, 0], scale: 0.8 },
+      { asset: 'part.charred_plate', position: [0, 1.46, 0.08], rotation: [-60, 8, 0], scale: 0.9 },
+      { asset: 'part.charred_plate', position: [0, 1.12, -0.26], rotation: [-40, -8, 0], scale: 0.8 },
     ],
   },
   {

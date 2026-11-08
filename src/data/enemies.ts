@@ -184,6 +184,7 @@ export const ENEMIES: EnemyInput[] = [
     preferredRange: [5, 9],
     hover: 1.1,
     glow: '#c0602a',
+    scale: 0.7, // enemy.eye_drone is 1 m across, the old drone body 0.7 m
     collider: { radius: 0.42, mass: 0.5 },
     attack: { kind: 'projectile', windup: 0.5, cooldown: 1.6, speed: 12, radius: 0.28, maxRange: 14, damageType: 'energy' },
   },
@@ -230,6 +231,7 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 12,
     aggroRange: 20,
     glow: '#ff7a2a',
+    scale: 0.6, // enemy.quad_shell is 2 m across and 1.5 m high, the old hound body about 1 m
     collider: { radius: 0.38, mass: 0.8 },
     attack: {
       kind: 'melee',
@@ -259,6 +261,7 @@ export const ENEMIES: EnemyInput[] = [
     preferredRange: [3, 5],
     hover: 1.3,
     glow: '#ff6a1a',
+    scale: 0.7, // enemy.eye_drone is 1 m across, the old drone body 0.7 m
     collider: { radius: 0.45, mass: 0.6 },
     attack: {
       kind: 'cone',
@@ -611,6 +614,7 @@ export const ENEMIES: EnemyInput[] = [
     preferredRange: [7, 11],
     hover: 1.3,
     glow: '#ffd23a',
+    scale: 0.7, // enemy.eye_drone is 1 m across, the old drone body 0.7 m
     collider: { radius: 0.45, mass: 0.6 },
     attack: { kind: 'projectile', windup: 0.6, cooldown: 2.0, speed: 12, radius: 0.3, maxRange: 16, damageType: 'energy' },
     shieldAlly: { every: 8, radius: 10, duration: 4 },
@@ -1210,8 +1214,8 @@ export const ENEMIES: EnemyInput[] = [
     moveSpeed: 1.7,
     turnRate: 1.6,
     aggroRange: 24,
-    scale: 1.5,
-    glow: '#5aff9a',
+    scale: 1.9, // enemy.trilobite is 2.5 m high and wide, about the old 4.8 m loader
+    // No `glow`: it flattened the trilobite's rusted texture to one green (as with Kade).
     collider: { radius: 2, mass: 160 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 4.6, arcDeg: 360, windup: 1.4, recovery: 1, cooldown: 1.8, damageType: 'physical', knockback: 3.5 },
@@ -1671,7 +1675,7 @@ export const ENEMIES: EnemyInput[] = [
     moveSpeed: 1.9,
     turnRate: 2.2,
     aggroRange: 28,
-    scale: 0.88,
+    scale: 1.3, // enemy.trilobite scaled to the old 3 m guardian
     collider: { radius: 2.2, mass: 300 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 5, arcDeg: 220, windup: 1.3, recovery: 1.0, cooldown: 1.9, damageType: 'physical', knockback: 4 },
