@@ -102,6 +102,35 @@ export function pulseZoomCurve(age: number, total: number, factor: number): numb
 export const PHOTO_PITCH = { min: 0.12, max: 1.45 } as const;
 export const PHOTO_ZOOM = { near: 0.4, far: 2.2 } as const;
 
+/**
+ * Where world points land on a screen when the follow camera looks at `focus` from `distance`: the largest |x| and |y| of
+ * their normalised device coordinates (1 = the screen edge). Used to frame a tall boss (A16) without building a renderer.
+ * The default angles are the rig's own.
+ */
+export function screenExtent(
+  focus: { x: number; y: number; z: number },
+  distance: number,
+  aspect: number,
+  points: readonly { x: number; y: number; z: number }[],
+  fovDeg: number = DEFAULTS.fovDeg,
+): { x: number; y: number } {
+  const yaw = THREE.MathUtils.degToRad(DEFAULTS.yawDeg);
+  const pitch = THREE.MathUtils.degToRad(DEFAULTS.pitchDeg);
+  const cam = new THREE.PerspectiveCamera(fovDeg, aspect, 0.5, 1200);
+  const horizontal = Math.cos(pitch) * distance;
+  cam.position.set(focus.x + Math.sin(yaw) * horizontal, focus.y + Math.sin(pitch) * distance, focus.z + Math.cos(yaw) * horizontal);
+  cam.lookAt(focus.x, focus.y, focus.z);
+  cam.updateMatrixWorld(true);
+  const v = new THREE.Vector3();
+  const out = { x: 0, y: 0 };
+  for (const p of points) {
+    v.set(p.x, p.y, p.z).project(cam);
+    out.x = Math.max(out.x, Math.abs(v.x));
+    out.y = Math.max(out.y, Math.abs(v.y));
+  }
+  return out;
+}
+
 export class CameraRig {
   readonly camera: THREE.PerspectiveCamera;
   readonly yaw: number;
@@ -121,6 +150,9 @@ export class CameraRig {
   /** Crowd pull-back: target and smoothed multiplier (F018). */
   private crowdTarget = 1;
   private crowd = 1;
+  /** Boss framing (A16): the distance multiplier that keeps a tall boss on screen, and its smoothed value. */
+  private frameTarget = 1;
+  private frame = 1;
   /** A timed push-in (F021). */
   private pulse = { age: 0, total: 0, factor: 1 };
   /** Reduce-motion setting (B01): no look-ahead, crowd pull-back or push-in; follow and zoom stay. */
@@ -212,9 +244,19 @@ export class CameraRig {
     this.pulse = { age: 0, total: seconds, factor };
   }
 
+  /** A16: pull the camera back by this factor (1 = normal) so a boss fits; it eases in and out. Ignores reduce-motion (it is framing, not motion). */
+  setFrameZoom(mul: number): void {
+    this.frameTarget = Math.max(1, mul);
+  }
+
+  /** The follow distance the player has chosen (before crowd, push-in and boss framing). */
+  get baseDistance(): number {
+    return this.targetDistance;
+  }
+
   /** The distance the camera sits at now, with crowd and push-in applied (tests, debugging). */
   get effectiveDistance(): number {
-    return this.distance * this.crowd * pulseZoomCurve(this.pulse.age, this.pulse.total, this.pulse.factor);
+    return this.distance * this.crowd * this.frame * pulseZoomCurve(this.pulse.age, this.pulse.total, this.pulse.factor);
   }
 
   addTrauma(amount: number): void {
@@ -229,6 +271,7 @@ export class CameraRig {
     this.look.x += (this.lookTarget.x - this.look.x) * kl;
     this.look.z += (this.lookTarget.z - this.look.z) * kl;
     this.crowd += (this.crowdTarget - this.crowd) * (1 - Math.exp(-2 * dt));
+    this.frame += (this.frameTarget - this.frame) * (1 - Math.exp(-2.5 * dt));
     if (this.pulse.age < this.pulse.total) this.pulse.age += dt;
     this.focus.x += (targetX + this.look.x - this.focus.x) * k;
     this.focus.y += (targetY + 1 - this.focus.y) * k;

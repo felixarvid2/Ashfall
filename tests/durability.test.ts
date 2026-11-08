@@ -19,7 +19,7 @@ describe('A12 durability', () => {
     const player = spawnPlayer(world, 'bastion', 0, 0);
     const inv = world.req(player, Inventory);
     const sword = gear('s1');
-    inv.equipped.weapon = sword;
+    inv.equipped.mainHand = sword;
     expect(durabilityOf(sword)).toBe(100);
     expect(wearEquipment(inv)).toEqual({ worn: 1, broken: 0 });
     expect(sword.durability).toBe(90);
@@ -45,9 +45,9 @@ describe('A12 durability', () => {
     expect(itemStats(item)).toEqual(item.implicits);
     expect(itemEffects(item)).toEqual([]);
     const cls = CLASSES.get('bastion')!;
-    const broken = computePlayerStats(cls, 10, { weapon: item });
+    const broken = computePlayerStats(cls, 10, { mainHand: item });
     delete item.durability;
-    const fixed = computePlayerStats(cls, 10, { weapon: item });
+    const fixed = computePlayerStats(cls, 10, { mainHand: item });
     expect(fixed.damageEstimate).toBeGreaterThan(broken.damageEstimate);
     expect(itemStats(item)).toEqual(full);
   });
@@ -58,7 +58,7 @@ describe('A12 durability', () => {
     const inv = world.req(player, Inventory);
     const a = gear('a');
     const b = gear('b');
-    inv.equipped.weapon = a;
+    inv.equipped.mainHand = a;
     inv.grid[0] = b;
     a.durability = 0;
     b.durability = 70;

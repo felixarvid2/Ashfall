@@ -37,6 +37,7 @@ export const CREDITS: readonly CreditSection[] = [
     entries: [
       { what: 'Sound effects and jingles', source: 'Kenney', licence: 'CC0' },
       { what: 'Music loops', source: 'Abstraction (Ben Burnes), Music Loop Bundle', licence: 'CC0' },
+      { what: 'The Core music', source: 'isaiah658, Heavenly Loop (OpenGameArt)', licence: 'CC0' },
     ],
   },
   { id: 'fonts', entries: [{ what: 'Rajdhani, Share Tech Mono', source: 'Google Fonts', licence: 'SIL Open Font License 1.1' }] },

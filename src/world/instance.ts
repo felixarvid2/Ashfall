@@ -35,6 +35,7 @@ import { descend, setupCore, shadesOnly, shaftAffixes, tickCore, type CoreInstan
 import { objectiveCount, objectiveDetail, objectiveInteract, setupObjective, tickObjective, type ObjectiveExtra } from './instanceObjectives';
 import { unlockCodexForDungeon } from '../systems/endgame/crafting';
 import { RIFT } from '../data/endgame/rifts';
+import { rollRiftModifier } from '../systems/endgame/riftModifiers';
 import { createRift, openRiftCache, riftHud, tickRift, type RiftHost, type RiftState } from '../systems/endgame/rifts';
 
 export type Dir = 'n' | 's' | 'e' | 'w';
@@ -250,7 +251,7 @@ export function buildInstance(world: World, ctx: GameContext, defId: string, poi
     completed: false,
     lights: [],
     extra: {},
-    ...(def.kind === 'rift' ? { rift: createRift(riftLevel ?? 1) } : {}),
+    ...(def.kind === 'rift' ? { rift: createRift(riftLevel ?? 1, null, rollRiftModifier(rng.fork('modifier'), riftLevel ?? 1)) } : {}),
   };
 
   const bossRoom = layout.rooms.find((r) => r.kind === 'boss');

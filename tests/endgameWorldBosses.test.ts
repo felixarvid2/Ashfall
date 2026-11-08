@@ -127,7 +127,7 @@ describe('data', () => {
     expect(engine.look).toBe('lumen');
     // Only existing portraits are reused (the portrait files are listed in artFiles).
     expect(worldBossPortrait('world_mother_of_spores')).toBe('brood_mother');
-    expect(worldBossPortrait('world_ashen_colossus')).toBeUndefined();
+    expect(worldBossPortrait('world_ashen_colossus')).toBe('ashen_colossus'); // round 4 D02: its own Blender render
   });
 
   it('every spot is inside its zone, in the open and away from hubs and gates', () => {

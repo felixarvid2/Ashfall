@@ -4,6 +4,7 @@
  * beat of phase 3 and the exposed core of phase 4) live in the boss script `lumen` (src/data/bosses.ts) and run in
  * src/systems/boss.ts; this file starts and ends the fight, and takes the player's choice.
  */
+import { screenExtent } from '../render/camera';
 import { Boss, Collider, Dead, EnemyAI, Renderable, Transform, makeTransform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
@@ -32,6 +33,12 @@ export const LUMEN_TUNING = {
    */
   frameLean: 0.5,
   frameMax: 5,
+  /**
+   * A16: Lumen (15 m tall, about 4 m across) must be wholly on screen from anywhere in the arena. The camera leans toward it
+   * up to the whole way and, when that is not enough, pulls back up to `maxZoom` times; `margin` is the share of the half
+   * screen the boss may fill (the rest is the frame).
+   */
+  frame: { height: 15, radius: 4, margin: 0.88, maxZoom: 2.4 },
 };
 
 export interface LumenState {
@@ -86,6 +93,50 @@ export function lumenCameraFocus(world: World, zone: ZoneRuntime, px: number, pz
   if (d < 1e-3) return { x: px, z: pz };
   const lean = Math.min(d * LUMEN_TUNING.frameLean, LUMEN_TUNING.frameMax);
   return { x: px + (dx / d) * lean, z: pz + (dz / d) * lean };
+}
+
+/**
+ * A16: the framing for the fight: where the camera looks and how far it pulls back (1 = normal) so that Lumen stands wholly
+ * on screen. The camera stays on the player (and keeps the old, gentle lean) as long as that already shows the boss; further out
+ * it leans toward Lumen, then pulls back. `distance` is the follow distance in use, `aspect` the screen's width / height.
+ */
+export function lumenCameraFrame(
+  world: World,
+  zone: ZoneRuntime,
+  px: number,
+  pz: number,
+  distance: number,
+  aspect: number,
+  fovDeg?: number,
+): { x: number; z: number; zoom: number } {
+  const base = lumenCameraFocus(world, zone, px, pz);
+  const st = zone.setPieces.lumen;
+  const bt = st && st.state === 'fight' && st.boss !== null && world.isAlive(st.boss) ? world.get(st.boss, Transform) : undefined;
+  if (!bt) return { ...base, zoom: 1 };
+  const F = LUMEN_TUNING.frame;
+  const pts: { x: number; y: number; z: number }[] = [{ x: bt.x, y: F.height, z: bt.z }];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    pts.push({ x: bt.x + Math.sin(a) * F.radius, y: 0, z: bt.z + Math.cos(a) * F.radius });
+    pts.push({ x: bt.x + Math.sin(a) * F.radius * 0.6, y: F.height * 0.6, z: bt.z + Math.cos(a) * F.radius * 0.6 });
+  }
+  const fits = (x: number, z: number, zoom: number) => {
+    const e = screenExtent({ x, y: 1, z }, distance * zoom, aspect, pts, fovDeg);
+    return e.x <= F.margin && e.y <= F.margin;
+  };
+  const dx = bt.x - px;
+  const dz = bt.z - pz;
+  const d = Math.hypot(dx, dz) || 1;
+  const t0 = Math.min(LUMEN_TUNING.frameLean, LUMEN_TUNING.frameMax / d);
+  for (let zoom = 1; zoom <= F.maxZoom + 1e-6; zoom += 0.1) {
+    for (const t of [t0, 0.6, 0.75, 0.9, 1]) {
+      if (t < t0 - 1e-9) continue;
+      const x = px + dx * t;
+      const z = pz + dz * t;
+      if (fits(x, z, zoom)) return { x, z, zoom };
+    }
+  }
+  return { x: bt.x, z: bt.z, zoom: F.maxZoom };
 }
 
 function closeArena(world: World, st: LumenState): void {

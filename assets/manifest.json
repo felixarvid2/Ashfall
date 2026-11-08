@@ -8340,6 +8340,66 @@
           1.5
         ]
       }
+    },
+    {
+      "id": "weapon.power_sword",
+      "category": "prop",
+      "prompt": "Round 4 (A19): a heavy industrial power sword, steel blade with a glowing ember edge, dark rubber grip. Stands on its pommel, 1.1 m.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "heightMeters": 1.1,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/power_sword.glb",
+      "lods": [
+        "blender/power_sword_lod1.glb",
+        "blender/power_sword_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 310,
+        "bytes": 10020,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#9aa2ac",
+        "size": [
+          0.08,
+          1.1,
+          0.04
+        ]
+      }
+    },
+    {
+      "id": "weapon.sun_staff",
+      "category": "prop",
+      "prompt": "Round 4 (A19): the Lightbearer's sun staff: a brass shaft ending in a cage round a bright core, crossed prongs and a cap. Stands on its butt, 1.5 m.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 700,
+      "heightMeters": 1.5,
+      "status": "optimized",
+      "meshy": {},
+      "file": "blender/sun_staff.glb",
+      "lods": [
+        "blender/sun_staff_lod1.glb",
+        "blender/sun_staff_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 396,
+        "bytes": 8776,
+        "textures": 0
+      },
+      "placeholder": {
+        "shape": "cylinder",
+        "color": "#b8893a",
+        "size": [
+          0.12,
+          1.5,
+          0.12
+        ]
+      }
     }
   ]
 }

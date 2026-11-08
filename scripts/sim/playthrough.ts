@@ -28,8 +28,10 @@ import { World, type Entity } from '../../src/core/ecs';
 import { EventQueue } from '../../src/core/events';
 import { Rng } from '../../src/core/rng';
 import { SpatialHash } from '../../src/core/spatial';
-import { classDef, enemyDef } from '../../src/data/db';
-import { baseItem } from '../../src/data/loot/db';
+import { ENCOUNTERS, classDef, enemyDef } from '../../src/data/db';
+import type { Encounter } from '../../src/data/schemas';
+import { PROGRESSION, baseItem } from '../../src/data/loot/db';
+import type { Slot } from '../../src/data/loot/schemas';
 import { defaultSettings } from '../../src/data/settings';
 import { TEST_ARENA } from '../../src/data/zones/testArena';
 import { collisionSystem, spatialSystem } from '../../src/systems/collision';
@@ -51,6 +53,8 @@ import { computePlayerStats, recomputePlayer } from '../../src/systems/stats';
 import { statusSystem } from '../../src/systems/status';
 import { spawnArenaProps } from '../../src/world/arena';
 import { spawnPlayer } from '../../src/world/spawn';
+import { BASE_FOR_SLOT } from './sim';
+import type { PlayStage } from './stages';
 
 export interface PlayStep {
   skill: string;
@@ -97,6 +101,31 @@ export interface PlayResult {
   taken: Record<string, number>;
   /** Ticks spent casting / moving / standing while enemies were alive, and between waves. */
   activity: { casting: number; moving: number; idle: number; between: number };
+  /** Level the run started at (1 unless a stage run). */
+  startLevel?: number;
+  /** Stage id of a level 10 to 50 run (scripts/sim/stages.ts). */
+  stage?: string;
+}
+
+/** Options of a run. A `stage` swaps the test arena's waves for a region's monsters at its levels (B05). */
+export interface PlaythroughOptions {
+  maxMinutes?: number;
+  targetLevel?: number;
+  seed?: string;
+  stage?: PlayStage;
+  /** Start at this level, with one skill point per level and rare gear in every slot (default 1, the starter kit). */
+  startLevel?: number;
+}
+
+/** Rare gear for every slot at the item power of `level`, so a character that skips levels 1 to 9 is not naked. */
+function dress(world: World, player: Entity, classId: string, level: number, rng: Rng): void {
+  const inv = world.req(player, Inventory);
+  const itemPower = Math.round(PROGRESSION.itemPower.base + PROGRESSION.itemPower.perLevel * level);
+  inv.equipped.mainHand = generateItem(rng, { itemPower, classId, uid: 'start-w', rarity: 'rare', type: 'weapon' });
+  for (const [slot, baseId] of Object.entries(BASE_FOR_SLOT) as [Slot, string][]) {
+    if (slot === 'mainHand') continue;
+    inv.equipped[slot] = generateItem(rng, { itemPower, classId, uid: `start-${slot}`, rarity: 'rare', baseId });
+  }
 }
 
 const SYSTEMS = [
@@ -132,7 +161,7 @@ const DODGE_SKILL = 0.35;
 /** Melee plans only fire projectile skills (the fallback starter) at targets this close. */
 const MELEE_SHOOT_RANGE = 4;
 
-function makeContext(seed: string): GameContext {
+function makeContext(seed: string, levels: [number, number] = TEST_ARENA.levels): GameContext {
   return {
     input: { isDown: () => false, wasPressed: () => false, isMouseDown: () => false, wasMousePressed: () => false },
     settings: defaultSettings(),
@@ -148,7 +177,7 @@ function makeContext(seed: string): GameContext {
     stats: { kills: 0 },
     loot: { rng: new Rng(seed).fork('loot'), seq: 0 },
     rewards: [],
-    zoneLevels: TEST_ARENA.levels,
+    zoneLevels: levels,
   };
 }
 
@@ -159,12 +188,17 @@ function gearScore(classId: string, level: number, equipped: Inventory['equipped
   return s.damageEstimate * Math.sqrt(s.maxLife * (1 + armor / 200));
 }
 
-export function playthrough(plan: PlayPlan, opts: { maxMinutes?: number; targetLevel?: number; seed?: string } = {}): PlayResult {
+export function playthrough(plan: PlayPlan, opts: PlaythroughOptions = {}): PlayResult {
   const seed = opts.seed ?? 'play';
   const maxTicks = Math.round((opts.maxMinutes ?? 40) * 3600);
-  const targetLevel = opts.targetLevel ?? 10;
+  const stage = opts.stage;
+  const startLevel = opts.startLevel ?? 1;
+  const targetLevel = opts.targetLevel ?? stage?.levels[1] ?? 10;
+  const encounterId = stage?.encounter.id ?? 'encounter.test_arena';
+  // The stage's waves join the encounter table (a sim-only registration; the game never sees them).
+  if (stage && !ENCOUNTERS.has(encounterId)) (ENCOUNTERS as Map<string, Encounter>).set(encounterId, stage.encounter);
   const world = new World();
-  const ctx = makeContext(seed);
+  const ctx = makeContext(seed, stage?.levels);
   const botRng = new Rng(`${seed}-bot`);
   spawnArenaProps(world, TEST_ARENA);
   const spawn = TEST_ARENA.playerSpawn;
@@ -173,6 +207,10 @@ export function playthrough(plan: PlayPlan, opts: { maxMinutes?: number; targetL
   const prog = world.req(player, Progression);
   const inv = world.req(player, Inventory);
   const t = tree(plan.classId);
+  if (startLevel > 1) {
+    prog.level = startLevel;
+    prog.skillPoints = startLevel - 1;
+  }
   // Like a player, fall back on the starting skill until the build's skills are learned.
   const starter = classDef(plan.classId).actionBar[0]!;
   if (!plan.rotation.some((r) => r.skill === starter)) plan = { ...plan, rotation: [...plan.rotation, { skill: starter }] };
@@ -183,18 +221,19 @@ export function playthrough(plan: PlayPlan, opts: { maxMinutes?: number; targetL
     addToGrid(inv, item);
     equipFromGrid(inv, inv.grid.indexOf(item), plan.classId);
   }
+  if (startLevel > 1) dress(world, player, plan.classId, startLevel, new Rng(`${seed}-start-gear`));
   recomputePlayer(world, player);
 
   const encounter = world.create();
-  world.add(encounter, EncounterState, { encounterId: 'encounter.test_arena', wave: 0, phase: 'intermission', timer: 2.5, alive: 0 });
+  world.add(encounter, EncounterState, { encounterId, wave: 0, phase: 'intermission', timer: 2.5, alive: 0 });
 
   reacted.clear();
   Object.assign(nav, { lastX: spawn.x, lastZ: spawn.z, checkTimer: 0, sideTimer: 0, flip: 1 });
-  const result: PlayResult = { name: plan.name, levelTimes: [0, 0], reached: 1, deaths: 0, kills: 0, wave: 0, potions: 0, avgLife: 0, seconds: 0, taken: {}, activity: { casting: 0, moving: 0, idle: 0, between: 0 } };
+  const result: PlayResult = { name: plan.name, levelTimes: [0, 0], reached: startLevel, deaths: 0, kills: 0, wave: 0, potions: 0, avgLife: 0, seconds: 0, taken: {}, activity: { casting: 0, moving: 0, idle: 0, between: 0 } };
   let deadFor = 0;
   let lifeSum = 0;
   let lifeSamples = 0;
-  let lastLevel = 1;
+  let lastLevel = startLevel;
 
   const spendPoints = () => {
     if (prog.skillPoints <= 0) return;
@@ -214,6 +253,16 @@ export function playthrough(plan: PlayPlan, opts: { maxMinutes?: number; targetL
         progress = true;
         break;
       }
+    }
+    // Past the plan's build order (a level 10 to 50 run has many more points than it lists): rank up the rotation's
+    // own nodes first, then anything that can be learned, in the tree's order.
+    const rotationNodes = plan.rotation.map((r) => `n.${r.skill.split('.')[1]}`);
+    // (Only for stage runs: the level 1 to 10 bands were measured with the plan's order alone.)
+    for (let guard = 0; (stage || startLevel > 1) && prog.skillPoints > 0 && guard < 200; guard++) {
+      const next = [...rotationNodes, ...t.nodes.map((n) => n.id)].find((id) => canLearn(t, user.tree, id, prog.skillPoints).ok);
+      if (!next) break;
+      learn(t, user.tree, next, prog.skillPoints);
+      prog.skillPoints--;
     }
     recomputePlayer(world, player);
     const bar = plan.rotation.map((r) => r.skill).filter((id) => user.compiled[id]);
@@ -306,6 +355,8 @@ export function playthrough(plan: PlayPlan, opts: { maxMinutes?: number; targetL
     if (prog.level >= targetLevel) break;
   }
   result.reached = prog.level;
+  result.startLevel = startLevel;
+  if (stage) result.stage = stage.id;
   result.kills = ctx.stats.kills;
   result.wave = world.req(encounter, EncounterState).wave;
   result.avgLife = lifeSamples > 0 ? lifeSum / lifeSamples : 1;

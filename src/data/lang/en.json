@@ -2498,6 +2498,17 @@
   "credits": {
     "sections": { "models": "3D models", "textures": "Textures", "icons": "Icons", "audio": "Music and sound", "fonts": "Fonts", "tools": "Tools" }
   },
+  "bestiary": {
+    "heading": "Bestiary",
+    "kills": "{n} defeated",
+    "infected": { "name": "Infected", "desc": "People and animals taken by the Lumen spores. They shamble in packs and burn well." },
+    "insect": { "name": "Brood", "desc": "Insects grown large on the Vaults' nutrient. They swarm, and the swarm does not tire." },
+    "machine": { "name": "Machines", "desc": "Drones, loaders and security units, still following orders nobody gave. They spark and topple when they fall." },
+    "beast": { "name": "Beasts", "desc": "Hounds and burrowers that live where the Lumen is thickest. Fast, hungry, loud." },
+    "lumen": { "name": "Lumen-born", "desc": "Things the Lumen made on its own. The light in them is not a glow, it is a thought." },
+    "human": { "name": "People", "desc": "Soldiers, officers and miners who stayed. Some still know your name." },
+    "light": { "name": "Light Beings", "desc": "The Core's own children: motes, singers and guardians. They remember everyone." }
+  },
   "barks": {
     "benny": {
       "idle": {
@@ -5552,6 +5563,12 @@
   },
   "rifts": {
     "title": "Deep Rift",
+    "modifiers": {
+      "volatileDead": { "name": "Volatile Dead", "desc": "Some of the slain burst a moment later. Step away from the bodies." },
+      "shrinkingArena": { "name": "Shrinking Arena", "desc": "In the guardian fight a ring of burning light closes in from the walls." },
+      "eliteStorm": { "name": "Elite Storm", "desc": "A share of every pack is born a champion." },
+      "lumenSurges": { "name": "Lumen Surges", "desc": "Every half a minute the rift flares and its enemies hit harder for a few seconds.", "flare": "The rift flares!" }
+    },
     "locked": "The obelisk is dormant. Defeat Lumen to wake it.",
     "badLevel": "That rift level is not open yet.",
     "daily": {

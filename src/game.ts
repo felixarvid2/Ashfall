@@ -1,6 +1,7 @@
 /**
  * Top-level game: wires ECS, systems, input, rendering, UI and saving together.
  */
+import { bestiaryRows } from './data/bestiary';
 import {
   AttackTarget,
   Renderable,
@@ -191,7 +192,7 @@ import { VENDOR } from './data/services';
 import { championAffixes, eliteSystem } from './systems/elites';
 import { activeMemory, bossSystem, inBeat, resetBoss } from './systems/boss';
 import { CREDIT_KEYS, epilogueKeys, type LumenChoice } from './data/lumen';
-import { chooseLumen, lumenCameraFocus } from './world/lumen';
+import { chooseLumen, lumenCameraFocus, lumenCameraFrame } from './world/lumen';
 import type { EpilogueScreen } from './ui/epilogue';
 import { panelStack } from './ui/panelStack';
 import { buildSaveData, restoreVitals } from './systems/saveSnapshot';
@@ -828,7 +829,7 @@ export class Game {
         return { used: grid.filter((i) => i !== null).length, max: grid.length };
       })(),
       portraitUrl: this.renderer.assets.iconUrl(`icon.portrait_${this.world.req(this.player, SkillUser).classId}`, import.meta.env.BASE_URL),
-      ...(this.ctx.account && { feats: this.featRows(this.ctx.account) }),
+      ...(this.ctx.account && { feats: this.featRows(this.ctx.account), bestiary: this.bestiaryPages(this.ctx.account) }),
     }), {
         wearTitle: (id) => {
           if (this.ctx.account && setTitle(this.ctx.account, id)) saveAccount(this.storage, this.ctx.account);
@@ -1516,7 +1517,10 @@ export class Game {
     const tr = this.playerTransform;
     const px = tr.prevX + (tr.x - tr.prevX) * alpha;
     const pz = tr.prevZ + (tr.z - tr.prevZ) * alpha;
-    this.renderer.render(frameDt, px, 0, pz, this.zone ? lumenCameraFocus(this.world, this.zone, px, pz) : undefined);
+    // A16: during the Lumen fight the camera also pulls back until the whole boss is on screen.
+    const frame = this.zone ? lumenCameraFrame(this.world, this.zone, px, pz, this.renderer.rig.baseDistance, this.renderer.rig.camera.aspect, this.renderer.rig.camera.fov) : undefined;
+    this.renderer.rig.setFrameZoom(frame?.zoom ?? 1);
+    this.renderer.render(frameDt, px, 0, pz, frame && frame.zoom > 1 ? { x: frame.x, z: frame.z } : this.zone ? lumenCameraFocus(this.world, this.zone, px, pz) : undefined);
     audio.setListener(px, pz, this.ctx.cameraYaw);
     this.updateAudio(px, pz, frameDt);
     this.pickupLog.update(frameDt);
@@ -1614,6 +1618,17 @@ export class Game {
   }
 
   /** D12: the feats list for the character panel. */
+  /** D19: the bestiary's pages from the account's family kill counters. */
+  private bestiaryPages(account: AccountData) {
+    return bestiaryRows(account.feats.stats).map((r) => ({
+      family: r.family,
+      name: t(`bestiary.${r.family}.name`),
+      description: t(`bestiary.${r.family}.desc`),
+      members: r.members,
+      kills: r.kills,
+    }));
+  }
+
   private featRows(account: AccountData) {
     const worn = wornTitle(account);
     return FEATS.map((f) => {
@@ -2810,6 +2825,18 @@ export class Game {
 
   get mounted(): boolean {
     return this.world.has(this.player, Mounted);
+  }
+
+  /** Debug: one ground item of each given rarity in a row beside the player (a copy of a worn item), for UI checks (C01, C04). */
+  dropTestLoot(rarities: Item['rarity'][]): void {
+    const tr = this.playerTransform;
+    const base = Object.values(this.world.req(this.player, Inventory).equipped).find((i): i is Item => !!i);
+    if (!base) return;
+    rarities.forEach((rarity, i) => {
+      const e = this.world.create();
+      this.world.add(e, GroundItem, { item: { ...structuredClone(base), uid: `test-${i}`, rarity }, age: 5 });
+      this.world.add(e, Transform, makeTransform(tr.x + 3 + i * 1.6, 0, tr.z + 3));
+    });
   }
 
   /** Debug: a champion pack or rare elite next to the player. */

@@ -13,7 +13,8 @@
  * the sets miss. A runtime variant (src/data/variants.ts) is listed as the manifest ids it is built from, its base
  * and its parts, so the byte budgets count both.
  */
-import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from './weapons';
+import { CLASS_WEAPONS, PROCEDURAL_PREFIX, WEAPON_BY_BASE } from './weapons';
+import { BASE_ITEMS } from './loot/db';
 import { CLASSES, ENEMY_DEFS } from './db';
 import { BOSS_SCRIPTS } from './bosses';
 import { WORLD_BOSSES } from './endgame/worldBosses';
@@ -43,6 +44,11 @@ export function classAssetIds(classId: string): string[] {
   // The Xenomant's raised minions wear a crest of bone shards (D04).
   if (classId === 'xenomant') ids.push('part.bone_shards');
   for (const mount of CLASS_WEAPONS[classId] ?? []) if (!mount.asset.startsWith(PROCEDURAL_PREFIX)) ids.push(mount.asset);
+  // A19: the models of the class's other weapon bases, for when one is equipped.
+  for (const [base, mounts] of Object.entries(WEAPON_BY_BASE)) {
+    if (!BASE_ITEMS.get(base)?.classes?.includes(classId)) continue;
+    for (const mount of mounts) if (!mount.asset.startsWith(PROCEDURAL_PREFIX)) ids.push(mount.asset);
+  }
   return expandAssetIds(ids);
 }
 

@@ -9,10 +9,10 @@ import { StaticProps } from './staticProps';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { AttackTarget, Boss, Collider, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Summon, Transform, Turret } from '../core/components';
+import { AttackTarget, Boss, Collider, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Inventory, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Summon, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
-import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from '../data/weapons';
+import { PROCEDURAL_PREFIX, weaponMountsFor } from '../data/weapons';
 import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena';
@@ -1060,9 +1060,16 @@ export class GameRenderer {
   }
 
   /** Put the class's weapons into the character's hands (bone attachments). */
-  private attachWeapons(obj: THREE.Object3D, classId: string): void {
+  private attachWeapons(obj: THREE.Object3D, classId: string, baseId?: string | null): void {
     obj.updateMatrixWorld(true);
-    for (const mount of CLASS_WEAPONS[classId] ?? []) {
+    // A19: the hand holds the equipped weapon's own model where there is one. Changing weapons swaps what was attached.
+    const old: THREE.Object3D[] = [];
+    obj.traverse((o) => {
+      if (o.name.startsWith('weapon:')) old.push(o);
+    });
+    for (const o of old) o.removeFromParent();
+    obj.userData.weaponBase = baseId ?? null;
+    for (const mount of weaponMountsFor(classId, baseId)) {
       const bone = obj.getObjectByName(mount.bone);
       const procedural = mount.asset.startsWith(PROCEDURAL_PREFIX);
       if (!bone || (!procedural && !this.assets.has(mount.asset))) continue;
@@ -1215,7 +1222,7 @@ export class GameRenderer {
           });
         }
         const user = world.get(e, SkillUser);
-        if (user && world.has(e, PlayerControlled)) this.attachWeapons(obj, user.classId);
+        if (user && world.has(e, PlayerControlled)) this.attachWeapons(obj, user.classId, world.get(e, Inventory)?.equipped.mainHand?.base);
         // Rim light keeps characters readable against the dark ground (docs/world-and-gameplay.md §14).
         if (world.has(e, PlayerControlled)) addRim(obj, '#a8bcdf', 0.55);
         else if (world.has(e, EnemyAI)) {
@@ -1323,6 +1330,12 @@ export class GameRenderer {
         if (ai.state === 'windup') pitch = -0.16;
         else if (ai.state === 'recover') pitch = 0.22;
         lean = { pitch, roll: Math.sin(phase) * 0.06 * gait };
+      }
+      // A19: a new main-hand weapon changes what the hero holds.
+      if (obj.userData.weaponBase !== undefined) {
+        const base = world.get(e, Inventory)?.equipped.mainHand?.base ?? null;
+        const user = world.get(e, SkillUser);
+        if (user && base !== obj.userData.weaponBase) this.attachWeapons(obj, user.classId, base);
       }
       if (animator) {
         if (animator.pendingBorrow !== undefined && this.assets.borrowReady(animator.pendingBorrow)) {

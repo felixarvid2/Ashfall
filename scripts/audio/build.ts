@@ -160,14 +160,16 @@ const AMBIENCE: Record<(typeof AMBIENCE_IDS)[number], { file: string; gain: numb
 };
 
 /** id → Abstraction loop; they are already seamless, only the level changes. */
-const MUSIC: Record<(typeof MUSIC_IDS)[number], { file: string; gain: number }> = {
+/** `repeat`: the loop is tiled this many times (a 34 s loop that must reach the 60 s the Core track is held to); `lean`: encode at the low rates the synthesised drones use (the audio budget). */
+const MUSIC: Record<(typeof MUSIC_IDS)[number], { file: string; gain: number; repeat?: number; lean?: boolean }> = {
   'music.menu': { file: 'abstraction/Week 19 - Dark Portents MYSTERIOUS TRAVELER.ogg', gain: 0.8 },
   'music.hub': { file: 'abstraction/Week 20 - Dust Bowl HOPE OF RAIN.ogg', gain: 0.8 },
   'music.cinder_flats': { file: 'abstraction/Week 20 - Dust Bowl PARCHED.ogg', gain: 0.8 },
   'music.refinery_district': { file: 'abstraction/Week 20.1 - Magnetic Tape SCUFFED.ogg', gain: 0.8 },
   'music.hydroponic_vaults': { file: 'abstraction/Week 13 - Primordial Soup BASE.ogg', gain: 0.8 },
   'music.deep_mines': { file: 'abstraction/Week 24 - Pull Me Down DEEP WELL.ogg', gain: 0.8 },
-  'music.the_core': { file: 'synth:the_core', gain: 0.8 },
+  // Round 4 (D01): "Heavenly Loop" by isaiah658, CC0 (https://opengameart.org/content/heavenly-loop), file `Heavenly Loop_0.ogg`; two loops back to back.
+  'music.the_core': { file: 'opengameart/Heavenly Loop.ogg', gain: 0.8, repeat: 2, lean: true },
   'music.boss': { file: 'abstraction/Week 19 - Dark Portents SHROUDED FUTURE.ogg', gain: 0.8 },
   'music.boss_mines': { file: 'abstraction/Week 24 - Pull Me Down GRAVITY.ogg', gain: 0.8 },
   'music.boss_core': { file: 'synth:boss_core', gain: 0.8 },
@@ -414,7 +416,7 @@ function loudness(file: string): { lufs: number; truePeak: number } {
   return { lufs: Number(j.input_i), truePeak: Number(j.input_tp) };
 }
 
-function music(tmp: string, id: string, file: string): { duration: number; lufs: number } {
+function music(tmp: string, id: string, file: string, opts: { repeat?: number; lean?: boolean } = {}): { duration: number; lufs: number } {
   const name = id.slice('music.'.length);
   const synth = file.startsWith('synth:');
   let src = join(SRC, file);
@@ -423,6 +425,12 @@ function music(tmp: string, id: string, file: string): { duration: number; lufs:
     src = join(tmp, `synth-${name}.wav`);
     writeFileSync(src, wav(SYNTH_MUSIC[file.slice('synth:'.length)]!(SR)));
   }
+  if ((opts.repeat ?? 1) > 1) {
+    // Tile the (seamless) loop into a WAV, so the loudness measurement and the gain see the whole track.
+    const tiled = join(tmp, `tiled-${name}.wav`);
+    ffmpeg(['-stream_loop', String(opts.repeat! - 1), '-i', src, '-ac', '2', '-ar', String(SR), '-c:a', 'pcm_f32le', tiled]);
+    src = tiled;
+  }
   const m = loudness(src);
   // Plain gain (loudnorm's linear mode without its dynamic fallback), so the loop point is untouched.
   const gainDb = Math.min(MUSIC_LUFS - m.lufs, MUSIC_TP_DB - m.truePeak);
@@ -430,8 +438,9 @@ function music(tmp: string, id: string, file: string): { duration: number; lufs:
   const w = join(tmp, `${name}.wav`);
   writeFileSync(w, wav(ch));
   // A synthesised drone has little high end: lower rates keep the audio budget (BUDGET).
-  encodeOgg(w, join(OUT, 'music', `${name}.ogg`), synth ? 0 : 3);
-  encodeMp3(w, join(OUT, 'music', `${name}.mp3`), synth ? '64k' : '128k', true);
+  const lean = synth || opts.lean === true;
+  encodeOgg(w, join(OUT, 'music', `${name}.ogg`), lean ? 0 : 3);
+  encodeMp3(w, join(OUT, 'music', `${name}.mp3`), lean ? '64k' : '128k', true);
   verifyLoop(`music/${name}`, ch);
   return { duration: ch[0]!.length / SR, lufs: m.lufs + gainDb };
 }
@@ -536,7 +545,7 @@ function main(): void {
     }
 
     for (const id of MUSIC_IDS) {
-      const { duration, lufs } = music(tmp, id, MUSIC[id].file);
+      const { duration, lufs } = music(tmp, id, MUSIC[id].file, MUSIC[id]);
       entries.push({ id, file: `music/${id.slice(6)}`, clips: [{ start: 0, duration }], loop: true, bus: 'music', gain: MUSIC[id].gain });
       console.log(`  ${id} ${duration.toFixed(3)} s at ${lufs.toFixed(1)} LUFS`);
     }

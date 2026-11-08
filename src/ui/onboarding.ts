@@ -253,7 +253,9 @@ export class CoachMarks {
     const never = Object.assign(document.createElement('button'), { type: 'button', className: 'coach-never', textContent: t('onboarding.never') });
     never.dataset.testid = 'coach-never';
     never.addEventListener('click', () => this.dismissCurrent());
-    this.el.append(this.text, never, skip);
+    const actions = Object.assign(document.createElement('div'), { className: 'coach-actions' });
+    actions.append(never, skip);
+    this.el.append(this.text, actions);
     root.append(this.el);
     // Doing the thing finishes its tip.
     document.addEventListener(

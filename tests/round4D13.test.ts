@@ -327,3 +327,61 @@ describe('D16 ten Blender props', () => {
     }
   });
 });
+
+describe('D03 barrier emblem', () => {
+  it('every passive that raises barrierBonus has its own emblem, not the generic one', async () => {
+    const { existsSync } = await import('node:fs');
+    const { ART_FILES } = await import('../src/data/artFiles');
+    const { SKILL_TREES } = await import('../src/data/db');
+    expect(ART_FILES.has('stats/barrierBonus')).toBe(true);
+    expect(existsSync(new URL('../public/assets/art/stats/barrierBonus.webp', import.meta.url))).toBe(true);
+    // Every stat a passive node raises has a stat emblem (src/ui/skillTreePanel.ts falls back to the generic one otherwise).
+    for (const tree of SKILL_TREES.values()) {
+      for (const n of tree.nodes) {
+        if (n.type !== 'passive') continue;
+        const stat = n.effects.find((e) => e.kind === 'stat');
+        if (stat && 'stat' in stat && stat.stat === 'barrierBonus') expect(ART_FILES.has(`stats/${stat.stat}`), n.id).toBe(true);
+      }
+    }
+  });
+});
+
+describe('D02 Ashen Colossus portrait', () => {
+  it('the world boss has a portrait file that the intro card finds', async () => {
+    const { existsSync } = await import('node:fs');
+    const { worldBossPortrait } = await import('../src/data/endgame/worldBosses');
+    const { ART_FILES } = await import('../src/data/artFiles');
+    expect(worldBossPortrait('world_ashen_colossus')).toBe('ashen_colossus');
+    expect(ART_FILES.has('bosses/ashen_colossus')).toBe(true);
+    expect(existsSync(new URL('../public/assets/art/bosses/ashen_colossus.webp', import.meta.url))).toBe(true);
+  });
+});
+
+describe('D19 bestiary', () => {
+  it('has a page for every enemy family and counts kills per family', async () => {
+    const { bestiaryRows, familyKillKey } = await import('../src/data/bestiary');
+    const { ENEMY_FAMILIES } = await import('../src/data/schemas');
+    const en = (await import('../src/data/lang/en.json')).default as unknown as { bestiary: Record<string, { name: string; desc: string }> };
+    const rows = bestiaryRows({ [familyKillKey('machine')]: 12 });
+    expect(rows.map((r) => r.family)).toEqual([...ENEMY_FAMILIES]);
+    for (const r of rows) {
+      expect(en.bestiary[r.family]!.name).toBeTruthy();
+      expect(r.members.length, r.family).toBeGreaterThan(0);
+    }
+    expect(rows.find((r) => r.family === 'machine')!.kills).toBe(12);
+    expect(rows.find((r) => r.family === 'beast')!.kills).toBe(0);
+  });
+
+  it('trackFeats counts a kill under its enemy family', async () => {
+    const { Dead } = await import('../src/core/components');
+    const { emptyAccount } = await import('../src/core/account');
+    const { trackFeats } = await import('../src/systems/feats');
+    const world = new World();
+    const player = spawnPlayer(world, 'bastion', 0, 0);
+    const account = emptyAccount();
+    const e = (await import('../src/world/spawn')).spawnEnemy(world, 'security_drone', 5, 5, { level: 1 });
+    world.add(e, Dead, {} as never);
+    trackFeats(world, account, player, [{ type: 'death', target: e, x: 0, z: 0, isPlayer: false } as never]);
+    expect(account.feats.stats['family.machine']).toBe(1);
+  });
+});

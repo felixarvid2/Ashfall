@@ -67,7 +67,7 @@ export const SOUND_CATALOG: Record<SoundId, SoundEntry> = {
   'music.refinery_district': { id: 'music.refinery_district', file: 'music/refinery_district', clips: [{ start: 0, duration: 27.428571 }], loop: true, bus: 'music', gain: 0.8 },
   'music.hydroponic_vaults': { id: 'music.hydroponic_vaults', file: 'music/hydroponic_vaults', clips: [{ start: 0, duration: 32.842109 }], loop: true, bus: 'music', gain: 0.8 },
   'music.deep_mines': { id: 'music.deep_mines', file: 'music/deep_mines', clips: [{ start: 0, duration: 26.4 }], loop: true, bus: 'music', gain: 0.8 },
-  'music.the_core': { id: 'music.the_core', file: 'music/the_core', clips: [{ start: 0, duration: 60 }], loop: true, bus: 'music', gain: 0.8 },
+  'music.the_core': { id: 'music.the_core', file: 'music/the_core', clips: [{ start: 0, duration: 67.304989 }], loop: true, bus: 'music', gain: 0.8 },
   'music.boss': { id: 'music.boss', file: 'music/boss', clips: [{ start: 0, duration: 33.423719 }], loop: true, bus: 'music', gain: 0.8 },
   'music.boss_mines': { id: 'music.boss_mines', file: 'music/boss_mines', clips: [{ start: 0, duration: 28.2 }], loop: true, bus: 'music', gain: 0.8 },
   'music.boss_core': { id: 'music.boss_core', file: 'music/boss_core', clips: [{ start: 0, duration: 40 }], loop: true, bus: 'music', gain: 0.8 },
