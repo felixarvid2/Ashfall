@@ -112,3 +112,81 @@ describe('D06 eight new aspects', () => {
     expect(perClass).toEqual({ bastion: 2, spectre: 2, xenomant: 2, lightbearer: 2 });
   });
 });
+
+describe('D07 three new bounty types', () => {
+  it('are repeatable, valid and use steps that exist', async () => {
+    const { QUESTS, NPCS } = await import('../src/data/quests/db');
+    for (const id of ['bt.cf_pylon', 'bt.hv_samples', 'bt.dm_hunt']) {
+      const q = QUESTS.get(id)!;
+      expect(q.repeatable).toBe(true);
+      expect(NPCS.get(q.giver!)?.zone).toBe(q.zone);
+      expect(q.steps.at(-1)!.kind).toBe('talk');
+    }
+    const samples = QUESTS.get('bt.hv_samples')!.steps.find((s) => s.kind === 'interact');
+    expect(samples && samples.kind === 'interact' && samples.objects).toHaveLength(5);
+    const hunt = QUESTS.get('bt.dm_hunt')!.steps[0]!;
+    expect(hunt.kind === 'kill' && hunt.spawn?.elite).toBe('champion');
+  });
+});
+
+describe('D08 lore pages and D09 NPC barks', () => {
+  it('D08: twelve new lore notes with title and body, placed in the zones', async () => {
+    const en = (await import('../src/data/lang/en.json')).default as unknown as { lore: Record<string, Record<string, { title: string; body: string }>> };
+    const { ZONES } = await import('../src/data/zones');
+    const counts = { cf: 14, rd: 14, hv: 15, dm: 15, core: 14 } as Record<string, number>;
+    let added = 0;
+    for (const [k, n] of Object.entries(counts)) {
+      expect(Object.keys(en.lore[k]!)).toHaveLength(n);
+      for (let i = 12; i < n; i++) {
+        added++;
+        expect(en.lore[k]![String(i)]!.title.length).toBeGreaterThan(3);
+        expect(en.lore[k]![String(i)]!.body.length).toBeGreaterThan(60);
+      }
+    }
+    expect(added).toBe(12);
+    const logs = ZONES.flatMap((z) => z.pois.filter((p) => p.kind === 'lore').map((p) => String(p.data?.log)));
+    for (const [k, n] of Object.entries(counts)) for (let i = 12; i < n; i++) expect(logs).toContain(`${k}.${i}`);
+  });
+
+  it('D09: every hub NPC has three idle barks and two reactions, and the system picks them in order', async () => {
+    const en = (await import('../src/data/lang/en.json')).default as unknown as { barks: Record<string, { idle: Record<string, string>; react: Record<string, string> }> };
+    const { BARK_NPCS } = await import('../src/data/barks');
+    const { NPCS } = await import('../src/data/quests/db');
+    const { nextBarkKey } = await import('../src/world/barks');
+    expect(BARK_NPCS.length).toBeGreaterThanOrEqual(20);
+    for (const id of BARK_NPCS) {
+      expect(NPCS.has(id), id).toBe(true);
+      expect(Object.keys(en.barks[id]!.idle), id).toHaveLength(3);
+      expect(Object.keys(en.barks[id]!.react), id).toHaveLength(2);
+    }
+    const heard = new Set<string>();
+    expect(nextBarkKey('benny', false, false, heard, 4)).toBe('barks.benny.idle.1');
+    expect(nextBarkKey('benny', true, false, heard, 0)).toBe('barks.benny.react.0');
+    heard.add('benny:0');
+    expect(nextBarkKey('benny', true, true, heard, 0)).toBe('barks.benny.react.1');
+  });
+});
+
+describe('D12 regional elite names', () => {
+  it('rare elites draw prefix + suffix and titles from their region, deterministically', async () => {
+    const { rareName, eliteRegionOf } = await import('../src/systems/elites');
+    const en = (await import('../src/data/lang/en.json')).default as unknown as { elites: { regional: Record<string, { prefix: string; suffix: string; title: string }> } };
+    expect(eliteRegionOf(5)).toBe('cf');
+    expect(eliteRegionOf(25)).toBe('hv');
+    expect(eliteRegionOf(45)).toBe('core');
+    const all = new Set<string>();
+    for (const [level, key] of [[5, 'cf'], [15, 'rd'], [25, 'hv'], [35, 'dm'], [48, 'core']] as const) {
+      const r = en.elites.regional[key]!;
+      for (let i = 0; i < 30; i++) {
+        const name = rareName(new Rng(`n${level}-${i}`), level);
+        const [first, rest] = name.split(' the ');
+        expect(rest, name).toBeTruthy();
+        expect(r.prefix.split('|').some((p) => first!.startsWith(p)), name).toBe(true);
+        expect(r.title.split('|').some((t) => name.endsWith(t)), name).toBe(true);
+        all.add(first!);
+      }
+      expect(rareName(new Rng('same'), level)).toBe(rareName(new Rng('same'), level));
+    }
+    expect(all.size).toBeGreaterThan(40);
+  });
+});

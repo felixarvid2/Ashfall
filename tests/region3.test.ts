@@ -63,7 +63,7 @@ describe('The Hydroponic Vaults zone', () => {
     expect(count('bunker')).toBe(6);
     expect(count('event')).toBe(6);
     expect(count('relic')).toBe(10);
-    expect(count('lore')).toBe(12);
+    expect(count('lore')).toBe(15);
     expect(count('signalTower')).toBe(3);
     expect(count('pylon')).toBe(6);
     expect(count('lockedChest')).toBe(6);

@@ -297,6 +297,8 @@ function buildPois(): PoiDef[] {
     [220, -110], [240, -150], [280, 160],
   ]);
   lore.forEach(([x, z], i) => pois.push({ id: `lore.${i}`, kind: 'lore', x, z, data: { log: `cf.${i}` } }));
+  // Round 4 (D08): two more notes.
+  scaled([[-232, -120], [90, 70]]).forEach(([x, z], i) => pois.push({ id: `lore.${12 + i}`, kind: 'lore', x, z, data: { log: `cf.${12 + i}` } }));
   const towers: [number, number][] = scaled([[-292, -26], [40, 120], [176, -224]]);
   towers.forEach(([x, z], i) => pois.push({ id: `tower.${i}`, kind: 'signalTower', x, z }));
   // Explosive barrels in clusters near fights.

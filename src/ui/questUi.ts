@@ -72,6 +72,8 @@ export interface TrackedQuest {
   step: string;
   kind: 'main' | 'side' | 'mystery';
   tracked: boolean;
+  /** Pinned to the HUD tracker from the quest log (C08). */
+  pinned?: boolean;
   /** Metres to the nearest marker of the quest's current step, and the screen direction to it (degrees, 0 = up). */
   dist?: number;
   angle?: number;
@@ -118,6 +120,22 @@ export function formatDistance(metres: number): string {
   return `${Math.max(0, Math.round(metres / 5) * 5)} m`;
 }
 
+/** Most quests the HUD tracker shows at once. */
+export const TRACKER_MAX = 3;
+
+/**
+ * The quests the HUD tracker shows (C08): with no pins the first three (the tracked one leads, as before); with pins
+ * the tracked quest and the pinned ones, at most three, pins in pin order after the tracked quest.
+ */
+export function visibleQuests(quests: readonly TrackedQuest[]): TrackedQuest[] {
+  if (!quests.some((q) => q.pinned)) return quests.slice(0, TRACKER_MAX);
+  const wanted = quests.filter((q) => q.pinned || q.tracked);
+  const pinned = wanted.filter((q) => q.pinned);
+  const tracked = wanted.filter((q) => q.tracked && !q.pinned);
+  // A tracked quest that is not pinned keeps its row (the arrow needs it) unless three pins fill the tracker.
+  return [...tracked, ...pinned].slice(0, TRACKER_MAX);
+}
+
 /** Active quests under the minimap: the tracked one expanded, the others behind a "+N" chip on touch. */
 export class QuestTracker {
   private readonly el: HTMLDivElement;
@@ -153,8 +171,8 @@ export class QuestTracker {
   }
 
   update(quests: TrackedQuest[]): void {
-    const shown = quests.slice(0, 3);
-    const key = shown.map((q) => `${q.id}|${q.step}|${q.tracked}`).join('#');
+    const shown = visibleQuests(quests);
+    const key = shown.map((q) => `${q.id}|${q.step}|${q.tracked}|${q.pinned ? 1 : 0}`).join('#');
     if (key !== this.last) {
       const first = this.last === '';
       this.last = key;
@@ -168,7 +186,7 @@ export class QuestTracker {
       this.el.replaceChildren(
         ...shown.map((q) => {
           const row = document.createElement('div');
-          row.className = `quest-row q-${q.kind}${q.tracked ? ' tracked' : ''}${!first && changed.has(q.id) ? ' updated' : ''}`;
+          row.className = `quest-row q-${q.kind}${q.tracked ? ' tracked' : ''}${q.pinned ? ' pinned' : ''}${!first && changed.has(q.id) ? ' updated' : ''}`;
           const step = Object.assign(document.createElement('div'), { className: 'quest-step', textContent: q.step });
           // A finished step stays on top for a moment, struck through with a check, and fades out over the new one (A018).
           // It is absolutely positioned, so the row never changes height.
@@ -195,7 +213,7 @@ export class QuestTracker {
       }
     }
     // The chip counts the quests that are not on screen.
-    const others = quests.length - (quests.some((q) => q.tracked) ? 1 : 0);
+    const others = quests.length - shown.length;
     this.more.hidden = others <= 0;
     this.more.textContent = `+${Math.max(0, others)}`;
     this.more.setAttribute('aria-label', t('questUi.log'));
@@ -233,6 +251,8 @@ export interface QuestLogEntry {
   level: number;
   rewards: string;
   tracked: boolean;
+  /** Pinned to the HUD tracker (C08). */
+  pinned?: boolean;
 }
 
 export interface QuestLogDone {
@@ -279,7 +299,7 @@ export class QuestLog {
     private readonly entries: () => { active: QuestLogEntry[]; done: QuestLogDone[] },
     /** Sets the tracked quest; `null` stops tracking. */
     private readonly track: (id: string | null) => void,
-    private readonly actions: { showOnMap?: (id: string) => void; openMap?: () => void; /** The hero's level, for dimming trivial quests. */ playerLevel?: () => number } = {},
+    private readonly actions: { /** Pins or unpins a quest on the HUD tracker; false when three are pinned already (C08). */ togglePin?: (id: string) => boolean; showOnMap?: (id: string) => void; openMap?: () => void; /** The hero's level, for dimming trivial quests. */ playerLevel?: () => number } = {},
   ) {
     this.panel = document.createElement('div');
     this.panel.className = 'panel quest-log';
@@ -390,6 +410,23 @@ export class QuestLog {
         this.refresh();
       });
       head.append(toggle, star);
+      if (this.actions.togglePin) {
+        // A pin: keep the quest on the HUD tracker, up to three at once (C08).
+        const pin = document.createElement('button');
+        pin.type = 'button';
+        pin.className = `log-pin${q.pinned ? ' on' : ''}`;
+        pin.dataset.testid = `log-pin-${q.id}`;
+        pin.setAttribute('aria-pressed', String(!!q.pinned));
+        pin.setAttribute('aria-label', q.pinned ? t('ux.quests.unpin') : t('ux.quests.pin'));
+        pin.title = pin.ariaLabel ?? '';
+        pin.textContent = q.pinned ? '\u25C6' : '\u25C7';
+        pin.addEventListener('click', () => {
+          haptic('tap');
+          this.actions.togglePin!(q.id);
+          this.refresh();
+        });
+        head.append(pin);
+      }
       row.append(head);
       if (open) {
         const body = document.createElement('div');

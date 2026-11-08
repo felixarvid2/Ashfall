@@ -42,9 +42,17 @@ export function rollAffixes(rng: Rng, count: number, level = 0): EliteAffix[] {
 }
 
 /** "Kaal the Rotting, Warden of Ash". */
-export function rareName(rng: Rng): string {
+export function rareName(rng: Rng, level?: number): string {
   const pool = (key: string) => t(`elites.names.${key}`).split('|');
-  return t('elites.named', { first: rng.pick(pool('first')), epithet: rng.pick(pool('epithet')), title: rng.pick(pool('title')) });
+  if (level === undefined) return t('elites.named', { first: rng.pick(pool('first')), epithet: rng.pick(pool('epithet')), title: rng.pick(pool('title')) });
+  // Round 4 (D12): a region's own prefix + suffix ("Ashmaw") and titles.
+  const region = (key: string) => t(`elites.regional.${eliteRegionOf(level)}.${key}`).split('|');
+  return t('elites.named', { first: rng.pick(region('prefix')) + rng.pick(region('suffix')), epithet: rng.pick(pool('epithet')), title: rng.pick(region('title')) });
+}
+
+/** The region whose name tables a rare elite of this monster level draws from (the zone level ranges). */
+export function eliteRegionOf(level: number): 'cf' | 'rd' | 'hv' | 'dm' | 'core' {
+  return level <= 10 ? 'cf' : level <= 20 ? 'rd' : level <= 30 ? 'hv' : level <= 40 ? 'dm' : 'core';
 }
 
 export function championAffixes(rng: Rng, level = 0): EliteAffix[] {
@@ -62,7 +70,7 @@ export function applyAffixes(world: World, e: Entity, kind: 'champion' | 'rare' 
     const m = world.get(e, Mover);
     if (m) m.speed *= AFFIX_TUNING.fast;
   }
-  if (kind === 'rare' && !world.has(e, DisplayName)) world.add(e, DisplayName, { key: rareName(rng), literal: true });
+  if (kind === 'rare' && !world.has(e, DisplayName)) world.add(e, DisplayName, { key: rareName(rng, world.get(e, CombatStats)?.level), literal: true });
 }
 
 const range = (rng: Rng, [a, b]: [number, number]) => rng.range(a, b);

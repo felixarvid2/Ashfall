@@ -1142,7 +1142,7 @@ export class ServicePanel {
   private hover(cell: HTMLElement, item: Item, extra?: string): void {
     if (useSheet()) return;
     cell.addEventListener('mouseenter', () => {
-      const tip = renderItemTooltip(item, this.actions.classId(), this.compareOptions(item));
+      const tip = renderItemTooltip(item, this.actions.classId(), { ...this.compareOptions(item), worn: Object.values(this.actions.inventory().equipped).filter((i): i is Item => !!i) });
       if (extra) tip.appendChild(div('tooltip-price', extra));
       else if (this.kind === 'vendor') tip.appendChild(div('tooltip-price', t('services.vendor.sellFor', { gold: sellPrice(item) })));
       this.tooltip.replaceChildren(tip);

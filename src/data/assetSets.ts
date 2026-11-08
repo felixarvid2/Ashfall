@@ -20,7 +20,7 @@ import { WORLD_BOSSES } from './endgame/worldBosses';
 import { INSTANCES, type InstanceDef } from './instances';
 import { PACK_TEMPLATES } from './packs';
 import { LOOT_ASSET_IDS } from './loot/lootModels';
-import { expandAssetIds } from './variants';
+import { CLIP_DONOR_ID, borrowsClips, expandAssetIds } from './variants';
 import { NPCS, QUESTS } from './quests/db';
 import type { ZoneDef } from './zones/zoneTypes';
 import { interactableAssetIds } from '../world/interactables';
@@ -105,6 +105,8 @@ export function enemyAssetIds(enemyIds: Iterable<string>, scripts: Iterable<stri
     const def = ENEMY_DEFS.get(id);
     if (!def) return;
     for (const piece of expandAssetIds([def.assetId])) ids.add(piece);
+    // A18: idle-only rigs borrow their other clips from the donor model, so an enemy on one brings it along.
+    if (borrowsClips(def.assetId)) ids.add(CLIP_DONOR_ID);
     if (def.onDeath?.spawn) addEnemy(def.onDeath.spawn.enemy);
     if (def.reinforce) addEnemy(def.reinforce.enemy);
   };

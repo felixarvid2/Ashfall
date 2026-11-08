@@ -439,6 +439,8 @@ function buildPois(): PoiDef[] {
   scaled([
     [140, -300], [90, -250], [118, -228], [10, -150], [-80, -210], [-160, -60], [-250, 0], [-140, 120], [180, 130], [240, 180], [-200, 280], [30, 190],
   ]).forEach(([x, z], i) => pois.push({ id: `hv.lore.${i}`, kind: 'lore', x, z, data: { log: `hv.${i}` } }));
+  // Round 4 (D08): three of Okafor's logs.
+  scaled([[60, -200], [-200, 40], [200, 100]]).forEach(([x, z], i) => pois.push({ id: `hv.lore.${12 + i}`, kind: 'lore', x, z, data: { log: `hv.${12 + i}` } }));
   // One signal tower per outer subzone.
   scaled([[-30, -230], [-250, -40], [250, 80]]).forEach(([x, z], i) => pois.push({ id: `hv.tower.${i}`, kind: 'signalTower', x, z }));
   scaled([[80, -160], [-20, -60], [170, 90]]).forEach(([x, z], i) => {

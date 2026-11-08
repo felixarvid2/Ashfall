@@ -120,6 +120,9 @@ import { spawnArenaProps } from './world/arena';
 import { blastSystem, crystalSystem, interactSystem, nearestInteractable, spawnInteractables, syncInteractables } from './world/interactables';
 import { acknowledgeAccountRecovery, loadAccount, relicEffects, saveAccount, type AccountData } from './core/account';
 import { runSaveApply, sanitizeSave } from './core/saveRefs';
+import { checkImport, summarizeSave } from './core/saveImport';
+import { copyText, formatLog, logEntries } from './core/errorLog';
+import type { DataTabDeps } from './ui/dataTab';
 import { InteractPrompt, LoreReader } from './ui/interactUi';
 import { deathCauseLine, deathRecap } from './ui/deathCause';
 import { bossPhaseTicks } from './ui/hud';
@@ -138,6 +141,7 @@ import {
   questSystem,
   rebuildQuestWorld,
   setQuestState,
+  togglePinned,
   spawnUnlockedNpcs,
   skipStep,
   startQuest,
@@ -202,6 +206,7 @@ import { WorldBossHud, worldBossLine, worldBossMapLabel } from './ui/worldBossHu
 import { EndgameStack } from './ui/endgameStack';
 import { EdgeArrow, edgeInsets, placeEdgeArrow } from './ui/edgeArrows';
 import { WORLD_BOSS, worldBossPortrait } from './data/endgame/worldBosses';
+import { barkSystem } from './world/barks';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
 import { restoreGroundLoot, stashGroundLoot } from './world/groundLoot';
 import { harvestSystem, harvestView, shardPileSystem } from './world/harvest';
@@ -442,6 +447,7 @@ export class Game {
       .add('pickup', pickupSystem)
       .add('interact', interactSystem)
       .add('quests', questSystem)
+      .add('barks', barkSystem)
       .add('instance', instanceSystem)
       .add('restoration', restorationSystem);
 
@@ -522,6 +528,11 @@ export class Game {
         if (this.ctx.quests) this.ctx.quests.tracked = id;
       },
       {
+        togglePin: (id) => {
+          const ok = this.ctx.quests ? togglePinned(this.ctx.quests, id) : false;
+          if (!ok) this.toasts.show(t('ux.quests.pinFull'), 'info', 2600);
+          return ok;
+        },
         // The map opens centred on the quest's marker (or plain, when the step has none).
         showOnMap: (id) => {
           const m = questMarkers(this.world, this.ctx).find((q) => q.quest === id);
@@ -952,6 +963,7 @@ export class Game {
         this.coach.reset();
         this.feelUi.resetGuideBanner();
       },
+      data: this.dataTabDeps(),
     });
     });
     this.soundUi.openSettings = () => this.settingsPanel.run((p) => p.toggle('sound'));
@@ -1095,7 +1107,7 @@ export class Game {
     this.resetWorld();
     // A new character starts with empty endgame state (recipes, materials), not the last one's.
     this.ctx.endgame = SaveDataSchema.shape.endgame.parse(undefined);
-    setQuestState(this.ctx.quests!, { active: {}, done: {}, tracked: null });
+    setQuestState(this.ctx.quests!, { active: {}, done: {}, tracked: null, pinned: [] });
     this.enterZone(START_ZONE.id, START_ZONE.playerSpawn.x, START_ZONE.playerSpawn.z);
     // A slot that failed to parse (damaged, or from a newer build) is copied aside before it is overwritten.
     this.saves.quarantineIfUnreadable(slotKey(slot));
@@ -1630,6 +1642,9 @@ export class Game {
           }
           this.notice(event.key, 'error');
           break;
+        case 'bark':
+          this.toasts.show(`${t(`npcs.${event.npc}.name`)}: ${t(event.key)}`);
+          break;
         case 'discover':
           this.toasts.show(t('map.discovered', { name: t(`zones.teleporters.${event.id}`) }));
           this.hud.showBanner(t(`zones.teleporters.${event.id}`), 2);
@@ -1705,6 +1720,7 @@ export class Game {
           level: def.level,
           rewards: t('questUi.rewards', { xp: Math.round(def.rewards.xp * tierMods(this.ctx).xp), gold: def.rewards.gold }),
           tracked: rt.tracked === id,
+          pinned: rt.pinned.includes(id),
         };
       }),
       done: [...rt.done.keys()].map((id) => {
@@ -1863,6 +1879,7 @@ export class Game {
       step: this.stepText(id),
       kind: questDef(id).kind,
       tracked: rt.tracked === id,
+      pinned: rt.pinned.includes(id),
       ...(rt.tracked === id && where ? where : {}),
     }));
     this.questTracker.update(tracked);
@@ -2426,7 +2443,7 @@ export class Game {
         max: th.max,
         statuses,
         ...(portrait ? { portrait } : {}),
-        ...bossPhaseTicks(w.get(te, Boss)?.script ?? undefined),
+        ...bossPhaseTicks(w.get(te, Boss)?.script ?? undefined, w.get(te, Boss)?.phase ?? 0),
         ...(elite ? { tier: elite.kind, color: ELITE_COLORS[elite.kind], affixes: elite.affixes.map((a) => t(`elites.affixes.${a}`)), affixIds: [...elite.affixes] } : {}),
       };
     }
@@ -3159,6 +3176,49 @@ export class Game {
     return true;
   }
 
+  /** Settings > Data (src/ui/dataTab.ts): backups of this character's slot, a checked import and the problem log. */
+  private dataTabDeps(): DataTabDeps {
+    const slotName = (): string | null => (this.slot === null ? null : slotKey(this.slot));
+    return {
+      backups: () => {
+        const key = slotName();
+        return key ? this.saves.backups(key) : [];
+      },
+      restoreBackup: (stamp) => {
+        const key = slotName();
+        if (!key) return t('saveData.reasons.broken');
+        try {
+          this.autosave();
+          const data = this.saves.restoreBackup(key, stamp);
+          return this.applyChecked(data, null) ? null : t('save.restoreFailed');
+        } catch (err) {
+          return err instanceof SaveError ? err.message : String(err);
+        }
+      },
+      exportSave: () => this.exportSave(),
+      checkImport,
+      current: () => (this.playing ? summarizeSave(this.snapshot()) : null),
+      applyImport: (check) => {
+        try {
+          // The character being replaced stays restorable from Settings > Data.
+          const key = slotName();
+          if (key) {
+            this.autosave();
+            this.saves.backupNow(key);
+          }
+          if (!this.applyChecked(check.data, null)) return t('save.restoreFailed');
+          this.toasts.show(t('save.imported'));
+          return null;
+        } catch (err) {
+          return err instanceof SaveError ? err.message : String(err);
+        }
+      },
+      logText: () => formatLog(logEntries(), { version: typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev', userAgent: navigator.userAgent }),
+      logCount: () => logEntries().length,
+      copy: (text) => copyText(text),
+    };
+  }
+
   exportSave(): void {
     const blob = new Blob([serializeSave(this.snapshot(), true)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -3275,6 +3335,10 @@ export class Game {
       padActive: () => pad.lastDevice === 'pad',
     });
     focusNav.attach(pad);
+    // With the full map open the bumpers zoom the minimap in three steps (C07); in play they are skill buttons.
+    pad.onButton((code, down) => {
+      if (down && this.mapUi.open && (code === 'Pad4' || code === 'Pad5')) this.mapUi.zoomMini(code === 'Pad5' ? 1 : -1);
+    });
     pad.onDevice((device) => {
       document.documentElement.classList.toggle('pad-active', device === 'pad');
       this.refreshHint();

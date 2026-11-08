@@ -66,13 +66,24 @@ describe('zone change leaks (round 4 B04)', () => {
       enter(zoneA);
       enter(zoneB);
     };
-    trip();
-    trip(); // the second trip warms every cache (shared textures, pooled effects)
+    for (let i = 0; i < 3; i++) trip(); // the first trips warm every cache (shared textures, pooled effects)
     const baseline = { ...gpu.counts };
     const g0 = new Set(gpu.geometries), m0 = new Set(gpu.materials);
-    for (let i = 0; i < 10; i++) trip();
+    for (let i = 0; i < 10; i++) {
+      trip();
+      if (process.env.LEAKDBG) console.log('trip', i, JSON.stringify(gpu.counts));
+    }
     const after = { ...gpu.counts };
     if (process.env.LEAKDBG) {
+      const reach = new Set<unknown>();
+      (renderer as unknown as { scene: import('three').Scene }).scene.traverse((o) => {
+        const d = o as import('three').Mesh;
+        if (d.geometry) reach.add(d.geometry);
+        for (const m of Array.isArray(d.material) ? d.material : d.material ? [d.material] : []) reach.add(m);
+      });
+      const lost: Record<string, number> = {};
+      for (const x of [...gpu.geometries, ...gpu.materials]) if (!reach.has(x)) { const k = `${x.type}:${(x as { color?: { getHexString(): string } }).color?.getHexString() ?? ''}`; lost[k] = (lost[k] ?? 0) + 1; }
+      console.log('unreachable', JSON.stringify(lost));
       const hist = (set: Set<{ type: string; name: string }>, before: Set<unknown>) => { const h: Record<string, number> = {}; for (const x of set) if (!before.has(x)) { const k = `${x.type}:${x.name}`; h[k] = (h[k] ?? 0) + 1; } return h; };
       console.log('new geos', JSON.stringify(hist(gpu.geometries as never, g0)), 'new mats', JSON.stringify(hist(gpu.materials as never, m0)));
     }

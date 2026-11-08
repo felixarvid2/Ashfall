@@ -138,8 +138,8 @@ describe('The Absorbed (people from earlier regions)', () => {
 });
 
 describe('The Core lore and events', () => {
-  it('has twelve lore logs with title and body', () => {
-    expect(Object.keys(lang.lore.core)).toHaveLength(12);
+  it('has fourteen lore logs with title and body', () => {
+    expect(Object.keys(lang.lore.core)).toHaveLength(14);
     for (const l of Object.values(lang.lore.core)) {
       expect(l.title).toBeTruthy();
       expect(l.body.length).toBeGreaterThan(40);

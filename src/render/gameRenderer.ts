@@ -1219,9 +1219,13 @@ export class GameRenderer {
         obj.userData.baseScale = obj.scale.x;
         this.objects.set(e, obj);
         this.scene.add(obj);
-        const clips = this.assets.clips(r.assetId);
+        const borrow = world.has(e, EnemyAI);
+        const clips = this.assets.clips(r.assetId, borrow);
         if (clips.size > 0) {
-          this.animators.set(e, new CharacterAnimator(obj, clips));
+          const animator = new CharacterAnimator(obj, clips);
+          // A18: the donor of borrowed clips is still loading; they are added when it is.
+          if (borrow && !this.assets.borrowReady(r.assetId)) animator.pendingBorrow = r.assetId;
+          this.animators.set(e, animator);
           obj.userData.animClock = { acc: 1 } satisfies AnimClock;
         }
         else if (!r.look && !((obj.userData.tint as TintSlot[] | undefined)?.length ?? 0) && world.hasOnly(e, Transform, Renderable, Collider)) {
@@ -1302,6 +1306,10 @@ export class GameRenderer {
         lean = { pitch, roll: Math.sin(phase) * 0.06 * gait };
       }
       if (animator) {
+        if (animator.pendingBorrow !== undefined && this.assets.borrowReady(animator.pendingBorrow)) {
+          animator.addClips(this.assets.clips(animator.pendingBorrow, true));
+          animator.pendingBorrow = undefined;
+        }
         // Far mixers tick at a lower rate, off-screen ones not at all (B01); the player and bosses always run in full.
         let interval = 0;
         if (ai && !world.has(e, Boss)) {

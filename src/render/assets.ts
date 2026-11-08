@@ -11,8 +11,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import runtimeManifest from 'virtual:asset-manifest';
 import { RuntimeManifestSchema, type RuntimeEntry } from '../data/assetManifest';
-import { VARIANTS, assetIdsOf, type VariantDef, type VariantMaterialLook, type VariantPart } from '../data/variants';
+import { CLIP_DONOR_ID, VARIANTS, assetIdsOf, borrowsClips, type VariantDef, type VariantMaterialLook, type VariantPart } from '../data/variants';
 import { applyLookMaterials } from './looks';
+import { borrowClips, hasSharedSkeleton, hipsHeight } from './sharedClips';
 import { ModelPacks, type Pack } from './modelPack';
 
 type Placeholder = NonNullable<RuntimeEntry['placeholder']>;
@@ -381,7 +382,7 @@ export class AssetLibrary {
    * Animation clips by game state name ("idle", "run", "attack", …). Empty while the id still shows its placeholder
    * (a variant whose base is loaded but a part is not): a mixer on a bone-less placeholder only warns about every track.
    */
-  clips(id: string): Map<string, THREE.AnimationClip> {
+  clips(id: string, borrow = false): Map<string, THREE.AnimationClip> {
     const map = new Map<string, THREE.AnimationClip>();
     if (!this.hasModel(id)) return map;
     const baseId = this.variants.get(id)?.base ?? id;
@@ -392,7 +393,31 @@ export class AssetLibrary {
       const clip = model.animations.find((c) => c.name === clipName);
       if (clip) map.set(state, clip);
     }
+    // A18: an idle-only rig on the shared skeleton borrows walk/attack/hit/death from the donor (once it has loaded).
+    if (borrow && !map.has('walk') && borrowsClips(id, this.variants)) return this.withBorrowed(baseId, model, map);
     return map;
+  }
+
+  /** Is the donor of borrowed clips loaded (or not needed by this id)? False means the clips will be there later. */
+  borrowReady(id: string): boolean {
+    return !borrowsClips(id, this.variants) || this.models.has(CLIP_DONOR_ID);
+  }
+
+  private readonly borrowed = new Map<string, Map<string, THREE.AnimationClip>>();
+  private withBorrowed(baseId: string, model: { levels: THREE.Object3D[] }, own: Map<string, THREE.AnimationClip>): Map<string, THREE.AnimationClip> {
+    const donor = this.models.get(CLIP_DONOR_ID);
+    if (!donor) {
+      void this.ensure([CLIP_DONOR_ID]);
+      return own;
+    }
+    const cached = this.borrowed.get(baseId);
+    if (cached) return cached;
+    const target = model.levels[0]!;
+    if (!hasSharedSkeleton(target)) return own;
+    const ratio = hipsHeight(target) / (hipsHeight(donor.levels[0]!) || 1) || 1;
+    const out = borrowClips(own, this.clips(CLIP_DONOR_ID), ratio);
+    this.borrowed.set(baseId, out);
+    return out;
   }
 
   /**

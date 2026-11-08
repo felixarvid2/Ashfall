@@ -1,0 +1,15 @@
+/* Settings > Data (src/ui/dataTab.ts). Touch targets are at least 44 px. */
+.settings-group-box { margin: 0 0 14px; }
+.settings-action { font: inherit; min-height: 44px; margin: 8px 8px 0 0; padding: 0 16px; cursor: pointer; color: var(--ui-text); background: #24201c; border: 1px solid var(--ui-border); letter-spacing: 0.06em; }
+.settings-action:hover, .settings-action:focus-visible { border-color: var(--ui-accent); outline: none; }
+.settings-action:disabled { opacity: 0.5; cursor: default; }
+.settings-status { min-height: 1.3em; margin: 8px 0 0; font-size: 0.9em; color: var(--ui-muted); }
+.settings-status.error { color: #ff7a5a; }
+.backup-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.backup-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid #2c2722; }
+.backup-row .settings-action { margin: 0; }
+.backup-empty { padding: 6px 0; color: var(--ui-muted); }
+.import-summary dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0 0 8px; }
+.import-summary dt { color: var(--ui-muted); }
+.import-summary dd { margin: 0; }
+.import-summary dd.changed { color: var(--ui-accent); }

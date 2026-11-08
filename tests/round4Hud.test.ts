@@ -149,3 +149,47 @@ describe('low-life feedback (C12)', () => {
     vi.useRealTimers();
   });
 });
+
+// ---- C10 boss phases ---------------------------------------------------------------------------------------
+import { bossPhaseTicks } from '../src/ui/hud';
+import { BOSS_SCRIPTS } from '../src/data/bosses';
+import { t } from '../src/data/i18n';
+
+describe('boss bar phases (C10)', () => {
+  it('reports the tick positions and the current phase of a scripted boss, and nothing for others', () => {
+    expect(bossPhaseTicks(undefined)).toEqual({});
+    expect(bossPhaseTicks('no_such_script')).toEqual({});
+    expect(bossPhaseTicks('the_first', 1)).toEqual({ phases: [0.6, 0.25], phase: { index: 1, count: 3 } });
+  });
+
+  it('every phase after the first of every boss script has a banner that resolves to text', () => {
+    for (const [id, list] of Object.entries(BOSS_SCRIPTS)) {
+      list.slice(1).forEach((p, i) => {
+        expect(p.banner, `${id} phase ${i + 2}`).toBeTruthy();
+        expect(t(p.banner!)).not.toBe(p.banner);
+      });
+    }
+  });
+
+  it('the boss frame shows "Phase 2/3", dims passed ticks and flashes on a new phase', () => {
+    document.body.replaceChildren();
+    const root = document.createElement('div');
+    root.id = 'ui';
+    document.body.append(root);
+    const hud = new Hud(root, () => {});
+    const boss = (current: number, index: number) =>
+      hudState({ target: { name: 'The First', current, max: 100, statuses: [], phases: [0.6, 0.25], phase: { index, count: 3 } } });
+    hud.update(boss(90, 0), 0.016);
+    const label = root.querySelector<HTMLElement>('.target-phase')!;
+    expect(label.hidden).toBe(false);
+    expect(label.textContent).toBe('Phase 1/3');
+    expect(root.querySelectorAll('.target-tick.passed')).toHaveLength(0);
+    expect(label.classList.contains('entered')).toBe(false);
+    hud.update(boss(55, 1), 0.016);
+    expect(label.textContent).toBe('Phase 2/3');
+    expect(label.classList.contains('entered')).toBe(true);
+    expect(root.querySelectorAll('.target-tick.passed')).toHaveLength(1);
+    hud.update(hudState({ target: { name: 'Rat', current: 5, max: 5, statuses: [] } }), 0.016);
+    expect(root.querySelector<HTMLElement>('.target-phase')!.hidden).toBe(true);
+  });
+});

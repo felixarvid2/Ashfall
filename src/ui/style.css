@@ -1218,3 +1218,36 @@ html.touch-device .hint-mouse { display: none; }
 .dmg-compact.dmg-crit { font-size: 1.25em; }
 .dmg-compact.dmg-crit::after { content: '!'; }
 .dmg-dot { font-style: italic; }
+
+/* C10: boss phase label ("Phase 2/3") on the target frame; phase ticks already passed are dimmed. */
+.target-phase { font-family: var(--ui-mono); font-size: 0.78em; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd27a; margin-right: 8px; }
+.target-phase[hidden] { display: none; }
+.target-phase.entered { animation: phase-entered 2.4s ease-out 1; }
+@keyframes phase-entered { 0% { background: #ffd27a; color: #1a1208; padding: 0 5px; } 100% { background: transparent; color: #ffd27a; padding: 0; } }
+#ui.reduce-flashing .target-phase.entered { animation: none; }
+.target-tick.passed { opacity: 0.35; }
+
+/* C03: the stash search box sits in the tool row; C07: the minimap zoom row of the full map. */
+.stash-search { min-width: 0; flex: 1 1 90px; height: 28px; }
+.map-minizoom { display: flex; align-items: center; gap: 8px; justify-content: center; margin: 4px 0; font-family: var(--ui-mono); font-size: 0.8em; color: var(--ui-muted); }
+.map-minizoom button { min-width: 32px; height: 32px; padding: 0 8px; font-size: 1.1em; color: var(--ui-text); background: var(--ui-bg); border: 1px solid var(--ui-border); cursor: pointer; }
+#ui.touch-ui .map-minizoom button { min-width: var(--tap-min, 44px); height: var(--tap-min, 44px); }
+
+/* C13: pickup log, bottom left. */
+.pickup-log { position: absolute; left: 12px; bottom: 150px; display: flex; flex-direction: column; gap: 2px; max-width: min(260px, 40vw); pointer-events: none; z-index: 3; }
+.pickup-line { font-size: 0.85em; line-height: 1.25; padding: 2px 8px; border-left: 3px solid var(--line-color, #ccc); color: var(--line-color, var(--ui-text)); background: rgba(10, 9, 8, 0.6); text-shadow: 0 1px 2px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pickup-line[data-rarity='gold'] { color: #ffd27a; }
+
+/* C08: the pin button of the quest log, and the pinned look in the HUD tracker. */
+.log-pin { min-width: 36px; min-height: 36px; margin-left: 4px; background: transparent; border: 1px solid var(--ui-border); color: var(--ui-muted); font-size: 1em; cursor: pointer; }
+.log-pin.on { color: #ffd27a; border-color: #ffd27a; }
+#ui.touch-ui .log-pin { min-width: var(--tap-min, 44px); min-height: var(--tap-min, 44px); }
+.quest-row.pinned .quest-title::before { content: '\25C6 '; color: #ffd27a; font-size: 0.8em; }
+
+/* C16: set pieces and bonus thresholds in item tooltips. */
+.item-tip-set { margin-top: 6px; padding-top: 4px; border-top: 1px solid var(--ui-border); font-size: 0.9em; }
+.item-tip-set-title { color: #7ad7ff; font-weight: 700; }
+.item-tip-set .set-piece { color: var(--ui-muted); }
+.item-tip-set .set-piece.worn { color: var(--ui-text); }
+.item-tip-set .set-bonus { color: var(--ui-muted); }
+.item-tip-set .set-bonus.active { color: #7ad7ff; }

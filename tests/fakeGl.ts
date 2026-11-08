@@ -36,7 +36,7 @@ export class FakeGpu {
         for (const v of Object.values(m)) if (v && (v as THREE.Texture).isTexture) this.texture(v as THREE.Texture);
       }
     });
-    this.texture((scene.background as THREE.Texture | null) ?? undefined);
+    this.texture((scene as THREE.Scene).background as THREE.Texture | null);
   }
 
   get counts(): { geometries: number; materials: number; textures: number } {

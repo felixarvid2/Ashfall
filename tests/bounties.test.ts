@@ -43,10 +43,11 @@ function setup() {
 
 describe('repeatable bounties (C013)', () => {
   it('has four per region (three hunts and an escort), given by hub NPCs of that region once the campaign is done', () => {
-    expect(bounties).toHaveLength(20);
+    expect(bounties).toHaveLength(23);
     for (const zone of REGIONS) {
       const mine = bounties.filter((q) => q.zone === zone);
-      expect(mine, zone).toHaveLength(4);
+      expect(mine.length, zone).toBeGreaterThanOrEqual(4);
+      expect(mine.length, zone).toBeLessThanOrEqual(5);
       expect(new Set(mine.map((q) => q.giver)).size, `${zone} givers`).toBeGreaterThanOrEqual(3);
       for (const q of mine) {
         expect(NPCS.get(q.giver!)?.zone, q.id).toBe(zone);

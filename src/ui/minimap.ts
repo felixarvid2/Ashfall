@@ -16,6 +16,21 @@ import { haptic } from './haptics';
 const MINI_SIZE = 180;
 /** Metres shown from the centre of the minimap to its edge. */
 const MINI_RANGE = 85;
+/** Minimap zoom (C07): the world radius shown, far to near; the middle step is the classic view. */
+export const MINI_RANGES = [130, 85, 55] as const;
+export const MINI_DEFAULT_STEP = 1;
+const MINI_ZOOM_KEY = 'ashfall.minimapZoom';
+
+/** Next zoom step: `dir` +1 zooms in (nearer), -1 out; clamped to the three steps. */
+export function stepMiniZoom(step: number, dir: number): number {
+  return Math.max(0, Math.min(MINI_RANGES.length - 1, step + Math.sign(dir)));
+}
+
+/** A stored step, or the default for anything that is not one of the steps. */
+export function parseMiniStep(raw: string | null | undefined): number {
+  const n = Number(raw);
+  return raw != null && Number.isInteger(n) && n >= 0 && n < MINI_RANGES.length ? n : MINI_DEFAULT_STEP;
+}
 const MAP_SIZE = 640;
 /** Longest side (device px) the full map's backing store may grow to when zoomed in (B08). */
 export const MAP_BACKING_MAX = 2560;
@@ -336,6 +351,9 @@ export class MapUi {
   private zoom: MapZoom = { z: 1, tx: 0, ty: 0 };
   /** Canvas units per CSS px, so markers keep a readable size on a small screen (minimap, full map). */
   private miniK = 1;
+  /** Minimap zoom step (C07), remembered between sessions. */
+  private miniStepValue = MINI_DEFAULT_STEP;
+  private miniZoomLabel: HTMLElement | null = null;
   private fullK = 1;
   private footerKey = '';
   private legendKey = '';
@@ -391,6 +409,12 @@ export class MapUi {
     this.mini.setAttribute('aria-label', t('map.title'));
     this.mini.addEventListener('click', () => this.onMiniTap());
     this.miniCtx = this.mini.getContext('2d')!;
+    try {
+      this.miniStepValue = parseMiniStep(localStorage.getItem(MINI_ZOOM_KEY));
+    } catch {
+      // Storage blocked: the default zoom.
+    }
+    this.installMiniZoom();
 
     this.full = document.createElement('div');
     this.full.className = 'map-panel panel';
@@ -418,9 +442,85 @@ export class MapUi {
     this.tip.hidden = true;
     this.viewport.append(this.fullCanvas, this.locateBtn, this.tip);
     this.legend = this.buildLegend();
-    this.full.append(title, this.tabs, this.viewport, this.legend, this.fullInfo);
+    this.full.append(title, this.tabs, this.viewport, this.legend, this.buildMiniZoomRow(), this.fullInfo);
     this.installGestures();
     parent.append(this.mini, this.full);
+  }
+
+  /** The world radius the minimap shows at the current zoom step. */
+  get miniRange(): number {
+    return MINI_RANGES[this.miniStepValue] ?? MINI_RANGE;
+  }
+
+  get miniStep(): number {
+    return this.miniStepValue;
+  }
+
+  /** Zooms the minimap one step (+1 in, -1 out) and remembers it (C07). Returns the new step. */
+  zoomMini(dir: number): number {
+    return this.setMiniStep(stepMiniZoom(this.miniStepValue, dir));
+  }
+
+  setMiniStep(step: number): number {
+    this.miniStepValue = parseMiniStep(String(step));
+    try {
+      localStorage.setItem(MINI_ZOOM_KEY, String(this.miniStepValue));
+    } catch {
+      // Storage blocked: the zoom just does not persist.
+    }
+    if (this.miniZoomLabel) this.miniZoomLabel.textContent = t('ux.map.miniZoom', { n: this.miniStepValue + 1, max: MINI_RANGES.length });
+    this.mini.dataset.zoom = String(this.miniStepValue);
+    const zone = this.zone();
+    if (zone) this.drawMini(zone);
+    return this.miniStepValue;
+  }
+
+  /**
+   * Wheel over the minimap and the - / + keys zoom it; the full map has - / + buttons (touch) and the bumpers
+   * (LB/RB, wired in game.ts) while it is open.
+   */
+  private installMiniZoom(): void {
+    this.mini.dataset.zoom = String(this.miniStepValue);
+    window.addEventListener(
+      'wheel',
+      (e) => {
+        if (this.mini.hidden || this.open) return;
+        const r = this.mini.getBoundingClientRect();
+        if (r.width === 0 || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.zoomMini(e.deltaY < 0 ? 1 : -1);
+      },
+      { capture: true, passive: false },
+    );
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || this.mini.hidden) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.code === 'NumpadAdd' || e.code === 'Equal') this.zoomMini(1);
+      else if (e.code === 'NumpadSubtract' || e.code === 'Minus') this.zoomMini(-1);
+    });
+  }
+
+  /** The "Minimap zoom" row of the full map: - and + buttons with the current step. */
+  private buildMiniZoomRow(): HTMLDivElement {
+    const row = document.createElement('div');
+    row.className = 'map-minizoom';
+    row.dataset.testid = 'map-minizoom';
+    const mk = (cls: string, text: string, label: string, dir: number) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = cls;
+      b.textContent = text;
+      b.title = b.ariaLabel = label;
+      b.addEventListener('click', () => this.zoomMini(dir));
+      return b;
+    };
+    this.miniZoomLabel = document.createElement('span');
+    this.miniZoomLabel.className = 'map-minizoom-label';
+    this.miniZoomLabel.textContent = t('ux.map.miniZoom', { n: this.miniStepValue + 1, max: MINI_RANGES.length });
+    row.append(mk('map-minizoom-out', '\u2212', t('ux.map.miniZoomOut'), -1), this.miniZoomLabel, mk('map-minizoom-in', '+', t('ux.map.miniZoomIn'), 1));
+    return row;
   }
 
   /** The full-map panel (for the panel stack). */
@@ -650,14 +750,14 @@ export class MapUi {
   private drawBlips(c: CanvasRenderingContext2D, v: View, p: { x: number; z: number }): void {
     const k = this.miniK;
     if (this.features.length > 0) {
-      for (const f of selectFeaturePips(this.features, p.x, p.z)) {
+      for (const f of selectFeaturePips(this.features, p.x, p.z, this.miniRange)) {
         const [sx, sy] = project(v, f.x, f.z);
         this.mark(c, sx, sy, FEATURE_PIP_COLOR[f.kind]!, FEATURE_PIP_R * k, 'diamond');
       }
     }
     if (this.pips.length > 0) this.drawPips(c, v, k);
     if (this.blips.length === 0) return;
-    for (const b of selectBlips(this.blips, p.x, p.z)) {
+    for (const b of selectBlips(this.blips, p.x, p.z, (BLIP_RANGE * this.miniRange) / MINI_RANGE)) {
       const style = BLIP_STYLE[b.kind];
       const [sx, sy] = project(v, b.x, b.z);
       this.mark(c, sx, sy, style.color, style.r * k, 'dot');
@@ -705,7 +805,7 @@ export class MapUi {
   private drawMini(zone: ZoneRuntime): void {
     const c = this.miniCtx;
     const p = this.player();
-    const v: View = { cx: MINI_SIZE / 2, cy: MINI_SIZE / 2, px: p.x, pz: p.z, scale: MINI_SIZE / (MINI_RANGE * 2), cos: this.cos, sin: this.sin };
+    const v: View = { cx: MINI_SIZE / 2, cy: MINI_SIZE / 2, px: p.x, pz: p.z, scale: MINI_SIZE / (this.miniRange * 2), cos: this.cos, sin: this.sin };
     c.clearRect(0, 0, MINI_SIZE, MINI_SIZE);
     c.save();
     c.beginPath();
@@ -713,7 +813,7 @@ export class MapUi {
     c.clip();
     c.fillStyle = 'rgba(8,7,6,0.85)';
     c.fillRect(0, 0, MINI_SIZE, MINI_SIZE);
-    this.drawWorld(c, zone, v, MINI_RANGE * 1.5);
+    this.drawWorld(c, zone, v, this.miniRange * 1.5);
     this.drawBlips(c, v, p);
     c.restore();
     this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);

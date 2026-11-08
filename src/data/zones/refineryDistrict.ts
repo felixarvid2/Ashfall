@@ -409,6 +409,8 @@ function buildPois(): PoiDef[] {
   scaled([
     [-318, -300], [-250, -200], [-165, -110], [-130, -80], [-80, -180], [-240, 0], [-120, 160], [-200, 240], [30, 60], [160, -60], [250, 40], [200, 210],
   ]).forEach(([x, z], i) => pois.push({ id: `rd.lore.${i}`, kind: 'lore', x, z, data: { log: `rd.${i}` } }));
+  // Round 4 (D08): two more notes.
+  scaled([[-190, -150], [100, 120]]).forEach(([x, z], i) => pois.push({ id: `rd.lore.${12 + i}`, kind: 'lore', x, z, data: { log: `rd.${12 + i}` } }));
   // One signal tower per outer subzone.
   scaled([[-290, -80], [-250, 200], [210, -230]]).forEach(([x, z], i) => pois.push({ id: `rd.tower.${i}`, kind: 'signalTower', x, z }));
   scaled([[-230, -30], [-40, 0], [100, 95], [140, -150], [-150, 210], [280, 30]]).forEach(([x, z], i) => {

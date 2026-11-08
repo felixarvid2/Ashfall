@@ -1,6 +1,7 @@
 /** Item tooltip: rarity-coloured name, stats, sockets and a comparison against equipped gear. */
 import { t } from '../data/i18n';
 import { ASPECT_DEFS, BASE_ITEMS, CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
+import { setOfItem, setProgress, type ItemSetDef, type SetProgress } from '../data/loot/sets';
 import { PERCENT_STATS, type Item, type Slot, type StatKey } from '../data/loot/schemas';
 import { canEquip, crystalSlotGroup, salvageValue } from '../systems/loot/generate';
 import { MASTERWORK } from '../data/endgame/crafting';
@@ -85,6 +86,10 @@ export function renderItemTooltip(
     aspectStatus?: 'codex' | 'cache' | 'new' | undefined;
     /** Extra muted lines at the very end, e.g. key hints (B011/B018). */
     hints?: string[] | undefined;
+    /** The items the hero wears: a set piece lists the set's pieces owned and its bonus thresholds (C16). */
+    worn?: readonly Item[] | undefined;
+    /** Set table to read (tests); the game's sets by default. */
+    sets?: readonly ItemSetDef[] | undefined;
   } = {},
 ): HTMLElement {
   const root = el('div', 'item-tip');
@@ -171,6 +176,8 @@ export function renderItemTooltip(
       root.appendChild(el('div', 'item-tip-aspect unique', `✦ ${t(`uniques.${item.unique}.effect`)}`));
       root.appendChild(el('div', 'item-tip-flavor', t(`uniques.${item.unique}.flavor`)));
     }
+    const set = setOfItem(item, opts.sets);
+    if (set) root.appendChild(renderSetBlock(setProgress(set, opts.worn ?? []), item.unique));
     if (item.sockets.length && base) {
       const group = crystalSlotGroup(base.type);
       const sock = el('div', 'item-tip-sockets');
@@ -463,4 +470,20 @@ export function renderItemSheet(item: Item, classId: string, opts: ItemSheetOpti
   root.append(pin, legend, view);
   render();
   return root;
+}
+
+/** The set block of a tooltip (C16): "Set: Name (2/4)", every piece ticked when worn, and the bonus thresholds. */
+export function renderSetBlock(progress: SetProgress, current?: string): HTMLElement {
+  const box = el('div', 'item-tip-set');
+  box.dataset.testid = 'item-tip-set';
+  box.appendChild(el('div', 'item-tip-set-title', t('ux.set.title', { name: t(`sets.${progress.set.id}.name`), n: progress.wornCount, max: progress.pieces.length })));
+  const list = el('div', 'item-tip-set-pieces');
+  for (const p of progress.pieces) {
+    const row = el('div', `set-piece${p.worn ? ' worn' : ''}${p.id === current ? ' current' : ''}`, `${p.worn ? '\u2713' : '\u25CB'} ${t(`uniques.${p.id}.name`)}`);
+    row.setAttribute('aria-label', `${t(`uniques.${p.id}.name`)}: ${t(p.worn ? 'ux.set.worn' : 'ux.set.missing')}`);
+    list.appendChild(row);
+  }
+  box.appendChild(list);
+  for (const b of progress.bonuses) box.appendChild(el('div', `set-bonus${b.active ? ' active' : ''}`, t('ux.set.bonus', { n: b.pieces, text: t(b.text) })));
+  return box;
 }

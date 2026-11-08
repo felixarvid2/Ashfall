@@ -555,6 +555,10 @@ function buildPois(): PoiDef[] {
   scaled([[0, -300], [-70, -232], [60, -150], [0, -80], [-100, 38], [-176, 96], [-245, 205], [180, 20], [255, 100], [0, 205], [-40, 270], [0, 100]]).forEach(([x, z], i) =>
     pois.push({ id: `core.lore.${i}`, kind: 'lore', ...place(x, z), data: { log: `core.${i}` } }),
   );
+  // Round 4 (D08): two notes on the Core's history.
+  scaled([[-30, -200], [90, 60]]).forEach(([x, z], i) =>
+    pois.push({ id: `core.lore.${12 + i}`, kind: 'lore', ...place(x, z), data: { log: `core.${12 + i}` } }),
+  );
   scaled([[-30, -160], [-212, 128], [200, 40]]).forEach(([x, z], i) => pois.push({ id: `core.tower.${i}`, kind: 'signalTower', ...place(x, z) }));
   scaled([[-132, -190], [128, -184], [75, -234]]).forEach(([x, z], i) => {
     const b = place(x, z);

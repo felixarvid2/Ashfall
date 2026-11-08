@@ -23,8 +23,11 @@ import { CharacterSelect } from './ui/characterSelect';
 import { registerFonts } from './ui/fonts';
 import { audio } from './audio/engine';
 import { installHost } from './core/host';
+import { installErrorLog } from './core/errorLog';
 import { guardStartup, installRuntimeGuards } from './bootGuard';
 
+// The last 200 console warnings and errors are kept for Settings > Data > Copy log (B18).
+installErrorLog(console, window);
 // Android host: define `__ashfallPad` before anything polls the pad (the app may send the controller at once).
 installHost();
 registerFonts();

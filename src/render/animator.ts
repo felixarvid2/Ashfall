@@ -43,6 +43,14 @@ export class CharacterAnimator {
     for (const [state, clip] of clips) this.actions.set(state, this.mixer.clipAction(clip));
   }
 
+  /** A18: set while the clips this model should borrow have not arrived (the donor is still loading). */
+  pendingBorrow: string | undefined;
+
+  /** Add clips for states this animator does not have yet (the borrowed ones, once the donor has loaded). */
+  addClips(clips: ReadonlyMap<string, THREE.AnimationClip>): void {
+    for (const [state, clip] of clips) if (!this.actions.has(state)) this.actions.set(state, this.mixer.clipAction(clip));
+  }
+
   has(state: string): boolean {
     return this.actions.has(state);
   }

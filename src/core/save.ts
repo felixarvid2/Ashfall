@@ -73,6 +73,8 @@ export const SaveDataSchema = z.object({
       active: z.record(z.string(), z.object({ step: z.number().int().nonnegative(), progress: z.number().int().nonnegative(), choice: z.string().optional() })),
       done: z.record(z.string(), z.string()),
       tracked: z.string().nullable(),
+      /** Quests pinned to the HUD tracker, at most three (C08). */
+      pinned: z.array(z.string()).max(3).optional(),
     })
     .default({ active: {}, done: {}, tracked: null }),
   /**
@@ -254,6 +256,20 @@ export function writeFailureReason(err: unknown): SaveWriteFailure {
 
 /** How many `.corrupt.*` copies of a slot are kept. */
 const QUARANTINE_KEEP = 2;
+/** B07: rolling backups of a slot (`<slot>.bk.<time>`): the last three, at least this far apart (autosave runs often). */
+export const BACKUP_KEEP = 3;
+export const BACKUP_EVERY_MS = 5 * 60 * 1000;
+
+export interface SaveBackup {
+  /** Epoch ms when the backup was taken (also its key suffix). */
+  stamp: number;
+  /** The `savedAt` and character of the saved data, when it can be read. */
+  savedAt?: string;
+  name?: string;
+  level?: number;
+  classId?: string;
+  bytes: number;
+}
 
 /** Thin wrapper over a Storage so the browser storage can be swapped in tests. */
 export class SaveStore {
@@ -267,10 +283,12 @@ export class SaveStore {
   }
 
   /** Never throws: a full or blocked storage comes back as `{ ok: false, reason }`. */
-  write(slot: string, data: SaveData): SaveWriteResult {
+  write(slot: string, data: SaveData, now: number = Date.now()): SaveWriteResult {
     if (!this.storage) return { ok: false, reason: 'blocked' };
     try {
-      this.storage.setItem(this.prefix + slot, serializeSave(data));
+      const json = serializeSave(data);
+      this.rotateBackup(slot, now);
+      this.storage.setItem(this.prefix + slot, json);
       return { ok: true };
     } catch (err) {
       return { ok: false, reason: writeFailureReason(err) };
@@ -286,6 +304,81 @@ export class SaveStore {
     if (json == null) return null;
     const { data, fromVersion } = parseSaveDetailed(json);
     if (fromVersion < SAVE_VERSION) this.keepOriginal(slot, `v${fromVersion}`, json);
+    return data;
+  }
+
+  private backupStem(slot: string): string {
+    return `${this.prefix}${slot}.bk.`;
+  }
+
+  private backupStamps(slot: string): number[] {
+    const stem = this.backupStem(slot);
+    const stamps: number[] = [];
+    for (let i = 0; this.storage && i < this.storage.length; i++) {
+      const key = this.storage.key(i);
+      if (key?.startsWith(stem) && /^\d+$/.test(key.slice(stem.length))) stamps.push(Number(key.slice(stem.length)));
+    }
+    return stamps.sort((a, b) => b - a);
+  }
+
+  /**
+   * B07: before a slot is overwritten, keeps what is in it as a backup, if the newest backup is older than
+   * BACKUP_EVERY_MS (or `force`). Only the last BACKUP_KEEP are kept. Best effort: a full storage skips the backup,
+   * never the save.
+   */
+  private rotateBackup(slot: string, now: number, force = false): void {
+    if (!this.storage) return;
+    try {
+      const current = this.raw(slot);
+      if (current == null) return;
+      const stamps = this.backupStamps(slot);
+      const newest = stamps[0];
+      if (!force && newest !== undefined && now - newest < BACKUP_EVERY_MS) return;
+      if (newest !== undefined && this.storage.getItem(this.backupStem(slot) + newest) === current) return;
+      const stem = this.backupStem(slot);
+      this.storage.setItem(stem + now, current);
+      for (const old of [now, ...stamps].slice(BACKUP_KEEP)) this.storage.removeItem(stem + old);
+    } catch {
+      // No room for a backup: the save itself is more important.
+    }
+  }
+
+  /** Keeps what is in the slot as a backup right now, whatever the age of the newest one (before an import, say). */
+  backupNow(slot: string, now: number = Date.now()): void {
+    this.rotateBackup(slot, now, true);
+  }
+
+  /** The backups of a slot, newest first, with what can be read from each. */
+  backups(slot: string): SaveBackup[] {
+    const out: SaveBackup[] = [];
+    for (const stamp of this.backupStamps(slot)) {
+      const json = this.storage?.getItem(this.backupStem(slot) + stamp);
+      if (json == null) continue;
+      const entry: SaveBackup = { stamp, bytes: json.length };
+      try {
+        const { data } = parseSaveDetailed(json);
+        entry.savedAt = data.savedAt;
+        entry.name = data.character.name;
+        entry.classId = data.character.classId;
+        entry.level = data.progression.level;
+      } catch {
+        // Listed, but restoring it will say why it cannot be read.
+      }
+      out.push(entry);
+    }
+    return out;
+  }
+
+  /**
+   * Puts a backup back into its slot after checking that it reads. What was in the slot is kept as a backup first.
+   * Throws SaveError when the backup is unreadable (the slot is untouched). Returns the restored data.
+   */
+  restoreBackup(slot: string, stamp: number, now: number = Date.now()): SaveData {
+    const json = this.storage?.getItem(this.backupStem(slot) + stamp);
+    if (json == null) throw new SaveError('that backup no longer exists');
+    const data = parseSave(json);
+    this.rotateBackup(slot, now, true);
+    this.storage!.setItem(this.prefix + slot, json);
     return data;
   }
 
@@ -338,6 +431,7 @@ export class SaveStore {
 
   remove(slot: string): void {
     this.storage?.removeItem(this.prefix + slot);
+    for (const stamp of this.backupStamps(slot)) this.storage?.removeItem(this.backupStem(slot) + stamp);
   }
 }
 

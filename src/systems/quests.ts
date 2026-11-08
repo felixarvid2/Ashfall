@@ -54,6 +54,8 @@ export interface QuestRuntime {
   done: Map<string, string>;
   /** Quest shown in the HUD tracker. */
   tracked: string | null;
+  /** Quests pinned to the HUD tracker (C08), at most MAX_PINNED, in pin order. */
+  pinned: string[];
   signals: QuestSignal[];
   /** Entities spawned for each quest's current step. */
   spawned: Map<string, Entity[]>;
@@ -78,7 +80,7 @@ export interface EscortMemory {
 }
 
 export function createQuestRuntime(): QuestRuntime {
-  return { active: new Map(), done: new Map(), tracked: null, signals: [], spawned: new Map(), triggers: new Map(), usedObjects: new Set(), escorts: new Map() };
+  return { active: new Map(), done: new Map(), tracked: null, pinned: [], signals: [], spawned: new Map(), triggers: new Map(), usedObjects: new Set(), escorts: new Map() };
 }
 
 export function signal(ctx: GameContext, s: QuestSignal): void {
@@ -219,6 +221,7 @@ function advance(world: World, ctx: GameContext, id: string): void {
       }
     }
     if (rt.tracked === id) rt.tracked = [...rt.active.keys()].find((q) => questDef(q).kind === 'main') ?? rt.active.keys().next().value ?? null;
+    rt.pinned = rt.pinned.filter((q) => q !== id);
     ctx.events.push({ type: 'quest', id, state: 'completed' });
     return;
   }
@@ -403,7 +406,7 @@ function refreshTriggers(world: World, ctx: GameContext): void {
 export function restoreQuests(
   world: World,
   ctx: GameContext,
-  saved: { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null },
+  saved: { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null; pinned?: string[] | undefined },
 ): void {
   const rt = ctx.quests;
   if (!rt) return;
@@ -416,7 +419,7 @@ export function restoreQuests(
 /** Replace the quest log's state without touching the world (the caller rebuilds it). */
 export function setQuestState(
   rt: QuestRuntime,
-  saved: { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null },
+  saved: { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null; pinned?: string[] | undefined },
 ): void {
   rt.active.clear();
   rt.done.clear();
@@ -430,13 +433,32 @@ export function setQuestState(
     rt.active.set(id, { step: Math.min(st.step, def.steps.length - 1), progress: st.progress, ...(st.choice ? { choice: st.choice } : {}) });
   }
   rt.tracked = saved.tracked && rt.active.has(saved.tracked) ? saved.tracked : (rt.active.keys().next().value ?? null);
+  rt.pinned = (saved.pinned ?? []).filter((id, i, all) => rt.active.has(id) && all.indexOf(id) === i).slice(0, MAX_PINNED);
 }
 
-export function saveQuests(rt: QuestRuntime): { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null } {
+/** Most quests that can be pinned to the HUD tracker (C08). */
+export const MAX_PINNED = 3;
+
+/**
+ * Pins or unpins a quest (C08). Pinning a fourth quest does nothing and returns false: the log tells the player to
+ * unpin one first.
+ */
+export function togglePinned(rt: Pick<QuestRuntime, 'pinned' | 'active'>, id: string): boolean {
+  if (rt.pinned.includes(id)) {
+    rt.pinned = rt.pinned.filter((q) => q !== id);
+    return true;
+  }
+  if (!rt.active.has(id) || rt.pinned.length >= MAX_PINNED) return false;
+  rt.pinned = [...rt.pinned, id];
+  return true;
+}
+
+export function saveQuests(rt: QuestRuntime): { active: Record<string, QuestState>; done: Record<string, string>; tracked: string | null; pinned: string[] } {
   return {
     active: Object.fromEntries([...rt.active].map(([id, st]) => [id, { step: st.step, progress: st.progress, ...(st.choice ? { choice: st.choice } : {}) }])),
     done: Object.fromEntries(rt.done),
     tracked: rt.tracked,
+    pinned: [...rt.pinned],
   };
 }
 

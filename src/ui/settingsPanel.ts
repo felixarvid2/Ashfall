@@ -27,14 +27,15 @@ import {
 } from '../data/settings';
 import type { GamepadInput } from '../core/gamepad';
 import { armConfirm } from './confirmSheet';
+import { buildDataPage, type DataTabDeps } from './dataTab';
 import { hapticsSupported, haptic } from './haptics';
 import { isAndroidHost } from '../core/host';
 import { keyLabel } from './hud';
 import { panelStack } from './panelStack';
 import type { SoundUi } from './soundPanel';
 
-export type SettingsTab = 'sound' | 'display' | 'controls';
-const TABS: SettingsTab[] = ['sound', 'display', 'controls'];
+export type SettingsTab = 'sound' | 'display' | 'controls' | 'data';
+const TABS: SettingsTab[] = ['sound', 'display', 'controls', 'data'];
 
 export interface SettingsDeps {
   settings: () => Settings;
@@ -47,6 +48,8 @@ export interface SettingsDeps {
   toggleMute: () => void;
   /** The gamepad, for rebinding its buttons (A02); without it the Gamepad group is left out. */
   pad?: GamepadInput;
+  /** The Data tab (save backups, export/import, problem log; src/ui/dataTab.ts). Without it the tab is left out. */
+  data?: DataTabDeps;
 }
 
 /** Text size steps: label key, scale. */
@@ -116,6 +119,7 @@ export class SettingsPanel {
     const tabs = el('div', 'settings-tabs');
     tabs.setAttribute('role', 'tablist');
     for (const id of TABS) {
+      if (id === 'data' && !this.deps.data) continue;
       const b = el('button', 'settings-tab', t(`settings.tabs.${id}`));
       b.type = 'button';
       b.setAttribute('role', 'tab');
@@ -128,6 +132,11 @@ export class SettingsPanel {
     this.pages.set('sound', this.buildSound());
     this.pages.set('display', this.buildDisplay());
     this.pages.set('controls', this.buildControls());
+    if (this.deps.data) {
+      const dataPage = this.page('data');
+      this.refreshers.push(buildDataPage(dataPage, this.deps.data));
+      this.pages.set('data', dataPage);
+    }
     for (const page of this.pages.values()) this.root.append(page);
     parent.append(this.root);
     applyAccessibility(parent, this.deps.settings());

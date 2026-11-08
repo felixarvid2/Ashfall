@@ -21,10 +21,11 @@ import { actionLabel, keyLabel, padPrompts } from '../core/inputLabels';
 export { keyLabel, actionLabel };
 
 /** Life fractions where the boss script changes phase (tick marks on its bar); `{}` for a script with one phase. */
-export function bossPhaseTicks(script: string | undefined): { phases?: number[] } {
+export function bossPhaseTicks(script: string | undefined, phase = 0): { phases?: number[]; phase?: { index: number; count: number } } {
   if (!script) return {};
-  const phases = (BOSS_SCRIPTS[script] ?? []).map((p) => p.below).filter((b) => b < 1);
-  return phases.length > 0 ? { phases } : {};
+  const list = BOSS_SCRIPTS[script] ?? [];
+  const phases = list.map((p) => p.below).filter((b) => b < 1);
+  return phases.length > 0 ? { phases, phase: { index: Math.min(phase, list.length - 1), count: list.length } } : {};
 }
 
 /**
@@ -71,7 +72,7 @@ export interface HudState {
   location?: { title: string; sub: string };
   /** World Tier badge text ('WT II Veteran'), shown under the region name once a tier above I is unlocked. */
   tier?: string;
-  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; /** Affix ids, parallel to `affixes` (names): the chips pick their icons from them. */ affixIds?: string[]; /** Elite kind: the frame's border colour (A022). */ tier?: 'champion' | 'rare' | 'named'; portrait?: string; /** Life fractions where a boss changes phase (tick marks on its bar). */ phases?: number[] } | null;
+  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; /** Affix ids, parallel to `affixes` (names): the chips pick their icons from them. */ affixIds?: string[]; /** Elite kind: the frame's border colour (A022). */ tier?: 'champion' | 'rare' | 'named'; portrait?: string; /** Life fractions where a boss changes phase (tick marks on its bar). */ phases?: number[]; /** The boss's current phase (0-based) and how many it has: the "Phase 2/3" label (C10). */ phase?: { index: number; count: number } } | null;
   /** World event in progress near the player. */
   event?: { title: string; text: string };
   /** Statuses on the player: pylon buffs, wards, and harm like burning or poison. */
@@ -301,6 +302,9 @@ export class Hud {
   private readonly targetSep: HTMLSpanElement;
   private readonly targetStatusText: HTMLSpanElement;
   private readonly targetPct: HTMLSpanElement;
+  /** "Phase 2/3" on a boss frame (C10), and the phase it showed last. */
+  private readonly targetPhase: HTMLSpanElement;
+  private lastPhase = -1;
   private readonly targetTrack: HTMLDivElement;
   /** Portrait: the left column under the menu (target, statuses, region label, endgame stack) flows in here. */
   readonly leftColumn: HTMLDivElement;
@@ -449,7 +453,9 @@ export class Hud {
     this.targetAffix = Object.assign(document.createElement('span'), { className: 'target-affix' });
     this.targetSep = Object.assign(document.createElement('span'), { className: 'target-sep', textContent: '  |  ' });
     this.targetStatusText = Object.assign(document.createElement('span'), { className: 'target-state' });
-    this.targetStatus.append(this.targetAffix, this.targetSep, this.targetStatusText);
+    this.targetPhase = Object.assign(document.createElement('span'), { className: 'target-phase' });
+    this.targetPhase.hidden = true;
+    this.targetStatus.append(this.targetPhase, this.targetAffix, this.targetSep, this.targetStatusText);
     this.targetPct = Object.assign(document.createElement('span'), { className: 'target-pct' });
     this.targetPortrait = Object.assign(document.createElement('img'), { className: 'target-portrait', alt: '' });
     this.targetPortrait.hidden = true;
@@ -876,7 +882,7 @@ export class Hud {
     }
 
     const targetKey = state.target
-      ? `${state.target.name}|${Math.ceil(state.target.current)}|${state.target.max}|${state.target.statuses.join(',')}|${state.target.phases?.join(',') ?? ''}|${state.target.affixIds?.join(',') ?? ''}`
+      ? `${state.target.name}|${Math.ceil(state.target.current)}|${state.target.max}|${state.target.statuses.join(',')}|${state.target.phases?.join(',') ?? ''}|${state.target.phase?.index ?? ''}|${state.target.affixIds?.join(',') ?? ''}`
       : '';
     if (targetKey !== this.lastTarget) {
       this.lastTarget = targetKey;
@@ -907,9 +913,21 @@ export class Hud {
         this.targetPct.textContent = `${Math.ceil(frac * 100)}%`;
         this.targetTrack.querySelectorAll('.target-tick').forEach((tick) => tick.remove());
         for (const below of state.target.phases ?? []) {
-          this.targetTrack.append(Object.assign(document.createElement('i'), { className: 'target-tick' }));
+          this.targetTrack.append(Object.assign(document.createElement('i'), { className: `target-tick${frac <= below ? ' passed' : ''}` }));
           (this.targetTrack.lastElementChild as HTMLElement).style.left = `${below * 100}%`;
         }
+        // The phase name: "Phase 2/3", flashing for a moment when the boss enters a new one (C10).
+        const phase = state.target.phase;
+        this.targetPhase.hidden = !phase;
+        if (phase) {
+          this.targetPhase.textContent = t('ux.boss.phase', { n: phase.index + 1, max: phase.count });
+          if (this.lastPhase >= 0 && phase.index > this.lastPhase) {
+            this.targetPhase.classList.remove('entered');
+            void this.targetPhase.offsetWidth;
+            this.targetPhase.classList.add('entered');
+          }
+          this.lastPhase = phase.index;
+        } else this.lastPhase = -1;
         // Elite affixes first (in the elite's colour), then statuses; portrait puts them on their own lines.
         const ids = state.target.affixIds;
         const names = state.target.affixes ?? [];
