@@ -27,11 +27,11 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
   {
     // The governor's drone: dark hull in gold and blue, a gold collar and a shield antenna.
     id: 'variant.governor_drone',
-    base: 'enemy.security_drone',
+    base: 'enemy.eye_drone',
     look: { tint: '#cdb890', roughness: 0.5 },
     parts: [
-      { asset: 'part.dc_antenna', position: [0, 0.5, 0] },
-      { asset: 'part.dc_collar', position: [0, 0.36, 0] },
+      { asset: 'part.dc_antenna', position: [0, 0.95, 0], scale: 1.4 },
+      { asset: 'part.dc_collar', position: [0, 0.6, 0], scale: 1.4 },
     ],
   },
   {
@@ -150,14 +150,13 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
   {
     // The Drill Colossus drowned: cables, moss and a big drill, wet and green.
     id: 'variant.drowned_engine',
-    base: 'enemy.cargo_loader',
+    base: 'enemy.trilobite',
     look: { tint: '#6a8078', roughness: 0.3 },
     parts: [
-      { asset: 'part.dc_drill_arm', position: [-0.85, 1.35, 0.45], rotation: [90, 0, 0], scale: 2.2 },
-      { asset: 'part.dc_cable_bundle', position: [0, 2.9, 0.3], scale: 1.6 },
-      { asset: 'part.dc_cable_bundle', position: [0.5, 2.5, -0.4], rotation: [0, 120, 0], scale: 1.3 },
-      { asset: 'part.dc_moss_mat', position: [0, 3.0, 0], scale: 1.6 },
-      { asset: 'part.dc_moss_mat', position: [0.7, 2.4, 0.1], scale: 1.0 },
+      { asset: 'part.dc_cable_bundle', position: [0, 2.5, 0.2], scale: 1.0 },
+      { asset: 'part.dc_cable_bundle', position: [0.6, 2.4, -0.5], rotation: [0, 120, 0], scale: 0.8 },
+      { asset: 'part.dc_moss_mat', position: [0, 2.5, -0.2], scale: 1.0 },
+      { asset: 'part.dc_moss_mat', position: [0.7, 2.45, 0.3], scale: 0.7 },
     ],
   },
   {
@@ -334,12 +333,12 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     ],
   },
   {
-    // The Brood Engine: hatch pods stacked on its back (root parts do not follow the clips, so they sit on the torso, not on the arms).
+    // The Brood Engine: hatch pods stacked on its back.
     id: 'variant.brood_engine',
-    base: 'enemy.core_guardian',
+    base: 'enemy.trilobite',
     parts: [
-      { asset: 'part.dc_hatch_pods', position: [0, 3.5, -1.15], rotation: [-12, 0, 0], scale: 2.8 },
-      { asset: 'part.dc_hatch_pods', position: [0, 5.0, -0.95], rotation: [-30, 0, 0], scale: 1.5 },
+      { asset: 'part.dc_hatch_pods', position: [0, 2.45, -0.5], rotation: [-12, 0, 0], scale: 1.3 },
+      { asset: 'part.dc_hatch_pods', position: [0.6, 2.4, 0.4], rotation: [0, 40, 0], scale: 0.8 },
     ],
   },
   {

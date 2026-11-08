@@ -4308,6 +4308,119 @@
       }
     },
     {
+      "id": "enemy.eye_drone",
+      "category": "enemy",
+      "prompt": "Eye drone: a spherical hovering security drone with one big camera eye (free textured model, tinted per variant in game)",
+      "source": "external",
+      "credit": "Quaternius Sci-Fi Essentials Kit Enemy_EyeDrone (CC0)",
+      "targetPolycount": 3700,
+      "textureSize": 512,
+      "heightMeters": 1,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Idle",
+          "walk": "Idle",
+          "run": "Idle",
+          "attack": "Attack",
+          "hit": "Hit"
+        }
+      },
+      "file": "enemies/eye_drone.glb",
+      "stats": {
+        "triangles": 3530,
+        "bytes": 131480,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#4a4f57",
+        "size": [
+          0.9,
+          0.9,
+          0.9
+        ],
+        "showFacing": true,
+        "facingColor": "#ff3b30"
+      }
+    },
+    {
+      "id": "enemy.quad_shell",
+      "category": "enemy",
+      "prompt": "Quad shell: a four-legged armoured robot hound with a gun on its back (free textured model, tinted per variant in game)",
+      "source": "external",
+      "credit": "Quaternius Sci-Fi Essentials Kit Enemy_QuadShell (CC0)",
+      "targetPolycount": 7600,
+      "textureSize": 512,
+      "heightMeters": 1.5,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Idle",
+          "walk": "Walk",
+          "run": "Run",
+          "attack": "Attack",
+          "hit": "Hit",
+          "death": "TurnOff"
+        }
+      },
+      "file": "enemies/quad_shell.glb",
+      "stats": {
+        "triangles": 7494,
+        "bytes": 291460,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a4a3a",
+        "size": [
+          1.4,
+          1,
+          1.4
+        ],
+        "showFacing": true,
+        "facingColor": "#ff3b30"
+      }
+    },
+    {
+      "id": "enemy.trilobite",
+      "category": "enemy",
+      "prompt": "Trilobite: a heavy disc-shaped war machine on clawed legs (free textured model, tinted per variant in game)",
+      "source": "external",
+      "credit": "Quaternius Sci-Fi Essentials Kit Enemy_Trilobite (CC0)",
+      "targetPolycount": 8500,
+      "textureSize": 512,
+      "heightMeters": 2.5,
+      "status": "optimized",
+      "meshy": {
+        "clips": {
+          "idle": "Idle",
+          "walk": "Walk",
+          "run": "Run",
+          "attack": "Attack",
+          "attack2": "AttackAuto",
+          "hit": "Hit"
+        }
+      },
+      "file": "enemies/trilobite.glb",
+      "stats": {
+        "triangles": 8338,
+        "bytes": 297244,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a5a48",
+        "size": [
+          2.5,
+          2.5,
+          2.5
+        ],
+        "showFacing": true,
+        "facingColor": "#ff3b30"
+      }
+    },
+    {
       "id": "enemy.core_guardian",
       "category": "enemy",
       "prompt": "Core Guardian: a tall heavy combat mech (free low-poly model, Lumen look applied in game)",
