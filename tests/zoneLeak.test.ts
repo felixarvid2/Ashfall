@@ -10,10 +10,11 @@ import { World } from '../src/core/ecs';
 import { ZONES } from '../src/data/zones';
 import { spawnArenaProps } from '../src/world/arena';
 import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
-import { FakePostFx, FakeWebGLRenderer, gpu, installFakeCanvas } from './fakeGl';
+import { gpu, installFakeCanvas } from './fakeGl';
 
-vi.mock('../src/render/postfx', () => ({ PostFx: FakePostFx }));
-vi.mock('three', async (orig) => ({ ...(await orig<typeof import('three')>()), WebGLRenderer: FakeWebGLRenderer }));
+// The factories import the stand-ins themselves: a top-level binding is not ready yet when `three` is first imported.
+vi.mock('../src/render/postfx', async () => ({ PostFx: (await import('./fakeGl')).FakePostFx }));
+vi.mock('three', async (orig) => ({ ...(await orig<typeof import('three')>()), WebGLRenderer: (await import('./fakeGl')).FakeWebGLRenderer }));
 
 describe('fake GPU census', () => {
   it('counts what the scene draws and forgets what is disposed', async () => {

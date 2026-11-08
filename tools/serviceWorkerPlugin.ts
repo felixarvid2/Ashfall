@@ -141,7 +141,7 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE);
     const hit = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
     const fresh = fetch(request).then((res) => store(cache, request, res));
-    if (hit) { fresh.catch(() => undefined); return hit; }
+    if (hit) { fresh.catch(() => undefined /* offline: the cached copy was served */); return hit; }
     try { return await fresh; } catch (e) { return (await lookup(request)) || Response.error(); }
   })());
 });

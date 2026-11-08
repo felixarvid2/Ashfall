@@ -9,10 +9,11 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { PlayerControlled, Transform } from '../src/core/components';
 import { ZONES } from '../src/data/zones';
 import { runTickBench } from '../scripts/perf/tick';
-import { FakePostFx, gpu, FakeWebGLRenderer, installFakeCanvas } from './fakeGl';
+import { gpu, installFakeCanvas } from './fakeGl';
 
-vi.mock('../src/render/postfx', () => ({ PostFx: FakePostFx }));
-vi.mock('three', async (orig) => ({ ...(await orig<typeof import('three')>()), WebGLRenderer: FakeWebGLRenderer }));
+// The factories import the stand-ins themselves: a top-level binding is not ready yet when `three` is first imported.
+vi.mock('../src/render/postfx', async () => ({ PostFx: (await import('./fakeGl')).FakePostFx }));
+vi.mock('three', async (orig) => ({ ...(await orig<typeof import('three')>()), WebGLRenderer: (await import('./fakeGl')).FakeWebGLRenderer }));
 
 async function crowdRun(zoneName: string, enemies: number, ticks: number) {
   gpu.enabled = false;

@@ -773,7 +773,7 @@ in `docs/balance.md`. Real decisions:
   network-first, hashed scripts cache-first, models/audio/art stale-while-revalidate, the two newest caches kept (an old tab still finds its lazy chunks).
   The page hands the worker what it fetched before the worker took control, so the first visit works offline too. Verified headless (`e2e --scenario offline`).
 - **Bundle (B14).** `npm run bundle:analyze` attributes bytes to source files through the hidden source maps. No unused export of any size exists and
-  three.js is already tree-shaken to what the renderer uses (445 kB of 2.1 MB), so nothing was dropped; the table is in `docs/improvements/round4-status.md`.
+  three.js is already tree-shaken to what the renderer uses (445 kB of 2.1 MB), so nothing was dropped; the table is in `docs/improvements/round4-status-tech.md`.
 - **Prefetch, auto graphics, FPS cap (B15-B17).** The zone behind a gate is requested in idle time within 60 m of the gate (once, not while locked).
   The first run measures 2.5 s of frame times (0.5 s warm-up skipped) and only ever steps the preset down. The cap skips display frames that come
   sooner than the cap allows (1.5 ms jitter slack) and keeps their time, so the 60 Hz simulation is untouched.

@@ -1329,5 +1329,5 @@ html.touch-device .hint-mouse { display: none; }
 #ui.touch-ui .pickup-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 170px); left: calc(env(safe-area-inset-left, 0px) + 12px); max-width: 46vw; }
 #ui.touch-ui .pickup-log .pickup-line:nth-last-child(n + 4) { display: none; }
 #ui.touch-ui.portrait .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 290px); width: 92vw; }
-#ui.touch-ui:not(.portrait) .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); width: min(460px, 44vw); }
+#ui.touch-ui:not(.portrait) .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); left: 42%; width: min(360px, 40vw); }
 #ui.touch-ui:not(.portrait) .pickup-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); }
