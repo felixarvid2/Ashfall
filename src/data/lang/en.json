@@ -5989,7 +5989,7 @@
       "rarityShapes": "Rarity shapes",
       "rarityShapesHint": "Adds corner marks and border patterns to item frames, labels and beams, so rarity does not depend on colour.",
       "uiScale": "Interface scale",
-      "uiScaleHint": "Scales the whole interface. Text size is separate.",
+      "uiScaleHint": "Scales the HUD and the menus. Text size is separate. On touch screens the thumb buttons follow Button size.",
       "damageNumbers": "Damage numbers",
       "damageNumberModes": {
         "off": "Off",
