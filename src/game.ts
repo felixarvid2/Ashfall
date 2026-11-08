@@ -91,6 +91,7 @@ import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import type { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
+import { PickupLog } from './ui/pickupLog';
 import { setHeartbeat } from './audio/heartbeat';
 import { dropHitstopMs, playDropSound, playGoldSound, playMagnetSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
@@ -450,6 +451,7 @@ export class Game {
     setHaptics(this.settings.haptics);
     this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0, () => this.settings.damageNumbers);
     this.toasts = new Toasts(uiRoot);
+    this.pickupLog = new PickupLog(uiRoot);
     this.setupGamepad();
     if (this.loadedAccount.recovered) {
       this.toasts.show(t(this.loadedAccount.reason === 'newer' ? 'save.accountNewer' : 'save.accountRecovered'), 'error', 12000);
@@ -1424,6 +1426,7 @@ export class Game {
     this.renderer.render(frameDt, px, 0, pz, this.zone ? lumenCameraFocus(this.world, this.zone, px, pz) : undefined);
     audio.setListener(px, pz, this.ctx.cameraYaw);
     this.updateAudio(px, pz, frameDt);
+    this.pickupLog.update(frameDt);
     this.damageNumbers.update(frameDt, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
     this.updateEnemyBars(frameDt, px, pz);
     this.updateMapFeatures(px, pz);
@@ -1586,6 +1589,8 @@ export class Game {
           if (rarityRank(event.rarity) >= rarityRank('legendary')) this.mapUi.addPip(event.x, event.z, 5000);
           break;
         case 'pickup':
+          if (event.kind === 'gold') this.pickupLog.gold(event.amount);
+          else this.pickupLog.item(event.name, event.rarity);
           if (event.magnet) {
             // The magnet (B12): a soft tick and a small spark, at most ten a second so a pile of coins is not a rattle.
             if (this.realTime - this.lastMagnetCue >= 0.1) {

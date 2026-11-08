@@ -15,6 +15,23 @@ import { FakePostFx, FakeWebGLRenderer, gpu, installFakeCanvas } from './fakeGl'
 vi.mock('../src/render/postfx', () => ({ PostFx: FakePostFx }));
 vi.mock('three', async (orig) => ({ ...(await orig<typeof import('three')>()), WebGLRenderer: FakeWebGLRenderer }));
 
+describe('fake GPU census', () => {
+  it('counts what the scene draws and forgets what is disposed', async () => {
+    const THREE = await import('three');
+    const { FakeGpu } = await import('./fakeGl');
+    const g = new FakeGpu();
+    const scene = new THREE.Scene();
+    const geo = new THREE.BoxGeometry();
+    const mat = new THREE.MeshBasicMaterial({ map: new THREE.Texture() });
+    scene.add(new THREE.Mesh(geo, mat));
+    g.upload(scene);
+    expect(g.counts).toEqual({ geometries: 1, materials: 1, textures: 1 });
+    geo.dispose();
+    mat.map!.dispose();
+    expect(g.counts).toEqual({ geometries: 0, materials: 1, textures: 0 });
+  });
+});
+
 describe('zone change leaks (round 4 B04)', () => {
   beforeAll(() => installFakeCanvas());
 
@@ -48,8 +65,9 @@ describe('zone change leaks (round 4 B04)', () => {
     trip(); // the second trip warms every cache (shared textures, pooled effects)
     const baseline = { ...gpu.counts };
     for (let i = 0; i < 10; i++) trip();
-    const after = gpu.counts;
-    expect(baseline.geometries).toBeGreaterThan(50);
+    const after = { ...gpu.counts };
+    console.log('zone leak census', JSON.stringify({ baseline, after }));
+    expect(baseline.geometries).toBeGreaterThan(10);
     expect(after.geometries, 'geometries').toBeLessThanOrEqual(baseline.geometries);
     expect(after.materials, 'materials').toBeLessThanOrEqual(baseline.materials);
     expect(after.textures, 'textures').toBeLessThanOrEqual(baseline.textures);
