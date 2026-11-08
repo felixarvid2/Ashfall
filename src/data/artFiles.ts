@@ -53,7 +53,6 @@ export const ART_FILES: ReadonlySet<string> = new Set([
   'aspects/vulnerability_matrix',
   'aspects/warding',
   'aspects/wrecking_ball',
-  'bosses/ashen_colossus',
   'bosses/archivist',
   'bosses/brood_engine',
   'bosses/brood_mother',

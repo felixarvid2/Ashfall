@@ -347,13 +347,13 @@ describe('D03 barrier emblem', () => {
 });
 
 describe('D02 Ashen Colossus portrait', () => {
-  it('the world boss has a portrait file that the intro card finds', async () => {
+  it('has no portrait: the Blender render was dropped, so no intro card shows a poor likeness', async () => {
     const { existsSync } = await import('node:fs');
     const { worldBossPortrait } = await import('../src/data/endgame/worldBosses');
     const { ART_FILES } = await import('../src/data/artFiles');
-    expect(worldBossPortrait('world_ashen_colossus')).toBe('ashen_colossus');
-    expect(ART_FILES.has('bosses/ashen_colossus')).toBe(true);
-    expect(existsSync(new URL('../public/assets/art/bosses/ashen_colossus.webp', import.meta.url))).toBe(true);
+    expect(worldBossPortrait('world_ashen_colossus')).toBeUndefined();
+    expect(ART_FILES.has('bosses/ashen_colossus')).toBe(false);
+    expect(existsSync(new URL('../public/assets/art/bosses/ashen_colossus.webp', import.meta.url))).toBe(false);
   });
 });
 

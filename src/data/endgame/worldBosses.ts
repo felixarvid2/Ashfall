@@ -78,8 +78,7 @@ export const WORLD_BOSSES: readonly WorldBossDef[] = [
     lifeMul: 4,
     damageMul: 1,
     affixes: [],
-    // Round 4 (D02): a Blender render of its model (scripts/blender/portrait.py).
-    portrait: 'ashen_colossus',
+    // No portrait: the Blender render tried in round 4 (scripts/blender/portrait.py) did not read as the Colossus.
     rewards: { uniqueChance: 0.2, recipes: [1, 2], dust: [8, 14] },
     spots: [
       { zone: CF, x: -440, z: -480, radius: 26 },
