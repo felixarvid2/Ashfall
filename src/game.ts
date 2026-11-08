@@ -260,6 +260,7 @@ export class Game {
   private readonly harvestHud: HarvestHud;
   private readonly devtools: DevTools;
   private readonly damageNumbers: DamageNumbers;
+  private readonly pickupLog: PickupLog;
   private readonly inventoryPanel: InventoryPanel;
   // Character, skills and settings panels are fetched on first use (C02).
   private readonly characterPanel: LazyPanel<CharacterPanel>;

@@ -5515,6 +5515,11 @@
     "stash": {
       "search": "Search the stash",
       "noMatch": "Nothing in the stash matches."
+    },
+    "pickupLog": {
+      "label": "Picked up",
+      "gold": "+{gold} gold",
+      "itemMany": "{name} x{n}"
     }
   }
 }

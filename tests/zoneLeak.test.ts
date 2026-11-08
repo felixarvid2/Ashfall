@@ -43,12 +43,17 @@ describe('zone change leaks (round 4 B04)', () => {
     const zoneB = ZONES.find((z) => z.id === 'zone.hydroponic_vaults')!;
 
     /** What the game does on a zone change: drop the old entities, build the new arena, spawn, draw some frames. */
+    const world = new World();
+    const player = spawnPlayer(world, 'bastion', 0, 0);
     const enter = (zone: typeof zoneA) => {
-      const world = new World();
+      for (const e of world.query(Transform)) if (e !== player) world.destroyDeferred(e);
+      world.flushDestroyed();
       renderer.buildArena(zone);
       spawnArenaProps(world, zone);
       const hub = zone.hubs[0]!;
-      spawnPlayer(world, 'bastion', hub.x, hub.z);
+      const pt = world.req(player, Transform);
+      pt.x = pt.prevX = hub.x;
+      pt.z = pt.prevZ = hub.z;
       for (let i = 0; i < 20; i++) spawnEnemy(world, i % 2 ? 'infected_colonist' : 'security_drone', hub.x + 6 + i, hub.z + 4, { level: 5 });
       for (let f = 0; f < 3; f++) {
         renderer.sync(world, 0.5, 1 / 60);
@@ -64,8 +69,13 @@ describe('zone change leaks (round 4 B04)', () => {
     trip();
     trip(); // the second trip warms every cache (shared textures, pooled effects)
     const baseline = { ...gpu.counts };
+    const g0 = new Set(gpu.geometries), m0 = new Set(gpu.materials);
     for (let i = 0; i < 10; i++) trip();
     const after = { ...gpu.counts };
+    if (process.env.LEAKDBG) {
+      const hist = (set: Set<{ type: string; name: string }>, before: Set<unknown>) => { const h: Record<string, number> = {}; for (const x of set) if (!before.has(x)) { const k = `${x.type}:${x.name}`; h[k] = (h[k] ?? 0) + 1; } return h; };
+      console.log('new geos', JSON.stringify(hist(gpu.geometries as never, g0)), 'new mats', JSON.stringify(hist(gpu.materials as never, m0)));
+    }
     console.log('zone leak census', JSON.stringify({ baseline, after }));
     expect(baseline.geometries).toBeGreaterThan(10);
     expect(after.geometries, 'geometries').toBeLessThanOrEqual(baseline.geometries);
