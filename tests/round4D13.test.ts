@@ -190,3 +190,13 @@ describe('D12 regional elite names', () => {
     expect(all.size).toBeGreaterThan(40);
   });
 });
+
+describe('D15 feats round 2', () => {
+  it('adds ten feats, three with titles', async () => {
+    const { FEATS } = await import('../src/data/feats');
+    const ids = ['thousand_cuts', 'ash_legion', 'elite_scourge', 'giant_killer', 'unique_hoard', 'mythic_hoard', 'rift_legend', 'rift_apex', 'maxed_out', 'town_hero'];
+    const mine = FEATS.filter((f) => ids.includes(f.id));
+    expect(mine).toHaveLength(10);
+    expect(mine.filter((f) => f.title)).toHaveLength(3);
+  });
+});

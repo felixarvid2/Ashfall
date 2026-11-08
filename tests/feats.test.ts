@@ -23,7 +23,7 @@ const death = (id: number): GameEvent => ({ type: 'death', target: id, x: 0, z: 
 describe('feat data', () => {
   it('has about twenty feats with unique ids, real icons and every string', () => {
     expect(FEATS.length).toBeGreaterThanOrEqual(18);
-    expect(FEATS.length).toBeLessThanOrEqual(24);
+    expect(FEATS.length).toBeLessThanOrEqual(34);
     expect(new Set(FEATS.map((f) => f.id)).size).toBe(FEATS.length);
     for (const f of FEATS) {
       expect(existsSync(new URL(`../public/assets/icons/${f.icon}.webp`, import.meta.url)), f.icon).toBe(true);

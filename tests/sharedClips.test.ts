@@ -33,7 +33,26 @@ function donorClip(name: string): THREE.AnimationClip {
   ]);
 }
 
+/** The node names of a GLB (read from its JSON chunk). */
+function glbNodes(path: string): string[] {
+  const buf = readFileSync(new URL(`../public/assets/${path}`, import.meta.url));
+  const json = JSON.parse(buf.subarray(20, 20 + buf.readUInt32LE(12)).toString('utf8'));
+  return json.nodes.map((n: { name?: string }) => n.name ?? '');
+}
+
 describe('A18 shared clips', () => {
+  it('the real donor and every idle-only model share the same joint names', () => {
+    const donor = new Set(glbNodes('enemies/sergeant.glb'));
+    for (const e of entries.filter((x) => IDLE_ONLY_BASES.includes(x.id))) {
+      const file = (e as unknown as { file: string }).file;
+      const nodes = new Set(glbNodes(file));
+      for (const j of JOINTS) {
+        expect(donor.has(j)).toBe(true);
+        expect(nodes.has(j)).toBe(true);
+      }
+    }
+  });
+
   it('keeps rotations, scales the hips and drops other translations and scales', () => {
     const c = retargetClip(donorClip('walk'), 'borrowed.walk', 0.5);
     expect(c.tracks.map((t) => t.name).sort()).toEqual(['Hips.position', 'Spine.quaternion']);

@@ -40,6 +40,17 @@ export const FEATS: readonly FeatDef[] = [
   { id: 'four_paths', stat: 'classesAt10', goal: 4, icon: 'echo_relic', title: true },
   { id: 'errand_runner', stat: 'quests', goal: 10, icon: 'keycard' },
   { id: 'wasteland_hand', stat: 'quests', goal: 50, icon: 'signal_pendant', title: true },
+  // Round 4 (D15): ten more, three with titles.
+  { id: 'thousand_cuts', stat: 'kills', goal: 5000, icon: 'hydraulic_knuckles' },
+  { id: 'ash_legion', stat: 'kills', goal: 50000, icon: 'skill_wrath_of_lumen', title: true },
+  { id: 'elite_scourge', stat: 'elites', goal: 1000, icon: 'skill_death_mark' },
+  { id: 'giant_killer', stat: 'bosses', goal: 50, icon: 'skill_orbital_strike', title: true },
+  { id: 'unique_hoard', stat: 'uniques', goal: 30, icon: 'crystal_ember' },
+  { id: 'mythic_hoard', stat: 'mythics', goal: 5, icon: 'crystal_lumen', title: true },
+  { id: 'rift_legend', stat: 'riftsCleared', goal: 150, icon: 'skill_holy_light' },
+  { id: 'rift_apex', stat: 'riftBest', goal: 75, icon: 'skill_sanctuary' },
+  { id: 'maxed_out', stat: 'level', goal: 50, icon: 'combat_helm' },
+  { id: 'town_hero', stat: 'quests', goal: 100, icon: 'signal_pendant' },
 ];
 
 export const FEAT_DEFS: ReadonlyMap<string, FeatDef> = new Map(FEATS.map((f) => [f.id, f]));

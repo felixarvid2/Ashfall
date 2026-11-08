@@ -5494,7 +5494,17 @@
     "veteran": {"name": "Veteran", "desc": "Reach level 30."},
     "four_paths": {"name": "Four Paths", "desc": "Take a hero of every class to level 10.", "title": "Pathfinder"},
     "errand_runner": {"name": "Errand Runner", "desc": "Complete 10 quests or bounties."},
-    "wasteland_hand": {"name": "Wasteland Hand", "desc": "Complete 50 quests or bounties.", "title": "Wasteland Hand"}
+    "wasteland_hand": {"name": "Wasteland Hand", "desc": "Complete 50 quests or bounties.", "title": "Wasteland Hand"},
+    "thousand_cuts": {"name": "Thousand Cuts", "desc": "Defeat 5,000 enemies."},
+    "ash_legion": {"name": "Ash Legion", "desc": "Defeat 50,000 enemies.", "title": "Ash Legion"},
+    "elite_scourge": {"name": "Elite Scourge", "desc": "Defeat 1,000 elites."},
+    "giant_killer": {"name": "Giant Killer", "desc": "Defeat 50 bosses.", "title": "Giant Killer"},
+    "unique_hoard": {"name": "Unique Hoard", "desc": "Find 30 unique or mythic items."},
+    "mythic_hoard": {"name": "Mythic Hoard", "desc": "Find 5 mythic items.", "title": "Mythic Hoarder"},
+    "rift_legend": {"name": "Rift Legend", "desc": "Clear 150 Deep Rifts."},
+    "rift_apex": {"name": "Rift Apex", "desc": "Clear a Deep Rift of level 75."},
+    "maxed_out": {"name": "Maxed Out", "desc": "Reach level 50."},
+    "town_hero": {"name": "Town Hero", "desc": "Complete 100 quests or bounties."}
   },
   "rifts": {
     "title": "Deep Rift",
