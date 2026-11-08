@@ -2047,9 +2047,71 @@
     "thurible": {
       "name": "Thurible",
       "desc": "Censer Strike has a {value} wider arc and {value} longer reach."
+    },
+    "cleaver": {
+      "name": "Cleaver",
+      "desc": "Furnace Cleave has a {value} wider arc and {value} longer reach."
+    },
+    "afterburner": {
+      "name": "Afterburner",
+      "desc": "Orbital Strike has a {value} larger radius and deals {value} more damage."
+    },
+    "long_arm": {
+      "name": "Long Arm",
+      "desc": "Cluster Grenade can be thrown {value} farther and its cooldown is {value} shorter."
+    },
+    "steady_hand": {
+      "name": "Steady Hand",
+      "desc": "Pistol Barrage spreads {value} less and deals {value} more damage."
+    },
+    "venom_edge": {
+      "name": "Venom Edge",
+      "desc": "Scalpel Slash poisons enemies, dealing {value} of weapon damage over 4 seconds."
+    },
+    "miasma": {
+      "name": "Miasma",
+      "desc": "Spore Burst has a {value} larger radius and lasts {value} longer."
+    },
+    "sacred_flame": {
+      "name": "Sacred Flame",
+      "desc": "Holy Light sets enemies on fire, dealing {value} of weapon damage over 3 seconds."
+    },
+    "choir_of_light": {
+      "name": "Choir of Light",
+      "desc": "Magnus Exorcismus has a {value} larger radius and lasts {value} longer."
     }
   },
   "uniques": {
+    "spore_mantle": {
+      "name": "Spore Mantle",
+      "effect": "Deal x12% damage to poisoned enemies.",
+      "flavor": "The vest was green when it was found. It is greener now."
+    },
+    "thornwoven_band": {
+      "name": "Thornwoven Band",
+      "effect": "Restores 6 life on kill.",
+      "flavor": "It grew around the finger. It does not plan to let go."
+    },
+    "prospectors_lamp": {
+      "name": "Prospector's Lamp",
+      "effect": "Deal x10% damage to elites.",
+      "flavor": "Whoever carried it last stopped walking in a straight line."
+    },
+    "sunken_greaves": {
+      "name": "Sunken Greaves",
+      "effect": "Take 5% less damage.",
+      "flavor": "Water still runs out of them. Nobody asks where it comes from."
+    },
+    "memory_lens": {
+      "name": "Memory Lens",
+      "effect": "Deal x12% damage while your resource is high.",
+      "flavor": "It shows you the fight before it happens. You have already won it twice."
+    },
+    "lightstep_boots": {
+      "name": "Lightstep Boots",
+      "effect": "Deal x15% damage while evading.",
+      "flavor": "The floor remembers where you were a moment ago."
+    },
     "governors_crucible": {
       "name": "Governor's Crucible",
       "effect": "Seismic Shock costs no Heat, but has a 3.5 second cooldown.",
@@ -5216,6 +5278,9 @@
     "mapCache": "Harvest Cache",
     "needShards": "Not enough Ash Shards for a Harvest Cache.",
     "shardsLost": "You fell. Half of your Ash Shards are lost.",
+    "shardsDropped": "You fell. Half of your Ash Shards lie where you died. Pick them up within 5 minutes.",
+    "shardsRecovered": "You recovered your Ash Shards.",
+    "shardsGone": "The Ash Shards you lost have crumbled to dust.",
     "cacheOpened": "Harvest Cache opened: a legendary and {dust} Lumen Dust.",
     "cacheRecipe": "The cache held a tempering recipe you did not know."
   },
@@ -5428,5 +5493,28 @@
       "Fire, poison and cold fields on the ground keep hurting. Step out of them."
     ],
     "rose": "You rise again"
+  },
+  "ux": {
+    "settings": {
+      "hideLowLoot": "Hide common and magic drops",
+      "hideLowLootHint": "Common and magic items vanish from the ground. Gold and crystals always show. Hold the labels key to see everything.",
+      "rarityShapes": "Rarity shapes",
+      "rarityShapesHint": "Adds corner marks and border patterns to item frames, labels and beams, so rarity does not depend on colour.",
+      "uiScale": "Interface scale",
+      "uiScaleHint": "Scales the whole interface. Text size is separate.",
+      "damageNumbers": "Damage numbers",
+      "damageNumberModes": {
+        "off": "Off",
+        "compact": "Compact",
+        "full": "Full"
+      },
+      "damageNumbersHint": "Compact merges small hits and shows crits and big hits.",
+      "subtitles": "Subtitles",
+      "subtitlesHint": "Shows what NPCs and bosses say as a line of text."
+    },
+    "stash": {
+      "search": "Search the stash",
+      "noMatch": "Nothing in the stash matches."
+    }
   }
 }

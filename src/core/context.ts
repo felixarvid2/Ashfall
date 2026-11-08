@@ -90,4 +90,6 @@ export interface RewardRequest {
   itemPower?: number;
   /** Also drop this specific unique (quest choices). */
   unique?: string;
+  /** The boss that died: its signature drops roll on top of the table (round 4, D13). */
+  boss?: string;
 }

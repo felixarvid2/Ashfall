@@ -3,6 +3,7 @@ import { GroundGold, GroundItem, Transform } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import { t } from '../data/i18n';
 import { CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
+import { hiddenByLootFilter } from '../data/loot/filter';
 import { itemDisplayName } from './itemTooltip';
 
 type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
@@ -34,6 +35,8 @@ export interface LabelCandidate {
 const RARITY_RANK: Record<string, number> = { common: 0, magic: 1, rare: 2, legendary: 3, unique: 4, mythic: 5 };
 /** Lowest rarity rank each `lootLabelMin` setting keeps a label for (B046). */
 const MIN_RANK: Record<LootLabelMin, number> = { all: 0, magic: 1, rare: 2, legendary: 3 };
+
+export { hiddenByLootFilter };
 
 export function rarityRank(rarity: string): number {
   return RARITY_RANK[rarity] ?? 0;
@@ -158,6 +161,8 @@ export class LootLabels {
     private readonly onAutoPicked: (message: string) => void = () => {},
     /** The "Loot labels" setting: labels from this rarity up (crystals always), see settings.lootLabelMin (B046). */
     private readonly minRarity: () => LootLabelMin = () => 'all',
+    /** The "Hide low loot" setting (C01). */
+    private readonly hideLow: () => boolean = () => false,
   ) {
     this.layer = document.createElement('div');
     this.layer.className = 'loot-labels';
@@ -198,6 +203,7 @@ export class LootLabels {
     const touch = this.root.classList.contains('touch-ui');
     const now = performance.now();
     const min = this.minRarity();
+    const hideLow = this.hideLow();
     const seen = new Set<Entity>();
     const cands: (LabelCandidate & { e: Entity; g: GroundItem; sx: number; sy: number })[] = [];
     const autoPick: Entity[] = [];
@@ -207,7 +213,7 @@ export class LootLabels {
       const dist = Math.hypot(tr.x - playerX, tr.z - playerZ);
       if (touch && g.age > 0.35 && dist <= AUTO_PICKUP_RADIUS && !g.item.crystal && (g.item.rarity === 'common' || g.item.rarity === 'magic')) autoPick.push(e);
       // Below the "Loot labels" threshold a drop keeps only its beam (B046); Alt shows everything.
-      const visible = passesLootFilter(g.item.rarity, !!g.item.crystal, min, showAll, dist) && g.age > 0.35 && dist < MAX_DISTANCE;
+      const visible = !hiddenByLootFilter(g.item.rarity, !!g.item.crystal, hideLow, showAll) && passesLootFilter(g.item.rarity, !!g.item.crystal, min, showAll, dist) && g.age > 0.35 && dist < MAX_DISTANCE;
       if (!visible || !project(tr.x, 0.4, tr.z, this.screen)) continue;
       cands.push({ key: e, e, g, dist, always: ALWAYS_SHOWN.has(g.item.rarity), rank: touch ? undefined : rarityRank(g.item.rarity), sx: this.screen.x, sy: this.screen.y - 18 });
     }

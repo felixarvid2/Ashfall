@@ -31,6 +31,7 @@ import { scalesToPlayer, tierMods } from '../endgame/tiers';
 import { recomputePlayer } from '../stats';
 import { addToGrid, freeCells } from './inventory';
 import { MAGNET_ARRIVE, magnetPull } from './magnet';
+import { rollBossSignatures } from './bossLoot';
 import { generateItem, generateUnique, itemPowerFor, killXp, rollDrops, xpToNext } from './generate';
 
 export const GOLD_PICKUP_RADIUS = 1.8;
@@ -141,6 +142,12 @@ export function rewardSystem(world: World, _dt: number, ctx: GameContext): void 
     }
     const unique = req.unique ? UNIQUE_DEFS.get(req.unique) : undefined;
     if (unique) drop.items.push(generateUnique(ctx.loot.rng, unique, itemPowerFor(req.level, ctx.loot.rng) + tier.itemPower, nextItemUid(ctx)));
+    if (req.boss) {
+      for (const id of rollBossSignatures(ctx.loot.rng, req.boss, classId, tier.rareDrops)) {
+        const sig = UNIQUE_DEFS.get(id);
+        if (sig) drop.items.push(generateUnique(ctx.loot.rng, sig, itemPowerFor(req.level, ctx.loot.rng) + tier.itemPower, nextItemUid(ctx)));
+      }
+    }
     const total = drop.items.length + (drop.gold > 0 ? 1 : 0);
     drop.items.forEach((item, i) => {
       const p = spawnGround(ctx, req.x, req.z, i, total);

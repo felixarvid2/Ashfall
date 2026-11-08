@@ -4,6 +4,7 @@
  */
 import { cssUrl } from './art';
 import { BannerQueue, type BannerItem } from './bannerQueue';
+import { LOW_LIFE_SHARE } from '../audio/heartbeat';
 import { haptic, setLowLife } from './haptics';
 import { HintFade } from './hintFade';
 import { setAffixChips } from './enemyBars';
@@ -712,6 +713,10 @@ export class Hud {
     return !this.wasDead || this.deathLock > 0;
   }
 
+  /** Called when life crosses the low-life line (C12); the game starts or stops the audible heartbeat from it. */
+  onLowLife: (low: boolean) => void = () => {};
+  private wasUrgent = false;
+
   /** Hints fade after 20 s of play or the first skill use, the title after 8 s; F1 or ? show the hints for 12 s (A019). */
   private updateHints(state: HudState): void {
     // Real elapsed time: the loop clamps its frame time to 0.25 s, so a slow renderer would run these timers far too slowly.
@@ -808,13 +813,17 @@ export class Hud {
         this.flares.classList.toggle('empty', state.flares.charges === 0);
       }
     }
-    const lowLife = state.life.current / state.life.max < 0.3;
+    const lowLife = state.life.max > 0 && state.life.current / state.life.max < LOW_LIFE_SHARE;
     this.lifeOrb.set(state.life.current, state.life.max, state.life.barrier, lowLife);
     // Low life shows on the playfield too: a red vignette, and the potion button asks to be pressed (H005).
     const urgent = lowLife && !state.dead;
     this.vignette.classList.toggle('on', urgent);
     this.potionSlot.el.classList.toggle('urgent', urgent && state.potion.charges > 0);
     setLowLife(urgent);
+    if (urgent !== this.wasUrgent) {
+      this.wasUrgent = urgent;
+      this.onLowLife(urgent);
+    }
     this.heatOrb.setKind(state.resource.kind, t(`resources.${state.resource.kind}`));
     this.heatOrb.set(state.resource.current, state.resource.max, 0, state.resource.overheating);
 

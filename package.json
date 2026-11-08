@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage --exclude tests/balance.test.ts",
     "meshy": "tsx scripts/meshy/cli.ts",
-    "perf:quick": "PERF_QUICK=1 vitest run tests/perfBudget.test.ts",
+    "perf:quick": "PERF_QUICK=1 vitest run tests/perfBudget.test.ts tests/crowdBudget.test.ts",
     "perf:tick": "tsx scripts/perf/tick.ts",
     "sim": "tsx scripts/sim/cli.ts",
     "play": "tsx scripts/sim/play.ts",

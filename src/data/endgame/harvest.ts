@@ -21,6 +21,9 @@ export const HARVEST = {
   shards: { normal: 1, elite: 5, boss: 25 },
   /** Dying drops this share of the carried shards (they are lost). */
   deathLoss: 0.5,
+  /** A09: the lost shards lie where you fell for this long (s of game time) and are picked up by walking over them. */
+  pileKeep: 300,
+  pileRadius: 2,
   /** A Harvest Cache: price in shards, the Lumen Dust it holds, and the chance it teaches a tempering recipe. */
   cacheCost: 250,
   cacheDust: [4, 8] as const,

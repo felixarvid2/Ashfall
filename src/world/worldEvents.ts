@@ -25,6 +25,7 @@ import { Rng } from '../core/rng';
 import { INTERACT_RADIUS } from '../data/interactables';
 import { at } from '../data/zones/cinderFlats';
 import { monsterLevel } from '../systems/encounter';
+import { PROGRESS_KEEP } from '../systems/quests';
 import { grantXp } from '../systems/loot/rewards';
 import { spawnEnemy } from './spawn';
 import { harvestEventCooldownMul } from './harvest';
@@ -104,6 +105,8 @@ export interface EventState {
   /** Runaway Belt: crates that reached the furnace. Slag Tide: kills whose corpses are gone. */
   missed?: number;
   banked?: number;
+  /** A10: progress left behind when the player walked out of the zone mid-event (resumed within PROGRESS_KEEP s). */
+  paused?: { at: number; elapsed: number; progress: number; missed: number; banked: number; hp: number };
 }
 
 export function createEvents(zone: ZoneRuntime): Map<string, EventState> {
@@ -115,10 +118,18 @@ export function createEvents(zone: ZoneRuntime): Map<string, EventState> {
   return out;
 }
 
-/** The player left the zone mid-event: it can be started again later (its entities are gone). */
-export function suspendEvents(zone: ZoneRuntime): void {
+/**
+ * The player left the zone mid-event: its entities are gone and it can be started again later. A10: with `time` (ctx.time)
+ * the progress is remembered, and the event picks up from there if the player is back within PROGRESS_KEEP seconds.
+ */
+export function suspendEvents(zone: ZoneRuntime, time?: number, world?: World): void {
   for (const ev of zone.events.values()) {
     if (ev.state !== 'active') continue;
+    if (time !== undefined) {
+      const first = ev.objects[0];
+      const h = world && first !== undefined && world.isAlive(first) ? world.get(first, Health) : undefined;
+      ev.paused = { at: time, elapsed: ev.elapsed, progress: ev.progress, missed: ev.missed ?? 0, banked: ev.banked ?? 0, hp: h ? h.current / h.max : 1 };
+    }
     ev.state = 'idle';
     ev.objects = [];
     ev.result = null;
@@ -203,6 +214,8 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
   ev.objects = [];
   ev.missed = 0;
   ev.banked = 0;
+  const memory = ev.paused;
+  delete ev.paused;
   switch (ev.type) {
     case 'convoy': {
       const [x, z] = T.convoy.path[0]!;
@@ -329,7 +342,24 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
       break;
     }
   }
+  if (memory && ctx.time - memory.at <= PROGRESS_KEEP) resumeEvent(world, ev, memory);
   ctx.events.push({ type: 'banner', key: `worldEvents.${ev.type}.title`, seconds: 2.4 });
+}
+
+/** A10: put a freshly started event back where the player left it. */
+function resumeEvent(world: World, ev: EventState, m: NonNullable<EventState['paused']>): void {
+  ev.elapsed = m.elapsed;
+  ev.progress = m.progress;
+  ev.missed = m.missed;
+  ev.banked = m.banked;
+  const first = ev.objects[0];
+  const h = first !== undefined ? world.get(first, Health) : undefined;
+  if (h && (ev.type === 'convoy' || ev.type === 'signalJam')) h.current = Math.max(1, h.max * m.hp);
+  if (ev.type === 'convoy' && first !== undefined) {
+    // The truck stands at the last waypoint it passed.
+    const [x, z] = EVENT_TUNING.convoy.path[Math.max(0, Math.min(m.progress, EVENT_TUNING.convoy.path.length) - 1)]!;
+    Object.assign(world.req(first, Transform), makeTransform(x, 0, z, 0));
+  }
 }
 
 function finish(world: World, ctx: GameContext, zone: ZoneRuntime, id: string, ev: EventState, result: Tier | 'failed'): void {

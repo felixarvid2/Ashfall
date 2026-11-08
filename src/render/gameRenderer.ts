@@ -35,6 +35,7 @@ import { VfxSystem } from './vfx';
 import { disposeOwned, trackOwned } from './owned';
 import { recoilCurve } from './hitRecoil';
 import { LootVisuals } from './lootVisuals';
+import { SHADOW_CASTERS, animInterval, nearestN, stepAnimClock, type AnimClock } from './lod';
 import { PostFx, type GraphicsQuality } from './postfx';
 
 export class GameRenderer {
@@ -59,6 +60,16 @@ export class GameRenderer {
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
   private readonly animators = new Map<Entity, CharacterAnimator>();
+  /** Animation and shadow LOD (round 4 B01, B02): the view frustum, per-frame counts and the shadow candidates. */
+  private readonly viewFrustum = new THREE.Frustum();
+  private readonly viewMatrix = new THREE.Matrix4();
+  private readonly lodSphere = new THREE.Sphere();
+  private readonly shadowIds: Entity[] = [];
+  private readonly shadowDist: number[] = [];
+  private readonly shadowSet = new Set<Entity>();
+  private blobParts: { geo: THREE.BufferGeometry; mat: THREE.Material } | null = null;
+  /** Last frame's LOD numbers: mixers updated and skipped, enemies with a real shadow. */
+  readonly lodStats = { animUpdated: 0, animSkipped: 0, shadowCasters: 0 };
   /** Last time each entity played its hit reaction (seconds), to avoid stutter under constant hits. */
   private readonly lastHitAnim = new Map<Entity, number>();
   /** Recoil in progress per enemy (F008): seconds since the hit and whether it was a crit. */
@@ -1160,6 +1171,12 @@ export class GameRenderer {
     this.shimmerInteractables(world, frameDt);
     const seen = this.seen;
     seen.clear();
+    this.viewMatrix.multiplyMatrices(this.rig.camera.projectionMatrix, this.rig.camera.matrixWorldInverse);
+    this.viewFrustum.setFromProjectionMatrix(this.viewMatrix);
+    const focus = this.rig.focusPoint;
+    this.shadowIds.length = 0;
+    this.shadowDist.length = 0;
+    this.lodStats.animUpdated = this.lodStats.animSkipped = 0;
     for (const e of world.queryInto(this.renderables, Transform, Renderable)) {
       seen.add(e);
       // Plain static props are placed once and culled and faded in `statics.update` below (T015).
@@ -1203,7 +1220,10 @@ export class GameRenderer {
         this.objects.set(e, obj);
         this.scene.add(obj);
         const clips = this.assets.clips(r.assetId);
-        if (clips.size > 0) this.animators.set(e, new CharacterAnimator(obj, clips));
+        if (clips.size > 0) {
+          this.animators.set(e, new CharacterAnimator(obj, clips));
+          obj.userData.animClock = { acc: 1 } satisfies AnimClock;
+        }
         else if (!r.look && !((obj.userData.tint as TintSlot[] | undefined)?.length ?? 0) && world.hasOnly(e, Transform, Renderable, Collider)) {
           this.statics.add(e, obj, tr, r, this.propSize(r.assetId).h * (r.scale ?? 1) >= SILHOUETTE.minPropHeight);
           continue;
@@ -1282,8 +1302,23 @@ export class GameRenderer {
         lean = { pitch, roll: Math.sin(phase) * 0.06 * gait };
       }
       if (animator) {
-        animator.play(this.animationFor(world, e, animator));
-        animator.update(frameDt * this.animationTimeScale);
+        // Far mixers tick at a lower rate, off-screen ones not at all (B01); the player and bosses always run in full.
+        let interval = 0;
+        if (ai && !world.has(e, Boss)) {
+          this.lodSphere.center.set(tr.x, tr.y + 1, tr.z);
+          this.lodSphere.radius = 6;
+          interval = animInterval((tr.x - focus.x) ** 2 + (tr.z - focus.z) ** 2, this.viewFrustum.intersectsSphere(this.lodSphere));
+        }
+        const step = stepAnimClock(obj.userData.animClock as AnimClock, frameDt * this.animationTimeScale, interval);
+        if (step > 0 || (interval === 0 && this.animationTimeScale === 0)) {
+          animator.play(this.animationFor(world, e, animator));
+          animator.update(step);
+          this.lodStats.animUpdated++;
+        } else this.lodStats.animSkipped++;
+      }
+      if (ai && !world.has(e, Dead) && !world.has(e, Boss)) {
+        this.shadowIds.push(e);
+        this.shadowDist.push((tr.x - focus.x) ** 2 + (tr.z - focus.z) ** 2);
       }
 
       const dead = world.get(e, Dead);
@@ -1333,6 +1368,15 @@ export class GameRenderer {
       }
       this.applyTint(world, e, obj, frameDt);
       if (this.recoils.size > 0) this.applyRecoil(world, e, obj, frameDt);
+    }
+    {
+      // Shadow LOD (B02): the nearest enemies cast a real shadow, the rest a blob.
+      const near = nearestN(this.shadowIds, this.shadowDist, SHADOW_CASTERS, this.shadowSet);
+      for (const e of this.shadowIds) {
+        const o = this.objects.get(e);
+        if (o) this.setShadowLod(o, near.has(e), world.get(e, Collider)?.radius ?? 0.5);
+      }
+      this.lodStats.shadowCasters = near.size;
     }
     {
       const f = this.rig.focusPoint;
@@ -1498,6 +1542,42 @@ export class GameRenderer {
     ground.traverse((o) => (o.userData.noTint = true));
     obj.add(ground);
     obj.userData.droneMarks = { ground, beacon };
+  }
+
+  /**
+   * Shadow LOD (B02): real shadow casting on or off for one enemy; without it a soft dark disc sits under it. Meshes are
+   * listed once per object and only touched when the state changes. Hovering drones keep their own ground shadow.
+   */
+  private setShadowLod(obj: THREE.Object3D, cast: boolean, radius: number): void {
+    if (obj.userData.shadowCast === cast) return;
+    obj.userData.shadowCast = cast;
+    let meshes = obj.userData.shadowMeshes as THREE.Mesh[] | undefined;
+    if (!meshes) {
+      meshes = [];
+      obj.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh && o.castShadow) meshes!.push(o as THREE.Mesh);
+      });
+      obj.userData.shadowMeshes = meshes;
+    }
+    for (const m of meshes) m.castShadow = cast;
+    if (obj.userData.droneMarks) return;
+    let blob = obj.userData.blob as THREE.Mesh | undefined;
+    if (!blob) {
+      if (cast) return;
+      const parts = (this.blobParts ??= {
+        geo: new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2),
+        mat: new THREE.MeshBasicMaterial({ map: this.glowTexture(), color: '#000000', transparent: true, opacity: 0.5, depthWrite: false }),
+      });
+      blob = new THREE.Mesh(parts.geo, parts.mat);
+      const s = obj.scale.x || 1;
+      blob.scale.setScalar((radius * 1.7) / s);
+      blob.position.y = 0.02 / s;
+      blob.renderOrder = 2;
+      blob.userData.noTint = true;
+      obj.userData.blob = blob;
+      obj.add(blob);
+    }
+    blob.visible = !cast;
   }
 
   private droneMarkParts: { shadowGeo: THREE.BufferGeometry; ringGeo: THREE.BufferGeometry; shadowMat: THREE.Material } | null = null;

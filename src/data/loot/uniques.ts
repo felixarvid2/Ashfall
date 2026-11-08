@@ -4,6 +4,9 @@ import type { UniqueDefSchema } from './schemas';
 
 type Unique = z.input<typeof UniqueDefSchema>;
 
+/** Round 4 uniques with no icon of their own: they wear their base's masterwork look (`items/<base>_3`, src/ui/art.ts). */
+export const BASE_ART_UNIQUES: readonly string[] = ['spore_mantle', 'thornwoven_band', 'prospectors_lamp', 'sunken_greaves', 'memory_lens', 'lightstep_boots'];
+
 export const UNIQUES: Unique[] = [
   {
     // Seismic Shock becomes a cooldown skill instead of a Heat spender.
@@ -473,6 +476,79 @@ export const UNIQUES: Unique[] = [
       { kind: 'stat', stat: 'cooldownReduction', value: 0.08 },
       { kind: 'stat', stat: 'damageReduction', value: 0.05 },
     ],
+  },
+  // ---- Round 4 (D05): two for each of the Vaults, the Mines and the Core, for every class. ----
+  {
+    // The Vaults: a poisoned enemy takes a good deal more from everything you do.
+    id: 'spore_mantle',
+    base: 'mesh_vest',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'maxLife', min: 30, max: 40, scaling: 'linear' },
+      { stat: 'resistToxic', min: 0.12, max: 0.18, scaling: 'sqrt' },
+      { stat: 'potionHealing', min: 0.1, max: 0.16, scaling: 'none' },
+    ],
+    effects: [{ kind: 'damage', value: 0.12, multiplicative: true, when: 'poisoned' }],
+  },
+  {
+    // The Vaults: a ring grown around a finger; every kill feeds it.
+    id: 'thornwoven_band',
+    base: 'signet_band',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'damageVsVulnerable', min: 0.14, max: 0.2, scaling: 'sqrt' },
+      { stat: 'critChance', min: 0.03, max: 0.05, scaling: 'none' },
+      { stat: 'resistToxic', min: 0.08, max: 0.12, scaling: 'sqrt' },
+    ],
+    effects: [{ kind: 'stat', stat: 'lifeOnKill', value: 6 }],
+  },
+  {
+    // The Mines: a lamp that shows the way and the weak points of what hides in the dark.
+    id: 'prospectors_lamp',
+    base: 'lumen_locket',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'damageVsElite', min: 0.14, max: 0.2, scaling: 'sqrt' },
+      { stat: 'resourceGen', min: 0.06, max: 0.1, scaling: 'none' },
+      { stat: 'moveSpeed', min: 0.04, max: 0.07, scaling: 'none' },
+    ],
+    effects: [{ kind: 'damage', value: 0.1, multiplicative: true, when: 'elite' }],
+  },
+  {
+    // The Mines: plates salvaged from the drowned engine; heavy, and it shows.
+    id: 'sunken_greaves',
+    base: 'armored_greaves',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'armor', min: 30, max: 42, scaling: 'linear' },
+      { stat: 'maxLife', min: 25, max: 35, scaling: 'linear' },
+      { stat: 'resistAll', min: 0.05, max: 0.08, scaling: 'sqrt' },
+    ],
+    effects: [{ kind: 'stat', stat: 'damageReduction', value: 0.05 }],
+  },
+  {
+    // The Core: a visor that remembers every fight it was in; full resource, full damage.
+    id: 'memory_lens',
+    base: 'signal_visor',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'cooldownReduction', min: 0.05, max: 0.08, scaling: 'none' },
+      { stat: 'critChance', min: 0.03, max: 0.05, scaling: 'none' },
+      { stat: 'willpower', min: 8, max: 12, scaling: 'linear' },
+    ],
+    effects: [{ kind: 'damage', value: 0.12, multiplicative: true, when: 'highResource' }],
+  },
+  {
+    // The Core: boots of light; hits find you less often and your own land harder after a dodge.
+    id: 'lightstep_boots',
+    base: 'grip_boots',
+    rarity: 'unique',
+    affixes: [
+      { stat: 'moveSpeed', min: 0.08, max: 0.12, scaling: 'none' },
+      { stat: 'resourceGen', min: 0.06, max: 0.1, scaling: 'none' },
+      { stat: 'resistEnergy', min: 0.08, max: 0.12, scaling: 'sqrt' },
+    ],
+    effects: [{ kind: 'damage', value: 0.15, multiplicative: true, when: 'evasive' }],
   },
   // ---- Hydroponic Vaults: the Mother Tree choice (any class) ----
   {

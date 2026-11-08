@@ -30,6 +30,8 @@ export interface TickBenchOptions {
   enemies?: number;
   ticks?: number;
   warmup?: number;
+  /** Per-frame render prep run after every tick and timed on its own (round 4 B03: `GameRenderer.sync`). */
+  frame?: (world: World, ctx: ReturnType<typeof makeCtx>) => void;
 }
 
 export interface TickBenchResult {
@@ -39,6 +41,8 @@ export interface TickBenchResult {
   /** ms per tick, by system, in run order. */
   perSystem: Record<string, number>;
   totalMs: number;
+  /** ms per frame in `frame` (0 without one). */
+  frameMs: number;
   /** Heap bytes allocated per tick; null unless node ran with --expose-gc. */
   heapPerTick: number | null;
 }
@@ -79,10 +83,16 @@ export function runTickBench(zoneName: string, opts: TickBenchOptions = {}): Tic
     .add('collision', collisionSystem)
     .add('projectiles', projectileSystem)
     .add('death', deathSystem);
+  let frameTotal = 0;
   const step = (): void => {
     scheduler.tick(world, 1 / 60, ctx);
     ctx.tick++;
     ctx.time += 1 / 60;
+    if (opts.frame) {
+      const t0 = performance.now();
+      opts.frame(world, ctx);
+      frameTotal += performance.now() - t0;
+    }
   };
 
   for (let k = 0; k < warmup; k++) step();
@@ -91,6 +101,7 @@ export function runTickBench(zoneName: string, opts: TickBenchOptions = {}): Tic
   const heap0 = process.memoryUsage().heapUsed;
   scheduler.profile = true;
   scheduler.resetTimes();
+  frameTotal = 0;
   for (let k = 0; k < ticks; k++) step();
   scheduler.profile = false;
   const heapPerTick = gc ? (process.memoryUsage().heapUsed - heap0) / ticks : null;
@@ -107,6 +118,7 @@ export function runTickBench(zoneName: string, opts: TickBenchOptions = {}): Tic
     colliders: world.query(Collider).length,
     perSystem,
     totalMs,
+    frameMs: frameTotal / ticks,
     heapPerTick,
   };
 }

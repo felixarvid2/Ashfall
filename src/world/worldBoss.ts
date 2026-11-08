@@ -92,7 +92,7 @@ export interface WorldBossRuntime {
   entity: Entity | null;
   /** The event the entity belongs to. */
   index: number;
-  /** The last event killed (it does not come back). Not saved: a reload inside the window brings it back. */
+  /** The last event killed (it does not come back); the account keeps it too (`worldBossKilled`). */
   killed: number;
   /** Life fraction when it was last seen, so leaving the zone and coming back does not heal it. */
   lifeFrac: number;
@@ -107,12 +107,17 @@ export function worldBossRuntime(ctx: GameContext): WorldBossRuntime {
   return rt;
 }
 
+/** The last event killed: this session's, or the account's (A08: saved, so a reload inside the window keeps it dead). */
+export function worldBossKilled(ctx: GameContext): number {
+  return Math.max(worldBossRuntime(ctx).killed, ctx.account?.endgame.worldBossKilled ?? 0);
+}
+
 /** The status in effect for this game: null before World Tier 2, without an account, and once the boss is dead. */
 export function activeWorldBoss(ctx: GameContext): WorldBossStatus | null {
   const e = ctx.account?.endgame;
   if (!e || e.tierUnlocked < WORLD_BOSS.minTier) return null;
   const st = worldBossStatus(e.playtime);
-  if (!st || (st.phase === 'alive' && worldBossRuntime(ctx).killed === st.event.index)) return null;
+  if (!st || (st.phase === 'alive' && worldBossKilled(ctx) === st.event.index)) return null;
   return st;
 }
 
@@ -197,6 +202,7 @@ export function worldBossSystem(world: World, _dt: number, ctx: GameContext): vo
     if (dead) {
       if (rt.killed !== rt.index) {
         rt.killed = rt.index;
+        if (ctx.account) ctx.account.endgame.worldBossKilled = Math.max(ctx.account.endgame.worldBossKilled, rt.index);
         const def = worldBossEvent(rt.index).def;
         const tr = world.req(here, Transform);
         const player = world.first(PlayerControlled, SkillUser);
@@ -226,7 +232,7 @@ export function worldBossSystem(world: World, _dt: number, ctx: GameContext): vo
 
   rt.entity = null;
   if (!st || st.phase !== 'alive' || !ctx.zone || ctx.zone.def.id !== st.event.spot.zone) return;
-  if (rt.killed === st.event.index) return;
+  if (worldBossKilled(ctx) === st.event.index) return;
   // A new event starts at full life; the same one (back in the zone) keeps what was taken off it.
   if (rt.index !== st.event.index) rt.lifeFrac = 1;
   const player = world.first(PlayerControlled, Transform);

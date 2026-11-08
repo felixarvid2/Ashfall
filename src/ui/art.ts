@@ -4,6 +4,7 @@
  * region cards, menu art and region maps. Everything falls back to what was there before when a file
  * is missing.
  */
+import { ART_ALIAS } from '../data/artAlias';
 import { ART_FILES } from '../data/artFiles';
 import type { Item } from '../data/loot/schemas';
 
@@ -17,7 +18,8 @@ export function cssUrl(path: string): string {
 }
 
 export function artUrl(key: string): string | null {
-  return ART_FILES.has(key) ? `${import.meta.env.BASE_URL}assets/art/${key}.webp` : null;
+  const real = ART_FILES.has(key) ? key : ART_ALIAS[key];
+  return real !== undefined && ART_FILES.has(real) ? `${import.meta.env.BASE_URL}assets/art/${real}.webp` : null;
 }
 
 /** Common and magic items look worn, rare and legendary military, mythic masterwork. */

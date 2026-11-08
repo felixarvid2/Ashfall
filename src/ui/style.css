@@ -1212,3 +1212,9 @@ html.touch-device .hint-mouse { display: none; }
 #ui.touch-ui.portrait .tree-panel.matrix-mode { height: calc(100dvh - 12px - var(--sat) - var(--sab)); max-height: calc(100dvh - 12px - var(--sat) - var(--sab)); padding: 8px; }
 #ui.touch-ui.portrait .matrix-detail { max-height: 30%; }
 #ui.touch-ui .matrix button { padding: 8px 12px; }
+
+/* C09: compact damage numbers are smaller and merge; crits keep a clear size and a mark, DoT ticks are italic. */
+.dmg-compact { font-size: 0.85em; }
+.dmg-compact.dmg-crit { font-size: 1.25em; }
+.dmg-compact.dmg-crit::after { content: '!'; }
+.dmg-dot { font-style: italic; }

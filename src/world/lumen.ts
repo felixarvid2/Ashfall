@@ -149,7 +149,7 @@ export function lumenSystem(world: World, ctx: GameContext, zone: ZoneRuntime, p
     const x = camp.x + 3;
     const z = camp.z + 3;
     ctx.rewards.push({ table: 'dt.boss', level, x, z, xp: true, ...(first ? { rarity: 'legendary' as const } : {}) });
-    ctx.rewards.push({ table: 'dt.boss', level, x, z, xp: false });
+    ctx.rewards.push({ table: 'dt.boss', level, x, z, xp: false, boss: 'lumen' });
     ctx.events.push({ type: 'banner', key: 'setPieces.lumen.defeated', seconds: 3 });
     // Defeating Lumen opens the endgame: World Tier 2 for the whole account (docs/endgame.md).
     if ((ctx.account?.endgame.tierUnlocked ?? 2) < 2) {

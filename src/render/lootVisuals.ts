@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { GroundGold, GroundItem, PlayerControlled, Resource, Transform } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import { CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
+import { hiddenByLootFilter } from '../data/loot/filter';
 import { LOOT_MODELS } from '../data/loot/lootModels';
 import type { AssetLibrary } from './assets';
 
@@ -57,6 +58,9 @@ export class LootVisuals {
   /** One cloned material per rarity colour (cache trim) and per crystal colour, shared by every drop of it. */
   private readonly retinted = new Map<string, THREE.Material>();
   private time = 0;
+  /** The "Hide low loot" setting and the show-all key (C01): common and magic drops are not drawn while hidden. */
+  hideLow = false;
+  showAll = false;
 
   constructor(private readonly assets?: AssetLibrary) {}
 
@@ -76,6 +80,7 @@ export class LootVisuals {
         this.root.add(obj);
       }
       this.upgradeModel(obj);
+      obj.visible = !hiddenByLootFilter(g.item.rarity, !!g.item.crystal, this.hideLow, this.showAll);
       const tr = world.req(e, Transform);
       const t = Math.min(1, g.age / POP_TIME);
       const body = obj.children[0]!;

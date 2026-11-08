@@ -91,6 +91,7 @@ import { averageItemPower, unassignedSkills } from './ui/serviceLogic';
 import type { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
+import { setHeartbeat } from './audio/heartbeat';
 import { dropHitstopMs, playDropSound, playGoldSound, playMagnetSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
 import { soundsForEvents } from './audio/eventSounds';
@@ -182,7 +183,7 @@ import { CREDIT_KEYS, epilogueKeys, type LumenChoice } from './data/lumen';
 import { chooseLumen, lumenCameraFocus } from './world/lumen';
 import type { EpilogueScreen } from './ui/epilogue';
 import { panelStack } from './ui/panelStack';
-import { buildSaveData } from './systems/saveSnapshot';
+import { buildSaveData, restoreVitals } from './systems/saveSnapshot';
 import { LazyPanel, registerGamePanels, registerServicePanel } from './ui/panelRegistry';
 import { meanItemPower } from './ui/characterSelect';
 import { PauseMenu } from './ui/pauseMenu';
@@ -201,7 +202,8 @@ import { EndgameStack } from './ui/endgameStack';
 import { EdgeArrow, edgeInsets, placeEdgeArrow } from './ui/edgeArrows';
 import { WORLD_BOSS, worldBossPortrait } from './data/endgame/worldBosses';
 import { activeEvent, suspendEvents, worldEventSystem } from './world/worldEvents';
-import { harvestSystem, harvestView } from './world/harvest';
+import { restoreGroundLoot, stashGroundLoot } from './world/groundLoot';
+import { harvestSystem, harvestView, shardPileSystem } from './world/harvest';
 import { HarvestHud } from './ui/harvestHud';
 import { environmentSystem, resetEnvironment, sporeExposure, sporesActive } from './world/environment';
 import { vehicleSystem } from './systems/vehicle';
@@ -408,6 +410,7 @@ export class Game {
       .add('worldBoss', worldBossSystem)
       .add('worldEvents', worldEventSystem)
       .add('harvest', harvestSystem)
+      .add('shardPile', shardPileSystem)
       .add('storm', stormSystem)
       .add('minions', minionSystem)
       .add('status', statusSystem)
@@ -442,9 +445,10 @@ export class Game {
 
     // Panel framework: Back/Escape, the shared header, one panel at a time, the tab bar (src/ui/panelStack.ts).
     this.uiRoot = uiRoot;
+    uiRoot.classList.toggle('reduce-motion', this.settings.reduceMotion);
     panelStack.init(uiRoot);
     setHaptics(this.settings.haptics);
-    this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0);
+    this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0, () => this.settings.damageNumbers);
     this.toasts = new Toasts(uiRoot);
     this.setupGamepad();
     if (this.loadedAccount.recovered) {
@@ -458,6 +462,8 @@ export class Game {
     this.harvestHud = new HarvestHud(endgameStack);
     this.hud = new Hud(uiRoot, () => this.respawn());
     this.hud.onOpenSkills = () => this.input.pressAction('skills');
+    // Low life: a heartbeat on top of the vignette and the vibration (C12); reduced motion keeps it silent.
+    this.hud.onLowLife = (low) => setHeartbeat(low && !this.settings.reduceMotion);
     // On a phone the stack lives in the HUD's left column (one chip, see portrait/hud.css).
     this.hud.leftColumn.append(endgameStack);
     this.fade = document.createElement('div');
@@ -468,6 +474,7 @@ export class Game {
       (e) => this.requestPickup(e),
       (message) => this.toasts.show(message, 'info', 1800),
       () => this.settings.lootLabelMin,
+      () => this.settings.hideLowLoot,
     );
     this.interactPrompt = new InteractPrompt(
       uiRoot,
@@ -608,7 +615,7 @@ export class Game {
           this.autosave();
         }
       },
-      compare: (item) => this.compare(item),
+      compare: (item, slot) => this.compare(item, slot),
       buyback: () => this.vendorBuyback,
       buyBack: (i) => {
         const r = buyBackItem(this.world.req(this.player, Inventory), this.vendorBuyback, i);
@@ -1154,6 +1161,7 @@ export class Game {
   private enterZone(id: string, x: number, z: number): void {
     const def = zoneDef(id);
     const zones = this.ctx.zones!;
+    const fromInstance = !!this.ctx.instance;
     if (this.ctx.instance) {
       clearInstance(this.world);
       this.ctx.instance = undefined;
@@ -1161,8 +1169,9 @@ export class Game {
     }
     const old = this.ctx.zone;
     if (old) {
+      if (!fromInstance) stashGroundLoot(this.world, this.ctx, old);
       suspendZone(old);
-      suspendEvents(old);
+      suspendEvents(old, this.ctx.time, this.world);
     }
     this.clearZoneEntities();
     let zone = zones.get(id);
@@ -1178,6 +1187,7 @@ export class Game {
     this.lastStorm = -1;
     resetEnvironment();
     this.populateZone();
+    restoreGroundLoot(this.world, this.ctx, zone);
     this.placePlayer(x, z);
     // Raised minions follow you across.
     for (const m of this.world.query(MinionAI, Transform)) {
@@ -1417,6 +1427,8 @@ export class Game {
     this.damageNumbers.update(frameDt, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
     this.updateEnemyBars(frameDt, px, pz);
     this.updateMapFeatures(px, pz);
+    this.renderer.loot.hideLow = this.settings.hideLowLoot;
+    this.renderer.loot.showAll = this.input.isDown('showLabels');
     this.lootLabels.update(this.world, px, pz, this.input.isDown('showLabels'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
     );
@@ -2830,6 +2842,7 @@ export class Game {
     Object.assign(tr, makeTransform(at.x, y, at.z, data.player.facing));
     this.applyAccountBonuses();
     if (this.ctx.account) grantRestorationPoints(this.world, this.ctx.account);
+    restoreVitals(this.world, this.player, data.state);
     this.renderer.rig.snapTo(at.x, y, at.z);
     this.inventoryPanel.refresh();
   }
@@ -3185,6 +3198,10 @@ export class Game {
     if (patch.graphics !== undefined) this.renderer.setQuality(patch.graphics);
     if (patch.screenShake !== undefined) this.renderer.screenShake = patch.screenShake;
     if (patch.reduceMotion !== undefined) this.renderer.reduceMotion = patch.reduceMotion;
+    if (patch.reduceMotion !== undefined) {
+      this.uiRoot.classList.toggle('reduce-motion', patch.reduceMotion);
+      if (patch.reduceMotion) setHeartbeat(false);
+    }
     if (patch.showTips !== undefined) this.coach?.setEnabled(patch.showTips);
     if (patch.showFps !== undefined) this.devtools.setShowFps(patch.showFps);
     if (patch.haptics !== undefined) setHaptics(patch.haptics);

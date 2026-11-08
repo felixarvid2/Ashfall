@@ -61,10 +61,24 @@ export interface QuestRuntime {
   triggers: Map<string, Entity>;
   /** Interact-step objects already used this step. */
   usedObjects: Set<string>;
+  /** A10: where an escort stood when the player left its zone (quest id → state), kept for `ESCORT_KEEP` s so the tanker resumes. */
+  escorts: Map<string, EscortMemory>;
+}
+
+/** A10: how long (s of game time) an abandoned escort or world event keeps its progress. */
+export const PROGRESS_KEEP = 600;
+
+export interface EscortMemory {
+  next: number;
+  x: number;
+  z: number;
+  life: number;
+  /** ctx.time of the last tick the tanker was alive. */
+  at: number;
 }
 
 export function createQuestRuntime(): QuestRuntime {
-  return { active: new Map(), done: new Map(), tracked: null, signals: [], spawned: new Map(), triggers: new Map(), usedObjects: new Set() };
+  return { active: new Map(), done: new Map(), tracked: null, signals: [], spawned: new Map(), triggers: new Map(), usedObjects: new Set(), escorts: new Map() };
 }
 
 export function signal(ctx: GameContext, s: QuestSignal): void {
@@ -185,6 +199,7 @@ function advance(world: World, ctx: GameContext, id: string): void {
   const rt = ctx.quests!;
   const st = rt.active.get(id)!;
   leaveStep(world, rt, id);
+  rt.escorts.delete(id);
   st.step++;
   st.progress = 0;
   rt.usedObjects.clear();
@@ -266,15 +281,19 @@ function enterStep(world: World, ctx: GameContext, id: string): void {
       }
     }
   } else if (step.kind === 'escort') {
-    const [x, z] = step.path[0]!;
+    // A10: an escort left mid-way resumes where it stood if the player is back within PROGRESS_KEEP seconds.
+    const mem = rt.escorts.get(id);
+    const resume = mem && ctx.time - mem.at <= PROGRESS_KEEP && mem.next >= 1 && mem.next < step.path.length ? mem : undefined;
+    rt.escorts.delete(id);
+    const [x, z] = resume ? [resume.x, resume.z] : step.path[0]!;
     const e = world.create();
     world.add(e, Transform, makeTransform(x, 0, z, 0));
     world.add(e, Renderable, { assetId: step.asset });
     world.add(e, Mover, { speed: step.speed, speedMul: 1, turnRate: 2, vx: 0, vz: 0 });
     world.add(e, Faction, { team: 'player' });
-    world.add(e, Health, { current: step.life, max: step.life });
+    world.add(e, Health, { current: resume ? Math.min(step.life, resume.life) : step.life, max: step.life });
     world.add(e, Collider, { radius: 1.6, mass: 40, layer: 'ground', isStatic: false });
-    world.add(e, Escort, { path: step.path, next: 1, leash: step.leash });
+    world.add(e, Escort, { path: step.path, next: resume ? resume.next : 1, leash: step.leash });
     world.add(e, DisplayName, { key: `quests.${id}.escortName` });
     spawned.push(tag(world, e, id, st.step));
   } else if (step.kind === 'choice' || step.kind === 'talk') {
@@ -401,6 +420,7 @@ export function setQuestState(
 ): void {
   rt.active.clear();
   rt.done.clear();
+  rt.escorts.clear();
   rt.signals = [];
   rt.usedObjects.clear();
   for (const [id, choice] of Object.entries(saved.done)) if (QUESTS.has(id)) rt.done.set(id, choice);
@@ -504,6 +524,7 @@ function escortStep(world: World, ctx: GameContext, id: string, st: QuestState, 
   if (vehicle === undefined || !world.isAlive(vehicle) || world.has(vehicle, Dead)) {
     // Destroyed: start the escort over.
     leaveStep(world, rt, id);
+    rt.escorts.delete(id);
     st.progress = 0;
     ctx.events.push({ type: 'quest', id, state: 'failed' });
     enterStep(world, ctx, id);
@@ -524,6 +545,7 @@ function escortStep(world: World, ctx: GameContext, id: string, st: QuestState, 
   if (near) world.add(vehicle, MoveTarget, { x: tx, z: tz });
   else world.remove(vehicle, MoveTarget);
   st.progress = esc.next;
+  rt.escorts.set(id, { next: esc.next, x: tr.x, z: tr.z, life: world.req(vehicle, Health).current, at: ctx.time });
 }
 
 // ---- Markers for the map ----------------------------------------------------------------

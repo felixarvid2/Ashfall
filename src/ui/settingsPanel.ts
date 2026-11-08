@@ -9,6 +9,7 @@
 import { t } from '../data/i18n';
 import {
   BRIGHTNESS_RANGE,
+  UI_SCALE_RANGE,
   MAX_KEYS_PER_ACTION,
   PAD_ACTIONS,
   isBindableKey,
@@ -255,7 +256,21 @@ export class SettingsPanel {
         ),
         el('p', 'settings-hint', t('settings.lootLabelsHint')),
       ),
+      this.switchRow(t('ux.settings.hideLowLoot'), t('ux.settings.hideLowLootHint'), () => this.deps.settings().hideLowLoot, (on) => this.change({ hideLowLoot: on }), 'hide-low-loot'),
+      this.row(
+        t('ux.settings.damageNumbers'),
+        this.segmented(
+          (['off', 'compact', 'full'] as const).map((m) => ({ id: m, label: t(`ux.settings.damageNumberModes.${m}`) })),
+          () => this.deps.settings().damageNumbers,
+          (id) => this.change({ damageNumbers: id as Settings['damageNumbers'] }),
+          'damage-numbers',
+        ),
+        el('p', 'settings-hint', t('ux.settings.damageNumbersHint')),
+      ),
+      this.switchRow(t('ux.settings.subtitles'), t('ux.settings.subtitlesHint'), () => this.deps.settings().subtitles, (on) => this.change({ subtitles: on }), 'subtitles'),
+      this.sliderRow(t('ux.settings.uiScale'), t('ux.settings.uiScaleHint'), UI_SCALE_RANGE, () => this.deps.settings().uiScale, (v) => this.change({ uiScale: v }), 'ui-scale'),
       el('h3', 'settings-group', t('settings.accessibility')),
+      this.switchRow(t('ux.settings.rarityShapes'), t('ux.settings.rarityShapesHint'), () => this.deps.settings().rarityShapes, (on) => this.change({ rarityShapes: on }), 'rarity-shapes'),
       this.switchRow(t('settings.reduceFlashing'), t('settings.reduceFlashingHint'), () => this.deps.settings().reduceFlashing, (on) => this.change({ reduceFlashing: on }), 'reduce-flashing'),
       this.switchRow(t('settings.reduceMotion'), t('settings.reduceMotionHint'), () => this.deps.settings().reduceMotion, (on) => this.change({ reduceMotion: on }), 'reduce-motion'),
       this.row(

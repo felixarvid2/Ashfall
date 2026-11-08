@@ -4,7 +4,7 @@
  * The clock is the account's play time (`account.endgame.playtime`); nothing here is saved beyond the
  * character's shard count (`ctx.endgame.ashShards`) and the recipes and materials a cache grants.
  */
-import { Boss, Collider, Elite, EnemyAI, Interactable, PlayerControlled, Renderable, Transform, CombatStats, makeTransform } from '../core/components';
+import { Boss, Collider, Dead, Elite, EnemyAI, Interactable, PlayerControlled, Renderable, Transform, CombatStats, makeTransform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
 import type { Rng } from '../core/rng';
@@ -127,11 +127,54 @@ export function harvestOnDeath(world: World, ctx: GameContext, target: Entity): 
     const lost = Math.floor(e.ashShards * HARVEST.deathLoss);
     if (lost <= 0) return;
     e.ashShards -= lost;
-    ctx.events.push({ type: 'notice', key: 'harvest.shardsLost' });
+    // A09: the shards lie where the player fell (a dungeon death: at its entrance) and can be recovered for a few minutes.
+    const zone = ctx.zone;
+    const tr = world.get(target, Transform);
+    if (zone && tr) {
+      const at = ctx.instance ? ctx.instance.exit : tr;
+      const pile = zone.shardPile;
+      zone.shardPile = { x: at.x, z: at.z, amount: lost + (pile?.amount ?? 0), expiresAt: ctx.time + HARVEST.pileKeep, ...(pile?.entity !== undefined && { entity: pile.entity }) };
+      ctx.events.push({ type: 'notice', key: 'harvest.shardsDropped' });
+    } else ctx.events.push({ type: 'notice', key: 'harvest.shardsLost' });
     return;
   }
   if (!world.has(target, EnemyAI) || world.get(target, Elite)?.copy || !harvestHere(ctx)) return;
   e.ashShards += shardValue(world, target);
+}
+
+// ---- The pile of lost shards (A09) ----------------------------------------------------
+
+const PILE_LOOK = { asset: 'prop.loot_crystal', scale: 2.2, glow: '#ff8a2a' };
+
+/**
+ * Keeps the pile of shards lost on death in step with the zone: an entity while the player is in the zone,
+ * picked up by walking over it, gone after `HARVEST.pileKeep` seconds (the pile itself lives on the zone, so it
+ * survives leaving and coming back).
+ */
+export function shardPileSystem(world: World, _dt: number, ctx: GameContext): void {
+  const zone = ctx.zone;
+  const pile = zone?.shardPile;
+  if (!zone || !pile || ctx.instance) return;
+  if (ctx.time >= pile.expiresAt) {
+    if (pile.entity !== undefined && world.isAlive(pile.entity)) world.destroyDeferred(pile.entity);
+    delete zone.shardPile;
+    ctx.events.push({ type: 'notice', key: 'harvest.shardsGone' });
+    return;
+  }
+  if (pile.entity === undefined || !world.isAlive(pile.entity)) {
+    const e = world.create();
+    world.add(e, Transform, makeTransform(pile.x, 0, pile.z, 0));
+    world.add(e, Renderable, { assetId: PILE_LOOK.asset, scale: PILE_LOOK.scale, glow: PILE_LOOK.glow });
+    pile.entity = e;
+  }
+  const player = world.first(PlayerControlled, Transform);
+  if (player === undefined || world.has(player, Dead) || !ctx.endgame) return;
+  const tr = world.req(player, Transform);
+  if (Math.hypot(tr.x - pile.x, tr.z - pile.z) > HARVEST.pileRadius) return;
+  ctx.endgame.ashShards += pile.amount;
+  world.destroyDeferred(pile.entity);
+  delete zone.shardPile;
+  ctx.events.push({ type: 'notice', key: 'harvest.shardsRecovered' });
 }
 
 // ---- Caches ----------------------------------------------------------------------

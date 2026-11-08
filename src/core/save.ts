@@ -92,6 +92,18 @@ export const SaveDataSchema = z.object({
       materials: z.record(z.string(), z.number().int().nonnegative()).default({}),
     })
     .prefault({}),
+  /**
+   * A17: the moment-to-moment state: life, class resource, the remaining time of buffs and the wave encounter's
+   * phase. Absent in older saves, which load at full life as before (no version bump: the block is optional).
+   */
+  state: z
+    .object({
+      health: z.number().nonnegative(),
+      resource: z.number().nonnegative().default(0),
+      buffs: z.array(z.object({ id: z.string(), remaining: z.number().positive(), duration: z.number().positive(), amount: z.number().default(0) })).default([]),
+      wave: z.object({ encounterId: z.string(), wave: z.number().int().nonnegative(), phase: z.enum(['intermission', 'active']), timer: z.number() }).nullable().default(null),
+    })
+    .optional(),
 });
 
 export type SaveData = z.infer<typeof SaveDataSchema>;

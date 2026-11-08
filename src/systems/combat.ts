@@ -707,6 +707,7 @@ export function kill(world: World, ctx: GameContext, target: Entity, fallDir: nu
         x: tr.x,
         z: tr.z,
         xp: true,
+        ...(!eliteTable && def.dropTable === 'dt.boss' ? { boss: def.id } : {}),
       });
     }
     if (def.onDeath?.hazard && tr) spawnEnemyHazard(world, target, tr.x, tr.z, def.onDeath.hazard);

@@ -34,6 +34,8 @@ export const AccountSchema = z.object({
       riftOpen: z.number().int().nonnegative().default(0),
       riftTime: z.number().nonnegative().default(0),
       playtime: z.number().nonnegative().default(0),
+      /** A08: the index of the last world boss event killed (its window is play time, so it stays dead after a reload). */
+      worldBossKilled: z.number().int().nonnegative().default(0),
     })
     .prefault({}),
   /** D08: the best clear time (s) per class per rift level, local to this browser: class id → level → seconds. */

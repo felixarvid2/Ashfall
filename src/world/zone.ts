@@ -66,6 +66,10 @@ export interface ZoneRuntime {
   cooled: Map<string, number>;
   /** Deep Mines: flares, cave-ins and noise (created on first use). */
   underground?: import('./underground').UndergroundState;
+  /** A09: Ash Shards lost on death in this zone, waiting where the player fell (picked up by walking over them). */
+  shardPile?: { x: number; z: number; amount: number; expiresAt: number; entity?: Entity };
+  /** A11: ground loot left behind when the player changed zone (respawned on return within LOOT_KEEP s). */
+  groundLoot?: { at: number; items: { item: import('../data/loot/schemas').Item; x: number; z: number }[]; gold: { amount: number; x: number; z: number }[] };
   /** The Core: which gravity shimmers were already shown (created on first use). */
   core?: import('./theCore').CoreState;
 }
