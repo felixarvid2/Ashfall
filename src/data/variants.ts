@@ -11,6 +11,7 @@ import type { Look } from '../render/looks';
 import { DEEP_CORE_VARIANTS } from './variants/deepCore';
 import { NPC_VARIANTS } from './variants/npcs';
 import { REGIONS123_VARIANTS } from './variants/regions123';
+import { ROUND4_VARIANTS } from './variants/round4';
 
 export type Vec3 = readonly [number, number, number];
 
@@ -83,6 +84,7 @@ const DEFS: readonly VariantDef[] = [
   ...REGIONS123_VARIANTS,
   ...DEEP_CORE_VARIANTS,
   ...NPC_VARIANTS,
+  ...ROUND4_VARIANTS,
 ];
 
 export const VARIANTS: ReadonlyMap<string, VariantDef> = new Map(DEFS.map((d) => [d.id, d]));

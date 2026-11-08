@@ -53,8 +53,19 @@ const POI_STYLE: Partial<Record<PoiKind, { color: string; r: number; shape: 'dot
   boss: { color: '#ff2a2a', r: 6, shape: 'diamond' },
   event: { color: '#ffd23a', r: 4, shape: 'diamond' },
   relic: { color: '#9fb8ff', r: 3, shape: 'diamond' },
+  lore: { color: '#b8b8c0', r: 3, shape: 'dot' },
   signalTower: { color: '#8ad2ff', r: 3, shape: 'dot' },
 };
+
+/**
+ * How a point of interest shows on the maps (C17): uncollected lore logs and Echo Relics in explored areas are
+ * marked ('open'); a collected relic, event or tower stays as a grey 'done' mark; a read lore log is gone.
+ */
+export function poiMapState(kind: string, found: boolean): 'open' | 'done' | 'hidden' {
+  if (!found) return 'open';
+  if (kind === 'lore') return 'hidden';
+  return kind === 'relic' || kind === 'event' || kind === 'signalTower' ? 'done' : 'open';
+}
 
 /** A tap on the full map snaps to a discovered teleporter within this many CSS px (P077). */
 export const PICK_RADIUS_PX = 28;
@@ -262,6 +273,7 @@ export const LEGEND: LegendEntry[] = [
   { key: 'bunker', color: POI_STYLE.bunker!.color, shape: 'square' },
   { key: 'event', color: POI_STYLE.event!.color, shape: 'diamond' },
   { key: 'relic', color: POI_STYLE.relic!.color, shape: 'diamond' },
+  { key: 'lore', color: POI_STYLE.lore!.color, shape: 'dot' },
   { key: 'signalTower', color: POI_STYLE.signalTower!.color, shape: 'dot' },
   { key: 'gate', color: '#e8e0d0', shape: 'square' },
   { key: 'cache', color: '#ff8a3a', shape: 'diamond' },
@@ -540,7 +552,7 @@ export class MapUi {
     const kinds = new Set(this.markers.map(markerQuestKind));
     const entries = legendFor({
       poiKinds: new Set([
-        ...zone.def.pois.filter((p) => POI_STYLE[p.kind] && (p.kind !== 'relic' || zone.found.has(p.id))).map((p) => p.kind as string),
+        ...zone.def.pois.filter((p) => POI_STYLE[p.kind] && poiMapState(p.kind, zone.found.has(p.id)) !== 'hidden').map((p) => p.kind as string),
         // The world boss marker is a diamond in the boss colour.
         ...(here && this.markers.some((m) => !m.quest && m.shape === 'diamond') ? ['boss'] : []),
       ]),
@@ -1031,10 +1043,11 @@ export class MapUi {
     for (const poi of def.pois) {
       const style = POI_STYLE[poi.kind];
       if (!style || !near(poi.x, poi.z) || !seen(poi.x, poi.z)) continue;
-      if (poi.kind === 'relic' && !found.has(poi.id)) continue; // relics stay hidden until found
+      const state = poiMapState(poi.kind, found.has(poi.id));
+      if (state === 'hidden') continue;
       // On the full map every marker is at least ~5 px (CSS) in radius.
       const r = full ? Math.max(style.r, 5) * k : style.r * k;
-      if (found.has(poi.id) && (poi.kind === 'event' || poi.kind === 'signalTower')) this.mark(c, ...project(v, poi.x, poi.z), '#5a5a5a', r, style.shape);
+      if (state === 'done') this.mark(c, ...project(v, poi.x, poi.z), '#5a5a5a', r, style.shape);
       else this.mark(c, ...project(v, poi.x, poi.z), style.color, r, style.shape);
     }
     // Teleporters: 14 px across on the full map so a thumb can find them (P077).
@@ -1271,7 +1284,7 @@ export class MapUi {
       out.push({ x: sx, y: sy, label });
     };
     for (const poi of def.pois) {
-      if (!POI_STYLE[poi.kind] || !seen(poi.x, poi.z) || (poi.kind === 'relic' && !zone.found.has(poi.id))) continue;
+      if (!POI_STYLE[poi.kind] || !seen(poi.x, poi.z) || poiMapState(poi.kind, zone.found.has(poi.id)) === 'hidden') continue;
       add(poi.x, poi.z, t(`map.legend.${poi.kind}`));
     }
     for (const tp of def.teleporters) if (zone.discovered.has(tp.id)) add(tp.x, tp.z, t(`zones.teleporters.${tp.id}`));

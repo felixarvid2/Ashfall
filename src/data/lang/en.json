@@ -2399,6 +2399,7 @@
       "stronghold": "Stronghold",
       "event": "Event",
       "relic": "Echo relic",
+      "lore": "Lore log",
       "signalTower": "Signal tower",
       "gate": "Region gate",
       "cache": "Harvest cache"
@@ -2490,6 +2491,9 @@
     "armor": "+12 armour",
     "moveSpeed": "+2% movement speed",
     "resourceGen": "+3% resource generation"
+  },
+  "credits": {
+    "sections": { "models": "3D models", "textures": "Textures", "icons": "Icons", "audio": "Music and sound", "fonts": "Fonts", "tools": "Tools" }
   },
   "barks": {
     "benny": {
@@ -5686,6 +5690,9 @@
     "paused": "Paused",
     "tabs": "Panels"
   },
+  "host": {
+    "quitHint": "Press Back again to quit"
+  },
   "saveData": {
     "backups": {
       "title": "Save backups",
@@ -5756,6 +5763,10 @@
     "textPreview": "The scout reads the ash and the wind.",
     "sizes": { "s": "S", "m": "M", "l": "L", "xl": "XL" },
     "graphics": "Graphics",
+    "graphicsAuto": "Graphics set to {level} to suit this device. You can change it in Settings > Display.",
+    "fpsCap": "Frame rate limit",
+    "fpsCapHint": "A lower limit saves battery and keeps the device cool. The game itself always runs at the same speed.",
+    "fpsCapLevels": { "0": "No limit", "30": "30", "60": "60", "120": "120" },
     "graphicsLevels": { "low": "Low", "medium": "Medium", "high": "High" },
     "graphicsHint": {
       "low": "No post-processing. Best for older phones.",
@@ -5855,6 +5866,9 @@
   },
   "onboarding": {
     "skip": "Skip tips",
+    "never": "Don't show again",
+    "map": "New place found. Press {key:map} to open the map and travel between teleporters you have found.",
+    "stash": "The stash in the hub keeps items for all your characters. Walk up to it and press {key:pickup} to open it.",
     "move": "Drag on the left half of the screen to move.",
     "attack": "Tap the big button to attack. It aims for you.",
     "menu": "The icons at the top open your bag, skills and map.",
@@ -5869,6 +5883,7 @@
     "quest": "First quest done. Press {key:quests} for the quest log and pick your next one."
   },
   "feel": {
+    "loadProgress": "Loading {done} / {total}",
     "guideBanner": "Follow the golden trail to your objective",
     "guideBannerPlace": "Follow the golden trail to {place}",
     "guideBannerStep": "Follow the golden trail: {step}",

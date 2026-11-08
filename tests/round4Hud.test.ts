@@ -193,3 +193,117 @@ describe('boss bar phases (C10)', () => {
     expect(root.querySelector<HTMLElement>('.target-phase')!.hidden).toBe(true);
   });
 });
+
+// ---- C15 subtitles -------------------------------------------------------------------------------------------
+import { Subtitles, SUBTITLE_MAX, subtitleSeconds } from '../src/ui/subtitles';
+
+describe('subtitles for barks (C15)', () => {
+  it('shows speaker and line in a live region, and nothing when the setting is off', () => {
+    let on = true;
+    const root = document.createElement('div');
+    const sub = new Subtitles(root, () => on);
+    expect(sub.element.getAttribute('aria-live')).toBe('polite');
+    expect(sub.say('Benny', 'Fuel is thirsty work.')).toBe(true);
+    expect(root.querySelector('.subtitle-speaker')!.textContent).toBe('Benny');
+    expect(root.querySelector('.subtitle-text')!.textContent).toBe('Fuel is thirsty work.');
+    on = false;
+    expect(sub.say('Benny', 'Hello')).toBe(false);
+    expect(sub.count).toBe(1);
+    on = true;
+    expect(sub.say('Benny', '   ')).toBe(false);
+  });
+
+  it('keeps two lines, times them by length and removes them when done', () => {
+    const sub = new Subtitles(document.createElement('div'));
+    for (const w of ['a', 'b', 'c']) sub.say('X', `line ${w}`);
+    expect(sub.count).toBe(SUBTITLE_MAX);
+    expect(subtitleSeconds('hi')).toBe(2.5);
+    expect(subtitleSeconds('x'.repeat(500))).toBe(8);
+    sub.update(2.6);
+    expect(sub.count).toBe(0);
+  });
+});
+
+// ---- C19 first-time hints -----------------------------------------------------------------------------------
+import { afterEach } from 'vitest';
+import { CoachMarks, DESKTOP_ORDER, HintScript } from '../src/ui/onboarding';
+
+describe('first-time hints: map and stash (C19)', () => {
+  it('covers dodge, potion, skills, map and stash', () => {
+    for (const h of ['dodge', 'potion', 'skill', 'map', 'stash'] as const) {
+      expect(DESKTOP_ORDER).toContain(h);
+      expect(t(`onboarding.${h}`)).not.toBe(`onboarding.${h}`);
+    }
+    expect(t('onboarding.never')).toBe("Don't show again");
+  });
+
+  it('the map tip starts when a teleporter is found and ends when the map opens', () => {
+    const s = new HintScript(['click', 'strike']);
+    expect(s.next()).toBeNull();
+    s.signal('discovered');
+    expect(s.next()).toBe('map');
+    s.signal('mapOpened');
+    expect(s.next()).toBeNull();
+    expect(s.done.has('map')).toBe(true);
+  });
+
+  it('the stash tip starts in a hub and ends when the stash is used', () => {
+    const s = new HintScript(['click', 'strike']);
+    s.signal('hubEntered');
+    expect(s.next()).toBe('stash');
+    s.signal('stashUsed');
+    expect(s.done.has('stash')).toBe(true);
+    // A finished tip never starts again.
+    s.signal('hubEntered');
+    expect(s.next()).toBeNull();
+  });
+
+  it('dismiss removes a waiting tip for good', () => {
+    const s = new HintScript(['click', 'strike']);
+    s.signal('lootDropped');
+    expect(s.next()).toBe('loot');
+    expect(s.dismiss('loot')).toBe(true);
+    s.signal('lootDropped');
+    expect(s.next()).toBeNull();
+  });
+});
+
+describe('"Don\'t show again" on the coach mark (C19)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('hides the shown tip, keeps it away after a reload, and leaves other tips alone', () => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    document.body.replaceChildren();
+    const root = document.createElement('div');
+    root.id = 'ui';
+    document.body.append(root, Object.assign(document.createElement('div'), { className: 'action-bar' }));
+    const bar = Object.assign(document.createElement('div'), { className: 'action-bar' });
+    const slots = Object.assign(document.createElement('div'), { className: 'slots' });
+    for (let i = 0; i < 6; i++) slots.append(Object.assign(document.createElement('div'), { className: 'slot' }));
+    root.append(bar, slots);
+    const coach = new CoachMarks(root);
+    coach.signal('clicked');
+    coach.signal('attacked');
+    coach.signal('lootDropped');
+    vi.advanceTimersByTime(1100);
+    expect(coach.showing).toBe('loot');
+    const never = root.querySelector<HTMLButtonElement>('[data-testid=coach-never]')!;
+    expect(never.textContent).toBe("Don't show again");
+    never.click();
+    expect(coach.showing).toBeNull();
+    expect(root.querySelector<HTMLElement>('[data-testid=coach-mark]')!.hidden).toBe(true);
+    // The loot tip does not come back, but a potion tip still can.
+    coach.signal('lootDropped');
+    coach.signal('lowLife');
+    vi.advanceTimersByTime(1100);
+    expect(coach.showing).toBe('potion');
+    // A new session reads the same progress.
+    const again = new CoachMarks(root);
+    again.signal('lootDropped');
+    vi.advanceTimersByTime(1100);
+    expect(again.showing).not.toBe('loot');
+  });
+});

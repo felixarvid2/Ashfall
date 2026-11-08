@@ -1251,3 +1251,49 @@ html.touch-device .hint-mouse { display: none; }
 .item-tip-set .set-piece.worn { color: var(--ui-text); }
 .item-tip-set .set-bonus { color: var(--ui-muted); }
 .item-tip-set .set-bonus.active { color: #7ad7ff; }
+
+/* C04: rarity shapes. With the setting on, `#ui.rarity-shapes` gives every rarity its own border pattern and a corner
+   mark on frames, ground labels and tooltips, so rarity does not depend on colour alone. Beams get polygon outlines
+   (src/render/lootVisuals.ts). Marks: magic ▪, rare ▪▪, legendary ◆, unique ★, mythic ✦. */
+#ui.rarity-shapes .inv-cell { position: relative; }
+#ui.rarity-shapes .inv-cell.r-magic { border-style: dashed; }
+#ui.rarity-shapes .inv-cell.r-rare { border-style: double; border-width: 3px; }
+#ui.rarity-shapes .inv-cell.r-legendary { border-width: 3px; }
+#ui.rarity-shapes .inv-cell.r-unique, #ui.rarity-shapes .inv-cell.r-mythic { border-style: ridge; border-width: 4px; }
+#ui.rarity-shapes .inv-cell.r-magic::before, #ui.rarity-shapes .inv-cell.r-rare::before, #ui.rarity-shapes .inv-cell.r-legendary::before,
+#ui.rarity-shapes .inv-cell.r-unique::before, #ui.rarity-shapes .inv-cell.r-mythic::before {
+  position: absolute; left: 2px; top: 0; z-index: 3; font-size: 11px; line-height: 12px; color: var(--rarity, #fff); text-shadow: 0 0 2px #000, 0 0 2px #000; pointer-events: none;
+}
+#ui.rarity-shapes .inv-cell.r-magic::before { content: '\25AA'; }
+#ui.rarity-shapes .inv-cell.r-rare::before { content: '\25AA\25AA'; }
+#ui.rarity-shapes .inv-cell.r-legendary::before { content: '\25C6'; }
+#ui.rarity-shapes .inv-cell.r-unique::before { content: '\2605'; }
+#ui.rarity-shapes .inv-cell.r-mythic::before { content: '\2726'; }
+#ui.rarity-shapes .loot-label[data-rarity='magic']::before { content: '\25AA '; }
+#ui.rarity-shapes .loot-label[data-rarity='rare']::before { content: '\25AA\25AA '; }
+#ui.rarity-shapes .loot-label[data-rarity='legendary']::before { content: '\25C6 '; }
+#ui.rarity-shapes .loot-label[data-rarity='unique']::before { content: '\2605 '; }
+#ui.rarity-shapes .loot-label[data-rarity='mythic']::before { content: '\2726 '; }
+#ui.rarity-shapes .loot-label[data-rarity='rare'] { border-style: double; }
+#ui.rarity-shapes .loot-label[data-rarity='magic'] { border-style: dashed; }
+#ui.rarity-shapes .item-tip.r-magic .item-tip-name::before { content: '\25AA '; }
+#ui.rarity-shapes .item-tip.r-rare .item-tip-name::before { content: '\25AA\25AA '; }
+#ui.rarity-shapes .item-tip.r-legendary .item-tip-name::before { content: '\25C6 '; }
+#ui.rarity-shapes .item-tip.r-unique .item-tip-name::before { content: '\2605 '; }
+#ui.rarity-shapes .item-tip.r-mythic .item-tip-name::before { content: '\2726 '; }
+
+/* C05: UI scale. `--ui-scale` (Settings > Display, 80-140 %) zooms the HUD and the panels, separate from the text
+   size. The world layers (ground labels, damage numbers, enemy bars, NPC plates, prompts) and the tooltips, which
+   are placed in screen pixels by script, stay at their size. Direct children only, so nothing zooms twice. */
+#ui.ui-scaled > :is(.action-bar, .hud-left, .hud-title, .level-chip, .boss-card, .center-banner, .death-screen, .exposure-meter,
+  .sound-hud, .touch-menu, .touch-fab, .touch-stick-zone, .quest-tracker, .toast-stack, .pickup-log, .panel, .map-panel, .inventory-panel,
+  .panel-tabbar, .fps-meter, canvas.minimap, .rift-strip, .rift-pin, .endgame-stack) {
+  zoom: var(--ui-scale, 1);
+}
+
+/* C15: subtitles above the action bar. */
+.subtitles { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); width: min(640px, 86vw); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; z-index: 4; }
+.subtitle-line { max-width: 100%; padding: 5px 12px; text-align: center; font-size: 1em; line-height: 1.3; color: #f2ece0; background: rgba(8, 7, 6, 0.78); border: 1px solid var(--ui-border); text-shadow: 0 1px 2px #000; transition: opacity 0.4s; }
+.subtitle-line.fading { opacity: 0; }
+.subtitle-speaker { color: #ffd27a; font-weight: 700; margin-right: 8px; }
+.subtitle-speaker::after { content: ':'; }

@@ -26,6 +26,7 @@ import { AFFIX_TUNING, EXCLUSIVE_AFFIXES, affixPool, rareAffixCount, type EliteA
 import { t } from '../data/i18n';
 import { applyStatus } from './combat';
 import { spawnEnemy } from '../world/spawn';
+import { LaserGridState, eliteTrapSystem, raiseForceWall, startLaserGrid } from './eliteTraps';
 
 /** Roll `count` affixes that may appear together (Force Wall and Laser Grid only from monster level 20). */
 export function rollAffixes(rng: Rng, count: number, level = 0): EliteAffix[] {
@@ -76,6 +77,7 @@ export function applyAffixes(world: World, e: Entity, kind: 'champion' | 'rare' 
 const range = (rng: Rng, [a, b]: [number, number]) => rng.range(a, b);
 
 export function eliteSystem(world: World, dt: number, ctx: GameContext): void {
+  eliteTrapSystem(world, dt, ctx);
   // Snares that finished their warning become real.
   for (const e of world.query(PendingHazard, Transform)) {
     const p = world.req(e, PendingHazard);
@@ -149,62 +151,12 @@ export function eliteSystem(world: World, dt: number, ctx: GameContext): void {
       });
       ctx.events.push({ type: 'telegraph', owner: null, x: ptr.x, z: ptr.z, shape: { kind: 'circle', radius: s.radius }, duration: s.warning, color: '#b06aff' });
     }
-    // Force Wall: a line of energy laid across the player, perpendicular to the way the elite faces them.
-    if (el.affixes.includes('forceWall') && dist < AFFIX_TUNING.forceWall.range && dist > 3 && tick('forceWall', AFFIX_TUNING.forceWall.cooldown)) {
-      const w = AFFIX_TUNING.forceWall;
-      const facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z) + Math.PI / 2;
-      laserLine(world, ctx, ptr.x, ptr.z, facing, w, '#6ac8ff', [
-        { status: 'burning', duration: 1, dps: dmg * w.dpsOfDamage },
-        { status: 'chilled', duration: w.slow },
-      ], level);
+    // Force Wall (A05): a wall of energy between the elite and the player.
+    if (el.affixes.includes('forceWall') && dist < AFFIX_TUNING.forceWall.range && dist > 5 && tick('forceWall', AFFIX_TUNING.forceWall.cooldown)) raiseForceWall(world, ctx, e, ptr.x, ptr.z);
+    // Laser Grid (A06): beams turning out of the elite (one grid at a time).
+    if (el.affixes.includes('laserGrid') && !world.has(e, LaserGridState) && dist < AFFIX_TUNING.laserGrid.range && tick('laserGrid', AFFIX_TUNING.laserGrid.cooldown)) {
+      startLaserGrid(world, ctx, e, Math.atan2(ptr.x - tr.x, ptr.z - tr.z), dmg, level);
     }
-    // Laser Grid: two beams crossing under the player.
-    if (el.affixes.includes('laserGrid') && dist < AFFIX_TUNING.laserGrid.range && tick('laserGrid', AFFIX_TUNING.laserGrid.cooldown)) {
-      const g = AFFIX_TUNING.laserGrid;
-      const facing = Math.atan2(ptr.x - tr.x, ptr.z - tr.z);
-      for (const turn of [Math.PI / 4, -Math.PI / 4]) {
-        laserLine(world, ctx, ptr.x, ptr.z, facing + turn, g, '#ff3a5a', [{ status: 'burning', duration: 1.5, dps: dmg * g.dpsOfDamage }], level);
-      }
-    }
-  }
-}
-
-/**
- * A warned line of hazards centred on (cx, cz): the telegraph shows the line, then a row of
- * circular hazards (spaced by their radius) fires for `duration` seconds.
- */
-function laserLine(
-  world: World,
-  ctx: GameContext,
-  cx: number,
-  cz: number,
-  facing: number,
-  o: { warning: number; length: number; width: number; radius: number; duration: number },
-  color: string,
-  applies: { status: 'burning' | 'chilled'; duration: number; dps?: number }[],
-  level: number,
-): void {
-  const dx = Math.sin(facing);
-  const dz = Math.cos(facing);
-  ctx.events.push({
-    type: 'telegraph',
-    owner: null,
-    x: cx - (dx * o.length) / 2,
-    z: cz - (dz * o.length) / 2,
-    shape: { kind: 'line', length: o.length, width: o.width, facing },
-    duration: o.warning,
-    color,
-  });
-  const step = o.radius * 1.6;
-  const n = Math.max(1, Math.round(o.length / step));
-  for (let i = 0; i < n; i++) {
-    const d = (i + 0.5) * (o.length / n) - o.length / 2;
-    const h = world.create();
-    world.add(h, Transform, makeTransform(cx + dx * d, 0, cz + dz * d));
-    world.add(h, PendingHazard, {
-      fuse: o.warning,
-      hazard: { team: 'enemy', radius: o.radius, remaining: o.duration, duration: o.duration, tickTimer: 0, applies, attackerLevel: level, color },
-    });
   }
 }
 

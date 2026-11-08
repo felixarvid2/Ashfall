@@ -25,6 +25,14 @@ export interface LoopGuard {
   now?: () => number;
 }
 
+/**
+ * Shortest time between drawn frames for a cap, in ms. A little under the exact interval, because display frames
+ * arrive with jitter: a 60 cap on a 60 Hz display must not skip every other frame for a 16.5 ms delta.
+ */
+export function capInterval(maxFps: number): number {
+  return 1000 / maxFps - 1.5;
+}
+
 export class GameLoop {
   readonly tickRate: number;
   readonly dt: number;
@@ -42,6 +50,11 @@ export class GameLoop {
    */
   guard: LoopGuard | null = null;
   private errorStamps: number[] = [];
+  /**
+   * Frame rate cap (frames per second, 0 = every display frame). Display frames that come sooner than the cap
+   * allows are skipped; their time is not lost, it counts in the next drawn frame, so the simulation is unchanged.
+   */
+  maxFps = 0;
   /** Cap per frame so a long stall (tab switch, breakpoint) can't spiral. */
   private readonly maxFrameTime = 0.25;
   /** At most this many ticks per frame; whatever time is left over is dropped (the game slows down instead of freezing). */
@@ -139,6 +152,10 @@ export class GameLoop {
 
   private readonly frame = (now: number): void => {
     if (!this.running) return;
+    if (this.maxFps > 0 && now - this.lastTime < capInterval(this.maxFps)) {
+      this.rafId = requestAnimationFrame(this.frame);
+      return;
+    }
     const frameTime = (now - this.lastTime) / 1000;
     this.lastTime = now;
     try {

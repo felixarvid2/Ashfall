@@ -90,7 +90,7 @@ describe('Refinery District layout', () => {
   it('has the planned points of interest', () => {
     const count = (kind: string) => REFINERY_DISTRICT.pois.filter((p) => p.kind === kind).length;
     expect(count('relic')).toBe(10);
-    expect(count('lore')).toBe(12);
+    expect(count('lore')).toBe(14);
     expect(count('signalTower')).toBe(3);
     expect(count('pylon')).toBe(6);
     expect(count('bunker')).toBe(6);

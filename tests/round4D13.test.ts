@@ -200,3 +200,60 @@ describe('D15 feats round 2', () => {
     expect(mine.filter((f) => f.title)).toHaveLength(3);
   });
 });
+
+describe('D20 credits screen', () => {
+  it('lists every source named in docs/credits.md with a heading string', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { CREDITS } = await import('../src/data/credits');
+    const en = (await import('../src/data/lang/en.json')).default as unknown as { credits: { sections: Record<string, string> } };
+    const md = readFileSync(new URL('../docs/credits.md', import.meta.url), 'utf8');
+    const text = CREDITS.flatMap((s) => s.entries).map((e) => `${e.source} ${e.licence}`).join(' ');
+    for (const needle of ['Poly Haven', 'Quaternius', 'Kenney', 'ambientCG', 'game-icons.net', 'Abstraction', 'Rajdhani', 'Meshy', 'FLUX', 'Blender']) {
+      expect(text, needle).toContain(needle === 'Rajdhani' ? 'Google Fonts' : needle);
+      if (needle !== 'Blender') expect(md, needle).toContain(needle);
+    }
+    for (const s of CREDITS) expect(en.credits.sections[s.id]).toBeTruthy();
+    expect(text).toContain('CC BY 3.0');
+  });
+});
+
+describe('D18 machine death pose', () => {
+  it('twitches, topples to nearly flat with a small bounce, and never goes below the ground', async () => {
+    const { machineDeathPose } = await import('../src/render/deathPose');
+    expect(machineDeathPose(0).pitch).toBe(0);
+    expect(Math.abs(machineDeathPose(0.3).roll)).toBeGreaterThan(0);
+    const end = machineDeathPose(1);
+    expect(end.pitch).toBeGreaterThan(1.4);
+    for (let t = 0; t < 1.2; t += 0.02) expect(machineDeathPose(t).lift).toBeGreaterThanOrEqual(0);
+    expect(machineDeathPose(0.35 + 0.45 * 0.9).lift).toBeGreaterThan(0.03);
+  });
+});
+
+describe('D17 ground decals', () => {
+  it('hold, then fade to nothing; the pool reuses its oldest slot', async () => {
+    const { decalFade, GROUND_DECAL_LIFE, GROUND_DECAL_POOL, GroundDecals } = await import('../src/render/groundDecals');
+    expect(decalFade(0)).toBe(1);
+    expect(decalFade(GROUND_DECAL_LIFE * 0.6)).toBe(1);
+    expect(decalFade(GROUND_DECAL_LIFE * 0.8)).toBeCloseTo(0.5, 5);
+    expect(decalFade(GROUND_DECAL_LIFE)).toBe(0);
+    const d = new GroundDecals();
+    expect(() => {
+      for (let i = 0; i < GROUND_DECAL_POOL + 5; i++) d.add('blood', i, 0, 1);
+    }).not.toThrow();
+    expect(d.activeCount).toBeLessThanOrEqual(GROUND_DECAL_POOL);
+    d.update(GROUND_DECAL_LIFE + 1);
+    expect(d.activeCount).toBe(0);
+  });
+});
+
+describe('D04 minion look', () => {
+  it('raised minions get the minion look, and the Xenomant prefetches the bone shards', async () => {
+    const { LOOKS } = await import('../src/render/looks');
+    const { classAssetIds } = await import('../src/data/assetSets');
+    expect(LOOKS.minion.keepTexture).toBe(true);
+    expect(classAssetIds('xenomant')).toContain('part.bone_shards');
+    expect(classAssetIds('bastion')).not.toContain('part.bone_shards');
+    const { readFileSync } = await import('node:fs');
+    expect(readFileSync(new URL('../src/systems/minions.ts', import.meta.url), 'utf8')).toContain("r.look = 'minion'");
+  });
+});

@@ -14,7 +14,7 @@ import type { EnemyLook } from '../data/schemas';
 import { FADE_DEATH } from '../data/core';
 
 /** Renderable looks: the enemy variants, plus `halo` (the Lightbearer's guardian lights, a warm gold-white glow). */
-export type Look = EnemyLook | 'halo';
+export type Look = EnemyLook | 'halo' | 'minion';
 
 export interface LookSpec {
   /** Surface colour replacing the model's own. */
@@ -36,6 +36,8 @@ export const LOOKS: Record<Look, LookSpec> = {
   lumen: { color: '#3b2f7a', emissive: '#6f4dff', rim: '#ffe49a', rimStrength: 1.7, rimPower: 2.4, depthWrite: true, keepTexture: false },
   // A small sun: pale gold body, warm glow, bright ivory rim.
   halo: { color: '#fff0b8', emissive: '#ffd36a', rim: '#fffbe8', rimStrength: 1.4, rimPower: 2.2, depthWrite: true, keepTexture: false },
+  // Round 4 (D04): the player's raised minions, one pale bone-green over their own texture so they read as friends.
+  minion: { color: '#a8e0b8', emissive: '#2fbf6a', rim: '#d8ffe0', rimStrength: 0.9, rimPower: 2.4, depthWrite: true, keepTexture: true },
   shade: { color: '#6c5aa6', emissive: '#7c5cff', rim: '#e4d6ff', rimStrength: 1.3, rimPower: 2.0, depthWrite: false, keepTexture: true },
 };
 
@@ -47,6 +49,7 @@ export interface LookState {
 
 /** The look at `time` (s) for one creature; `seed` (its entity id) keeps neighbours out of step. */
 export function lookState(look: Look, time: number, seed: number): LookState {
+  if (look === 'minion') return { opacity: 1, glow: 0.4 + 0.1 * Math.sin(time * 2.4 + seed) };
   if (look === 'halo') return { opacity: 1, glow: 0.9 + 0.25 * Math.sin(time * 3.1 + seed * 1.7) };
   if (look === 'lumen') {
     // A slow heartbeat: a double pulse every ~2.4 s. Opaque: a translucent body washes out against the pale ground.

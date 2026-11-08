@@ -83,7 +83,7 @@ for (const f of readdirSync(join(opt, 'locales'))) if (f !== 'en-US.pak') rmSync
 
 // 3. The app: shell code, the version, the web build.
 mkdirSync(app, { recursive: true });
-for (const f of ['main.js', 'serve.js']) cpSync(join(root, 'linux', f), join(app, f));
+for (const f of ['main.js', 'serve.js', 'windowState.js']) cpSync(join(root, 'linux', f), join(app, f));
 const shellPkg = JSON.parse(readFileSync(join(root, 'linux/package.json'), 'utf8')) as Record<string, unknown>;
 writeFileSync(join(app, 'package.json'), JSON.stringify({ ...shellPkg, version }, null, 2) + '\n');
 cpSync(www, join(app, 'www'), { recursive: true });

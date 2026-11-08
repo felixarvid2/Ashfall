@@ -495,7 +495,7 @@ button.armed { background: #3a2410 !important; border-color: var(--ui-accent) !i
 }
 .coach-mark.below::after { bottom: auto; top: -7px; transform: rotate(225deg); }
 #ui .coach-mark, #ui .coach-mark * { pointer-events: none; }
-#ui .coach-mark .coach-skip { pointer-events: auto; min-height: 32px; padding: 0 var(--space-2); font: inherit; font-size: max(var(--fs-min), 0.8em); color: var(--ui-muted); background: none; border: none; text-decoration: underline; }
+#ui .coach-mark .coach-skip, #ui .coach-mark .coach-never { pointer-events: auto; min-height: 32px; padding: 0 var(--space-2); font: inherit; font-size: max(var(--fs-min), 0.8em); color: var(--ui-muted); background: none; border: none; text-decoration: underline; }
 
 /* The FPS meter is a setting on phones too (Settings > Display): bottom left, small. */
 #ui.touch-ui .fps-meter:not([hidden]) {

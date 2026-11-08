@@ -4,6 +4,7 @@
  * Touch (portrait): slots are compact rows, classes a row of three chips, and Begin / Back stay on a bar above the
  * keyboard. The name field is not focused automatically there, so the keyboard does not hide the classes.
  */
+import { CREDITS } from '../data/credits';
 import { CLASSES } from '../data/db';
 import { t } from '../data/i18n';
 import { confirmSheet } from './confirmSheet';
@@ -168,8 +169,11 @@ export class CharacterSelect {
     const box = document.createElement('div');
     box.className = 'char-credits-text';
     box.dataset.testid = 'credits-text';
-    for (const line of t('select.credits').split(' · ')) {
-      box.appendChild(Object.assign(document.createElement('p'), { textContent: line }));
+    for (const section of CREDITS) {
+      box.appendChild(Object.assign(document.createElement('h4'), { textContent: t(`credits.sections.${section.id}`) }));
+      for (const e of section.entries) {
+        box.appendChild(Object.assign(document.createElement('p'), { textContent: `${e.what} · ${e.source} · ${e.licence}` }));
+      }
     }
     tooltipSheet.show({ content: box, title: t('select.creditsTitle') });
   }

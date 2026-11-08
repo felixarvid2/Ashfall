@@ -29,6 +29,15 @@ final class AshfallBridge {
         }
     }
 
+    /** Back with nothing open, pressed twice (B10): the game has saved, so the app can close. */
+    @JavascriptInterface
+    public void quit() {
+        try {
+            Host.quit();
+        } catch (Throwable ignored) {
+        }
+    }
+
     @JavascriptInterface
     public void panelState(String json) {
         try {

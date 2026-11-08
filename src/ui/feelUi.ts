@@ -9,6 +9,11 @@ import { getPref, setPref } from '../core/localPrefs';
 /** Number of `feel.tips.N` strings in the language file. */
 export const TIP_COUNT = 15;
 
+/** Share of the zone's models that have loaded, 0..1 (B13); an empty job counts as done. */
+export function loadFraction(done: number, total: number): number {
+  return total <= 0 ? 1 : Math.min(1, Math.max(0, done / total));
+}
+
 /** The tip for the `n`th zone change of this session, starting at a random offset so a returning player sees different ones. */
 export function tipIndex(n: number, start: number): number {
   return (((start + n) % TIP_COUNT) + TIP_COUNT) % TIP_COUNT;
@@ -138,6 +143,9 @@ export class FeelUi {
   private readonly card: HTMLDivElement;
   private readonly cardName: HTMLDivElement;
   private readonly cardTip: HTMLDivElement;
+  private readonly progress: HTMLDivElement;
+  private readonly progressBar: HTMLDivElement;
+  private readonly progressLabel: HTMLDivElement;
   private letterboxTimer: ReturnType<typeof setTimeout> | undefined;
   private zoneChanges = 0;
   private readonly tipStart = Math.floor(Math.random() * TIP_COUNT);
@@ -154,7 +162,23 @@ export class FeelUi {
     this.cardName.className = 'zone-card-name';
     this.cardTip = document.createElement('div');
     this.cardTip.className = 'zone-card-tip';
-    this.card.append(this.cardName, this.cardTip);
+    // Real loading progress of the zone's models (B13): a bar and "3 / 12", shown once there is something to load.
+    this.progress = document.createElement('div');
+    this.progress.className = 'zone-card-progress';
+    this.progress.dataset.testid = 'zone-progress';
+    this.progress.setAttribute('role', 'progressbar');
+    this.progress.setAttribute('aria-valuemin', '0');
+    this.progress.setAttribute('aria-valuemax', '100');
+    this.progress.hidden = true;
+    this.progressBar = document.createElement('div');
+    this.progressBar.className = 'zone-card-bar';
+    this.progressLabel = document.createElement('div');
+    this.progressLabel.className = 'zone-card-progress-label';
+    const track = document.createElement('div');
+    track.className = 'zone-card-track';
+    track.append(this.progressBar);
+    this.progress.append(track, this.progressLabel);
+    this.card.append(this.cardName, this.cardTip, this.progress);
     fade.append(this.card);
   }
 
@@ -175,6 +199,18 @@ export class FeelUi {
     this.cardName.textContent = name;
     this.cardTip.textContent = tip ? t(`feel.tips.${tipIndex(this.zoneChanges++, this.tipStart)}`) : '';
     this.card.classList.toggle('empty', name === '' && !tip);
+    this.progress.hidden = true;
+    this.setProgress(0, 0);
+  }
+
+  /** Models loaded so far out of `total` for the place the screen is dark for; nothing to load hides the bar. */
+  setProgress(done: number, total: number): void {
+    this.progress.hidden = total <= 0;
+    const pct = total > 0 ? Math.round(loadFraction(done, total) * 100) : 0;
+    this.progressBar.style.width = `${pct}%`;
+    this.progress.setAttribute('aria-valuenow', String(pct));
+    this.progress.setAttribute('aria-valuetext', t('feel.loadProgress', { done, total }));
+    this.progressLabel.textContent = total > 0 ? t('feel.loadProgress', { done, total }) : '';
   }
 
   /** True the first time it is called on this browser: the one-time "follow the trail" banner (F007). */

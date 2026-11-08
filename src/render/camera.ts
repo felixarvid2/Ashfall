@@ -98,6 +98,10 @@ export function pulseZoomCurve(age: number, total: number, factor: number): numb
   return 1 + (factor - 1) * eased;
 }
 
+/** Photo mode (C06): tilt limits (radians above the horizon) and how far past the normal range the zoom may go. */
+export const PHOTO_PITCH = { min: 0.12, max: 1.45 } as const;
+export const PHOTO_ZOOM = { near: 0.4, far: 2.2 } as const;
+
 export class CameraRig {
   readonly camera: THREE.PerspectiveCamera;
   readonly yaw: number;
@@ -121,6 +125,10 @@ export class CameraRig {
   private pulse = { age: 0, total: 0, factor: 1 };
   /** Reduce-motion setting (B01): no look-ahead, crowd pull-back or push-in; follow and zoom stay. */
   private reduceMotionOn = false;
+  /** Photo mode (C06): free orbit around the hero and a wider zoom range; offsets from the follow angle, in radians. */
+  private photoOn = false;
+  private photoYaw = 0;
+  private photoPitch = 0;
 
   constructor(aspect: number, options: Partial<CameraRigOptions> = {}) {
     this.opts = { ...DEFAULTS, ...options };
@@ -138,10 +146,36 @@ export class CameraRig {
     this.apply();
   }
 
+  /** Photo mode (C06): on lets `orbit` turn the camera and widens the zoom range; off puts the camera back. */
+  setPhoto(on: boolean): void {
+    this.photoOn = on;
+    if (!on) {
+      this.photoYaw = 0;
+      this.photoPitch = 0;
+      this.targetDistance = THREE.MathUtils.clamp(this.targetDistance, this.opts.minDistance * this.distanceScale, this.opts.maxDistance * this.distanceScale);
+    }
+  }
+
+  get photo(): boolean {
+    return this.photoOn;
+  }
+
+  /** Photo mode: turns the camera around the hero by `dYaw` and tilts it by `dPitch` (radians); the tilt stays above the ground. */
+  orbit(dYaw: number, dPitch: number): void {
+    if (!this.photoOn) return;
+    this.photoYaw = (this.photoYaw + dYaw) % (Math.PI * 2);
+    this.photoPitch = THREE.MathUtils.clamp(this.pitch + this.photoPitch + dPitch, PHOTO_PITCH.min, PHOTO_PITCH.max) - this.pitch;
+  }
+
+  /** The follow angle and tilt with the photo offsets applied (tests). */
+  get viewAngles(): { yaw: number; pitch: number } {
+    return { yaw: this.yaw + this.photoYaw, pitch: this.pitch + this.photoPitch };
+  }
+
   /** Wheel steps: positive zooms out. */
   zoom(steps: number): void {
-    const min = this.opts.minDistance * this.distanceScale;
-    const max = this.opts.maxDistance * this.distanceScale;
+    const min = this.opts.minDistance * this.distanceScale * (this.photoOn ? PHOTO_ZOOM.near : 1);
+    const max = this.opts.maxDistance * this.distanceScale * (this.photoOn ? PHOTO_ZOOM.far : 1);
     this.targetDistance = THREE.MathUtils.clamp(this.targetDistance + steps * (max - min) * 0.15, min, max);
   }
 
@@ -232,11 +266,12 @@ export class CameraRig {
 
   private apply(): void {
     const distance = this.effectiveDistance;
-    const horizontal = Math.cos(this.pitch) * distance;
+    const { yaw, pitch } = this.viewAngles;
+    const horizontal = Math.cos(pitch) * distance;
     this.camera.position.set(
-      this.focus.x + Math.sin(this.yaw) * horizontal,
-      this.focus.y + Math.sin(this.pitch) * distance,
-      this.focus.z + Math.cos(this.yaw) * horizontal,
+      this.focus.x + Math.sin(yaw) * horizontal,
+      this.focus.y + Math.sin(pitch) * distance,
+      this.focus.z + Math.cos(yaw) * horizontal,
     );
     this.camera.lookAt(this.focus);
     if (this.trauma > 0) {

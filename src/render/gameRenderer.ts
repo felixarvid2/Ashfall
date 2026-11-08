@@ -9,7 +9,7 @@ import { StaticProps } from './staticProps';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { AttackTarget, Boss, Collider, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { AttackTarget, Boss, Collider, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Summon, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
 import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from '../data/weapons';
@@ -30,6 +30,9 @@ import { CoreLook, blurCut, cutCells, cutTexture, ghostMaterial, type CutField }
 import { ChoirLinks } from './choirLinks';
 import { memoryAtmosphere, type Atmosphere } from './memoryLook';
 import { proceduralWeapon } from './proceduralWeapons';
+/** The bone-shard crest of a raised minion (scripts/blender/spec/round4_content.json). */
+const MINION_PART = 'part.bone_shards';
+import { machineDeathPose } from './deathPose';
 import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
 import { disposeOwned, trackOwned } from './owned';
@@ -1233,6 +1236,14 @@ export class GameRenderer {
           continue;
         }
       }
+      // Raised minions: the same look and a crest of bone shards, once the part has loaded (D04).
+      if (obj.userData.minionDressed === undefined && world.get(e, Summon)?.kind === 'minion' && this.assets.hasModel(MINION_PART)) {
+        obj.userData.minionDressed = true;
+        applyLookMaterials((obj.userData.tint as TintSlot[] | undefined) ?? [], 'minion');
+        const crest = this.assets.create(MINION_PART);
+        crest.userData.noTint = true;
+        obj.add(crest);
+      }
       // Cull far-away static props (the fog hides them anyway); characters and landmarks stay.
       const r = world.req(e, Renderable);
       if (!world.has(e, Mover)) {
@@ -1352,9 +1363,18 @@ export class GameRenderer {
         obj.visible = f.opacity > 0.01;
       } else if (dead) {
         // Topple over, then sink into the ash.
-        const fall = Math.min(1, dead.elapsed / 0.3);
-        obj.rotation.set(0, dead.fallDir, 0);
-        obj.rotateX((Math.PI / 2) * fall * 0.95);
+        const machine = ai !== undefined && enemyDef(ai.defId).family === 'machine';
+        if (machine) {
+          const pose = machineDeathPose(dead.elapsed);
+          obj.rotation.set(0, dead.fallDir, 0);
+          obj.rotateX(pose.pitch);
+          obj.rotateZ(pose.roll);
+          obj.position.y += pose.lift;
+        } else {
+          const fall = Math.min(1, dead.elapsed / 0.3);
+          obj.rotation.set(0, dead.fallDir, 0);
+          obj.rotateX((Math.PI / 2) * fall * 0.95);
+        }
         if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
       } else {
         if (obj.rotation.x !== 0) {

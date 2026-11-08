@@ -235,6 +235,18 @@ export class SettingsPanel {
     this.refreshers.push(() => (hint.textContent = t(`settings.graphicsHint.${this.deps.settings().graphics}`)));
     page.append(this.row(t('settings.graphics'), graphics, hint));
     page.append(
+      this.row(
+        t('settings.fpsCap'),
+        this.segmented(
+          ([0, 30, 60, 120] as const).map((n) => ({ id: String(n), label: t(`settings.fpsCapLevels.${n}`) })),
+          () => String(this.deps.settings().fpsCap),
+          (id) => this.change({ fpsCap: Number(id) as Settings['fpsCap'] }),
+          'fps-cap',
+        ),
+        el('p', 'settings-hint', t('settings.fpsCapHint')),
+      ),
+    );
+    page.append(
       this.switchRow(t('settings.screenShake'), undefined, () => this.deps.settings().screenShake, (on) => this.change({ screenShake: on }), 'shake'),
       this.switchRow(t('settings.showFps'), undefined, () => this.deps.settings().showFps, (on) => this.change({ showFps: on }), 'fps'),
       this.switchRow(t('settings.showTips'), t('settings.showTipsHint'), () => this.deps.settings().showTips, (on) => this.change({ showTips: on }), 'tips'),

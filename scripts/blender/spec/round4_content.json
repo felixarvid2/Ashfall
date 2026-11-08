@@ -1,0 +1,21 @@
+{
+  "parts": [
+    {
+      "id": "part.bone_shards",
+      "builder": "kitbash",
+      "params": {
+        "pieces": [
+          { "shape": "cone", "material": "painted_metal", "color": "#d9d2b8", "radius": 0.07, "depth": 0.42, "verts": 6, "at": [-0.22, 0.12, 1.5], "rotate": [-10, -28, 0] },
+          { "shape": "cone", "material": "painted_metal", "color": "#e6e0c8", "radius": 0.08, "depth": 0.5, "verts": 6, "at": [0.22, 0.12, 1.5], "rotate": [-10, 28, 0] },
+          { "shape": "cone", "material": "painted_metal", "color": "#cfc7a8", "radius": 0.06, "depth": 0.36, "verts": 6, "at": [0, 0.2, 1.55], "rotate": [-25, 0, 0] },
+          { "shape": "cone", "material": "painted_metal", "color": "#e6e0c8", "radius": 0.05, "depth": 0.28, "verts": 6, "at": [-0.1, 0.16, 1.35], "rotate": [-35, -12, 0] },
+          { "shape": "cone", "material": "painted_metal", "color": "#d9d2b8", "radius": 0.05, "depth": 0.28, "verts": 6, "at": [0.1, 0.16, 1.35], "rotate": [-35, 12, 0] },
+          { "shape": "sphere", "material": "ember_glow", "radius": 0.06, "verts": 8, "rings": 4, "at": [0, 0.12, 1.42] }
+        ]
+      },
+      "prompt": "Round 4 (D04): a small crest of bone shards on a raised minion's back, so the player's minions read as the player's. Origin at the model root.",
+      "targetPolycount": 400
+    }
+  ],
+  "models": []
+}

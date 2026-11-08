@@ -97,3 +97,33 @@ describe('MapUi minimap zoom (C07)', () => {
     expect(map.miniStep).toBe(1);
   });
 });
+
+import { LEGEND, legendFor, poiMapState } from '../src/ui/minimap';
+import en from '../src/data/lang/en.json';
+import { ZONES } from '../src/data/zones';
+
+describe('map markers for uncollected lore and relics (C17)', () => {
+  it('shows uncollected lore and relics, greys a collected relic and drops a read log', () => {
+    expect(poiMapState('lore', false)).toBe('open');
+    expect(poiMapState('lore', true)).toBe('hidden');
+    expect(poiMapState('relic', false)).toBe('open');
+    expect(poiMapState('relic', true)).toBe('done');
+    expect(poiMapState('event', true)).toBe('done');
+    expect(poiMapState('dungeon', true)).toBe('open');
+    expect(poiMapState('boss', false)).toBe('open');
+  });
+
+  it('the legend lists lore with a translated name, and only when present', () => {
+    expect(LEGEND.some((e) => e.key === 'lore')).toBe(true);
+    expect((en.map.legend as Record<string, string>).lore).toBeTruthy();
+    const none = { poiKinds: new Set<string>(), teleporters: false, gates: false, caches: false, mainQuest: false, sideQuest: false, you: false };
+    expect(legendFor(none).some((e) => e.key === 'lore')).toBe(false);
+    expect(legendFor({ ...none, poiKinds: new Set(['lore', 'relic']) }).map((e) => e.key)).toEqual(['relic', 'lore']);
+  });
+
+  it('the game has lore and relic points to mark', () => {
+    const kinds = new Set(Object.values(ZONES).flatMap((z) => z.pois.map((p) => p.kind)));
+    expect(kinds.has('lore')).toBe(true);
+    expect(kinds.has('relic')).toBe(true);
+  });
+});

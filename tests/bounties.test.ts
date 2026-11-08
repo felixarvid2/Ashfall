@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatStats, Elite, EnemyAI, Inventory, Transform } from '../src/core/components';
+import { Inventory } from '../src/core/components';
 import { Rng } from '../src/core/rng';
 import { World } from '../src/core/ecs';
 import { emptyAccount } from '../src/core/account';
@@ -8,7 +8,7 @@ import { NPCS, QUESTS } from '../src/data/quests/db';
 import { CINDER_FLATS } from '../src/data/zones/cinderFlats';
 import en from '../src/data/lang/en.json';
 import { kill } from '../src/systems/combat';
-import { championAffixes, eliteSystem, rareAffixes, rollAffixes } from '../src/systems/elites';
+import { championAffixes, rareAffixes, rollAffixes } from '../src/systems/elites';
 import {
   choose,
   completeTalk,
@@ -21,7 +21,6 @@ import {
   spawnQuestWorld,
   startQuest,
 } from '../src/systems/quests';
-import { Hazard, PendingHazard } from '../src/core/components';
 import { spawnInteractables } from '../src/world/interactables';
 import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
 import { createZoneRuntime } from '../src/world/zone';
@@ -178,32 +177,5 @@ describe('Force Wall and Laser Grid (C019)', () => {
       expect(early.has(a), a).toBe(false);
       expect(late.has(a), a).toBe(true);
     }
-  });
-
-  it('Force Wall lays a warned line of hazards across the player', () => {
-    const world = new World();
-    const ctx = makeCtx({ worldHalfSize: 200 });
-    spawnPlayer(world, 'bastion', 0, 0);
-    const e = spawnEnemy(world, 'infected_colonist', 10, 0, { level: 30 });
-    world.add(e, Elite, { kind: 'rare', affixes: ['forceWall'], timers: {}, shieldUsed: false, mirrored: false, copy: false });
-    world.req(e, EnemyAI).aggro = true;
-    run(world, ctx, [eliteSystem], 60 * 14);
-    expect(world.query(PendingHazard).length + world.query(Hazard).length).toBeGreaterThanOrEqual(5);
-    expect(ctx.events.drain().some((ev) => ev.type === 'telegraph' && ev.shape.kind === 'line')).toBe(true);
-    void CombatStats;
-    void Transform;
-  });
-
-  it('Laser Grid crosses two beams under the player', () => {
-    const world = new World();
-    const ctx = makeCtx({ worldHalfSize: 200 });
-    spawnPlayer(world, 'bastion', 0, 0);
-    const e = spawnEnemy(world, 'infected_colonist', 10, 0, { level: 30 });
-    world.add(e, Elite, { kind: 'rare', affixes: ['laserGrid'], timers: {}, shieldUsed: false, mirrored: false, copy: false });
-    world.req(e, EnemyAI).aggro = true;
-    run(world, ctx, [eliteSystem], 60 * 13);
-    const lines = ctx.events.drain().filter((ev) => ev.type === 'telegraph' && ev.shape.kind === 'line');
-    expect(lines.length).toBeGreaterThanOrEqual(2);
-    expect(world.query(PendingHazard).length + world.query(Hazard).length).toBeGreaterThanOrEqual(10);
   });
 });

@@ -4,6 +4,9 @@ Most of Ashfall's art is generated for the game: 3D models and icons with Meshy,
 Turbo (see `scripts/meshy/` and `scripts/art/`). The rest comes from free libraries, fetched and
 processed by `npm run assets:third-party` (`scripts/assets/thirdParty.ts`).
 
+Own models and parts are built headless in Blender (GPL tool; its output is ours, see `docs/blender.md`). The in-game credits page
+(`src/data/credits.ts`, character select) lists the packs and tools below.
+
 | What | Source | Licence | In the game |
 |---|---|---|---|
 | Environment light: *Burnt Warehouse* HDRI | [Poly Haven](https://polyhaven.com/a/burnt_warehouse) | CC0 | `public/assets/env/burnt_warehouse.webp` |

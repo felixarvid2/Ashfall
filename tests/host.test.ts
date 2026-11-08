@@ -264,3 +264,72 @@ describe('panelState', () => {
     expect(() => sendPanelState(() => state(), 10)).not.toThrow();
   });
 });
+
+// ---- B10: Back with nothing open asks to quit ---------------------------------------------------------------
+import { QUIT_WINDOW_MS, createBackHandler, hostQuit } from '../src/core/host';
+
+describe('Back asks to quit (round 4 B10)', () => {
+  function rig() {
+    let open = 0;
+    let t = 1000;
+    const log: string[] = [];
+    const back = createBackHandler({
+      closeTop: () => (open > 0 ? (open--, true) : false),
+      ask: () => log.push('ask'),
+      quit: () => log.push('quit'),
+      now: () => t,
+    });
+    return { back, log, open: (n: number) => (open = n), at: (ms: number) => (t = ms) };
+  }
+
+  it('closes panels first, one per press, without asking', () => {
+    const r = rig();
+    r.open(2);
+    r.back();
+    r.back();
+    expect(r.log).toEqual([]);
+  });
+
+  it('with nothing open the first press asks and the second within the window quits', () => {
+    const r = rig();
+    r.back();
+    expect(r.log).toEqual(['ask']);
+    r.at(1000 + QUIT_WINDOW_MS - 1);
+    r.back();
+    expect(r.log).toEqual(['ask', 'quit']);
+  });
+
+  it('a late second press asks again instead of quitting', () => {
+    const r = rig();
+    r.back();
+    r.at(1000 + QUIT_WINDOW_MS + 1);
+    r.back();
+    expect(r.log).toEqual(['ask', 'ask']);
+  });
+
+  it('opening and closing a panel in between starts the question over', () => {
+    const r = rig();
+    r.back();
+    r.open(1);
+    r.back();
+    r.back();
+    expect(r.log).toEqual(['ask', 'ask']);
+  });
+
+  it('the back command uses the game handler when there is one, Escape otherwise', () => {
+    const calls: string[] = [];
+    const base = { escape: () => calls.push('escape'), pause: () => {}, press: () => {} };
+    expect(runHostCommand('back', base)).toBe(true);
+    expect(runHostCommand('back', { ...base, back: () => calls.push('back') })).toBe(true);
+    expect(calls).toEqual(['escape', 'back']);
+  });
+
+  it('hostQuit calls the bridge and is silent without one', () => {
+    expect(() => hostQuit()).not.toThrow();
+    const quit = vi.fn();
+    (window as unknown as { AshfallAndroid?: object }).AshfallAndroid = { quit };
+    hostQuit();
+    expect(quit).toHaveBeenCalledOnce();
+    delete (window as unknown as { AshfallAndroid?: object }).AshfallAndroid;
+  });
+});

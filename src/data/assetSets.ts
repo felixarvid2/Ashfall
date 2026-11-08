@@ -40,6 +40,8 @@ export function classAssetIds(classId: string): string[] {
   const cls = CLASSES.get(classId);
   const ids = ['prop.motorbike'];
   if (cls) ids.push(cls.assetId);
+  // The Xenomant's raised minions wear a crest of bone shards (D04).
+  if (classId === 'xenomant') ids.push('part.bone_shards');
   for (const mount of CLASS_WEAPONS[classId] ?? []) if (!mount.asset.startsWith(PROCEDURAL_PREFIX)) ids.push(mount.asset);
   return expandAssetIds(ids);
 }

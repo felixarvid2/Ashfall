@@ -104,3 +104,20 @@ describe('pickup log (C13)', () => {
     expect(log.count).toBe(0);
   });
 });
+
+import { beamSegments } from '../src/render/lootVisuals';
+import { hiddenByLootFilter } from '../src/data/loot/filter';
+
+describe('rarity shapes (C04)', () => {
+  it('beams keep the round look when off and get one distinct outline per rarity when on', () => {
+    for (const r of ['common', 'magic', 'rare', 'legendary', 'unique', 'mythic']) expect(beamSegments(r, false)).toBe(12);
+    const sides = ['magic', 'rare', 'legendary', 'unique', 'mythic'].map((r) => beamSegments(r, true));
+    expect(new Set(sides).size).toBe(5);
+    expect(Math.min(...sides)).toBeGreaterThanOrEqual(3);
+    expect(sides).toEqual([...sides].sort((a, b) => a - b));
+  });
+
+  it('the filter helper agrees with the setting default', () => {
+    expect(hiddenByLootFilter('rare', false, true)).toBe(false);
+  });
+});

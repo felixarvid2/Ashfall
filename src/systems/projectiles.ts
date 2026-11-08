@@ -10,12 +10,17 @@ import { skillOf } from './skills';
 import { livingInCircle, nearestOpposing, opposingTeam } from './targeting';
 import { hitDestructibles } from '../world/interactables';
 import { onEliteHit } from './elites';
+import { Barrier, hitsBarrier } from './eliteTraps';
 
 const HAZARD_TICK = 1;
 /** Reused by the loop below so a tick does not allocate its entity list. */
 const projectilesBuf: Entity[] = [];
 
+/** A05: raised Force Walls this tick (usually none). */
+const wallsBuf: Entity[] = [];
+
 export function projectileSystem(world: World, dt: number, ctx: GameContext): void {
+  const walls = world.queryInto(wallsBuf, Barrier, Transform);
   for (const e of world.queryInto(projectilesBuf, Projectile, Transform)) {
     const p = world.req(e, Projectile);
     const tr = world.req(e, Transform);
@@ -28,6 +33,13 @@ export function projectileSystem(world: World, dt: number, ctx: GameContext): vo
     tr.x += p.vx * dt;
     tr.z += p.vz * dt;
     p.remaining -= dt;
+
+    // A Force Wall stops every shot, whoever fired it.
+    if (walls.length > 0 && hitsBarrier(world, walls, tr.x, tr.z, p.radius)) {
+      ctx.events.push({ type: 'vfx', kind: 'boltHit', x: tr.x, z: tr.z, radius: 0.6, facing: tr.facing });
+      world.destroyDeferred(e);
+      continue;
+    }
 
     if (p.skill) {
       if (skillProjectile(world, ctx, p, tr)) {

@@ -60,10 +60,10 @@ export const AFFIX_TUNING = {
   freezing: { chill: 2, freezeChance: 0.18, freeze: 0.8 },
   /** Mirroring: at half life, splits off copies with a share of its life. */
   mirroring: { copies: 2, lifeFraction: 0.25 },
-  /** Force Wall: a warned line of energy across the player's path that burns and slows. */
-  forceWall: { cooldown: [10, 13] as [number, number], range: 22, warning: 1, length: 10, width: 2, radius: 1.2, duration: 4.5, dpsOfDamage: 0.4, slow: 1.5 },
-  /** Laser Grid: two warned beams crossing under the player, a short hard burn. */
-  laserGrid: { cooldown: [9, 12] as [number, number], range: 24, warning: 1.5, length: 16, width: 1.6, radius: 0.9, duration: 0.8, dpsOfDamage: 1 },
+  /** Force Wall (A05): after a warning the elite raises a short wall of energy between itself and the player; it blocks movement and every projectile for `duration` seconds. */
+  forceWall: { cooldown: [10, 13] as [number, number], range: 22, warning: 1.1, length: 6, radius: 1, step: 1.6, duration: 6, standOff: 0.4 },
+  /** Laser Grid (A06): `beams` telegraphed beams turn out of the elite (`spin` rad/s, one way or the other) and burn what they touch. */
+  laserGrid: { cooldown: [11, 14] as [number, number], range: 24, warning: 1.5, beams: 3, length: 13, width: 1.2, duration: 5, spin: 0.7, dpsOfDamage: 0.9, tick: 0.25 },
 };
 
 /** How many affixes a rare elite gets by monster level. */

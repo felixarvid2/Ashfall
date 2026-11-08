@@ -26,6 +26,7 @@ import { INTERACT_RADIUS } from '../data/interactables';
 import { at } from '../data/zones/cinderFlats';
 import { monsterLevel } from '../systems/encounter';
 import { PROGRESS_KEEP } from '../systems/quests';
+import { CORE_EVENT_TUNING, coreEventInteract, coreEventObjective, isCoreEvent, startCoreEvent, stepCoreEvent, type CoreEventType } from './coreEvents';
 import { grantXp } from '../systems/loot/rewards';
 import { spawnEnemy } from './spawn';
 import { harvestEventCooldownMul } from './harvest';
@@ -51,7 +52,9 @@ export type EventType =
   | 'caveRescue'
   | 'burrowerSwarm'
   | 'lightsOut'
-  | 'securityPatrol';
+  | 'securityPatrol'
+  // The Core (A01-A04, src/world/coreEvents.ts)
+  | CoreEventType;
 export type Tier = 'gold' | 'silver' | 'bronze';
 
 export const EVENT_TUNING = {
@@ -216,6 +219,12 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
   ev.banked = 0;
   const memory = ev.paused;
   delete ev.paused;
+  if (isCoreEvent(ev.type)) {
+    startCoreEvent(world, ctx, id, ev);
+    if (memory && ctx.time - memory.at <= PROGRESS_KEEP) resumeEvent(world, ev, memory);
+    ctx.events.push({ type: 'banner', key: `worldEvents.${ev.type}.title`, seconds: 2.4 });
+    return;
+  }
   switch (ev.type) {
     case 'convoy': {
       const [x, z] = T.convoy.path[0]!;
@@ -401,7 +410,7 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
     const d = Math.hypot(ptr.x - ev.x, ptr.z - ev.z);
     if (ev.state === 'cooldown' && ctx.time >= ev.readyAt) ev.state = 'idle';
     if (ev.state === 'idle') {
-      if (d < T.triggerRadius && !world.has(player, Dead)) start(world, ctx, id, ev);
+      if (d < (isCoreEvent(ev.type) ? CORE_EVENT_TUNING.triggerRadius[ev.type] : T.triggerRadius) && !world.has(player, Dead)) start(world, ctx, id, ev);
       continue;
     }
     if (ev.state !== 'active') continue;
@@ -409,6 +418,10 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
     // Walking far away abandons the event (the convoy route itself is ~100 m long).
     if (d > 150) {
       finish(world, ctx, zone, id, ev, 'failed');
+      continue;
+    }
+    if (isCoreEvent(ev.type)) {
+      stepCoreEvent(world, ctx, ev, dt, ptr, (result) => finish(world, ctx, zone, id, ev, result));
       continue;
     }
     switch (ev.type) {
@@ -694,6 +707,7 @@ export function eventInteract(world: World, ctx: GameContext, target: Entity, it
   for (const [id, ev] of zone.events) {
     if (ev.state !== 'active' || !ev.objects.includes(target)) continue;
     const tr = world.req(target, Transform);
+    if (isCoreEvent(ev.type)) return coreEventInteract(world, ctx, ev, target, it);
     if (ev.type === 'rescue') {
       it.used = true;
       ev.progress++;
@@ -747,6 +761,7 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
   if (!best) return null;
   const T = EVENT_TUNING;
   const left = (limit: number) => Math.max(0, Math.ceil(limit - best!.elapsed));
+  if (isCoreEvent(best.type)) return { type: best.type, ...coreEventObjective(best) };
   switch (best.type) {
     case 'convoy':
       return { type: best.type, text: 'worldEvents.convoy.objective', params: { n: best.progress, count: T.convoy.path.length } };

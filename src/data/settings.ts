@@ -123,6 +123,8 @@ export const SettingsSchema = z.object({
   hideLowLoot: z.boolean().default(false),
   /** Rarity shapes (corner marks, border patterns) on frames, labels and beams in addition to colour (C04). */
   rarityShapes: z.boolean().default(false),
+  /** Frame rate cap in frames per second; 0 draws every display frame (B17). The simulation always ticks at 60 Hz. */
+  fpsCap: z.union([z.literal(0), z.literal(30), z.literal(60), z.literal(120)]).default(0),
   /** UI scale 0.8..1.4, separate from the text size (C05). */
   uiScale: z.number().min(0.8).max(1.4).default(1),
   /** Floating damage numbers: none, compact (rounded, merged, crits and big hits only) or full (C09). */
@@ -371,6 +373,7 @@ export function tabDefaults(tab: SettingsTabId, touch = false): Partial<Settings
       hideLowLoot: d.hideLowLoot,
       rarityShapes: d.rarityShapes,
       uiScale: d.uiScale,
+      fpsCap: d.fpsCap,
       damageNumbers: d.damageNumbers,
       subtitles: d.subtitles,
     };

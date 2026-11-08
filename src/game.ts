@@ -92,6 +92,7 @@ import type { MatrixPanel } from './ui/matrixPanel';
 import { LootLabels, rarityRank } from './ui/lootLabels';
 import { haptic, setHaptics } from './ui/haptics';
 import { PickupLog } from './ui/pickupLog';
+import { Subtitles } from './ui/subtitles';
 import { setHeartbeat } from './audio/heartbeat';
 import { dropHitstopMs, playDropSound, playGoldSound, playMagnetSound, playPickupSound } from './audio/lootSounds';
 import { audio } from './audio/engine';
@@ -129,7 +130,10 @@ import { bossPhaseTicks } from './ui/hud';
 import { actionLabel, setPromptSource } from './core/inputLabels';
 import { focusNav } from './ui/focusNav';
 import { setRumbleSink } from './ui/haptics';
-import { hostRumble, installHostCommands, isAndroidHost, sendPanelState, type HostCommandHandlers } from './core/host';
+import { ZonePrefetcher, whenIdle } from './world/prefetch';
+import { GraphicsProbe } from './render/autoGraphics';
+import { getPref, setPref } from './core/localPrefs';
+import { createBackHandler, hostQuit, hostRumble, installHostCommands, isAndroidHost, sendPanelState, type HostCommandHandlers } from './core/host';
 import { LORE_XP_PER_LEVEL } from './data/interactables';
 import {
   choose,
@@ -225,6 +229,8 @@ const DEFAULT_CLASS = 'bastion';
 const ASSET_WAIT_MS = 8000;
 /** Seconds of the black fade when crossing into another zone or teleporting there. */
 const ZONE_FADE = 0.35;
+/** Set once the first-run graphics benchmark has run (or the player chose a preset first). */
+const GFX_PROBED = 'ashfall.gfxProbed';
 /** Most real time spent waiting for the first two frames of a new place before the fade lifts. */
 const FRAME_WAIT_MS = 600;
 /** Seconds between automatic saves while playing. */
@@ -266,6 +272,7 @@ export class Game {
   private readonly devtools: DevTools;
   private readonly damageNumbers: DamageNumbers;
   private readonly pickupLog: PickupLog;
+  private readonly subtitles: Subtitles;
   private readonly inventoryPanel: InventoryPanel;
   // Character, skills and settings panels are fetched on first use (C02).
   private readonly characterPanel: LazyPanel<CharacterPanel>;
@@ -340,6 +347,9 @@ export class Game {
   /** False until a character is played (the select screen has its own music). */
   private playing = false;
 
+  /** True when no settings were stored at start-up: the graphics benchmark (B16) may run. */
+  private readonly firstRun: boolean;
+  private gfxProbe: GraphicsProbe | null = null;
   private hasStoredSettings(): boolean {
     try {
       return !!this.storage?.getItem('ashfall.settings');
@@ -357,6 +367,7 @@ export class Game {
 
   constructor(canvas: HTMLCanvasElement, uiRoot: HTMLElement) {
     const firstRun = !this.hasStoredSettings();
+    this.firstRun = firstRun;
     this.settings = loadSettings(this.storage);
     // Phones start on medium graphics (no 2× pixel ratio, lighter post-processing).
     if (firstRun && isTouchDevice()) {
@@ -454,11 +465,14 @@ export class Game {
     // Panel framework: Back/Escape, the shared header, one panel at a time, the tab bar (src/ui/panelStack.ts).
     this.uiRoot = uiRoot;
     uiRoot.classList.toggle('reduce-motion', this.settings.reduceMotion);
+    uiRoot.classList.toggle('rarity-shapes', this.settings.rarityShapes);
+    this.applyUiScale();
     panelStack.init(uiRoot);
     setHaptics(this.settings.haptics);
     this.damageNumbers = new DamageNumbers(uiRoot, 80, (e) => this.world.get(e, Health)?.max ?? 0, () => this.settings.damageNumbers);
     this.toasts = new Toasts(uiRoot);
     this.pickupLog = new PickupLog(uiRoot);
+    this.subtitles = new Subtitles(uiRoot, () => this.settings.subtitles);
     this.setupGamepad();
     if (this.loadedAccount.recovered) {
       this.toasts.show(t(this.loadedAccount.reason === 'newer' ? 'save.accountNewer' : 'save.accountRecovered'), 'error', 12000);
@@ -1010,6 +1024,7 @@ export class Game {
       update: (dt) => this.update(dt),
       render: (alpha, frameDt) => this.render(alpha, frameDt),
     });
+    this.loop.maxFps = this.settings.fpsCap;
   }
 
   /**
@@ -1060,6 +1075,16 @@ export class Game {
 
   start(): void {
     this.playing = true;
+    // First run on this browser: two seconds of frame times pick the graphics preset (B16).
+    if (this.firstRun && getPref(GFX_PROBED) !== '1' && !this.gfxProbe) {
+      this.gfxProbe = new GraphicsProbe(this.settings.graphics, (choice, stats) => {
+        setPref(GFX_PROBED, '1');
+        console.info(`[ashfall] graphics benchmark: median ${stats.median.toFixed(1)} ms, p90 ${stats.p90.toFixed(1)} ms over ${stats.frames} frames -> ${choice}`);
+        if (choice === this.settings.graphics) return;
+        this.applySettings({ graphics: choice });
+        this.toasts.show(t('settings.graphicsAuto', { level: t(`settings.graphicsLevels.${choice}`) }), 'info', 7000);
+      });
+    }
     // The player chose a character after the recovery notice: the rebuilt account may be saved now.
     if (this.ctx.account) acknowledgeAccountRecovery(this.ctx.account);
     this.loop.start();
@@ -1260,7 +1285,7 @@ export class Game {
       this.enterZone(gate.to.zone, target.arrive.x, target.arrive.z);
       this.hud.showBanner(t(`zones.${this.zoneDef.key}.name`), 2.6);
       this.autosave();
-    }, { name: t(`zones.${zoneDef(gate.to.zone).key}.name`), tip: true, prepare: this.prepareZone(gate.to.zone) });
+    }, { name: t(`zones.${zoneDef(gate.to.zone).key}.name`), tip: true, prepare: this.prepareZone(gate.to.zone, undefined, (done, total) => this.feelUi.setProgress(done, total)) });
   }
 
   private fading = false;
@@ -1291,7 +1316,7 @@ export class Game {
           this.fading = false;
         };
         // Models the new place spawned that nobody prefetched load while the screen is still black (capped).
-        const settled = Promise.race([this.settleAssets().catch(() => undefined) /* never rejects in practice */, wait(assetWait)]);
+        const settled = Promise.race([this.settleAssets((done, total) => this.feelUi.setProgress(done, total)).catch(() => undefined) /* never rejects in practice */, wait(assetWait)]);
         holdThenRelease(
           realHoldEnv,
           started,
@@ -1374,11 +1399,27 @@ export class Game {
     this.scheduler.tick(this.world, dt, this.ctx);
     this.ctx.tick++;
     this.ctx.time += dt;
+    // Walking towards a border gate: fetch the zone behind it in idle time (B15). Twice a second is plenty.
+    if (this.ctx.tick % 30 === 0 && this.playing && !this.fading) {
+      const tr = this.playerTransform;
+      this.prefetch.update(this.zoneDef, tr.x, tr.z, (gate) => !!gate.requires && !this.ctx.quests?.done.has(gate.requires.quest));
+    }
     input.endTick();
   }
 
+  /** The next zone's models and ground load while the player nears a gate (B15). */
+  private readonly prefetch = new ZonePrefetcher({
+    hasZone,
+    zoneDef,
+    assetIds: (zone) => zoneAssetIds(zone),
+    ensure: (ids) => this.renderer.assets.ensure(ids),
+    ground: (zone) => this.renderer.preloadGround([zone.ground]),
+    idle: whenIdle,
+  });
+
   private render(alpha: number, frameDt: number): void {
     this.realTime += frameDt;
+    if (this.gfxProbe?.active && !this.fading) this.gfxProbe.frame(frameDt);
     if (this.realTime >= this.nextAutosave) {
       this.nextAutosave = this.realTime + AUTOSAVE_INTERVAL;
       this.autosave();
@@ -1440,10 +1481,12 @@ export class Game {
     audio.setListener(px, pz, this.ctx.cameraYaw);
     this.updateAudio(px, pz, frameDt);
     this.pickupLog.update(frameDt);
+    this.subtitles.update(frameDt);
     this.damageNumbers.update(frameDt, (x, y, z, out) => this.renderer.toScreen(x, y, z, out));
     this.updateEnemyBars(frameDt, px, pz);
     this.updateMapFeatures(px, pz);
     this.renderer.loot.hideLow = this.settings.hideLowLoot;
+    this.renderer.loot.rarityShapes = this.settings.rarityShapes;
     this.renderer.loot.showAll = this.input.isDown('showLabels');
     this.lootLabels.update(this.world, px, pz, this.input.isDown('showLabels'), (x, y, z, out) =>
       this.renderer.toScreen(x, y, z, out),
@@ -1643,7 +1686,8 @@ export class Game {
           this.notice(event.key, 'error');
           break;
         case 'bark':
-          this.toasts.show(`${t(`npcs.${event.npc}.name`)}: ${t(event.key)}`);
+          // Barks are voice-style lines: they show as subtitles, and nothing when subtitles are off (C15).
+          this.subtitles.say(t(`npcs.${event.npc}.name`), t(event.key));
           break;
         case 'discover':
           this.toasts.show(t('map.discovered', { name: t(`zones.teleporters.${event.id}`) }));
@@ -2682,7 +2726,7 @@ export class Game {
       this.enterZone(def.id, x, z);
       this.hud.showBanner(t(`zones.${def.key}.name`), 2.4);
       this.autosave();
-    }, { name: t(`zones.${def.key}.name`), tip: true, prepare: this.prepareZone(def.id) });
+    }, { name: t(`zones.${def.key}.name`), tip: true, prepare: this.prepareZone(def.id, undefined, (done, total) => this.feelUi.setProgress(done, total)) });
     return true;
   }
 
@@ -3257,11 +3301,22 @@ export class Game {
     setTouchWording(on);
   }
 
+  /** UI scale (C05): `--ui-scale` on the UI root; style.css zooms the HUD and the panels with it, not the world labels. */
+  private applyUiScale(): void {
+    this.uiRoot.style.setProperty('--ui-scale', String(this.settings.uiScale));
+    this.uiRoot.classList.toggle('ui-scaled', this.settings.uiScale !== 1);
+  }
+
   /** The settings panel changes settings here: apply each one at once and save. */
   applySettings(patch: Partial<Settings>): void {
     Object.assign(this.settings, patch);
     if (patch.textScale !== undefined) document.documentElement.style.setProperty('--text-scale', String(patch.textScale));
     if (patch.graphics !== undefined) this.renderer.setQuality(patch.graphics);
+    if (patch.graphics !== undefined && this.gfxProbe?.active) {
+      // The player chose: no automatic change after this.
+      this.gfxProbe.cancel();
+      setPref(GFX_PROBED, '1');
+    }
     if (patch.screenShake !== undefined) this.renderer.screenShake = patch.screenShake;
     if (patch.reduceMotion !== undefined) this.renderer.reduceMotion = patch.reduceMotion;
     if (patch.reduceMotion !== undefined) {
@@ -3275,6 +3330,9 @@ export class Game {
     if (patch.reduceFlashing !== undefined) this.renderer.reduceFlashing = patch.reduceFlashing;
     if (patch.reduceFlashing !== undefined) this.mapUi.reduceFlashing = patch.reduceFlashing;
     if (patch.brightness !== undefined) this.renderer.setBrightness(patch.brightness);
+    if (patch.fpsCap !== undefined) this.loop.maxFps = patch.fpsCap;
+    if (patch.rarityShapes !== undefined) this.uiRoot.classList.toggle('rarity-shapes', patch.rarityShapes);
+    if (patch.uiScale !== undefined) this.applyUiScale();
     if (patch.keybindings !== undefined || patch.padBindings !== undefined) {
       this.input.setBindings(resolveKeybindings(this.settings), resolvePadBindings(this.settings));
       this.refreshHint();
@@ -3362,6 +3420,15 @@ export class Game {
     const handlers: HostCommandHandlers = {
       // Escape: close the top panel, else the pause menu (character select and dialogue are panels of the stack).
       escape: () => void panelStack.escape(),
+      // Back: close the top panel; with nothing open the first press asks to quit, the second leaves (B10).
+      back: createBackHandler({
+        closeTop: () => panelStack.closeTop(),
+        ask: () => this.toasts.show(t('host.quitHint'), 'info', 2500),
+        quit: () => {
+          this.autosave();
+          hostQuit();
+        },
+      }),
       pause: () => {
         if (this.playing && panelStack.top() === null && this.pauseMenu.canOpen()) panelStack.open('pause');
       },

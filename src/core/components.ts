@@ -60,7 +60,7 @@ export interface Renderable {
   /** Huge landmark: never distance-culled and ignores fog. */
   landmark?: boolean;
   /** The Core: Lumen's creations (`lumen`) and memory shades (`shade`) are drawn with their own materials. */
-  look?: import('../data/schemas').EnemyLook | 'halo';
+  look?: import('../data/schemas').EnemyLook | 'halo' | 'minion';
 }
 export const Renderable = defineComponent<Renderable>('Renderable');
 

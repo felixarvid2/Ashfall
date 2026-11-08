@@ -8024,6 +8024,22 @@
         "emissive": "#ffb03a",
         "emissiveIntensity": 0.3
       }
+    },
+    {
+      "id": "part.bone_shards",
+      "category": "part",
+      "prompt": "Round 4 (D04): a small crest of bone shards on a raised minion's back, so the player's minions read as the player's. Origin at the model root.",
+      "source": "blender",
+      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
+      "targetPolycount": 400,
+      "status": "optimized",
+      "meshy": {},
+      "file": "parts/bone_shards.glb",
+      "stats": {
+        "triangles": 98,
+        "bytes": 6700,
+        "textures": 0
+      }
     }
   ]
 }

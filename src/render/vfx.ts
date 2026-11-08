@@ -4,6 +4,7 @@
  * spores, frost, sparks and dust. Every effect object is reused, never freed, so
  * heavy fights don't churn the garbage collector.
  */
+import { GroundDecals } from './groundDecals';
 import * as THREE from 'three';
 import {
   Collider,
@@ -195,18 +196,21 @@ export class VfxSystem {
   readonly sprites: SpriteFx;
   private time = 0;
   private frameDt = 0;
+  /** Blood, oil, ash and scorch under deaths and explosions (D17). */
+  readonly decals = new GroundDecals();
 
   constructor() {
     this.root.name = 'vfx';
     this.sparks = new Sparks(500);
     this.sprites = new SpriteFx(`${import.meta.env.BASE_URL}assets/vfx/atlas.webp`);
-    this.root.add(this.sparks.points, this.sprites.mesh);
+    this.root.add(this.sparks.points, this.sprites.mesh, this.decals.root);
   }
 
   /** React to logic events (call once per frame with the drained queue). */
   handle(event: GameEvent): void {
     switch (event.type) {
       case 'vfx':
+        if (event.kind === 'explosion') this.decals.add('scorch', event.x, event.z, Math.max(1.5, event.radius * 1.6), event.x * 1.7);
         this.spawnVfx(event.kind, event.x, event.z, event.radius, event.facing, event.arcDeg ?? 90, event.color);
         break;
       case 'telegraph':
@@ -223,6 +227,9 @@ export class VfxSystem {
         if (!event.isPlayer) {
           this.sparks.emit(event.x, 0.8, event.z, 20, '#9a8a70', 4);
           this.sprites.dustRing(event.x, event.z, 0.7, '#6a5e50', 5);
+          // Machines throw a burst of sparks as they die (D18).
+          if (event.family === 'machine') this.sparks.emit(event.x, 1, event.z, 34, '#ffc45a', 7);
+          this.decals.add(event.family === 'machine' ? 'oil' : event.family === 'lumen' ? 'ash' : 'blood', event.x, event.z, 1.2 + (event.x * 7.3 + event.z * 3.1) % 0.6 + 0.6, (event.x + event.z) * 2.1);
         }
         break;
       default:
@@ -234,6 +241,7 @@ export class VfxSystem {
   update(world: World, dt: number, alpha: number): void {
     this.time += dt;
     this.frameDt = dt;
+    this.decals.update(dt);
     for (const pool of this.pools.values()) {
       for (const fx of pool) {
         if (!fx.active) continue;

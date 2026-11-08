@@ -95,6 +95,7 @@ export function renderItemTooltip(
   const root = el('div', 'item-tip');
   const rarity = rarityDef(item.rarity);
   root.style.setProperty('--rarity', rarity.color);
+  root.classList.add(`r-${item.rarity}`);
   const base = BASE_ITEMS.get(item.base);
   const targets = opts.equipped ? [] : (opts.targets ?? []);
   const mainTarget = targets.find((x) => x.slot === opts.defaultSlot) ?? targets[0];
