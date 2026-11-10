@@ -216,6 +216,7 @@ export const ART_FILES: ReadonlySet<string> = new Set([
   'regions/the_core',
   'stats/armor',
   'stats/attackSpeed',
+  'stats/barrierBonus',
   'stats/cooldownReduction',
   'stats/critChance',
   'stats/critDamage',

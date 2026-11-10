@@ -90,13 +90,13 @@ describe('Refinery District layout', () => {
   it('has the planned points of interest', () => {
     const count = (kind: string) => REFINERY_DISTRICT.pois.filter((p) => p.kind === kind).length;
     expect(count('relic')).toBe(10);
-    expect(count('lore')).toBe(12);
+    expect(count('lore')).toBe(14);
     expect(count('signalTower')).toBe(3);
     expect(count('pylon')).toBe(6);
     expect(count('bunker')).toBe(6);
     expect(count('lockedChest')).toBe(6);
     expect(count('dungeon')).toBe(4);
-    expect(count('event')).toBe(6);
+    expect(count('event')).toBe(7);
     expect(count('stronghold')).toBe(1);
     expect(count('boss')).toBe(1);
     // The Crane and three coolant valves.

@@ -40,6 +40,7 @@ public final class MainActivity extends Activity {
         });
         web.addJavascriptInterface(new AshfallBridge(this), "AshfallAndroid"); // before the page runs
         Host.setGame(web);
+        Host.setActivity(this);
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(0xFF000000);
         root.addView(web, new FrameLayout.LayoutParams(-1, -1));
@@ -86,6 +87,7 @@ public final class MainActivity extends Activity {
         dual.stop();
         pad.destroy();
         Host.setGame(null);
+        Host.setActivity(null);
         if (web != null) {
             web.destroy();
             web = null;
@@ -112,7 +114,7 @@ public final class MainActivity extends Activity {
         return super.dispatchGenericMotionEvent(ev);
     }
 
-    /** System Back is a game command (close the top panel, else open the pause menu); it never leaves the app. */
+    /** System Back is a game command (close the top panel; with nothing open the game asks to quit, and a second press calls Host.quit). */
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {

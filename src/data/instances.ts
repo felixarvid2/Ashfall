@@ -278,8 +278,8 @@ export const INSTANCES: InstanceDef[] = [
   {
     id: 'meridians_hold',
     kind: 'dungeon',
-    main: [6, 7],
-    branches: [3, 4],
+    main: [7, 8],
+    branches: [4, 5],
     packs: ['valley', 'road'],
     packsPerRoom: [1, 2],
     objective: { kind: 'activate', count: 3, charge: 6, wave: 4 },
@@ -290,8 +290,8 @@ export const INSTANCES: InstanceDef[] = [
   {
     id: 'bunker_sierra4',
     kind: 'dungeon',
-    main: [6, 7],
-    branches: [3, 4],
+    main: [7, 8],
+    branches: [4, 5],
     packs: ['military', 'road'],
     packsPerRoom: [1, 2],
     objective: { kind: 'collect', count: 2 },
@@ -302,8 +302,8 @@ export const INSTANCES: InstanceDef[] = [
   {
     id: 'drainage_tunnels',
     kind: 'dungeon',
-    main: [6, 8],
-    branches: [2, 4],
+    main: [7, 9],
+    branches: [4, 5],
     packs: ['valley', 'impact'],
     packsPerRoom: [1, 2],
     objective: { kind: 'destroy', count: 4, life: 260, spawnEvery: 9 },
@@ -534,8 +534,8 @@ export const INSTANCES: InstanceDef[] = [
     // D1, Memory Halls: a distorted Outpost Ember; Region 1's shades, and the Shade of The First at its end.
     id: 'core_memory_of_ember',
     kind: 'dungeon',
-    main: [8, 9],
-    branches: [4, 5],
+    main: [6, 7],
+    branches: [2, 2],
     packs: ['core_halls_ash'],
     packsPerRoom: [1, 2],
     objective: { kind: 'collect', count: 3 },
@@ -561,8 +561,8 @@ export const INSTANCES: InstanceDef[] = [
     // D3, Gardens: sound is the mechanic. Enemies hunt by hearing; a ringing pillar draws the whole room.
     id: 'core_singing_halls',
     kind: 'dungeon',
-    main: [8, 9],
-    branches: [3, 4],
+    main: [5, 6],
+    branches: [2, 3],
     packs: ['core_gardens', 'core_base'],
     packsPerRoom: [1, 2],
     objective: { kind: 'clear', objective: 'instances.objective.clearChoir' },
@@ -576,8 +576,8 @@ export const INSTANCES: InstanceDef[] = [
     // D4, Heart: four portals hatch the creatures of the four earlier regions; the Brood Engine waits behind them.
     id: 'core_chamber_of_creation',
     kind: 'dungeon',
-    main: [8, 9],
-    branches: [4, 5],
+    main: [5, 5],
+    branches: [2, 3],
     packs: ['core_heart'],
     packsPerRoom: [1, 2],
     objective: {

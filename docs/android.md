@@ -37,11 +37,13 @@ Java → game (via `evaluateJavascript`, ignored when the function is missing):
   The Activity consumes controller key and motion events, so the WebView's own Gamepad API never sees them.
 - `window.__ashfallCommand(name: string)` from the system Back button (`'back'`) and the bottom-screen panel:
   `'back'`, `'pause'`, `'inventory'`, `'character'`, `'skills'`, `'quests'`, `'map'`, `'potion'`, `'flare'`,
-  `'mount'`, `'pickup'`. `'back'` does what Escape does (close the top panel, else open the pause menu).
+  `'mount'`, `'pickup'`. `'back'` closes the top panel; with nothing open the first press shows "Press Back again to quit" and a second press
+  within 2.5 s saves and quits through `AshfallAndroid.quit()` (round 4 B10; the pause menu stays on Start and the panel's Pause button).
 
 Game → Java (methods on `window.AshfallAndroid`, all `@JavascriptInterface`, all optional to call):
 
 - `platform(): string` returns `"android"`; `secondScreen(): boolean` whether the bottom panel is up.
+- `quit()` closes the app (`finishAffinity`, both screens); only the game's own double Back press calls it, after an autosave.
 - `rumble(strong: number, weak: number, ms: number)` vibrates the controller (or the device) when haptics are on.
 - `panelState(json: string)` at most 4 times a second: `{ hp, hpMax, res, resMax, resName, level, xpPct, zone,
   gold, potions, potionsMax, inGame }`. The Activity forwards it to the bottom screen.

@@ -51,7 +51,16 @@ export interface CaveGrid {
   /** 1 = unwalkable open air (abyss, melt pools): bolts pass, no rock is drawn. Absent in plain caves. */
   air?: Uint8Array;
   /** Energy bridges: the cells only they make walkable, and whether each is on right now. */
-  bridges?: { def: Bridge; cells: Int32Array; on: boolean }[];
+  bridges?: { def: Bridge; cells: Int32Array; on: boolean; collapse?: BridgeCollapse }[];
+}
+
+/**
+ * A01: a bridge brought down by the Collapsing Bridge event, on the game clock: it crackles (flickers) until `warnUntil`,
+ * is gone until `downUntil` and then rebuilds. The grid is shared, so the times are absolute `ctx.time` values.
+ */
+export interface BridgeCollapse {
+  warnUntil: number;
+  downUntil: number;
 }
 
 export const CAVE_CELL = 2;
@@ -222,7 +231,7 @@ export function bridgeState(cycle: BridgeCycle | undefined, time: number): { on:
 export function setBridges(grid: CaveGrid, time: number): CaveGrid['bridges'] {
   const switchedOff: NonNullable<CaveGrid['bridges']> = [];
   for (const b of grid.bridges ?? []) {
-    const on = bridgeState(b.def.cycle, time).on;
+    const on = bridgeState(b.def.cycle, time).on && !bridgeDown(b, time);
     if (on === b.on) continue;
     b.on = on;
     for (const k of b.cells) {
@@ -232,6 +241,27 @@ export function setBridges(grid: CaveGrid, time: number): CaveGrid['bridges'] {
     if (!on) switchedOff.push(b);
   }
   return switchedOff;
+}
+
+/** Is this bridge brought down at `time`? (A stale record from a clock that ran backwards, after a load, counts as rebuilt.) */
+export function bridgeDown(b: { collapse?: BridgeCollapse }, time: number): boolean {
+  const c = b.collapse;
+  if (!c) return false;
+  if (c.downUntil - time > 600) {
+    delete b.collapse;
+    return false;
+  }
+  return time < c.downUntil;
+}
+
+/** The state a bridge is drawn in: its cycle, overridden by a collapse (flicker while crackling, dark while down). */
+export function bridgeLook(b: { def: Bridge; collapse?: BridgeCollapse }, time: number): { on: boolean; flicker: boolean } {
+  const st = bridgeState(b.def.cycle, time);
+  const c = b.collapse;
+  if (!c) return st;
+  if (time < c.warnUntil) return { on: st.on, flicker: true };
+  if (bridgeDown(b, time)) return { on: false, flicker: false };
+  return st;
 }
 
 /** The grid as drawn: every bridge cell is open air (bridges are drawn on top as light). */

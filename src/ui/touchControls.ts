@@ -5,6 +5,7 @@
  * UI root switches the HUD to the touch layout; `.portrait` on top of it (phone held upright) moves
  * everything out of the thumbs' way.
  */
+import { statusIconUrl as hudStatusIconUrl } from './statusIcons';
 import { cssUrl } from './art';
 import type { Input } from '../core/input';
 import { t } from '../data/i18n';
@@ -98,7 +99,7 @@ export function followStick(origin: { x: number; y: number }, dx: number, dy: nu
 const LONG_PRESS = 450;
 
 /** Status icons double as the dodge and potion glyphs (public/assets/ui/status/, white, tinted through a CSS mask). */
-const statusIcon = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/status/${id}.svg`;
+const statusIcon = hudStatusIconUrl;
 
 type SlotAction = (typeof SLOT_ACTIONS)[number];
 

@@ -11,6 +11,7 @@ import type { Look } from '../render/looks';
 import { DEEP_CORE_VARIANTS } from './variants/deepCore';
 import { NPC_VARIANTS } from './variants/npcs';
 import { REGIONS123_VARIANTS } from './variants/regions123';
+import { ROUND4_VARIANTS } from './variants/round4';
 
 export type Vec3 = readonly [number, number, number];
 
@@ -83,6 +84,7 @@ const DEFS: readonly VariantDef[] = [
   ...REGIONS123_VARIANTS,
   ...DEEP_CORE_VARIANTS,
   ...NPC_VARIANTS,
+  ...ROUND4_VARIANTS,
 ];
 
 export const VARIANTS: ReadonlyMap<string, VariantDef> = new Map(DEFS.map((d) => [d.id, d]));
@@ -98,6 +100,19 @@ export function isVariantId(id: string): boolean {
 export function assetIdsOf(id: string, variants: ReadonlyMap<string, VariantDef> = VARIANTS): string[] {
   const def = variants.get(id);
   return def ? [...new Set([def.base, ...def.parts.map((p) => p.asset)])] : [id];
+}
+
+/**
+ * A18: Meshy models rigged with an idle clip only (the town NPCs). They have the shared skeleton, so anything made from
+ * them borrows walk/attack/hit/death from the donor model (`CLIP_DONOR` in src/render/sharedClips.ts) at runtime.
+ * tests/sharedClips.test.ts checks this list against the manifest.
+ */
+export const IDLE_ONLY_BASES: readonly string[] = ['npc.cook', 'npc.blacksmith', 'npc.technician', 'npc.pump_engineer', 'npc.defector'];
+export const CLIP_DONOR_ID = 'enemy.sergeant';
+
+/** Does this model id (a variant or a base) borrow clips from the donor? */
+export function borrowsClips(id: string, variants: ReadonlyMap<string, VariantDef> = VARIANTS): boolean {
+  return IDLE_ONLY_BASES.includes(variants.get(id)?.base ?? id);
 }
 
 /** `assetIdsOf` for many ids, without duplicates. */

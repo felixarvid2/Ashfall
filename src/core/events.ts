@@ -85,6 +85,8 @@ export type GameEvent =
   | { type: 'pickup'; kind: 'gold'; amount: number; magnet?: boolean }
   | { type: 'pickup'; kind: 'item'; rarity: Rarity; name: string; magnet?: boolean }
   | { type: 'notice'; key: string }
+  /** A hub NPC speaks as the player passes (round 4, D09): `key` is a lang key under barks.<npc>. */
+  | { type: 'bark'; npc: string; key: string }
   | { type: 'discover'; id: string }
   | { type: 'hub'; id: string; entered: boolean }
   /** The player walked into a border crossing. */

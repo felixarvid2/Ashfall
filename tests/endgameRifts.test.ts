@@ -56,6 +56,8 @@ function inRift(level: number, opts: { tierUnlocked?: number; seed?: string } = 
   const player = spawnPlayer(world, 'bastion', 0, 0);
   const rt = buildInstance(world, ctx, RIFT_ID, 'riftObelisk', opts.seed ?? 's1', 50, { x: 10, z: 10 }, level);
   ctx.instance = rt;
+  // Round 4 (A20): the rift's twist is rolled from its seed; these tests are about the plain rift (tests/riftModifiers.test.ts has the twists).
+  rt.rift!.modifier = null;
   moveTo(world, player, rt.start.x, rt.start.z);
   return { world, ctx, player, rt, rift: rt.rift! };
 }

@@ -23,8 +23,12 @@ import { CharacterSelect } from './ui/characterSelect';
 import { registerFonts } from './ui/fonts';
 import { audio } from './audio/engine';
 import { installHost } from './core/host';
+import { installErrorLog } from './core/errorLog';
+import { registerServiceWorker } from './core/pwa';
 import { guardStartup, installRuntimeGuards } from './bootGuard';
 
+// The last 200 console warnings and errors are kept for Settings > Data > Copy log (B18).
+installErrorLog(console, window);
 // Android host: define `__ashfallPad` before anything polls the pad (the app may send the controller at once).
 installHost();
 registerFonts();
@@ -51,6 +55,16 @@ loading.textContent = t('game.loading', { done: 0, total: '…' });
 ui.appendChild(loading);
 await guardStartup(ui, () => game.loadAssets((done, total) => (loading.textContent = t('game.loading', { done, total }))));
 installRuntimeGuards(game, canvas, ui);
+// Offline and installable: the plain web build only (__PWA__ is false in the artifact, Android and Linux builds).
+registerServiceWorker({
+  enabled: __PWA__,
+  nav: navigator,
+  loc: location,
+  onUpdate: () => game.notifyUpdate(),
+  resources: () => performance.getEntriesByType('resource').map((r) => r.name),
+  whenLoaded: (fn) => (document.readyState === 'complete' ? fn() : window.addEventListener('load', fn, { once: true })),
+  log: (msg, err) => console.info(msg, err ?? ''),
+});
 game.connectHost();
 loading.remove();
 
@@ -88,11 +102,11 @@ const select = new CharacterSelect(ui, () => game.characterSlots(), {
       () => game.playCharacter(slot),
     );
   },
-  create: (slot, classId, name) => {
+  create: (slot, classId, name, hardcore) => {
     void startWith(
       () => game.prepareZone(START_ZONE.id, classId),
       () => {
-        game.newCharacter(slot, classId, name);
+        game.newCharacter(slot, classId, name, hardcore === true);
         return true;
       },
     );

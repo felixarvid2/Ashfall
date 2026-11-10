@@ -95,8 +95,9 @@ for (const [name, pack] of packs) writeFileSync(join(out, 'assets', 'packs', `${
 for (const f of ['manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) rmSync(join(out, f), { force: true });
 const built = readFileSync(join(out, 'index.html'), 'utf8');
 const js = /src="\.\/assets\/(index-[^"]+\.js)"/.exec(built)?.[1];
-const css = /href="\.\/assets\/([^"]+\.css)"/.exec(built)?.[1];
-if (!js || !css) throw new Error('index bundle names not found in dist-artifact/index.html');
+// Every stylesheet the build links (Vite can split CSS per chunk, e.g. index-*.css plus game-ui-*.css).
+const css = [...built.matchAll(/href="\.\/assets\/([^"]+\.css)"/g)].map((m) => m[1]!);
+if (!js || css.length === 0) throw new Error('index bundle names not found in dist-artifact/index.html');
 // The app is split into a few chunks (vendor-three, vendor-zod, lang, game-data, game-ui): the entry imports them
 // by relative path, so they must be published beside it. Preload them in parallel, and fail the build if any chunk
 // an import points at is missing from the output.
@@ -117,7 +118,7 @@ writeFileSync(
   :root { --bg: #0b0b0c; --fg: #d8d0c4; color-scheme: dark; }
   html, body { height: 100%; background: var(--bg); color: var(--fg); }
 </style>
-<link rel="stylesheet" href="./assets/${css}">
+${css.map((c) => `<link rel="stylesheet" href="./assets/${c}">`).join('\n')}
 ${preload}
 <div id="app">
   <canvas id="game"></canvas>

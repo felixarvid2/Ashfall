@@ -384,6 +384,7 @@
       "bt_slagborn": "The Born of Slag",
       "bt_cocoon": "The Cocoon Warden",
       "bt_crusher": "The Lake Crusher",
+      "bt_dm_hunt": "Warden Vael of the Shaft",
       "bt_sentinel": "The Dark Sentinel"
     },
     "lumen": "Lumen",
@@ -2047,9 +2048,71 @@
     "thurible": {
       "name": "Thurible",
       "desc": "Censer Strike has a {value} wider arc and {value} longer reach."
+    },
+    "cleaver": {
+      "name": "Cleaver",
+      "desc": "Furnace Cleave has a {value} wider arc and {value} longer reach."
+    },
+    "afterburner": {
+      "name": "Afterburner",
+      "desc": "Orbital Strike has a {value} larger radius and deals {value} more damage."
+    },
+    "long_arm": {
+      "name": "Long Arm",
+      "desc": "Cluster Grenade can be thrown {value} farther and its cooldown is {value} shorter."
+    },
+    "steady_hand": {
+      "name": "Steady Hand",
+      "desc": "Pistol Barrage spreads {value} less and deals {value} more damage."
+    },
+    "venom_edge": {
+      "name": "Venom Edge",
+      "desc": "Scalpel Slash poisons enemies, dealing {value} of weapon damage over 4 seconds."
+    },
+    "miasma": {
+      "name": "Miasma",
+      "desc": "Spore Burst has a {value} larger radius and lasts {value} longer."
+    },
+    "sacred_flame": {
+      "name": "Sacred Flame",
+      "desc": "Holy Light sets enemies on fire, dealing {value} of weapon damage over 3 seconds."
+    },
+    "choir_of_light": {
+      "name": "Choir of Light",
+      "desc": "Magnus Exorcismus has a {value} larger radius and lasts {value} longer."
     }
   },
   "uniques": {
+    "spore_mantle": {
+      "name": "Spore Mantle",
+      "effect": "Deal x12% damage to poisoned enemies.",
+      "flavor": "The vest was green when it was found. It is greener now."
+    },
+    "thornwoven_band": {
+      "name": "Thornwoven Band",
+      "effect": "Restores 6 life on kill.",
+      "flavor": "It grew around the finger. It does not plan to let go."
+    },
+    "prospectors_lamp": {
+      "name": "Prospector's Lamp",
+      "effect": "Deal x10% damage to elites.",
+      "flavor": "Whoever carried it last stopped walking in a straight line."
+    },
+    "sunken_greaves": {
+      "name": "Sunken Greaves",
+      "effect": "Take 5% less damage.",
+      "flavor": "Water still runs out of them. Nobody asks where it comes from."
+    },
+    "memory_lens": {
+      "name": "Memory Lens",
+      "effect": "Deal x12% damage while your resource is high.",
+      "flavor": "It shows you the fight before it happens. You have already won it twice."
+    },
+    "lightstep_boots": {
+      "name": "Lightstep Boots",
+      "effect": "Deal x15% damage while evading.",
+      "flavor": "The floor remembers where you were a moment ago."
+    },
     "governors_crucible": {
       "name": "Governor's Crucible",
       "effect": "Seismic Shock costs no Heat, but has a 3.5 second cooldown.",
@@ -2172,6 +2235,9 @@
     }
   },
   "select": {
+    "hardcore": "Hardcore",
+    "hardcoreHint": "One life. If this character dies it is gone for good. It has a stash of its own.",
+    "fallen": "Fallen",
     "title": "Choose your character",
     "new": "New character",
     "corrupt": "Damaged save – create a new character",
@@ -2336,6 +2402,7 @@
       "stronghold": "Stronghold",
       "event": "Event",
       "relic": "Echo relic",
+      "lore": "Lore log",
       "signalTower": "Signal tower",
       "gate": "Region gate",
       "cache": "Harvest cache"
@@ -2428,6 +2495,275 @@
     "moveSpeed": "+2% movement speed",
     "resourceGen": "+3% resource generation"
   },
+  "credits": {
+    "sections": { "models": "3D models", "textures": "Textures", "icons": "Icons", "audio": "Music and sound", "fonts": "Fonts", "tools": "Tools" }
+  },
+  "bestiary": {
+    "heading": "Bestiary",
+    "kills": "{n} defeated",
+    "infected": { "name": "Infected", "desc": "People and animals taken by the Lumen spores. They shamble in packs and burn well." },
+    "insect": { "name": "Brood", "desc": "Insects grown large on the Vaults' nutrient. They swarm, and the swarm does not tire." },
+    "machine": { "name": "Machines", "desc": "Drones, loaders and security units, still following orders nobody gave. They spark and topple when they fall." },
+    "beast": { "name": "Beasts", "desc": "Hounds and burrowers that live where the Lumen is thickest. Fast, hungry, loud." },
+    "lumen": { "name": "Lumen-born", "desc": "Things the Lumen made on its own. The light in them is not a glow, it is a thought." },
+    "human": { "name": "People", "desc": "Soldiers, officers and miners who stayed. Some still know your name." },
+    "light": { "name": "Light Beings", "desc": "The Core's own children: motes, singers and guardians. They remember everyone." }
+  },
+  "barks": {
+    "benny": {
+      "idle": {
+        "0": "Fuel is thirsty work. Mine, I mean. The engines are fine.",
+        "1": "If it rolls, I can sell it. If it burns, I can sell that too.",
+        "2": "Route 7 is quiet. I do not trust quiet."
+      },
+      "react": {
+        "0": "Heard the First is gone. Fuel prices fell. I'm not complaining.",
+        "1": "You've grown. The road suits you."
+      }
+    },
+    "hekla": {
+      "idle": {
+        "0": "Hot metal tells no lies. People do.",
+        "1": "Bring me scrap and I will bring you survival.",
+        "2": "Don't lean on the anvil. It remembers."
+      },
+      "react": {
+        "0": "You put down the First. Good. Now sit and let me look at your gear.",
+        "1": "That hammer's seen better days. And you've seen worse."
+      }
+    },
+    "pell": {
+      "idle": {
+        "0": "Eyes up. The ash hides things.",
+        "1": "I counted the drones twice. They counted me back.",
+        "2": "Nobody has slept on this wall in a week."
+      },
+      "react": {
+        "0": "Word is the Flats are quiet since the First fell. I don't trust it. I'll take it.",
+        "1": "You walk like someone who's earned the road."
+      }
+    },
+    "tomas": {
+      "idle": {
+        "0": "Careful with the radio. It listens as much as it talks.",
+        "1": "I fix what I can and hide what I cannot.",
+        "2": "Something answers on channel nine. Not a person."
+      },
+      "react": {
+        "0": "The channel nine static dropped when the First fell. Coincidence is a luxury.",
+        "1": "Your kill count is on every frequency. Be careful with it."
+      }
+    },
+    "mara": {
+      "idle": {
+        "0": "The stacks never stop. Neither do we.",
+        "1": "Smelters cook slow and bite fast. Learn the pattern.",
+        "2": "Slag floats. That is the only good news down here."
+      },
+      "react": {
+        "0": "Vire is down. The furnaces breathe easier. Did you hear it? The quiet.",
+        "1": "The stacks respect you now. Smelters step aside. A little."
+      }
+    },
+    "gus": {
+      "idle": {
+        "0": "Pressure's up. That's either good or the last thing I'll notice.",
+        "1": "Give me a wrench and an afternoon and I'll give you a miracle.",
+        "2": "Everything here leaks. The trick is picking what."
+      },
+      "react": {
+        "0": "Cathedral's cold, they say. Never thought I'd see the day.",
+        "1": "You've outgrown the Refinery. Don't forget the wrench-turners."
+      }
+    },
+    "ines": {
+      "idle": {
+        "0": "Belts break. People break faster.",
+        "1": "I keep the books. The books keep me honest.",
+        "2": "Count your ammo before you count your enemies."
+      },
+      "react": {
+        "0": "Vire's gone, and my ledger finally balances. Don't ask how.",
+        "1": "You carry a lot of weight. It shows."
+      }
+    },
+    "tobin": {
+      "idle": {
+        "0": "Coolant is blood to this place. Don't spill it.",
+        "1": "Another tanker lost. The road is hungry.",
+        "2": "I said I'd stay until the pumps ran. They run. I stay."
+      },
+      "react": {
+        "0": "Coolant flows clean. Vire is dead. Funny what a funeral does for pressure.",
+        "1": "You walk like the pumps run: steady."
+      }
+    },
+    "okafor": {
+      "idle": {
+        "0": "Don't touch the leaves unless you have to. They notice.",
+        "1": "Everything in here is alive. That is the problem.",
+        "2": "I keep a seed in my pocket. For luck. And for guilt."
+      },
+      "react": {
+        "0": "The Mother Tree is still. I'm not sure what you did. I'm not sure I want to ask.",
+        "1": "You've walked far. The Vaults notice."
+      }
+    },
+    "quill": {
+      "idle": {
+        "0": "Notes, notes, notes. The plants don't write back.",
+        "1": "Hold still. You have something growing on your sleeve.",
+        "2": "Science is just curiosity with a safety margin. I'm out of margin."
+      },
+      "react": {
+        "0": "Samples from the Warden's grove are stable. Mostly. Thank you.",
+        "1": "You look strong. Your cells say so. I checked."
+      }
+    },
+    "brann": {
+      "idle": {
+        "0": "The seed bank still has seeds. Barely. Don't say it loudly.",
+        "1": "Dirt under the nails is a good sign. Pods under the bed is not.",
+        "2": "If the vines move, you didn't see it. I didn't either."
+      },
+      "react": {
+        "0": "The vines have gone quiet since the Warden fell. I miss the noise.",
+        "1": "You've been through worse than the Vaults. It shows."
+      }
+    },
+    "dace": {
+      "idle": {
+        "0": "Nothing in the Vaults is quiet for long.",
+        "1": "I stand watch because somebody should.",
+        "2": "The hum is louder today. Or I'm quieter."
+      },
+      "react": {
+        "0": "The Warden's down. I can finally sleep on watch. Don't tell anyone.",
+        "1": "You carry yourself like a veteran."
+      }
+    },
+    "brask": {
+      "idle": {
+        "0": "Down here, light is currency. Spend it wisely.",
+        "1": "The shaft talks in its sleep. I stopped answering.",
+        "2": "Bring a lamp, bring a friend, bring luck. In that order."
+      },
+      "react": {
+        "0": "Kade is dead. The shafts still hum, but the orders stopped. That is something.",
+        "1": "You've dug deep. The mines respect that."
+      }
+    },
+    "oona": {
+      "idle": {
+        "0": "I can read a wall like a map. This one says 'turn back'.",
+        "1": "Tea? It's mostly water. Mostly.",
+        "2": "The crystals hum when someone's lying. They hum a lot."
+      },
+      "react": {
+        "0": "With the governor gone, the crystals stopped lying. Mostly.",
+        "1": "Your armour is humming. Not a good sign. Or a great one."
+      }
+    },
+    "gerd": {
+      "idle": {
+        "0": "Ore doesn't care who digs it. I like that about ore.",
+        "1": "My knees say there's a storm. We are underground. Think about that.",
+        "2": "One more shift and I'll rest. I said that yesterday."
+      },
+      "react": {
+        "0": "Kade's gone and the lamps are still lit. I didn't expect that.",
+        "1": "You're built like a drill. Take that as praise."
+      }
+    },
+    "nils": {
+      "idle": {
+        "0": "I chart what the dark lets me. Which isn't much.",
+        "1": "Every map I make is wrong by morning.",
+        "2": "The lake looks calm. The lake always looks calm."
+      },
+      "react": {
+        "0": "The lake is calm because Kade is gone. Or the opposite. I'm still charting.",
+        "1": "I've mapped your path. It's longer than most."
+      }
+    },
+    "maren": {
+      "idle": {
+        "0": "The camp holds. Barely, but it holds.",
+        "1": "Light is kind here. That's what scares me.",
+        "2": "Whatever you left behind, it's still there. Waiting."
+      },
+      "react": {
+        "0": "Lumen is quiet. We are afraid of how quiet.",
+        "1": "You've come further than any of us. Thank you for that."
+      }
+    },
+    "wren": {
+      "idle": {
+        "0": "Static in my ears all day. At night it's singing.",
+        "1": "I don't ask where the light comes from anymore.",
+        "2": "Keep your radio low. The Core likes to listen."
+      },
+      "react": {
+        "0": "The singing stopped when Lumen fell. I miss it. I shouldn't.",
+        "1": "Your signal is the loudest thing in the Core."
+      }
+    },
+    "idris": {
+      "idle": {
+        "0": "I used to count the days. Now I count the people.",
+        "1": "Every face in camp is one I didn't lose. Yet.",
+        "2": "Walk softly. The ground remembers."
+      },
+      "react": {
+        "0": "It's over. Why doesn't it feel over?",
+        "1": "You've given the camp a future. We won't waste it."
+      }
+    },
+    "hekla_core": {
+      "idle": {
+        "0": "Even here, metal bends if you're stubborn enough.",
+        "1": "The forge burns white now. I'm not complaining.",
+        "2": "I made something for the last fight. It isn't finished."
+      },
+      "react": {
+        "0": "Lumen's heart is out. The forge still burns. Good.",
+        "1": "I forged something for the end. You earned the first look."
+      }
+    },
+    "gus_core": {
+      "idle": {
+        "0": "Pipes in the sky. Pipes! I'll never get used to it.",
+        "1": "If it hums, I can fix it. If it sings, I fear it.",
+        "2": "Pressure's fine. It's me that's under it."
+      },
+      "react": {
+        "0": "Pipes quiet. Light steady. I think we won.",
+        "1": "You made it through the Core on foot. Show-off."
+      }
+    },
+    "dace_core": {
+      "idle": {
+        "0": "I held a post at every region. Now I hold this one.",
+        "1": "The watch never ends. It only changes shape.",
+        "2": "Somebody has to stay awake. It may as well be me."
+      },
+      "react": {
+        "0": "The watch can rest. For tonight.",
+        "1": "You don't need the watch anymore. We still do."
+      }
+    },
+    "brask_core": {
+      "idle": {
+        "0": "I'd say it's like the mines, but the mines were honest.",
+        "1": "Light everywhere, and still I carry a lamp.",
+        "2": "The deeper you went, the quieter it got. Now it isn't."
+      },
+      "react": {
+        "0": "The deep is silent. That's the first honest thing it's said.",
+        "1": "You've seen the bottom of everything. Rest."
+      }
+    }
+  },
   "lore": {
     "cmirror": {
       "ash": {
@@ -2491,6 +2827,14 @@
       "11": {
         "title": "Dr. Ines Okafor – personal log 5",
         "body": "They're coming for my notes. If someone finds this: the Governor knew. He had my reports a full month before the first evacuation order, and he kept the drills running. The mine isn't a mine anymore. It's a door. Don't let them open it wider."
+      },
+      "12": {
+        "title": "Halcyon relay manifest",
+        "body": "Cargo of the Halcyon relay, signed at Kharos IV: 40 crates of ration bricks, 12 of drill bits, one sealed case marked GOVERNOR - DO NOT OPEN. The case is not listed on the landing manifest. The drill bits are."
+      },
+      "13": {
+        "title": "Outpost Ember rationing board",
+        "body": "Ration day moved to every second day. Water by the cup, not the cask. Scratched below in a different hand: the Governor's convoy gets full cups. Below that, in a third: not for long."
       }
     },
     "rd": {
@@ -2541,6 +2885,14 @@
       "11": {
         "title": "Vire's private journal",
         "body": "It speaks to me in the heat. It does not want to be burned — it wants to be carried. My flock thinks I purify them. I only choose who goes in first. The green and the flame are the same light."
+      },
+      "12": {
+        "title": "Foreman's shift note",
+        "body": "Third shift refused the east furnace. Said it hummed back when the bellows stopped. Docked their pay. The hum is in the pay office now too. Docking that as well."
+      },
+      "13": {
+        "title": "Sealed order, Governor's office",
+        "body": "By order of Governor Kade: the Refinery shall run to quota regardless of attendance. Absent workers are to be recorded as present. Present workers are to be recorded as sufficient."
       }
     },
     "hv": {
@@ -2591,6 +2943,18 @@
       "11": {
         "title": "Harvester W-01 service log",
         "body": "Unit W-01 failed to return from the Great Dome. Telemetry shows it still moving in a slow circle around the big tree, arms raised. Its tracks are full of roots. Its engine has not run for nine months."
+      },
+      "12": {
+        "title": "Okafor's log: the first bloom",
+        "body": "Day 41. The seed stock is doing what I asked and then some. The second row has started answering the lights. I will call it adaptation until somebody asks me to call it something else."
+      },
+      "13": {
+        "title": "Okafor's log: the Mother Tree",
+        "body": "Day 77. I did not plant it. I want that in the record. The roots came up through the floor of Lab 9 and the tree was simply there, as if it had been waiting for the building."
+      },
+      "14": {
+        "title": "Okafor's log: a request",
+        "body": "Day 90. Governor Kade has asked for a harvest report and a sample. I have sent the report. The sample is staying here. Some things should not travel down a shaft."
       }
     },
     "hvlab": {
@@ -2659,6 +3023,18 @@
       "11": {
         "title": "Security Chief Holm, private log",
         "body": "The governor wired the sleepers from the Vaults into the drill's cooling loop. Says they're 'translators'. I've stopped sleeping. Aurum holds, for now. I don't know who for."
+      },
+      "12": {
+        "title": "Kade's orders: depth",
+        "body": "Orders of the Governor, Shaft 13: dig deeper by a hundred metres a week. Do not report what the drills hit. Do not report that the drills sing. Report tonnage."
+      },
+      "13": {
+        "title": "Kade's orders: the sealed levels",
+        "body": "Levels 9 and 10 are closed. Anyone found below the seal is to be treated as a casualty of the shaft, whatever state they are in when they are found."
+      },
+      "14": {
+        "title": "Kade's orders: the last message",
+        "body": "To the Surface: the crystal is the answer to every shortage. I have heard it and it has heard me. Send no relief. We are not in need of it any more."
       }
     },
     "dmarc": {
@@ -2727,6 +3103,14 @@
       "11": {
         "title": "Last message from the Elevator Base",
         "body": "We hold the shaft. Whatever is climbing it will have to climb past us. If you read this, tell the surface we did not run."
+      },
+      "12": {
+        "title": "The Core: before the colony",
+        "body": "Before the first drill the Core was already lit. The survey teams called it a mineral glow and went home. It was never a mineral. It was listening for people, and it waited a very long time."
+      },
+      "13": {
+        "title": "The Core: what it kept",
+        "body": "It keeps everyone it meets, not as prisoners but as memories it cannot bear to lose. The Absorbed are not dead. They are remembered too well, and the remembering has weight."
       }
     }
   },
@@ -4059,6 +4443,30 @@
       }
     },
     "bt": {
+      "cf_pylon": {
+        "title": "Bounty: Hold the Pylon",
+        "summary": "Pell wants a power pylon on the west road switched on and held against the colonists.",
+        "steps": { "0": "Go to the pylon on the west road", "1": "Switch the pylon on", "2": "Hold the pylon: clear the colonists around it", "3": "Return to Pell" },
+        "offer": "There is a pylon on the west road. Switch it on and the whole road wakes up: lights, beacons, a signal for the convoys.\nThe colonists will come for the noise. Hold it until they stop coming.",
+        "talk3": "The road is lit all the way to the overpass. Convoys will sleep better.\nHere is your cut. It will need holding again.",
+        "done": "The west road stays lit."
+      },
+      "hv_samples": {
+        "title": "Bounty: Grove Samples",
+        "summary": "Okafor needs five tissue samples from the old grove, spread wide because the growth is.",
+        "steps": { "0": "Go to the old grove", "1": "Collect the growth samples", "2": "Return to Okafor" },
+        "offer": "The grove changes every week. I need samples from five different growths, not five from one.\nWalk the whole ring. Do not eat anything.",
+        "talk2": "Five clean samples, five different species. Nobody told the grove it was one plant.\nCome back when it has changed again.",
+        "done": "The samples are in the cold room."
+      },
+      "dm_hunt": {
+        "title": "Bounty: Warden Vael",
+        "summary": "Brask has a name on the board: a sentinel that took over a shaft and answers to nobody.",
+        "steps": { "0": "Hunt Warden Vael in the shaft", "1": "Return to Brask" },
+        "offer": "Warden Vael. A crystal sentinel that grew into the shaft and now keeps its own guard.\nIt has a name because it has been seen too often. Remove it.",
+        "talk1": "Vael is down. The shaft can be walked again.\nThe fee, and a word of thanks.",
+        "done": "The shaft is quiet."
+      },
       "cf_tanker": {
         "title": "Bounty: Dry Run",
         "summary": "Benny has another tanker of fuel oil stuck out on Route 7 and wants it walked home.",
@@ -4561,6 +4969,13 @@
       "epithet": "the Rotting|the Hollow|the Burned|the Glowing|the Patient|the Unburied|the Hungry|the Broken|the Silent|the Blistered|the Forgotten|the Last",
       "title": "Warden of Ash|Keeper of the Flats|Voice of the Spores|Shepherd of the Dead|Herald of the Maw|Heir of Shaft 1|Breaker of Convoys|Lord of the Crater|Mother of Hounds|Watcher of Route 7"
     },
+    "regional": {
+      "cf": { "prefix": "Ash|Cinder|Rust|Dust|Char|Slag|Grit|Soot", "suffix": "maw|gnaw|fist|hide|jaw|born|claw|bite", "title": "Warden of Ash|Keeper of the Flats|Breaker of Convoys|Watcher of Route 7|Heir of the Crater" },
+      "rd": { "prefix": "Brand|Smelt|Pipe|Coke|Flue|Weld|Vent|Anvil", "suffix": "ghast|furnace|hammer|tongs|ladle|stack|burn|grinder", "title": "Foreman of the Furnace|Voice of the Stacks|Pourer of Slag|Priest of the Belt|Warden of the Coolant" },
+      "hv": { "prefix": "Spore|Thorn|Moss|Bloom|Root|Vine|Pod|Mold", "suffix": "creep|tangle|weaver|rot|seed|mother|throat|garden", "title": "Gardener of Lab 9|Child of the Tree|Shepherd of the Bloom|Thing in the Greenhouse|Heir of the Root" },
+      "dm": { "prefix": "Shard|Lode|Deep|Pit|Gloom|Quartz|Drill|Echo", "suffix": "fall|delver|breaker|glint|tooth|shaft|gnash|eye", "title": "Delver of Shaft 13|Lamp-Eater|Keeper of the Lake|Voice in the Rock|Heir of the Governor" },
+      "core": { "prefix": "Lumen|Glass|Hymn|Halo|Mirror|Choir|Memory|Dawn", "suffix": "born|song|shade|mote|bearer|warden|echo|bloom", "title": "Remembered of the Core|Cantor of the Heart|Light's Prisoner|Absorbed of Ember|Voice of Lumen" }
+    },
     "named": "{first} {epithet}, {title}",
     "champion": "Champion"
   },
@@ -4878,6 +5293,23 @@
       "objective": "Free the survivors: {n}/{count} · {s}s",
       "freed": "Survivor freed ({n}/{count})"
     },
+    "beaconRelight": {
+      "title": "Relight the Beacon",
+      "objective": "Defend the old beacon while it relights: {s}s"
+    },
+    "foundryAmbush": {
+      "title": "Foundry Ambush",
+      "objective": "Keep the slag pump alive against the ambush: {s}s"
+    },
+    "pollenRun": {
+      "title": "Pollen Run",
+      "objective": "Cut down the pollen pods before they burst: {n}/{count} · {s}s"
+    },
+    "cartRescue": {
+      "title": "Ore Cart Rescue",
+      "objective": "Pull the stranded carters clear: {n}/{count} · {s}s",
+      "freed": "Carter pulled clear ({n}/{count})"
+    },
     "signalJam": {
       "title": "Signal Jam",
       "objective": "Defend the transmitter while it charges: {s}s"
@@ -4942,6 +5374,26 @@
     "securityPatrol": {
       "title": "Security Patrol",
       "objective": "Stop the patrol before it gets away: {s}s"
+    },
+    "bridgeCollapse": {
+      "title": "Collapsing Bridge",
+      "objective": "The bridge is crackling. Get across: {s}s",
+      "down": "The bridge is gone. It rebuilds soon.",
+      "fell": "The bridge gives way!"
+    },
+    "choirAwakening": {
+      "title": "Choir Awakening",
+      "objective": "Break the resonance stone before the song ends: {s}s"
+    },
+    "memorySurge": {
+      "title": "Memory Surge",
+      "objective": "Close the memory rift: {n}/{count} · {s}s",
+      "closing": "The rift shudders ({n}/{count}).",
+      "closed": "The memory rift closes."
+    },
+    "gravityStorm": {
+      "title": "Gravity Storm",
+      "objective": "Destroy the anchors: {n}/{count} · {s}s"
     }
   },
   "storm": {
@@ -5097,10 +5549,26 @@
     "veteran": {"name": "Veteran", "desc": "Reach level 30."},
     "four_paths": {"name": "Four Paths", "desc": "Take a hero of every class to level 10.", "title": "Pathfinder"},
     "errand_runner": {"name": "Errand Runner", "desc": "Complete 10 quests or bounties."},
-    "wasteland_hand": {"name": "Wasteland Hand", "desc": "Complete 50 quests or bounties.", "title": "Wasteland Hand"}
+    "wasteland_hand": {"name": "Wasteland Hand", "desc": "Complete 50 quests or bounties.", "title": "Wasteland Hand"},
+    "thousand_cuts": {"name": "Thousand Cuts", "desc": "Defeat 5,000 enemies."},
+    "ash_legion": {"name": "Ash Legion", "desc": "Defeat 50,000 enemies.", "title": "Ash Legion"},
+    "elite_scourge": {"name": "Elite Scourge", "desc": "Defeat 1,000 elites."},
+    "giant_killer": {"name": "Giant Killer", "desc": "Defeat 50 bosses.", "title": "Giant Killer"},
+    "unique_hoard": {"name": "Unique Hoard", "desc": "Find 30 unique or mythic items."},
+    "mythic_hoard": {"name": "Mythic Hoard", "desc": "Find 5 mythic items.", "title": "Mythic Hoarder"},
+    "rift_legend": {"name": "Rift Legend", "desc": "Clear 150 Deep Rifts."},
+    "rift_apex": {"name": "Rift Apex", "desc": "Clear a Deep Rift of level 75."},
+    "maxed_out": {"name": "Maxed Out", "desc": "Reach level 50."},
+    "town_hero": {"name": "Town Hero", "desc": "Complete 100 quests or bounties."}
   },
   "rifts": {
     "title": "Deep Rift",
+    "modifiers": {
+      "volatileDead": { "name": "Volatile Dead", "desc": "Some of the slain burst a moment later. Step away from the bodies." },
+      "shrinkingArena": { "name": "Shrinking Arena", "desc": "In the guardian fight a ring of burning light closes in from the walls." },
+      "eliteStorm": { "name": "Elite Storm", "desc": "A share of every pack is born a champion." },
+      "lumenSurges": { "name": "Lumen Surges", "desc": "Every half a minute the rift flares and its enemies hit harder for a few seconds.", "flare": "The rift flares!" }
+    },
     "locked": "The obelisk is dormant. Defeat Lumen to wake it.",
     "badLevel": "That rift level is not open yet.",
     "daily": {
@@ -5207,6 +5675,22 @@
       "loot": "Item power +{power}, greater affix chance +{greater}%, unique and mythic drops ×{rare}."
     }
   },
+  "durability": {
+    "worn": "Your gear is worn ({n} pieces, -10%). The blacksmith can repair it.",
+    "broke": "{n} of your items broke. They give only their base stats until repaired.",
+    "note": "Worn gear is repaired for gold.",
+    "noteBroken": "{n} broken: no affixes until repaired.",
+    "repairAll": "Repair all ({gold} gold)",
+    "repaired": "Everything repaired for {gold} gold.",
+    "repairedSome": "Repaired what you could afford ({gold} gold).",
+    "cannotAfford": "Not enough gold to repair.",
+    "tag": "Durability {n}%",
+    "brokenTag": "Broken"
+  },
+  "hardcore": {
+    "fell": "Your Hardcore character has fallen. There is no coming back.",
+    "fallenSlot": "This character has fallen. It can only be deleted."
+  },
   "harvest": {
     "line": "Ash Harvest: {region} — {time} left",
     "shards": "Ash Shards: {n}",
@@ -5216,6 +5700,9 @@
     "mapCache": "Harvest Cache",
     "needShards": "Not enough Ash Shards for a Harvest Cache.",
     "shardsLost": "You fell. Half of your Ash Shards are lost.",
+    "shardsDropped": "You fell. Half of your Ash Shards lie where you died. Pick them up within 5 minutes.",
+    "shardsRecovered": "You recovered your Ash Shards.",
+    "shardsGone": "The Ash Shards you lost have crumbled to dust.",
     "cacheOpened": "Harvest Cache opened: a legendary and {dust} Lumen Dust.",
     "cacheRecipe": "The cache held a tempering recipe you did not know."
   },
@@ -5276,6 +5763,63 @@
     "paused": "Paused",
     "tabs": "Panels"
   },
+  "host": {
+    "quitHint": "Press Back again to quit",
+    "updateReady": "A new version was installed. Reload the page to play it."
+  },
+  "saveData": {
+    "backups": {
+      "title": "Save backups",
+      "hint": "The game keeps your last three saves of this character, taken at least five minutes apart. Restoring one replaces the current save (which becomes a backup).",
+      "none": "No backups yet. The first one appears after about five minutes of play.",
+      "entry": "{time}: {name}, level {level}",
+      "unreadable": "{time}: cannot be read",
+      "restore": "Restore",
+      "confirmTitle": "Restore this backup?",
+      "confirmBody": "Your character goes back to the save from {time}. Everything since then is lost, but kept as a backup.",
+      "restored": "Backup restored.",
+      "failed": "Could not restore: {reason}"
+    },
+    "files": {
+      "title": "Save file",
+      "hint": "Export your character to a file, or import one. An import shows what will change before it replaces anything.",
+      "export": "Export save",
+      "import": "Import save"
+    },
+    "import": {
+      "character": "Character",
+      "level": "Level",
+      "zone": "Place",
+      "gold": "Gold",
+      "items": "Items",
+      "saved": "Saved",
+      "confirmTitle": "Import this save?",
+      "confirm": "Replace character",
+      "migrated": "Written by an older version of the game (save format {from}); it is upgraded on import.",
+      "dropped": "{count} entries from an older version are not in this game any more and are removed.",
+      "replaces": "This replaces the character you are playing now.",
+      "cancelled": "Import cancelled.",
+      "done": "Save imported.",
+      "failed": "Could not import: {reason}",
+      "rejected": "This file cannot be imported. {reason}"
+    },
+    "reasons": {
+      "empty": "The file is empty.",
+      "tooBig": "The file is far too big to be a save.",
+      "notJson": "It is not a save file (the text is not valid JSON). Was it edited or cut off?",
+      "notSave": "It is a JSON file, but not an Ashfall save.",
+      "newer": "It was written by a newer version of the game. Update the game first; nothing was changed.",
+      "broken": "The save is damaged or was edited into something the game cannot read."
+    },
+    "log": {
+      "title": "Problem log",
+      "hint": "If something went wrong, copy the last warnings and errors and send them with your report. Nothing leaves your device unless you paste it somewhere.",
+      "count": "{count} entries so far.",
+      "copy": "Copy log",
+      "copied": "Log copied.",
+      "copyFailed": "Could not copy. Select the text in the browser console instead."
+    }
+  },
   "pause": {
     "title": "Paused",
     "resume": "Resume",
@@ -5288,11 +5832,15 @@
   },
   "settings": {
     "title": "Settings",
-    "tabs": { "sound": "Sound", "display": "Display", "controls": "Controls" },
+    "tabs": { "sound": "Sound", "display": "Display", "controls": "Controls", "data": "Data" },
     "textSize": "Text size",
     "textPreview": "The scout reads the ash and the wind.",
     "sizes": { "s": "S", "m": "M", "l": "L", "xl": "XL" },
     "graphics": "Graphics",
+    "graphicsAuto": "Graphics set to {level} to suit this device. You can change it in Settings > Display.",
+    "fpsCap": "Frame rate limit",
+    "fpsCapHint": "A lower limit saves battery and keeps the device cool. The game itself always runs at the same speed.",
+    "fpsCapLevels": { "0": "No limit", "30": "30", "60": "60", "120": "120" },
     "graphicsLevels": { "low": "Low", "medium": "Medium", "high": "High" },
     "graphicsHint": {
       "low": "No post-processing. Best for older phones.",
@@ -5352,6 +5900,7 @@
       "skills": "Skills",
       "map": "Map",
       "quests": "Quest log",
+      "photoMode": "Photo mode",
       "quickSave": "Quick save",
       "quickLoad": "Quick load",
       "toggleMute": "Mute sound",
@@ -5392,6 +5941,9 @@
   },
   "onboarding": {
     "skip": "Skip tips",
+    "never": "Don't show again",
+    "map": "New place found. Press {key:map} to open the map and travel between teleporters you have found.",
+    "stash": "The stash in the hub keeps items for all your characters. Walk up to it and press {key:pickup} to open it.",
     "move": "Drag on the left half of the screen to move.",
     "attack": "Tap the big button to attack. It aims for you.",
     "menu": "The icons at the top open your bag, skills and map.",
@@ -5406,6 +5958,7 @@
     "quest": "First quest done. Press {key:quests} for the quest log and pick your next one."
   },
   "feel": {
+    "loadProgress": "Loading {done} / {total}",
     "guideBanner": "Follow the golden trail to your objective",
     "guideBannerPlace": "Follow the golden trail to {place}",
     "guideBannerStep": "Follow the golden trail: {step}",
@@ -5428,5 +5981,57 @@
       "Fire, poison and cold fields on the ground keep hurting. Step out of them."
     ],
     "rose": "You rise again"
+  },
+  "ux": {
+    "settings": {
+      "hideLowLoot": "Hide common and magic drops",
+      "hideLowLootHint": "Common and magic items vanish from the ground. Gold and crystals always show. Hold the labels key to see everything.",
+      "rarityShapes": "Rarity shapes",
+      "rarityShapesHint": "Adds corner marks and border patterns to item frames, labels and beams, so rarity does not depend on colour.",
+      "uiScale": "Interface scale",
+      "uiScaleHint": "Scales the HUD and the menus. Text size is separate. On touch screens the thumb buttons follow Button size.",
+      "damageNumbers": "Damage numbers",
+      "damageNumberModes": {
+        "off": "Off",
+        "compact": "Compact",
+        "full": "Full"
+      },
+      "damageNumbersHint": "Compact merges small hits and shows crits and big hits.",
+      "subtitles": "Subtitles",
+      "subtitlesHint": "Shows what NPCs and bosses say as a line of text."
+    },
+    "stash": {
+      "search": "Search the stash",
+      "noMatch": "Nothing in the stash matches."
+    },
+    "pickupLog": {
+      "label": "Picked up",
+      "gold": "+{gold} gold",
+      "itemMany": "{name} x{n}"
+    },
+    "map": {
+      "miniZoom": "Minimap zoom {n}/{max}",
+      "miniZoomIn": "Zoom the minimap in",
+      "miniZoomOut": "Zoom the minimap out"
+    },
+    "quests": {
+      "pin": "Pin to tracker",
+      "unpin": "Unpin from tracker",
+      "pinFull": "Three quests are pinned already. Unpin one first."
+    },
+    "boss": {
+      "phase": "Phase {n}/{max}"
+    },
+    "set": {
+      "title": "Set: {name} ({n}/{max})",
+      "worn": "worn",
+      "missing": "not worn",
+      "bonus": "({n}) {text}"
+    },
+    "photo": {
+      "hint": "Photo mode: drag to turn the camera, scroll or pinch to zoom. Esc to return.",
+      "exit": "Exit",
+      "button": "Photo mode"
+    }
   }
 }

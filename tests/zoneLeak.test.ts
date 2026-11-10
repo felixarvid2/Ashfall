@@ -1,0 +1,97 @@
+// @vitest-environment happy-dom
+/**
+ * B04: ten zone round trips must not grow what the renderer keeps on the GPU. node has no GL, so the renderer is a stand-in
+ * (tests/fakeGl.ts) whose census counts every geometry, material and texture the scene draws until it is disposed:
+ * the same numbers as `renderer.info.memory`.
+ */
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { PlayerControlled, Transform } from '../src/core/components';
+import { World } from '../src/core/ecs';
+import { ZONES } from '../src/data/zones';
+import { spawnArenaProps } from '../src/world/arena';
+import { spawnEnemy, spawnPlayer } from '../src/world/spawn';
+import { gpu, installFakeCanvas } from './fakeGl';
+
+// The factories import the stand-ins themselves: a top-level binding is not ready yet when `three` is first imported.
+vi.mock('../src/render/postfx', async () => ({ PostFx: (await import('./fakeGl')).FakePostFx }));
+vi.mock('three', async (orig) => ({ ...(await orig<typeof import('three')>()), WebGLRenderer: (await import('./fakeGl')).FakeWebGLRenderer }));
+
+describe('fake GPU census', () => {
+  it('counts what the scene draws and forgets what is disposed', async () => {
+    const THREE = await import('three');
+    const { FakeGpu } = await import('./fakeGl');
+    const g = new FakeGpu();
+    const scene = new THREE.Scene();
+    const geo = new THREE.BoxGeometry();
+    const mat = new THREE.MeshBasicMaterial({ map: new THREE.Texture() });
+    scene.add(new THREE.Mesh(geo, mat));
+    g.upload(scene);
+    expect(g.counts).toEqual({ geometries: 1, materials: 1, textures: 1 });
+    geo.dispose();
+    mat.map!.dispose();
+    expect(g.counts).toEqual({ geometries: 0, materials: 1, textures: 0 });
+  });
+});
+
+describe('zone change leaks (round 4 B04)', () => {
+  beforeAll(() => installFakeCanvas());
+
+  it('ten round trips between two zones leave the geometry, material and texture counts where one trip left them', async () => {
+    gpu.enabled = true;
+    const { GameRenderer } = await import('../src/render/gameRenderer');
+    const renderer = new GameRenderer(document.createElement('canvas'));
+    const zoneA = ZONES.find((z) => z.id === 'zone.cinder_flats')!;
+    const zoneB = ZONES.find((z) => z.id === 'zone.hydroponic_vaults')!;
+
+    /** What the game does on a zone change: drop the old entities, build the new arena, spawn, draw some frames. */
+    const world = new World();
+    const player = spawnPlayer(world, 'bastion', 0, 0);
+    const enter = (zone: typeof zoneA) => {
+      for (const e of world.query(Transform)) if (e !== player) world.destroyDeferred(e);
+      world.flushDestroyed();
+      renderer.buildArena(zone);
+      spawnArenaProps(world, zone);
+      const hub = zone.hubs[0]!;
+      const pt = world.req(player, Transform);
+      pt.x = pt.prevX = hub.x;
+      pt.z = pt.prevZ = hub.z;
+      for (let i = 0; i < 20; i++) spawnEnemy(world, i % 2 ? 'infected_colonist' : 'security_drone', hub.x + 6 + i, hub.z + 4, { level: 5 });
+      for (let f = 0; f < 3; f++) {
+        renderer.sync(world, 0.5, 1 / 60);
+        const tr = world.req(world.query(PlayerControlled)[0]!, Transform);
+        renderer.render(1 / 60, tr.x, 0, tr.z);
+      }
+    };
+
+    const trip = () => {
+      enter(zoneA);
+      enter(zoneB);
+    };
+    for (let i = 0; i < 3; i++) trip(); // the first trips warm every cache (shared textures, pooled effects)
+    const baseline = { ...gpu.counts };
+    const g0 = new Set(gpu.geometries), m0 = new Set(gpu.materials);
+    for (let i = 0; i < 10; i++) {
+      trip();
+      if (process.env.LEAKDBG) console.log('trip', i, JSON.stringify(gpu.counts));
+    }
+    const after = { ...gpu.counts };
+    if (process.env.LEAKDBG) {
+      const reach = new Set<unknown>();
+      (renderer as unknown as { scene: import('three').Scene }).scene.traverse((o) => {
+        const d = o as import('three').Mesh;
+        if (d.geometry) reach.add(d.geometry);
+        for (const m of Array.isArray(d.material) ? d.material : d.material ? [d.material] : []) reach.add(m);
+      });
+      const lost: Record<string, number> = {};
+      for (const x of [...gpu.geometries, ...gpu.materials]) if (!reach.has(x)) { const k = `${x.type}:${(x as { color?: { getHexString(): string } }).color?.getHexString() ?? ''}`; lost[k] = (lost[k] ?? 0) + 1; }
+      console.log('unreachable', JSON.stringify(lost));
+      const hist = (set: Set<{ type: string; name: string }>, before: Set<unknown>) => { const h: Record<string, number> = {}; for (const x of set) if (!before.has(x)) { const k = `${x.type}:${x.name}`; h[k] = (h[k] ?? 0) + 1; } return h; };
+      console.log('new geos', JSON.stringify(hist(gpu.geometries as never, g0)), 'new mats', JSON.stringify(hist(gpu.materials as never, m0)));
+    }
+    console.log('zone leak census', JSON.stringify({ baseline, after }));
+    expect(baseline.geometries).toBeGreaterThan(10);
+    expect(after.geometries, 'geometries').toBeLessThanOrEqual(baseline.geometries);
+    expect(after.materials, 'materials').toBeLessThanOrEqual(baseline.materials);
+    expect(after.textures, 'textures').toBeLessThanOrEqual(baseline.textures);
+  }, 120000);
+});

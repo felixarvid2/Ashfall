@@ -4,6 +4,7 @@
  * layout is the same every time. Every id is prefixed `rd.` so it never collides with region 1
  * (relics are stored account-wide by id).
  */
+import { round4Props } from './round4Props';
 import { Rng } from '../../core/rng';
 import { alongRoad, clearOfProps, distanceToRoad as roadDistance, line } from './layout';
 import type { GroundDef, GroundPatch } from './testArena';
@@ -335,6 +336,8 @@ function buildProps(): PropPlacement[] {
     colliders: [-14, 0, 14].map((x) => ({ x, z: 0, r: 9 })),
     light: { color: '#ff8a3a', intensity: 140, distance: 36, height: 8 },
   });
+  // Round 4 (D16): ten Blender set-dressing props.
+  props.push(...round4Props('zone.refinery_district', HALF, (x, z) => distanceToRoad(x, z) > 6 && !nearPlace(x, z, 6) && !onEnv(x, z, 2)));
   return props;
 }
 
@@ -409,6 +412,8 @@ function buildPois(): PoiDef[] {
   scaled([
     [-318, -300], [-250, -200], [-165, -110], [-130, -80], [-80, -180], [-240, 0], [-120, 160], [-200, 240], [30, 60], [160, -60], [250, 40], [200, 210],
   ]).forEach(([x, z], i) => pois.push({ id: `rd.lore.${i}`, kind: 'lore', x, z, data: { log: `rd.${i}` } }));
+  // Round 4 (D08): two more notes.
+  scaled([[-190, -150], [100, 120]]).forEach(([x, z], i) => pois.push({ id: `rd.lore.${12 + i}`, kind: 'lore', x, z, data: { log: `rd.${12 + i}` } }));
   // One signal tower per outer subzone.
   scaled([[-290, -80], [-250, 200], [210, -230]]).forEach(([x, z], i) => pois.push({ id: `rd.tower.${i}`, kind: 'signalTower', x, z }));
   scaled([[-230, -30], [-40, 0], [100, 95], [140, -150], [-150, 210], [280, 30]]).forEach(([x, z], i) => {
@@ -451,7 +456,7 @@ function buildPois(): PoiDef[] {
     }
   });
   const events: [string, number, number][] = [
-    ['runawayBelt', -240, -40], ['slagTide', 150, -120], ['purgeFurnace', -200, 205], ['smelterRaid', -60, -30], ['eliteHunt', 40, -230], ['supplyDrop', 250, 30],
+    ['runawayBelt', -240, -40], ['slagTide', 150, -120], ['purgeFurnace', -200, 205], ['smelterRaid', -60, -30], ['eliteHunt', 40, -230], ['supplyDrop', 250, 30], ['foundryAmbush', 155, -66],
   ];
   events.forEach(([type, x, z]) => pois.push({ id: `rd.event.${type}`, kind: 'event', x: x * S, z: z * S, data: { event: type } }));
   return pois;

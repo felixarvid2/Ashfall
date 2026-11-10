@@ -20,6 +20,7 @@ import { DISTRICT_ID, districtHubs, districtOnDeath, districtSystem, syncDistric
 import { VAULTS_ID, syncVaults, vaultHubs, vaultSystem, vaultsOnDeath, type VaultSetPieces } from './vaultSetPieces';
 import { MINES_ID, mineHubs, mineSystem, minesOnDeath, syncMines, type MineSetPieces } from './mineSetPieces';
 import { CORE_ID, baseOnDeath, baseSystem, syncBase, type BaseState } from './elevatorBase';
+import { sealRing } from './sealedArena';
 import { LUMEN_ZONE_ID, lumenOnDeath, lumenSystem, syncLumen, type LumenState } from './lumen';
 
 /** These set pieces live in Cinder Flats only. */
@@ -221,7 +222,7 @@ function maw(world: World, ctx: GameContext, zone: ZoneRuntime, ptr: Transform):
       });
     }
     world.req(st.boss, EnemyAI).aggro = true;
-    st.gates = MAW.gaps.map((i) => gateAt(world, i));
+    st.gates = [...MAW.gaps.map((i) => gateAt(world, i)), ...sealRing(world, { x: MAW.x, z: MAW.z, radius: MAW.radius, segments: MAW.segments }, '#ff3a2a')];
     ctx.events.push({ type: 'banner', key: 'bosses.the_first.intro', seconds: 3 });
     ctx.events.push({ type: 'shake', trauma: 0.6 });
   }

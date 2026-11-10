@@ -1,0 +1,43 @@
+{
+  "models": [
+    {
+      "id": "weapon.power_sword",
+      "builder": "kitbash",
+      "prompt": "Round 4 (A19): a heavy industrial power sword, steel blade with a glowing ember edge, dark rubber grip. Stands on its pommel, 1.1 m.",
+      "targetPolycount": 700,
+      "category": "prop",
+      "heightMeters": 1.1,
+      "placeholder": { "shape": "box", "color": "#9aa2ac", "size": [0.08, 1.1, 0.04] },
+      "params": {
+        "pieces": [
+          { "shape": "sphere", "material": "painted_metal", "color": "#5a5f68", "radius": 0.034, "at": [0, 0, 0.02] },
+          { "shape": "cylinder", "material": "rubber_cloth", "color": "#2a2622", "radius": 0.022, "depth": 0.24, "at": [0, 0, 0.14], "verts": 8 },
+          { "shape": "box", "material": "painted_metal", "color": "#7a828c", "size": [0.22, 0.05, 0.04], "at": [0, 0, 0.27], "bevel": 0.008 },
+          { "shape": "box", "material": "painted_metal", "color": "#c4ccd6", "size": [0.07, 0.022, 0.78], "at": [0, 0, 0.68], "bevel": 0.006 },
+          { "shape": "cone", "material": "painted_metal", "color": "#c4ccd6", "radius": 0.04, "depth": 0.14, "at": [0, 0, 1.05], "verts": 4, "rotate": [0, 0, 45] },
+          { "shape": "box", "material": "ember_glow", "color": "#ff7a2a", "size": [0.014, 0.03, 0.7], "at": [0, 0, 0.66], "bevel": 0.003 }
+        ]
+      }
+    },
+    {
+      "id": "weapon.sun_staff",
+      "builder": "kitbash",
+      "prompt": "Round 4 (A19): the Lightbearer's sun staff: a brass shaft ending in a cage round a bright core, crossed prongs and a cap. Stands on its butt, 1.5 m.",
+      "targetPolycount": 700,
+      "category": "prop",
+      "heightMeters": 1.5,
+      "placeholder": { "shape": "cylinder", "color": "#b8893a", "size": [0.12, 1.5, 0.12] },
+      "params": {
+        "pieces": [
+          { "shape": "cone", "material": "painted_metal", "color": "#6e5224", "radius": 0.03, "depth": 0.1, "at": [0, 0, 0.03], "verts": 6, "rotate": [180, 0, 0] },
+          { "shape": "cylinder", "material": "painted_metal", "color": "#b8893a", "radius": 0.018, "depth": 1.2, "at": [0, 0, 0.64], "verts": 8 },
+          { "shape": "cylinder", "material": "painted_metal", "color": "#6e5224", "radius": 0.03, "depth": 0.05, "at": [0, 0, 1.22], "verts": 8 },
+          { "shape": "sphere", "material": "ember_glow", "color": "#ffd878", "radius": 0.065, "at": [0, 0, 1.34], "verts": 10, "rings": 6 },
+          { "shape": "box", "material": "painted_metal", "color": "#b8893a", "size": [0.22, 0.014, 0.014], "at": [0, 0, 1.34], "bevel": 0.003 },
+          { "shape": "box", "material": "painted_metal", "color": "#b8893a", "size": [0.014, 0.22, 0.014], "at": [0, 0, 1.34], "bevel": 0.003 },
+          { "shape": "cone", "material": "painted_metal", "color": "#b8893a", "radius": 0.05, "depth": 0.14, "at": [0, 0, 1.45], "verts": 8 }
+        ]
+      }
+    }
+  ]
+}

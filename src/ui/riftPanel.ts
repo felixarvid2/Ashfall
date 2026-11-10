@@ -3,6 +3,7 @@
  * and time), the result panel after a clear (three glyph upgrade attempts, the player picks the glyph), and the
  * timer + progress bar shown while inside a rift.
  */
+import { RIFT_MODIFIERS, type RiftModifierId } from '../systems/endgame/riftModifiers';
 import { t } from '../data/i18n';
 import { RIFT, RIFT_REWARDS } from '../data/endgame/rifts';
 import { riftCacheYield, riftDamageScale, riftItemPower, riftScale, type RiftPhase, type RiftResult } from '../systems/endgame/rifts';
@@ -316,7 +317,7 @@ export class RiftHud {
     return this.root;
   }
 
-  update(state: { level: number; left: number; progress: number; phase: RiftPhase } | null): void {
+  update(state: { level: number; left: number; progress: number; phase: RiftPhase; modifier?: RiftModifierId | null } | null): void {
     if (!state) {
       this.root.hidden = true;
       this.pin.hidden = true;
@@ -330,10 +331,20 @@ export class RiftHud {
     this.strip.dataset.phase = state.phase;
     this.root.dataset.phase = state.phase;
     const pct = Math.floor(state.progress * 100);
-    const key = `${state.level}|${Math.ceil(state.left)}|${pct}|${state.phase}`;
+    const key = `${state.level}|${Math.ceil(state.left)}|${pct}|${state.phase}|${state.modifier ?? ''}`;
     if (key === this.key) return;
     this.key = key;
     this.label.textContent = t('rifts.hud.level', { level: state.level });
+    // A20: the rift's twist, as a coloured tag with its icon colour (the name and the rule in the tooltip).
+    if (state.modifier) {
+      const m = RIFT_MODIFIERS[state.modifier];
+      const tag = el('span', 'rift-mod');
+      tag.dataset.testid = 'rift-mod';
+      tag.style.color = m.color;
+      tag.textContent = ` \u25C6 ${t(`rifts.modifiers.${state.modifier}.name`)}`;
+      tag.title = t(`rifts.modifiers.${state.modifier}.desc`);
+      this.label.append(tag);
+    }
     this.time.textContent = clock(state.left);
     const low = state.left < 60 && state.phase !== 'cleared' && state.phase !== 'failed';
     this.time.classList.toggle('low', low);

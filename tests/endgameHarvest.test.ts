@@ -275,12 +275,12 @@ describe('Ash Shards', () => {
 });
 
 describe('dying', () => {
-  it('drops half of the carried shards (they are lost)', () => {
+  it('drops half of the carried shards (they lie where you fell)', () => {
     const s = setup();
     s.ctx.endgame!.ashShards = 101;
     kill(s.world, s.ctx, s.player, 0);
     expect(s.ctx.endgame!.ashShards).toBe(51);
-    expect(s.ctx.events.drain().some((e) => e.type === 'notice' && e.key === 'harvest.shardsLost')).toBe(true);
+    expect(s.ctx.events.drain().some((e) => e.type === 'notice' && e.key === 'harvest.shardsDropped')).toBe(true);
   });
 
   it('applies anywhere, with nothing to lose it is silent', () => {

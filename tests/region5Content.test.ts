@@ -98,7 +98,8 @@ describe('Core instances: definitions', () => {
     }
     for (const id of ['shade_the_first', 'choir_mother', 'brood_engine', 'shade_vire', 'shade_warden', 'shade_kade']) {
       expect(typeof lang(`enemies.${id}`), id).toBe('string');
-      expect(ENEMY_DEFS.get(id)!.look === 'shade' || ENEMY_DEFS.get(id)!.look === 'lumen', id).toBe(true);
+      // (the Choir Mother has her own Meshy model and no repaint: the Lumen look flattened its texture)
+      if (id !== 'choir_mother') expect(ENEMY_DEFS.get(id)!.look === 'shade' || ENEMY_DEFS.get(id)!.look === 'lumen', id).toBe(true);
     }
   });
 

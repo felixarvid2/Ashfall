@@ -1049,6 +1049,7 @@ export class InventoryPanel {
       targets,
       defaultSlot,
       ranges: true,
+      worn: Object.values(inv.equipped).filter((i): i is Item => !!i),
       aspectStatus: item.aspect && !item.unique ? aspectStatus(item.aspect.id, inv.aspects ?? [], this.actions.codex?.() ?? []) : undefined,
       hints: comparable && slots.length > 1 ? [t('items.otherRingHint')] : undefined,
     });

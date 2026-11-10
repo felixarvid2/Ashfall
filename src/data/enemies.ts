@@ -1166,7 +1166,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Shaft 13: the foreman who stayed below. A drill lunge and dynamite.
     id: 'foreman_dray',
-    assetId: 'enemy.welder',
+    assetId: 'boss.foreman_dray',
     family: 'infected',
     behavior: 'rusher',
     life: 1500,
@@ -1176,7 +1176,6 @@ export const ENEMIES: EnemyInput[] = [
     moveSpeed: 3.8,
     turnRate: 6,
     aggroRange: 22,
-    glow: '#ffb23a',
     collider: { radius: 0.6, mass: 30 },
     dropTable: 'dt.boss',
     attack: { kind: 'lunge', range: 9, distance: 10, speed: 22, width: 2, windup: 0.8, recovery: 0.9, cooldown: 2.6, damageType: 'physical', knockback: 2 },
@@ -1185,7 +1184,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Crystal Labyrinth: a Crystal Sentinel grown huge; its shell bends light into beams.
     id: 'the_prism',
-    assetId: 'variant.the_prism',
+    assetId: 'boss.the_prism',
     family: 'lumen',
     behavior: 'tank',
     life: 1600,
@@ -1195,7 +1194,6 @@ export const ENEMIES: EnemyInput[] = [
     moveSpeed: 2,
     turnRate: 3,
     aggroRange: 22,
-    glow: '#bfffff',
     collider: { radius: 1.3, mass: 60 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 3, arcDeg: 140, windup: 1.1, recovery: 0.9, cooldown: 1.7, damageType: 'physical', knockback: 2.5 },
@@ -1243,7 +1241,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Burial Chamber: the guardian of the elder dead. Hard: beams, blinks, then a sweeping storm.
     id: 'elder_guardian',
-    assetId: 'variant.elder_guardian',
+    assetId: 'boss.elder_guardian',
     family: 'lumen',
     behavior: 'tank',
     life: 3600,
@@ -1254,7 +1252,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 2.4,
     aggroRange: 26,
     scale: 1.6,
-    glow: '#6ad8ff',
     collider: { radius: 2, mass: 180 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 4.2, arcDeg: 160, windup: 1.2, recovery: 0.9, cooldown: 1.6, damageType: 'energy', knockback: 3 },
@@ -1330,7 +1327,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Drainage Tunnels: a swollen spore-mother that slams and births Bloaters.
     id: 'brood_mother',
-    assetId: 'variant.brood_mother',
+    assetId: 'boss.brood_mother',
     family: 'infected',
     behavior: 'tank',
     life: 900,
@@ -1341,7 +1338,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 2.5,
     aggroRange: 22,
     scale: 2.1,
-    glow: '#9ac040',
     collider: { radius: 1.2, mass: 40 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 3.2, arcDeg: 150, windup: 1.1, recovery: 0.8, cooldown: 1.6, damageType: 'toxic', knockback: 2.5 },
@@ -1408,7 +1404,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Cathedral Crypt: the keeper of the pyres.
     id: 'pyre_warden',
-    assetId: 'variant.pyre_warden',
+    assetId: 'boss.pyre_warden',
     family: 'human',
     behavior: 'ranged',
     life: 1150,
@@ -1420,7 +1416,6 @@ export const ENEMIES: EnemyInput[] = [
     aggroRange: 24,
     preferredRange: [3, 6],
     scale: 1.3,
-    glow: '#ffd23a',
     collider: { radius: 0.8, mass: 20 },
     dropTable: 'dt.boss',
     attack: { kind: 'cone', range: 6.5, arcDeg: 70, windup: 0.9, duration: 1.6, cooldown: 3.2, coefficient: 0.3, damageType: 'heat', applies: [{ status: 'burning', duration: 3, coefficient: 0.25 }] },
@@ -1429,7 +1424,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Cold Hall: a welder frozen into the failed cooling plant, still cutting.
     id: 'frozen_welder',
-    assetId: 'variant.frozen_welder',
+    assetId: 'boss.frozen_welder',
     family: 'human',
     behavior: 'rusher',
     life: 1050,
@@ -1440,7 +1435,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 8,
     aggroRange: 24,
     scale: 1.35,
-    glow: '#7ec8ff',
     collider: { radius: 0.8, mass: 20 },
     dropTable: 'dt.boss',
     attack: { kind: 'lunge', range: 11, distance: 11, speed: 24, width: 2, windup: 0.8, recovery: 0.9, cooldown: 2.6, damageType: 'cold', knockback: 1.5, applies: [{ status: 'chilled', duration: 2.5 }] },
@@ -1484,7 +1478,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Seed Bank Depths: a Mossborn frozen into the gene vault, still tending it.
     id: 'the_keeper',
-    assetId: 'variant.the_keeper',
+    assetId: 'boss.the_keeper',
     family: 'lumen',
     behavior: 'tank',
     life: 1500,
@@ -1495,7 +1489,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 3,
     aggroRange: 24,
     scale: 1.3,
-    glow: '#9fd8ff',
     collider: { radius: 1.1, mass: 40 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 2.8, arcDeg: 130, windup: 1.0, recovery: 0.9, cooldown: 1.7, damageType: 'cold', knockback: 2.2, applies: [{ status: 'chilled', duration: 2.5 }] },
@@ -1504,7 +1497,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Cocoon Chamber: the brood's oldest warden.
     id: 'brood_warden',
-    assetId: 'variant.brood_warden',
+    assetId: 'boss.brood_warden',
     family: 'infected',
     behavior: 'tank',
     life: 1400,
@@ -1515,7 +1508,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 3,
     aggroRange: 24,
     scale: 1.45,
-    glow: '#5dff6a',
     frontShield: 0.5,
     collider: { radius: 0.8, mass: 20 },
     dropTable: 'dt.boss',
@@ -1525,7 +1517,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Irrigation System: a great knot of vines in the flooded pump hall.
     id: 'vine_matriarch',
-    assetId: 'variant.vine_matriarch',
+    assetId: 'boss.vine_matriarch',
     family: 'lumen',
     behavior: 'rusher',
     life: 1500,
@@ -1536,7 +1528,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 4,
     aggroRange: 24,
     scale: 1.6,
-    glow: '#6aff8a',
     collider: { radius: 1, mass: 40 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 4.2, arcDeg: 120, windup: 0.8, recovery: 0.7, cooldown: 1.4, damageType: 'toxic', knockback: 0.8 },
@@ -1565,7 +1556,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // Dome Gamma: the bloom at the heart of the nest.
     id: 'gamma_bloom',
-    assetId: 'variant.gamma_bloom',
+    assetId: 'boss.gamma_bloom',
     family: 'lumen',
     behavior: 'tank',
     life: 2600,
@@ -1576,7 +1567,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 1.8,
     aggroRange: 28,
     scale: 0.95,
-    glow: '#7affd8',
     collider: { radius: 2, mass: 200 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 4.4, arcDeg: 140, windup: 1.3, recovery: 1, cooldown: 1.5, damageType: 'physical', knockback: 3.2 },
@@ -1585,7 +1575,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Great Dome: an old harvesting machine fused with Lumen, guarding the Mother Tree.
     id: 'warden',
-    assetId: 'variant.warden',
+    assetId: 'boss.warden',
     family: 'machine',
     behavior: 'tank',
     life: 5400,
@@ -1596,7 +1586,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 2,
     aggroRange: 30,
     scale: 2.1,
-    glow: '#5dff6a',
     collider: { radius: 2.2, mass: 400 },
     dropTable: 'dt.boss',
     attack: { kind: 'melee', range: 5, arcDeg: 140, windup: 1.3, recovery: 1, cooldown: 1.8, damageType: 'physical', knockback: 3 },
@@ -1604,7 +1593,7 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Warden's third phase: the Mother Tree's roots burst up and lash out.
     id: 'mother_root',
-    assetId: 'variant.mother_root',
+    assetId: 'boss.mother_root',
     family: 'lumen',
     behavior: 'rusher',
     life: 140,
@@ -1615,7 +1604,6 @@ export const ENEMIES: EnemyInput[] = [
     turnRate: 6,
     aggroRange: 30,
     scale: 1.5,
-    glow: '#5dff6a',
     collider: { radius: 0.8, mass: 1e6 },
     dropTable: 'dt.tentacle',
     attack: { kind: 'melee', range: 3.8, arcDeg: 120, windup: 0.8, recovery: 0.7, cooldown: 1.6, damageType: 'toxic', knockback: 1.5 },
@@ -1642,10 +1630,9 @@ export const ENEMIES: EnemyInput[] = [
   {
     // The Singing Halls: the Choir Mother, a singer grown huge. Rooted in the middle of her choir, she empowers everything near.
     id: 'choir_mother',
-    assetId: 'variant.choir_mother',
+    assetId: 'boss.choir_mother',
     family: 'light',
     behavior: 'ranged',
-    look: 'lumen',
     life: 4200,
     armor: 180,
     resist: { energy: 0.4, toxic: 0.4 },

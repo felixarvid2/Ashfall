@@ -92,7 +92,11 @@ export function raiseCorpse(world: World, ctx: GameContext, corpse: Entity, owne
   const mover = world.get(corpse, Mover);
   if (mover) mover.speed = Math.max(mover.speed, ownerSpeed * 1.05);
   const r = world.get(corpse, Renderable);
-  if (r) r.glow = MINION_GLOW;
+  if (r) {
+    r.glow = MINION_GLOW;
+    // Every raised minion wears the same look and a crest of bone shards (src/render/gameRenderer.ts, D04).
+    r.look = 'minion';
+  }
   const ranged = source?.behavior === 'ranged';
   world.add(corpse, MinionAI, {
     owner,

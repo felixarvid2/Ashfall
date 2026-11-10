@@ -49,11 +49,11 @@ export function resetFirstQuestToast(): void {
 }
 
 type TouchHint = 'move' | 'attack' | 'menu' | 'interact';
-export type DesktopHint = 'click' | 'strike' | 'skill' | 'potion' | 'dodge' | 'loot' | 'bag';
+export type DesktopHint = 'click' | 'strike' | 'skill' | 'potion' | 'dodge' | 'loot' | 'bag' | 'map' | 'stash';
 type Hint = TouchHint | DesktopHint | 'quest';
 const ORDER: TouchHint[] = ['move', 'attack', 'menu', 'interact'];
 /** Desktop tips in the order they win when several are waiting: events first, then the two basics. */
-export const DESKTOP_ORDER: DesktopHint[] = ['skill', 'potion', 'dodge', 'loot', 'bag', 'click', 'strike'];
+export const DESKTOP_ORDER: DesktopHint[] = ['skill', 'potion', 'dodge', 'loot', 'bag', 'map', 'stash', 'click', 'strike'];
 const KNOWN: Hint[] = [...ORDER, ...DESKTOP_ORDER, 'quest'];
 
 /** What can happen to start or finish a desktop tip. */
@@ -68,7 +68,13 @@ export type HintSignal =
   | 'pickedUp'
   | 'bagOpened'
   | 'skillPoint'
-  | 'skillSpent';
+  | 'skillSpent'
+  /** A teleporter was found: the map is worth knowing (C19). */
+  | 'discovered'
+  | 'mapOpened'
+  /** The hero entered a hub, where the stash is (C19). */
+  | 'hubEntered'
+  | 'stashUsed';
 
 /** Which tips are waiting and which are done; `next` is the one to show. */
 export class HintScript {
@@ -131,8 +137,27 @@ export class HintScript {
       case 'skillSpent':
         this.finish('skill');
         break;
+      case 'discovered':
+        this.start('map');
+        break;
+      case 'mapOpened':
+        this.finish('map');
+        break;
+      case 'hubEntered':
+        this.start('stash');
+        break;
+      case 'stashUsed':
+        this.finish('stash');
+        break;
     }
     return this.done.size !== before;
+  }
+
+  /** "Don't show again" (C19): the tip is done for good, whether or not it was waiting. */
+  dismiss(h: DesktopHint): boolean {
+    const had = this.done.has(h);
+    this.finish(h);
+    return !had;
   }
 
   /** The tip to show now (not one in `skip`), or null. The basics wait for the event tips. */
@@ -225,7 +250,12 @@ export class CoachMarks {
       this.setEnabled(false);
       this.options.onSkip?.();
     });
-    this.el.append(this.text, skip);
+    const never = Object.assign(document.createElement('button'), { type: 'button', className: 'coach-never', textContent: t('onboarding.never') });
+    never.dataset.testid = 'coach-never';
+    never.addEventListener('click', () => this.dismissCurrent());
+    const actions = Object.assign(document.createElement('div'), { className: 'coach-actions' });
+    actions.append(never, skip);
+    this.el.append(this.text, actions);
     root.append(this.el);
     // Doing the thing finishes its tip.
     document.addEventListener(
@@ -240,6 +270,17 @@ export class CoachMarks {
       true,
     );
     setInterval(() => this.poll(), 500);
+  }
+
+  /** "Don't show again" on the tip in view (C19): that tip never comes back, the others carry on. */
+  dismissCurrent(): void {
+    const h = this.current;
+    if (!h) return;
+    if ((DESKTOP_ORDER as Hint[]).includes(h)) {
+      this.script.dismiss(h as DesktopHint);
+      this.persist();
+    } else this.finish(h);
+    this.hide();
   }
 
   /** True when the tips are turned off ("Skip tips" or Settings > Show tips off). */
@@ -279,7 +320,7 @@ export class CoachMarks {
   signal(s: HintSignal): void {
     if (this.isTouch()) return;
     // A fresh event (not a level) brings back a tip that timed out earlier.
-    const again = s === 'telegraph' ? 'dodge' : s === 'lootDropped' ? 'loot' : s === 'pickedUp' ? 'bag' : null;
+    const again = s === 'telegraph' ? 'dodge' : s === 'lootDropped' ? 'loot' : s === 'pickedUp' ? 'bag' : s === 'discovered' ? 'map' : s === 'hubEntered' ? 'stash' : null;
     if (again) this.snoozed.delete(again);
     if (this.script.signal(s)) this.persist();
   }
@@ -301,6 +342,15 @@ export class CoachMarks {
         break;
       case 'pickup':
         if (event.kind === 'item') this.signal('pickedUp');
+        break;
+      case 'discover':
+        this.signal('discovered');
+        break;
+      case 'hub':
+        if (event.entered) this.signal('hubEntered');
+        break;
+      case 'interact':
+        if (event.kind === 'stash') this.signal('stashUsed');
         break;
       case 'quest':
         if (event.state === 'completed' && !this.state.done.includes('quest') && !this.state.skipped) {
@@ -349,6 +399,8 @@ export class CoachMarks {
       }
       case 'strike':
         return q('.slots .slot');
+      case 'map':
+        return q('canvas.minimap:not([hidden])') ?? q('.action-bar');
       case 'skill':
         return this.root.querySelectorAll<HTMLElement>('.slots .slot')[1] ?? null;
       case 'potion':
@@ -404,6 +456,7 @@ export class CoachMarks {
     const panel = r.classList.contains('has-panel') || r.classList.contains('has-sheet');
     if (panel) {
       this.signal('bagOpened');
+      if (r.querySelector('.map-panel:not([hidden])')) this.signal('mapOpened');
       return this.hide();
     }
     const showable = this.script.next(this.snoozed);

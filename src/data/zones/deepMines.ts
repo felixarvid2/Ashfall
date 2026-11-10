@@ -6,6 +6,7 @@
  * Every id is prefixed `dm.`. No new 3D models: the Main Drill, the crystal pillar and the Elder
  * Gate are existing models at new sizes and tints.
  */
+import { round4Props } from './round4Props';
 import { Rng } from '../../core/rng';
 import { caveGrid, nearestWalkable, openAt, type Cavern } from './caves';
 import { alongRoad, clearOfProps, line } from './layout';
@@ -277,6 +278,8 @@ function buildProps(): PropPlacement[] {
     lamp(DRILL_BORE.x - 9, DRILL_BORE.z + 3, '#ffe2b0', 90),
     lamp(DRILL_BORE.x + 9, DRILL_BORE.z + 3, '#ffe2b0', 90),
   );
+  // Round 4 (D16): ten Blender set-dressing props.
+  props.push(...round4Props('zone.deep_mines', HALF, (x, z) => clear(x, z, 3)));
   return props;
 }
 
@@ -371,6 +374,10 @@ function buildPois(): PoiDef[] {
   scaled([[40, -300], [6, -176], [-80, -206], [70, -128], [-200, 20], [-250, -30], [180, 40], [160, 150], [0, 160], [-70, 280], [100, 300], [240, -176]]).forEach(([x, z], i) =>
     pois.push({ id: `dm.lore.${i}`, kind: 'lore', ...place(x, z), data: { log: `dm.${i}` } }),
   );
+  // Round 4 (D08): three of Governor Kade's orders.
+  scaled([[30, -250], [-80, -200], [170, 44]]).forEach(([x, z], i) =>
+    pois.push({ id: `dm.lore.${12 + i}`, kind: 'lore', ...place(x, z), data: { log: `dm.${12 + i}` } }),
+  );
   scaled([[-30, -150], [-220, 60], [170, 60]]).forEach(([x, z], i) => pois.push({ id: `dm.tower.${i}`, kind: 'signalTower', ...place(x, z) }));
   scaled([[80, -110], [-60, -66], [130, -214]]).forEach(([x, z], i) => {
     const b = place(x, z);
@@ -401,7 +408,7 @@ function buildPois(): PoiDef[] {
   );
   for (const f of FLOODLIGHTS) pois.push({ id: f.id, kind: 'feature', ...place(f.x, f.z), data: { feature: 'floodlight' } });
   const events: [string, number, number][] = [
-    ['caveRescue', -62, -62], ['burrowerSwarm', -152, 96], ['lightsOut', 80, -120], ['securityPatrol', 130, -210], ['eliteHunt', -262, -40], ['supplyDrop', 64, 184],
+    ['caveRescue', -62, -62], ['burrowerSwarm', -152, 96], ['lightsOut', 80, -120], ['securityPatrol', 130, -210], ['eliteHunt', -262, -40], ['supplyDrop', 64, 184], ['cartRescue', 66, -132],
   ];
   events.forEach(([type, x, z]) => pois.push({ id: `dm.event.${type}`, kind: 'event', ...place(...dm(x, z)), data: { event: type } }));
   return pois;

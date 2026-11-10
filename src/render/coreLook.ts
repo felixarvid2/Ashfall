@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { bridgeCellsOf, bridgeState, type BridgeCycle, type Cavern, type CaveDef, type CaveGrid } from '../data/zones/caves';
+import { bridgeCellsOf, bridgeLook, type Cavern, type CaveDef, type CaveGrid } from '../data/zones/caves';
 import { gravityPhase, type Gravity } from '../world/theCore';
 
 // ---- The cut: where the ground plane is open air ------------------------------------------------
@@ -456,7 +456,7 @@ export function ghostMaterial(src: THREE.Material, color: string): THREE.Materia
 // ---- The look itself -----------------------------------------------------------------------------
 
 interface BridgeLook {
-  cycle: BridgeCycle | undefined;
+  source: NonNullable<CaveGrid['bridges']>[number];
   band: THREE.ShaderMaterial;
   rails: THREE.MeshBasicMaterial;
   level: number;
@@ -577,7 +577,7 @@ export class CoreLook {
       railMesh.renderOrder = 2;
       group.add(railMesh);
       root.add(group);
-      this.bridges.push({ cycle: b.def.cycle, band, rails, level: 1 });
+      this.bridges.push({ source: b, band, rails, level: 1 });
     }
   }
 
@@ -607,7 +607,7 @@ export class CoreLook {
     this.last = time;
     this.time.value = time;
     for (const b of this.bridges) {
-      const st = bridgeState(b.cycle, time);
+      const st = bridgeLook(b.source, time);
       // Flicker: the light stutters in the last second before it goes out.
       const target = !st.on ? 0 : st.flicker ? (Math.sin(time * 38) > 0 ? 1 : 0.15) : 1;
       b.level += (target - b.level) * Math.min(1, dt * (st.on ? 14 : 7));

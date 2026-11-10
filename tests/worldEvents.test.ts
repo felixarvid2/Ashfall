@@ -42,7 +42,7 @@ const killAll = (world: World, ctx: ReturnType<typeof makeCtx>) => {
 
 describe('world events', () => {
   it('Cinder Flats has six events', () => {
-    expect(setup().zone.events.size).toBe(6);
+    expect(setup().zone.events.size).toBe(7);
   });
 
   it('Purge the Spore Nest: a fast kill is Gold; a hatched nest fails', () => {

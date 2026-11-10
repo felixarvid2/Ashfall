@@ -425,3 +425,8 @@
 #ui.touch-ui.portrait.touch-panel-open .touch-fab,
 #ui.touch-ui.portrait.has-panel .touch-fab,
 #ui.touch-ui.dead .touch-fab { visibility: hidden; }
+
+/* C11: the ready flash also plays on landscape touch layouts (the desktop rule is for mouse layouts only), and not
+   with reduced flashing. The radial cooldown sweep is the conic gradient Slot.set paints on .slot-cd. */
+#ui.touch-ui:not(.portrait):not(.reduce-flashing) .slots .slot.ready { animation: d-slot-ready 0.35s ease-out 1; }
+#ui.touch-ui.reduce-flashing .slots .slot.ready { animation: none; }

@@ -3,6 +3,7 @@
  * interest, rotated to match the camera. Clicking a discovered teleporter on the full map travels there;
  * tabs switch between the regions you have visited.
  */
+import { getPref, setPref } from '../core/localPrefs';
 import { t, touchText } from '../data/i18n';
 import type { PoiKind } from '../data/zones/zoneTypes';
 import { revealedFraction, type ZoneRuntime } from '../world/zone';
@@ -16,6 +17,21 @@ import { haptic } from './haptics';
 const MINI_SIZE = 180;
 /** Metres shown from the centre of the minimap to its edge. */
 const MINI_RANGE = 85;
+/** Minimap zoom (C07): the world radius shown, far to near; the middle step is the classic view. */
+export const MINI_RANGES = [130, 85, 55] as const;
+export const MINI_DEFAULT_STEP = 1;
+const MINI_ZOOM_KEY = 'ashfall.minimapZoom';
+
+/** Next zoom step: `dir` +1 zooms in (nearer), -1 out; clamped to the three steps. */
+export function stepMiniZoom(step: number, dir: number): number {
+  return Math.max(0, Math.min(MINI_RANGES.length - 1, step + Math.sign(dir)));
+}
+
+/** A stored step, or the default for anything that is not one of the steps. */
+export function parseMiniStep(raw: string | null | undefined): number {
+  const n = Number(raw);
+  return raw != null && Number.isInteger(n) && n >= 0 && n < MINI_RANGES.length ? n : MINI_DEFAULT_STEP;
+}
 const MAP_SIZE = 640;
 /** Longest side (device px) the full map's backing store may grow to when zoomed in (B08). */
 export const MAP_BACKING_MAX = 2560;
@@ -38,8 +54,19 @@ const POI_STYLE: Partial<Record<PoiKind, { color: string; r: number; shape: 'dot
   boss: { color: '#ff2a2a', r: 6, shape: 'diamond' },
   event: { color: '#ffd23a', r: 4, shape: 'diamond' },
   relic: { color: '#9fb8ff', r: 3, shape: 'diamond' },
+  lore: { color: '#b8b8c0', r: 3, shape: 'dot' },
   signalTower: { color: '#8ad2ff', r: 3, shape: 'dot' },
 };
+
+/**
+ * How a point of interest shows on the maps (C17): uncollected lore logs and Echo Relics in explored areas are
+ * marked ('open'); a collected relic, event or tower stays as a grey 'done' mark; a read lore log is gone.
+ */
+export function poiMapState(kind: string, found: boolean): 'open' | 'done' | 'hidden' {
+  if (!found) return 'open';
+  if (kind === 'lore') return 'hidden';
+  return kind === 'relic' || kind === 'event' || kind === 'signalTower' ? 'done' : 'open';
+}
 
 /** A tap on the full map snaps to a discovered teleporter within this many CSS px (P077). */
 export const PICK_RADIUS_PX = 28;
@@ -247,6 +274,7 @@ export const LEGEND: LegendEntry[] = [
   { key: 'bunker', color: POI_STYLE.bunker!.color, shape: 'square' },
   { key: 'event', color: POI_STYLE.event!.color, shape: 'diamond' },
   { key: 'relic', color: POI_STYLE.relic!.color, shape: 'diamond' },
+  { key: 'lore', color: POI_STYLE.lore!.color, shape: 'dot' },
   { key: 'signalTower', color: POI_STYLE.signalTower!.color, shape: 'dot' },
   { key: 'gate', color: '#e8e0d0', shape: 'square' },
   { key: 'cache', color: '#ff8a3a', shape: 'diamond' },
@@ -336,6 +364,9 @@ export class MapUi {
   private zoom: MapZoom = { z: 1, tx: 0, ty: 0 };
   /** Canvas units per CSS px, so markers keep a readable size on a small screen (minimap, full map). */
   private miniK = 1;
+  /** Minimap zoom step (C07), remembered between sessions. */
+  private miniStepValue = MINI_DEFAULT_STEP;
+  private miniZoomLabel: HTMLElement | null = null;
   private fullK = 1;
   private footerKey = '';
   private legendKey = '';
@@ -391,6 +422,8 @@ export class MapUi {
     this.mini.setAttribute('aria-label', t('map.title'));
     this.mini.addEventListener('click', () => this.onMiniTap());
     this.miniCtx = this.mini.getContext('2d')!;
+    this.miniStepValue = parseMiniStep(getPref(MINI_ZOOM_KEY));
+    this.installMiniZoom();
 
     this.full = document.createElement('div');
     this.full.className = 'map-panel panel';
@@ -418,9 +451,81 @@ export class MapUi {
     this.tip.hidden = true;
     this.viewport.append(this.fullCanvas, this.locateBtn, this.tip);
     this.legend = this.buildLegend();
-    this.full.append(title, this.tabs, this.viewport, this.legend, this.fullInfo);
+    this.full.append(title, this.tabs, this.viewport, this.legend, this.buildMiniZoomRow(), this.fullInfo);
     this.installGestures();
     parent.append(this.mini, this.full);
+  }
+
+  /** The world radius the minimap shows at the current zoom step. */
+  get miniRange(): number {
+    return MINI_RANGES[this.miniStepValue] ?? MINI_RANGE;
+  }
+
+  get miniStep(): number {
+    return this.miniStepValue;
+  }
+
+  /** Zooms the minimap one step (+1 in, -1 out) and remembers it (C07). Returns the new step. */
+  zoomMini(dir: number): number {
+    return this.setMiniStep(stepMiniZoom(this.miniStepValue, dir));
+  }
+
+  setMiniStep(step: number): number {
+    this.miniStepValue = parseMiniStep(String(step));
+    setPref(MINI_ZOOM_KEY, String(this.miniStepValue));
+    if (this.miniZoomLabel) this.miniZoomLabel.textContent = t('ux.map.miniZoom', { n: this.miniStepValue + 1, max: MINI_RANGES.length });
+    this.mini.dataset.zoom = String(this.miniStepValue);
+    const zone = this.zone();
+    if (zone) this.drawMini(zone);
+    return this.miniStepValue;
+  }
+
+  /**
+   * Wheel over the minimap and the - / + keys zoom it; the full map has - / + buttons (touch) and the bumpers
+   * (LB/RB, wired in game.ts) while it is open.
+   */
+  private installMiniZoom(): void {
+    this.mini.dataset.zoom = String(this.miniStepValue);
+    window.addEventListener(
+      'wheel',
+      (e) => {
+        if (this.mini.hidden || this.open) return;
+        const r = this.mini.getBoundingClientRect();
+        if (r.width === 0 || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.zoomMini(e.deltaY < 0 ? 1 : -1);
+      },
+      { capture: true, passive: false },
+    );
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || this.mini.hidden) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.code === 'NumpadAdd' || e.code === 'Equal') this.zoomMini(1);
+      else if (e.code === 'NumpadSubtract' || e.code === 'Minus') this.zoomMini(-1);
+    });
+  }
+
+  /** The "Minimap zoom" row of the full map: - and + buttons with the current step. */
+  private buildMiniZoomRow(): HTMLDivElement {
+    const row = document.createElement('div');
+    row.className = 'map-minizoom';
+    row.dataset.testid = 'map-minizoom';
+    const mk = (cls: string, text: string, label: string, dir: number) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = cls;
+      b.textContent = text;
+      b.title = b.ariaLabel = label;
+      b.addEventListener('click', () => this.zoomMini(dir));
+      return b;
+    };
+    this.miniZoomLabel = document.createElement('span');
+    this.miniZoomLabel.className = 'map-minizoom-label';
+    this.miniZoomLabel.textContent = t('ux.map.miniZoom', { n: this.miniStepValue + 1, max: MINI_RANGES.length });
+    row.append(mk('map-minizoom-out', '\u2212', t('ux.map.miniZoomOut'), -1), this.miniZoomLabel, mk('map-minizoom-in', '+', t('ux.map.miniZoomIn'), 1));
+    return row;
   }
 
   /** The full-map panel (for the panel stack). */
@@ -440,7 +545,7 @@ export class MapUi {
     const kinds = new Set(this.markers.map(markerQuestKind));
     const entries = legendFor({
       poiKinds: new Set([
-        ...zone.def.pois.filter((p) => POI_STYLE[p.kind] && (p.kind !== 'relic' || zone.found.has(p.id))).map((p) => p.kind as string),
+        ...zone.def.pois.filter((p) => POI_STYLE[p.kind] && poiMapState(p.kind, zone.found.has(p.id)) !== 'hidden').map((p) => p.kind as string),
         // The world boss marker is a diamond in the boss colour.
         ...(here && this.markers.some((m) => !m.quest && m.shape === 'diamond') ? ['boss'] : []),
       ]),
@@ -650,14 +755,14 @@ export class MapUi {
   private drawBlips(c: CanvasRenderingContext2D, v: View, p: { x: number; z: number }): void {
     const k = this.miniK;
     if (this.features.length > 0) {
-      for (const f of selectFeaturePips(this.features, p.x, p.z)) {
+      for (const f of selectFeaturePips(this.features, p.x, p.z, this.miniRange)) {
         const [sx, sy] = project(v, f.x, f.z);
         this.mark(c, sx, sy, FEATURE_PIP_COLOR[f.kind]!, FEATURE_PIP_R * k, 'diamond');
       }
     }
     if (this.pips.length > 0) this.drawPips(c, v, k);
     if (this.blips.length === 0) return;
-    for (const b of selectBlips(this.blips, p.x, p.z)) {
+    for (const b of selectBlips(this.blips, p.x, p.z, (BLIP_RANGE * this.miniRange) / MINI_RANGE)) {
       const style = BLIP_STYLE[b.kind];
       const [sx, sy] = project(v, b.x, b.z);
       this.mark(c, sx, sy, style.color, style.r * k, 'dot');
@@ -705,7 +810,7 @@ export class MapUi {
   private drawMini(zone: ZoneRuntime): void {
     const c = this.miniCtx;
     const p = this.player();
-    const v: View = { cx: MINI_SIZE / 2, cy: MINI_SIZE / 2, px: p.x, pz: p.z, scale: MINI_SIZE / (MINI_RANGE * 2), cos: this.cos, sin: this.sin };
+    const v: View = { cx: MINI_SIZE / 2, cy: MINI_SIZE / 2, px: p.x, pz: p.z, scale: MINI_SIZE / (this.miniRange * 2), cos: this.cos, sin: this.sin };
     c.clearRect(0, 0, MINI_SIZE, MINI_SIZE);
     c.save();
     c.beginPath();
@@ -713,7 +818,7 @@ export class MapUi {
     c.clip();
     c.fillStyle = 'rgba(8,7,6,0.85)';
     c.fillRect(0, 0, MINI_SIZE, MINI_SIZE);
-    this.drawWorld(c, zone, v, MINI_RANGE * 1.5);
+    this.drawWorld(c, zone, v, this.miniRange * 1.5);
     this.drawBlips(c, v, p);
     c.restore();
     this.arrow(c, MINI_SIZE / 2, MINI_SIZE / 2, p.facing, 7);
@@ -931,10 +1036,11 @@ export class MapUi {
     for (const poi of def.pois) {
       const style = POI_STYLE[poi.kind];
       if (!style || !near(poi.x, poi.z) || !seen(poi.x, poi.z)) continue;
-      if (poi.kind === 'relic' && !found.has(poi.id)) continue; // relics stay hidden until found
+      const state = poiMapState(poi.kind, found.has(poi.id));
+      if (state === 'hidden') continue;
       // On the full map every marker is at least ~5 px (CSS) in radius.
       const r = full ? Math.max(style.r, 5) * k : style.r * k;
-      if (found.has(poi.id) && (poi.kind === 'event' || poi.kind === 'signalTower')) this.mark(c, ...project(v, poi.x, poi.z), '#5a5a5a', r, style.shape);
+      if (state === 'done') this.mark(c, ...project(v, poi.x, poi.z), '#5a5a5a', r, style.shape);
       else this.mark(c, ...project(v, poi.x, poi.z), style.color, r, style.shape);
     }
     // Teleporters: 14 px across on the full map so a thumb can find them (P077).
@@ -1171,7 +1277,7 @@ export class MapUi {
       out.push({ x: sx, y: sy, label });
     };
     for (const poi of def.pois) {
-      if (!POI_STYLE[poi.kind] || !seen(poi.x, poi.z) || (poi.kind === 'relic' && !zone.found.has(poi.id))) continue;
+      if (!POI_STYLE[poi.kind] || !seen(poi.x, poi.z) || poiMapState(poi.kind, zone.found.has(poi.id)) === 'hidden') continue;
       add(poi.x, poi.z, t(`map.legend.${poi.kind}`));
     }
     for (const tp of def.teleporters) if (zone.discovered.has(tp.id)) add(tp.x, tp.z, t(`zones.teleporters.${tp.id}`));

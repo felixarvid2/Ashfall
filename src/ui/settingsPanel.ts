@@ -9,6 +9,7 @@
 import { t } from '../data/i18n';
 import {
   BRIGHTNESS_RANGE,
+  UI_SCALE_RANGE,
   MAX_KEYS_PER_ACTION,
   PAD_ACTIONS,
   isBindableKey,
@@ -26,14 +27,15 @@ import {
 } from '../data/settings';
 import type { GamepadInput } from '../core/gamepad';
 import { armConfirm } from './confirmSheet';
+import { buildDataPage, type DataTabDeps } from './dataTab';
 import { hapticsSupported, haptic } from './haptics';
 import { isAndroidHost } from '../core/host';
 import { keyLabel } from './hud';
 import { panelStack } from './panelStack';
 import type { SoundUi } from './soundPanel';
 
-export type SettingsTab = 'sound' | 'display' | 'controls';
-const TABS: SettingsTab[] = ['sound', 'display', 'controls'];
+export type SettingsTab = 'sound' | 'display' | 'controls' | 'data';
+const TABS: SettingsTab[] = ['sound', 'display', 'controls', 'data'];
 
 export interface SettingsDeps {
   settings: () => Settings;
@@ -46,6 +48,8 @@ export interface SettingsDeps {
   toggleMute: () => void;
   /** The gamepad, for rebinding its buttons (A02); without it the Gamepad group is left out. */
   pad?: GamepadInput;
+  /** The Data tab (save backups, export/import, problem log; src/ui/dataTab.ts). Without it the tab is left out. */
+  data?: DataTabDeps;
 }
 
 /** Text size steps: label key, scale. */
@@ -66,7 +70,7 @@ export const KEY_GROUPS: { id: 'movement' | 'combat' | 'panels' | 'system'; acti
   { id: 'movement', actions: ['moveUp', 'moveDown', 'moveLeft', 'moveRight', 'dodge', 'forceStand'] },
   { id: 'combat', actions: ['skill1', 'skill2', 'skill3', 'skill4', 'potion', 'pickup', 'showLabels', 'mount', 'flare', 'respawn'] },
   { id: 'panels', actions: ['inventory', 'character', 'skills', 'map', 'quests'] },
-  { id: 'system', actions: ['quickSave', 'quickLoad', 'toggleMute', 'toggleDebug'] },
+  { id: 'system', actions: ['quickSave', 'quickLoad', 'toggleMute', 'photoMode', 'toggleDebug'] },
 ];
 
 /**
@@ -115,6 +119,7 @@ export class SettingsPanel {
     const tabs = el('div', 'settings-tabs');
     tabs.setAttribute('role', 'tablist');
     for (const id of TABS) {
+      if (id === 'data' && !this.deps.data) continue;
       const b = el('button', 'settings-tab', t(`settings.tabs.${id}`));
       b.type = 'button';
       b.setAttribute('role', 'tab');
@@ -127,6 +132,11 @@ export class SettingsPanel {
     this.pages.set('sound', this.buildSound());
     this.pages.set('display', this.buildDisplay());
     this.pages.set('controls', this.buildControls());
+    if (this.deps.data) {
+      const dataPage = this.page('data');
+      this.refreshers.push(buildDataPage(dataPage, this.deps.data));
+      this.pages.set('data', dataPage);
+    }
     for (const page of this.pages.values()) this.root.append(page);
     parent.append(this.root);
     applyAccessibility(parent, this.deps.settings());
@@ -225,6 +235,18 @@ export class SettingsPanel {
     this.refreshers.push(() => (hint.textContent = t(`settings.graphicsHint.${this.deps.settings().graphics}`)));
     page.append(this.row(t('settings.graphics'), graphics, hint));
     page.append(
+      this.row(
+        t('settings.fpsCap'),
+        this.segmented(
+          ([0, 30, 60, 120] as const).map((n) => ({ id: String(n), label: t(`settings.fpsCapLevels.${n}`) })),
+          () => String(this.deps.settings().fpsCap),
+          (id) => this.change({ fpsCap: Number(id) as Settings['fpsCap'] }),
+          'fps-cap',
+        ),
+        el('p', 'settings-hint', t('settings.fpsCapHint')),
+      ),
+    );
+    page.append(
       this.switchRow(t('settings.screenShake'), undefined, () => this.deps.settings().screenShake, (on) => this.change({ screenShake: on }), 'shake'),
       this.switchRow(t('settings.showFps'), undefined, () => this.deps.settings().showFps, (on) => this.change({ showFps: on }), 'fps'),
       this.switchRow(t('settings.showTips'), t('settings.showTipsHint'), () => this.deps.settings().showTips, (on) => this.change({ showTips: on }), 'tips'),
@@ -255,7 +277,21 @@ export class SettingsPanel {
         ),
         el('p', 'settings-hint', t('settings.lootLabelsHint')),
       ),
+      this.switchRow(t('ux.settings.hideLowLoot'), t('ux.settings.hideLowLootHint'), () => this.deps.settings().hideLowLoot, (on) => this.change({ hideLowLoot: on }), 'hide-low-loot'),
+      this.row(
+        t('ux.settings.damageNumbers'),
+        this.segmented(
+          (['off', 'compact', 'full'] as const).map((m) => ({ id: m, label: t(`ux.settings.damageNumberModes.${m}`) })),
+          () => this.deps.settings().damageNumbers,
+          (id) => this.change({ damageNumbers: id as Settings['damageNumbers'] }),
+          'damage-numbers',
+        ),
+        el('p', 'settings-hint', t('ux.settings.damageNumbersHint')),
+      ),
+      this.switchRow(t('ux.settings.subtitles'), t('ux.settings.subtitlesHint'), () => this.deps.settings().subtitles, (on) => this.change({ subtitles: on }), 'subtitles'),
+      this.sliderRow(t('ux.settings.uiScale'), t('ux.settings.uiScaleHint'), UI_SCALE_RANGE, () => this.deps.settings().uiScale, (v) => this.change({ uiScale: v }), 'ui-scale'),
       el('h3', 'settings-group', t('settings.accessibility')),
+      this.switchRow(t('ux.settings.rarityShapes'), t('ux.settings.rarityShapesHint'), () => this.deps.settings().rarityShapes, (on) => this.change({ rarityShapes: on }), 'rarity-shapes'),
       this.switchRow(t('settings.reduceFlashing'), t('settings.reduceFlashingHint'), () => this.deps.settings().reduceFlashing, (on) => this.change({ reduceFlashing: on }), 'reduce-flashing'),
       this.switchRow(t('settings.reduceMotion'), t('settings.reduceMotionHint'), () => this.deps.settings().reduceMotion, (on) => this.change({ reduceMotion: on }), 'reduce-motion'),
       this.row(

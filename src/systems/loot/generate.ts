@@ -2,6 +2,7 @@
  * Item generation (brief §5). Pure functions driven by a seeded Rng, so a seed
  * always produces the same loot — essential for reproducing bugs and for tests.
  */
+import { isBroken } from './durability';
 import type { Rng } from '../../core/rng';
 import type { TierMods } from '../../data/endgame/tiers';
 import { CLASS_AFFIX_WEIGHTS, PRIMARY_ATTRIBUTE_WEIGHT } from '../../data/loot/affixes';
@@ -207,6 +208,7 @@ export function generateUnique(rng: Rng, def: UniqueDef, itemPower: number, uid:
 
 /** Effects granted by an item's aspect or unique power. */
 export function itemEffects(item: Item): Effect[] {
+  if (isBroken(item)) return [];
   if (item.aspect) {
     const a = ASPECT_DEFS.get(item.aspect.id);
     if (a) return resolveEffects(a.effects as Effect[], item.aspect.value);
@@ -244,6 +246,8 @@ export function crystalSlotGroup(type: ItemType): 'weapon' | 'armor' | 'jewelry'
 export function itemStats(item: Item): RolledStat[] {
   const base = BASE_ITEMS.get(item.base);
   // Tempered affixes and masterwork multipliers (docs/endgame.md) are already folded into effectiveAffixes.
+  // A12: a broken item gives its base stats only.
+  if (isBroken(item)) return [...item.implicits];
   const out: RolledStat[] = [...item.implicits, ...effectiveAffixes(item)];
   if (base) {
     const group = crystalSlotGroup(base.type);

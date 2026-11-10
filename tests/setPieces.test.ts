@@ -61,7 +61,8 @@ describe('The First', () => {
     run(world, ctx, [setPieceSystem]);
     const st = zone.setPieces.maw;
     expect(st.state).toBe('fight');
-    expect(st.gates).toHaveLength(3);
+    // The three entrance gates plus the energy barrier that seals the ring's seams (A07).
+    expect(st.gates.length).toBeGreaterThan(3);
     expect(st.gates.every((g) => world.has(g, Collider))).toBe(true);
     const boss = st.boss!;
     // Phase 2 at 60% life: plates get thrown at the player.

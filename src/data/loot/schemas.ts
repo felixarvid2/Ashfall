@@ -250,6 +250,8 @@ export const ItemSchema = z.object({
   temperCharges: z.number().int().min(0).optional(),
   /** Masterwork upgrades: indices into [...affixes, ...tempered], one per upgrade rank reached (+25 % each). */
   masterworkUp: z.array(z.number().int().min(0)).optional(),
+  /** A12: wear, 0-100 (absent = 100). Death costs 10 points; a broken item (0) loses its affixes until repaired at the blacksmith. */
+  durability: z.number().int().min(0).max(100).optional(),
   /** Locked (favourite): salvage, sell and every "junk" action skip it (UI audit B002). Absent = false. */
   locked: z.boolean().optional(),
   /** Marked as junk by the player: counts as junk like common and magic items (B003). Absent = false; never both. */

@@ -26,6 +26,15 @@ export interface FeatRow {
   worn: boolean;
 }
 
+/** One page of the bestiary (D19). */
+export interface BestiaryPage {
+  family: string;
+  name: string;
+  description: string;
+  members: string[];
+  kills: number;
+}
+
 export interface CharacterSnapshot {
   className: string;
   /** The hero's own name; the class name when none was chosen. */
@@ -44,6 +53,8 @@ export interface CharacterSnapshot {
   portraitUrl?: string | null;
   /** D12: every feat with its progress; the section is hidden when absent. */
   feats?: FeatRow[];
+  /** D19: a page per enemy family with kill counts; the section is hidden when absent. */
+  bestiary?: BestiaryPage[];
 }
 
 export interface CharacterPanelActions {
@@ -163,6 +174,11 @@ export class CharacterPanel {
   private readonly featsHead = el('button', 'char-section-head');
   private readonly featsList = el('div', 'char-rows char-feat-list');
   private featsOpen = false;
+  private readonly bestiaryBlock = el('div', 'char-section char-feats char-bestiary');
+  private readonly bestiaryHead = el('button', 'char-section-head');
+  private readonly bestiaryList = el('div', 'char-rows char-feat-list');
+  private bestiaryOpen = false;
+  private bestiarySignature = '';
   private featsSignature = '';
 
   constructor(parent: HTMLElement, private readonly snapshot: () => CharacterSnapshot, private readonly actions: CharacterPanelActions = {}) {
@@ -195,14 +211,24 @@ export class CharacterPanel {
 
     this.featsBlock.dataset.testid = 'char-feats';
     this.featsHead.type = 'button';
+    // Named before the first refresh fills in the count (C14).
+    this.featsHead.textContent = t('feats.heading', { done: 0, total: 0 });
     this.featsHead.addEventListener('click', () => {
       this.featsOpen = !this.featsOpen;
       this.applyFeatsOpen();
     });
     this.featsBlock.append(this.featsHead, this.featsList);
+    this.bestiaryBlock.dataset.testid = 'char-bestiary';
+    this.bestiaryHead.type = 'button';
+    this.bestiaryHead.addEventListener('click', () => {
+      this.bestiaryOpen = !this.bestiaryOpen;
+      this.applyBestiaryOpen();
+    });
+    this.bestiaryBlock.append(this.bestiaryHead, this.bestiaryList);
+    this.applyBestiaryOpen();
     this.applyFeatsOpen();
 
-    this.body.append(this.card, this.resourceEl, sections, this.featsBlock, footer);
+    this.body.append(this.card, this.resourceEl, sections, this.featsBlock, this.bestiaryBlock, footer);
     this.root.append(title, this.body);
     parent.appendChild(this.root);
   }
@@ -228,6 +254,33 @@ export class CharacterPanel {
     this.featsBlock.classList.toggle('collapsed', !this.featsOpen);
     this.featsHead.setAttribute('aria-expanded', String(this.featsOpen));
     this.featsList.hidden = !this.featsOpen;
+  }
+
+  private applyBestiaryOpen(): void {
+    this.bestiaryBlock.classList.toggle('collapsed', !this.bestiaryOpen);
+    this.bestiaryHead.setAttribute('aria-expanded', String(this.bestiaryOpen));
+    this.bestiaryList.hidden = !this.bestiaryOpen;
+  }
+
+  /** D19: a page per enemy family, rebuilt only when a kill count changes. */
+  private refreshBestiary(pages: BestiaryPage[] | undefined): void {
+    this.bestiaryBlock.hidden = !pages || pages.length === 0;
+    if (!pages) return;
+    const signature = pages.map((p) => `${p.family}:${p.kills}`).join('|');
+    if (signature === this.bestiarySignature) return;
+    this.bestiarySignature = signature;
+    this.bestiaryHead.replaceChildren(el('h3', undefined, t('bestiary.heading')), el('span', 'char-section-chev', '▾'));
+    this.bestiaryList.replaceChildren(
+      ...pages.map((p) => {
+        const row = el('div', p.kills > 0 ? 'char-row char-feat done' : 'char-row char-feat');
+        row.dataset.family = p.family;
+        row.title = p.description;
+        const text = el('span', 'char-feat-text');
+        text.append(el('span', 'char-row-label', p.name), el('span', 'char-feat-desc', p.description));
+        row.append(text, el('span', 'char-row-value', t('bestiary.kills', { n: p.kills.toLocaleString('en-US') })));
+        return row;
+      }),
+    );
   }
 
   /** D12: the feats list, rebuilt only when a number, a flag or the worn title changes. */
@@ -295,6 +348,7 @@ export class CharacterPanel {
     this.last = rows;
     for (const key of ['attributes', 'offense', 'defense', 'utility'] as const) this.refreshSection(key, rows[key]);
     this.refreshFeats(s.feats);
+    this.refreshBestiary(s.bestiary);
     if (this.statSheet) {
       const found = Object.values(rows).flat().find((r) => r.key === this.statSheet!.row);
       if (found) this.statSheet.value.textContent = found.value;

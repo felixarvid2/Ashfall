@@ -1212,3 +1212,122 @@ html.touch-device .hint-mouse { display: none; }
 #ui.touch-ui.portrait .tree-panel.matrix-mode { height: calc(100dvh - 12px - var(--sat) - var(--sab)); max-height: calc(100dvh - 12px - var(--sat) - var(--sab)); padding: 8px; }
 #ui.touch-ui.portrait .matrix-detail { max-height: 30%; }
 #ui.touch-ui .matrix button { padding: 8px 12px; }
+
+/* C09: compact damage numbers are smaller and merge; crits keep a clear size and a mark, DoT ticks are italic. */
+.dmg-compact { font-size: 0.85em; }
+.dmg-compact.dmg-crit { font-size: 1.25em; }
+.dmg-compact.dmg-crit::after { content: '!'; }
+.dmg-dot { font-style: italic; }
+
+/* C10: boss phase label ("Phase 2/3") on the target frame; phase ticks already passed are dimmed. */
+.target-phase { font-family: var(--ui-mono); font-size: 0.78em; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd27a; margin-right: 8px; }
+.target-phase[hidden] { display: none; }
+.target-phase.entered { animation: phase-entered 2.4s ease-out 1; }
+@keyframes phase-entered { 0% { background: #ffd27a; color: #1a1208; padding: 0 5px; } 100% { background: transparent; color: #ffd27a; padding: 0; } }
+#ui.reduce-flashing .target-phase.entered { animation: none; }
+.target-tick.passed { opacity: 0.35; }
+
+/* C03: the stash search box sits in the tool row; C07: the minimap zoom row of the full map. */
+.stash-search { min-width: 0; flex: 1 1 90px; height: 28px; }
+.map-minizoom { display: flex; align-items: center; gap: 8px; justify-content: center; margin: 4px 0; font-family: var(--ui-mono); font-size: 0.8em; color: var(--ui-muted); }
+.map-minizoom button { min-width: 32px; height: 32px; padding: 0 8px; font-size: 1.1em; color: var(--ui-text); background: var(--ui-bg); border: 1px solid var(--ui-border); cursor: pointer; }
+#ui.touch-ui .map-minizoom button { min-width: var(--tap-min, 44px); height: var(--tap-min, 44px); }
+
+/* C13: pickup log, bottom left. */
+.pickup-log { position: absolute; left: 12px; bottom: 150px; display: flex; flex-direction: column; gap: 2px; max-width: min(260px, 40vw); pointer-events: none; z-index: 3; }
+.pickup-line { font-size: 0.85em; line-height: 1.25; padding: 2px 8px; border-left: 3px solid var(--line-color, #ccc); color: var(--line-color, var(--ui-text)); background: rgba(10, 9, 8, 0.6); text-shadow: 0 1px 2px #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pickup-line[data-rarity='gold'] { color: #ffd27a; }
+
+/* C08: the pin button of the quest log, and the pinned look in the HUD tracker. */
+.log-pin { min-width: 36px; min-height: 36px; margin-left: 4px; background: transparent; border: 1px solid var(--ui-border); color: var(--ui-muted); font-size: 1em; cursor: pointer; }
+.log-pin.on { color: #ffd27a; border-color: #ffd27a; }
+#ui.touch-ui .log-pin { min-width: var(--tap-min, 44px); min-height: var(--tap-min, 44px); }
+.quest-row.pinned .quest-title::before { content: '\25C6 '; color: #ffd27a; font-size: 0.8em; }
+
+/* C16: set pieces and bonus thresholds in item tooltips. */
+.item-tip-set { margin-top: 6px; padding-top: 4px; border-top: 1px solid var(--ui-border); font-size: 0.9em; }
+.item-tip-set-title { color: #7ad7ff; font-weight: 700; }
+.item-tip-set .set-piece { color: var(--ui-muted); }
+.item-tip-set .set-piece.worn { color: var(--ui-text); }
+.item-tip-set .set-bonus { color: var(--ui-muted); }
+.item-tip-set .set-bonus.active { color: #7ad7ff; }
+
+/* C04: rarity shapes. With the setting on, `#ui.rarity-shapes` gives every rarity its own border pattern and a corner
+   mark on frames, ground labels and tooltips, so rarity does not depend on colour alone. Beams get polygon outlines
+   (src/render/lootVisuals.ts). Marks: magic ●, rare ●●, legendary ◆, unique ★, mythic ✦. */
+#ui.rarity-shapes .inv-cell { position: relative; }
+#ui.rarity-shapes .inv-cell.r-magic { border-style: dashed; }
+#ui.rarity-shapes .inv-cell.r-rare { border-style: double; border-width: 3px; }
+#ui.rarity-shapes .inv-cell.r-legendary { border-width: 3px; }
+#ui.rarity-shapes .inv-cell.r-unique, #ui.rarity-shapes .inv-cell.r-mythic { border-style: ridge; border-width: 4px; }
+#ui.rarity-shapes .inv-cell.r-magic::before, #ui.rarity-shapes .inv-cell.r-rare::before, #ui.rarity-shapes .inv-cell.r-legendary::before,
+#ui.rarity-shapes .inv-cell.r-unique::before, #ui.rarity-shapes .inv-cell.r-mythic::before {
+  position: absolute; left: 2px; top: 0; z-index: 3; font-size: 11px; line-height: 12px; color: var(--rarity, #fff); text-shadow: 0 0 2px #000, 0 0 2px #000; pointer-events: none;
+}
+#ui.rarity-shapes .inv-cell.r-magic::before { content: '\25CF'; }
+#ui.rarity-shapes .inv-cell.r-rare::before { content: '\25CF\25CF'; }
+#ui.rarity-shapes .inv-cell.r-legendary::before { content: '\25C6'; }
+#ui.rarity-shapes .inv-cell.r-unique::before { content: '\2605'; }
+#ui.rarity-shapes .inv-cell.r-mythic::before { content: '\2726'; }
+#ui.rarity-shapes .loot-label[data-rarity='magic']::before { content: '\25CF '; }
+#ui.rarity-shapes .loot-label[data-rarity='rare']::before { content: '\25CF\25CF '; }
+#ui.rarity-shapes .loot-label[data-rarity='legendary']::before { content: '\25C6 '; }
+#ui.rarity-shapes .loot-label[data-rarity='unique']::before { content: '\2605 '; }
+#ui.rarity-shapes .loot-label[data-rarity='mythic']::before { content: '\2726 '; }
+#ui.rarity-shapes .loot-label[data-rarity='rare'] { border-style: double; }
+#ui.rarity-shapes .loot-label[data-rarity='magic'] { border-style: dashed; }
+#ui.rarity-shapes .item-tip.r-magic .item-tip-name::before { content: '\25CF '; }
+#ui.rarity-shapes .item-tip.r-rare .item-tip-name::before { content: '\25CF\25CF '; }
+#ui.rarity-shapes .item-tip.r-legendary .item-tip-name::before { content: '\25C6 '; }
+#ui.rarity-shapes .item-tip.r-unique .item-tip-name::before { content: '\2605 '; }
+#ui.rarity-shapes .item-tip.r-mythic .item-tip-name::before { content: '\2726 '; }
+
+/* C05: UI scale. `--ui-scale` (Settings > Display, 80-140 %) zooms the HUD and the panels, separate from the text
+   size. The world layers (ground labels, damage numbers, enemy bars, NPC plates, prompts) and the tooltips, which
+   are placed in screen pixels by script, stay at their size. Direct children only, so nothing zooms twice.
+   Touch layouts are laid out to the pixel (the portrait HUD chain, the thumb zones) and their sheets fill the screen,
+   so there the scale reaches only the banners, toasts, boss card and log (held to 85-115 %); the thumb buttons and
+   the rest follow the Text size and Button size settings. */
+#ui.ui-scaled:not(.touch-ui) > :is(.action-bar, .hud-left, .hud-title, .level-chip, .boss-card, .center-banner, .death-screen, .exposure-meter,
+  .sound-hud, .quest-tracker, .toast-stack, .pickup-log, .panel, .map-panel, .inventory-panel, .panel-tabbar, .fps-meter, canvas.minimap,
+  .rift-strip, .rift-pin, .endgame-stack) {
+  zoom: var(--ui-scale, 1);
+}
+#ui.ui-scaled.touch-ui > :is(.boss-card, .center-banner, .toast-stack, .pickup-log, .fps-meter) {
+  zoom: clamp(0.85, var(--ui-scale, 1), 1.15);
+}
+
+/* C15: subtitles above the action bar. */
+.subtitles { position: absolute; left: 50%; bottom: 132px; transform: translateX(-50%); width: min(640px, 86vw); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; z-index: 4; }
+.subtitle-line { max-width: 100%; padding: 5px 12px; text-align: center; font-size: 1em; line-height: 1.3; color: #f2ece0; background: rgba(8, 7, 6, 0.78); border: 1px solid var(--ui-border); text-shadow: 0 1px 2px #000; transition: opacity 0.4s; }
+.subtitle-line.fading { opacity: 0; }
+.subtitle-speaker { color: #ffd27a; font-weight: 700; margin-right: 8px; }
+.subtitle-speaker::after { content: ':'; }
+
+/* C06: photo mode hides the whole interface except the hint line and the Exit button. */
+.photo-hint { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: 92vw; padding: 6px 8px 6px 14px; background: rgba(8, 7, 6, 0.8); border: 1px solid var(--ui-border); color: var(--ui-text); font-size: 0.85em; z-index: 60; }
+.photo-hint[hidden] { display: none; }
+#ui .photo-hint, #ui .photo-hint * { pointer-events: auto; }
+.photo-exit { min-height: 36px; min-width: 64px; padding: 0 12px; font: inherit; color: var(--ui-text); background: #2a2622; border: 1px solid var(--ui-accent); cursor: pointer; }
+#ui.touch-ui .photo-exit { min-height: var(--tap-min, 44px); }
+#ui.photo-mode > :not(.photo-hint) { visibility: hidden !important; }
+#ui.photo-mode > .photo-hint { visibility: visible; }
+
+/* C14: keyboard and pad focus is always visible, whatever a control's own style says. */
+#ui :is(button, [role='button'], [role='tab'], [role='radio'], [role='switch'], input, select, textarea, a[href], [tabindex]):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* A13: Hardcore characters */
+.char-hardcore { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; color: #e8b0a0; font-size: 0.9em; }
+.char-skull { color: #e8c8b8; }
+.char-skull.fallen { color: #ff6a5a; }
+
+/* C13/C15 on touch layouts: the pickup log (three lines) sits above the joystick, the subtitles above the thumb buttons;
+   in landscape the subtitles use the gap between the joystick and the buttons. */
+#ui.touch-ui .pickup-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 170px); left: calc(env(safe-area-inset-left, 0px) + 12px); max-width: 46vw; }
+#ui.touch-ui .pickup-log .pickup-line:nth-last-child(n + 4) { display: none; }
+#ui.touch-ui.portrait .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 290px); width: 92vw; }
+#ui.touch-ui:not(.portrait) .subtitles { bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); left: 42%; width: min(360px, 40vw); }
+#ui.touch-ui:not(.portrait) .pickup-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); }

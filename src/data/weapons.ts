@@ -14,8 +14,22 @@ export interface WeaponMount {
   offset?: [number, number, number];
 }
 
+/** The weapon mounts for a character: the equipped main-hand base's own model when it has one, else the class default. */
+export function weaponMountsFor(classId: string, baseId?: string | null): WeaponMount[] {
+  return (baseId ? WEAPON_BY_BASE[baseId] : undefined) ?? CLASS_WEAPONS[classId] ?? [];
+}
+
 /** Assets named `procedural.<name>` are built by the renderer instead of loaded (see proceduralWeapon). */
 export const PROCEDURAL_PREFIX = 'procedural.';
+
+/**
+ * A19: what is in hand follows the equipped weapon (main hand) where a model exists for its base type; any other base keeps its
+ * class's default weapon above. Held like the default weapons (a sword in the fist like the scalpel, a staff like the censer-mace).
+ */
+export const WEAPON_BY_BASE: Record<string, WeaponMount[]> = {
+  power_sword: [{ asset: 'weapon.power_sword', bone: 'RightHand', length: 1.1, grip: 0.14, rot: [1.3, 0, 0] }],
+  sun_staff: [{ asset: 'weapon.sun_staff', bone: 'RightHand', length: 1.5, grip: 0.3, rot: [1.3, 0, 0] }],
+};
 
 export const CLASS_WEAPONS: Record<string, WeaponMount[]> = {
   // Handle through the fist, head tilted up and back over the forearm.

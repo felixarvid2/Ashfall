@@ -68,6 +68,6 @@ tint, scale, behaviour or affixes (docs/world-and-gameplay.md §4).
 Champions (blue, packs of up to 4 sharing 1–2 affixes) and rare elites (yellow, generated name, 2–4
 affixes by level, 2–3 minions) can roll on any pack. Affixes: Shielded, Burning, Teleporting, Snaring,
 Spore Spreader, Explodes on Death, Vampiric, Fast, Freezing, Mirroring (src/data/elites.ts).
-Force Wall (a warned line of burning, slowing energy across the player's path) and Laser Grid (two warned beams crossing under the player) are in (C019). They only roll on monsters of level 20 and up (`LATE_AFFIX_MIN_LEVEL`, Hydroponic Vaults and later), so earlier regions are unchanged.
+Force Wall (a warned wall of energy raised between the elite and the player that blocks movement, enemy pathing and every projectile for 6 s) and Laser Grid (three telegraphed beams that turn out of the elite and hurt on touch) are in (C019, made physical in round 4: A05, A06). They only roll on monsters of level 20 and up (`LATE_AFFIX_MIN_LEVEL`, Hydroponic Vaults and later), so earlier regions are unchanged.
 
 Cinder Flats also has two new variants on existing models (C018): the Ash Thrower (infected colonist model, ranged, heat) and the Rust Drone (security drone model, faster and lighter), in the `road`, `valley` and `military` packs.

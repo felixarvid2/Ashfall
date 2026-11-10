@@ -13,14 +13,15 @@
  * the sets miss. A runtime variant (src/data/variants.ts) is listed as the manifest ids it is built from, its base
  * and its parts, so the byte budgets count both.
  */
-import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from './weapons';
+import { CLASS_WEAPONS, PROCEDURAL_PREFIX, WEAPON_BY_BASE } from './weapons';
+import { BASE_ITEMS } from './loot/db';
 import { CLASSES, ENEMY_DEFS } from './db';
 import { BOSS_SCRIPTS } from './bosses';
 import { WORLD_BOSSES } from './endgame/worldBosses';
 import { INSTANCES, type InstanceDef } from './instances';
 import { PACK_TEMPLATES } from './packs';
 import { LOOT_ASSET_IDS } from './loot/lootModels';
-import { expandAssetIds } from './variants';
+import { CLIP_DONOR_ID, borrowsClips, expandAssetIds } from './variants';
 import { NPCS, QUESTS } from './quests/db';
 import type { ZoneDef } from './zones/zoneTypes';
 import { interactableAssetIds } from '../world/interactables';
@@ -40,7 +41,14 @@ export function classAssetIds(classId: string): string[] {
   const cls = CLASSES.get(classId);
   const ids = ['prop.motorbike'];
   if (cls) ids.push(cls.assetId);
+  // The Xenomant's raised minions wear a crest of bone shards (D04).
+  if (classId === 'xenomant') ids.push('part.bone_shards');
   for (const mount of CLASS_WEAPONS[classId] ?? []) if (!mount.asset.startsWith(PROCEDURAL_PREFIX)) ids.push(mount.asset);
+  // A19: the models of the class's other weapon bases, for when one is equipped.
+  for (const [base, mounts] of Object.entries(WEAPON_BY_BASE)) {
+    if (!BASE_ITEMS.get(base)?.classes?.includes(classId)) continue;
+    for (const mount of mounts) if (!mount.asset.startsWith(PROCEDURAL_PREFIX)) ids.push(mount.asset);
+  }
   return expandAssetIds(ids);
 }
 
@@ -105,6 +113,8 @@ export function enemyAssetIds(enemyIds: Iterable<string>, scripts: Iterable<stri
     const def = ENEMY_DEFS.get(id);
     if (!def) return;
     for (const piece of expandAssetIds([def.assetId])) ids.add(piece);
+    // A18: idle-only rigs borrow their other clips from the donor model, so an enemy on one brings it along.
+    if (borrowsClips(def.assetId)) ids.add(CLIP_DONOR_ID);
     if (def.onDeath?.spawn) addEnemy(def.onDeath.spawn.enemy);
     if (def.reinforce) addEnemy(def.reinforce.enemy);
   };
@@ -196,6 +206,10 @@ const EVENT_ASSETS: Record<string, string[]> = {
   sporeBloom: ['prop.spore_nest'],
   caveRescue: ['env.slag_rock'],
   lightsOut: ['prop.generator'],
+  // The Core's own (A01-A04)
+  choirAwakening: ['prop.core_column'],
+  memorySurge: ['prop.core_column'],
+  gravityStorm: ['prop.core_column'],
 };
 
 /**

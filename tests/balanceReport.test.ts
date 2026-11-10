@@ -1,7 +1,7 @@
 /** D14: the balance report's layout (the measuring itself is `npm run balance:report`). */
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { renderReport, type BuildRow } from '../scripts/sim/balanceReport';
+import { renderReport, type BuildRow, type StageRow } from '../scripts/sim/balanceReport';
 
 describe('balance report (D14)', () => {
   const rows: BuildRow[] = [
@@ -17,6 +17,25 @@ describe('balance report (D14)', () => {
     expect(md).toContain('| L30 test build | bastion | 30 | 1,234 | 800 | 2,400 | 3.00x |');
     expect(md).toContain('| bastion | 800 | 1,234 | 1 |');
     expect(md).not.toContain('| spectre | 90 |'); // only level 30 builds are summed per class
+  });
+
+  it('adds the level 10 to 50 and survivability sections when it has the rows (B05, B06)', () => {
+    const withSurvival: BuildRow[] = [{ ...rows[0]!, survival: { deaths: 2, below30: 0.065, minLife: 0.018, avgLife: 0.7, takenPerSecond: 52.9, potions: 6 } }];
+    const stages: StageRow[] = [
+      { stage: 'Deep Mines (30-40)', plan: 'Bastion · Seismic Shock', classId: 'bastion', from: 30, to: 40, reached: 40, first: 90, mid: 500, end: 1240, deaths: 3, avgLife: 0.64 },
+      { stage: 'Deep Mines (30-40)', plan: 'Spectre · Sniper', classId: 'spectre', from: 30, to: 40, reached: 36, first: 80, deaths: 9, avgLife: 0.5 },
+    ];
+    const md = renderReport([], withSurvival, '2026-11-08', stages);
+    expect(md).toContain('## Level 10 to 50 (bot, one plan per class)');
+    expect(md).toContain('### Deep Mines (30-40)');
+    expect(md).toContain('| bastion | Bastion · Seismic Shock | 40/40 | 1:30 | 8:20 | 20:40 | 3 | 64 % |');
+    expect(md).toContain('| spectre | Spectre · Sniper | 36/40 | 1:20 | never | never | 9 | 50 % |');
+    expect(md).toContain('## Survivability (dummies that hit back)');
+    expect(md).toContain('| L30 test build | bastion | 30 | 2 | 7 % | 2 % | 53 |');
+    // Without the extra rows the sections stay out.
+    const plain = renderReport([], rows, '2026-11-08');
+    expect(plain).not.toContain('Survivability');
+    expect(plain).not.toContain('Level 10 to 50');
   });
 
   it('the npm script exists, and a generated report is checked in once it has been run', () => {

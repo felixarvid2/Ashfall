@@ -114,9 +114,9 @@ describe('The Deep Mines zone', () => {
     const count = (kind: string) => DEEP_MINES.pois.filter((p) => p.kind === kind).length;
     expect(count('dungeon')).toBe(5);
     expect(count('bunker')).toBe(6);
-    expect(count('event')).toBe(6);
+    expect(count('event')).toBe(7);
     expect(count('relic')).toBe(10);
-    expect(count('lore')).toBe(12);
+    expect(count('lore')).toBe(15);
     expect(count('signalTower')).toBe(3);
     expect(count('pylon')).toBe(6);
     expect(count('lockedChest')).toBe(6);

@@ -4,6 +4,7 @@
  *   then Brother Ash. Reclaimed, it becomes a hub with a teleporter.
  * - The Smelters' Cathedral: High Priestess Vire behind gates that close for the fight.
  */
+import { sealRing } from './sealedArena';
 import { Collider, Dead, DisplayName, EnemyAI, Faction, Health, Renderable, Transform, makeTransform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
@@ -194,7 +195,7 @@ function vire(world: World, ctx: GameContext, zone: ZoneRuntime, sp: DistrictSet
       });
     }
     world.req(st.boss, EnemyAI).aggro = true;
-    st.gates = VIRE_GATES.gaps.map((i) => gateAt(world, i));
+    st.gates = [...VIRE_GATES.gaps.map((i) => gateAt(world, i)), ...sealRing(world, { x: CATHEDRAL.x, z: CATHEDRAL.z, radius: CATHEDRAL.radius, segments: VIRE_GATES.segments }, '#ff6a1a')];
     ctx.events.push({ type: 'banner', key: 'bosses.vire.intro', seconds: 3 });
     ctx.events.push({ type: 'shake', trauma: 0.6 });
   }

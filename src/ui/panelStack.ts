@@ -151,6 +151,9 @@ class PanelStack {
     const entry: Entry = { spec, visible: false, scroll: 0, observer: new MutationObserver((records) => this.onMutations(entry, records)) };
     this.entries.set(spec.id, entry);
     if (spec.header !== false && spec.kind !== 'modal') adoptHeader(spec, () => this.dismiss(spec.id));
+    // A panel is a dialog with a name (C14): its heading, else its title or id.
+    if (!spec.el.getAttribute('role')) spec.el.setAttribute('role', 'dialog');
+    if (!spec.el.getAttribute('aria-label')) spec.el.setAttribute('aria-label', spec.el.querySelector('h1, h2')?.textContent?.trim() || spec.title || spec.id);
     enhanceScroll(spec.el, () => entry.visible);
     spec.el.addEventListener('scroll', () => {
       if (entry.visible) entry.scroll = spec.el.scrollTop;

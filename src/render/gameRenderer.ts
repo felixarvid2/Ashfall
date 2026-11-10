@@ -9,10 +9,10 @@ import { StaticProps } from './staticProps';
 import { buildDecals } from './decals';
 import type { NavService } from '../systems/navigation';
 import type { Entity, World } from '../core/ecs';
-import { AttackTarget, Boss, Collider, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Transform, Turret } from '../core/components';
+import { AttackTarget, Boss, Collider, CombatStats, Dead, EnemyAI, ForcedMove, Guardian, Interactable, InteractTarget, Inventory, Invulnerable, MoveTarget, PickupTarget, PlayerControlled, MinionAI, Mounted, Mover, Renderable, SkillUser, StatusEffects, Summon, Transform, Turret } from '../core/components';
 import type { GameEvent } from '../core/events';
 import { STATUS_DEFS, enemyDef, skill } from '../data/db';
-import { CLASS_WEAPONS, PROCEDURAL_PREFIX } from '../data/weapons';
+import { PROCEDURAL_PREFIX, weaponMountsFor } from '../data/weapons';
 import { CharacterAnimator, type PlayRequest } from './animator';
 import { Rng } from '../core/rng';
 import type { ArenaDef, GroundDef, GroundTexture } from '../data/zones/testArena';
@@ -24,17 +24,23 @@ import { scatterInstances } from '../world/arena';
 import { gravityFields } from '../world/theCore';
 import { angleDelta } from '../systems/movement';
 import { AshFall } from './ash';
+import { AmbientLayers } from './atmosphere';
+import { atmosphereFor } from '../data/atmosphere';
 import { AssetLibrary, type TintSlot } from './assets';
 import { CameraRig } from './camera';
 import { CoreLook, blurCut, cutCells, cutTexture, ghostMaterial, type CutField } from './coreLook';
 import { ChoirLinks } from './choirLinks';
 import { memoryAtmosphere, type Atmosphere } from './memoryLook';
 import { proceduralWeapon } from './proceduralWeapons';
+/** The bone-shard crest of a raised minion (scripts/blender/spec/round4_content.json). */
+const MINION_PART = 'part.bone_shards';
+import { machineDeathPose } from './deathPose';
 import { LOOKS, applyLookMaterials, deathFade, fadesOnDeath, lookState } from './looks';
 import { VfxSystem } from './vfx';
 import { disposeOwned, trackOwned } from './owned';
 import { recoilCurve } from './hitRecoil';
 import { LootVisuals } from './lootVisuals';
+import { SHADOW_CASTERS, animInterval, nearestN, stepAnimClock, type AnimClock } from './lod';
 import { PostFx, type GraphicsQuality } from './postfx';
 
 export class GameRenderer {
@@ -43,6 +49,10 @@ export class GameRenderer {
   readonly rig: CameraRig;
   readonly assets = new AssetLibrary();
   private readonly ash = new AshFall();
+  /** Ambient life and weather of the current zone (D10, D11). */
+  private readonly atmosphere = new AmbientLayers();
+  private atmosphereZone = '';
+  private quality: GraphicsQuality = 'high';
   readonly vfx = new VfxSystem();
   readonly loot = new LootVisuals(this.assets);
   private readonly postfx: PostFx;
@@ -59,6 +69,16 @@ export class GameRenderer {
   /** Seconds of white hit-flash left per entity. */
   private readonly flashes = new Map<Entity, number>();
   private readonly animators = new Map<Entity, CharacterAnimator>();
+  /** Animation and shadow LOD (round 4 B01, B02): the view frustum, per-frame counts and the shadow candidates. */
+  private readonly viewFrustum = new THREE.Frustum();
+  private readonly viewMatrix = new THREE.Matrix4();
+  private readonly lodSphere = new THREE.Sphere();
+  private readonly shadowIds: Entity[] = [];
+  private readonly shadowDist: number[] = [];
+  private readonly shadowSet = new Set<Entity>();
+  private blobParts: { geo: THREE.BufferGeometry; mat: THREE.Material } | null = null;
+  /** Last frame's LOD numbers: mixers updated and skipped, enemies with a real shadow. */
+  readonly lodStats = { animUpdated: 0, animSkipped: 0, shadowCasters: 0 };
   /** Last time each entity played its hit reaction (seconds), to avoid stutter under constant hits. */
   private readonly lastHitAnim = new Map<Entity, number>();
   /** Recoil in progress per enemy (F008): seconds since the hit and whether it was a crit. */
@@ -110,7 +130,7 @@ export class GameRenderer {
     this.rig = new CameraRig(1);
     this.postfx = new PostFx(this.renderer, this.scene, this.rig.camera);
     this.moon = new THREE.DirectionalLight();
-    this.scene.add(this.ash.points, this.vfx.root, this.loot.root);
+    this.scene.add(this.ash.points, this.atmosphere.root, this.vfx.root, this.loot.root);
     this.assets.onModelLoaded((id) => this.swapPlaceholders(id));
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -128,6 +148,8 @@ export class GameRenderer {
     this.scene.background = new THREE.Color(arena.fog.color);
     this.scene.fog = new THREE.FogExp2(arena.fog.color, arena.fog.density);
     this.ash.setColor(arena.particles ?? '#b8b2aa');
+    this.atmosphereZone = arena.id;
+    this.atmosphere.set(atmosphereFor(arena.id, this.quality));
     this.postfx.setGrade(arena.grade?.saturation, arena.grade?.tint);
     this.zoneLook = { fog: arena.fog, ambient: arena.ambient };
     this.zoneAtmosphere = { fog: arena.fog, ambient: arena.ambient, playerLight: arena.playerLight, hemisphere: arena.hemisphere, grade: arena.grade, dark: arena.dark };
@@ -1038,9 +1060,16 @@ export class GameRenderer {
   }
 
   /** Put the class's weapons into the character's hands (bone attachments). */
-  private attachWeapons(obj: THREE.Object3D, classId: string): void {
+  private attachWeapons(obj: THREE.Object3D, classId: string, baseId?: string | null): void {
     obj.updateMatrixWorld(true);
-    for (const mount of CLASS_WEAPONS[classId] ?? []) {
+    // A19: the hand holds the equipped weapon's own model where there is one. Changing weapons swaps what was attached.
+    const old: THREE.Object3D[] = [];
+    obj.traverse((o) => {
+      if (o.name.startsWith('weapon:')) old.push(o);
+    });
+    for (const o of old) o.removeFromParent();
+    obj.userData.weaponBase = baseId ?? null;
+    for (const mount of weaponMountsFor(classId, baseId)) {
       const bone = obj.getObjectByName(mount.bone);
       const procedural = mount.asset.startsWith(PROCEDURAL_PREFIX);
       if (!bone || (!procedural && !this.assets.has(mount.asset))) continue;
@@ -1160,6 +1189,12 @@ export class GameRenderer {
     this.shimmerInteractables(world, frameDt);
     const seen = this.seen;
     seen.clear();
+    this.viewMatrix.multiplyMatrices(this.rig.camera.projectionMatrix, this.rig.camera.matrixWorldInverse);
+    this.viewFrustum.setFromProjectionMatrix(this.viewMatrix);
+    const focus = this.rig.focusPoint;
+    this.shadowIds.length = 0;
+    this.shadowDist.length = 0;
+    this.lodStats.animUpdated = this.lodStats.animSkipped = 0;
     for (const e of world.queryInto(this.renderables, Transform, Renderable)) {
       seen.add(e);
       // Plain static props are placed once and culled and faded in `statics.update` below (T015).
@@ -1187,7 +1222,7 @@ export class GameRenderer {
           });
         }
         const user = world.get(e, SkillUser);
-        if (user && world.has(e, PlayerControlled)) this.attachWeapons(obj, user.classId);
+        if (user && world.has(e, PlayerControlled)) this.attachWeapons(obj, user.classId, world.get(e, Inventory)?.equipped.mainHand?.base);
         // Rim light keeps characters readable against the dark ground (docs/world-and-gameplay.md §14).
         if (world.has(e, PlayerControlled)) addRim(obj, '#a8bcdf', 0.55);
         else if (world.has(e, EnemyAI)) {
@@ -1202,12 +1237,27 @@ export class GameRenderer {
         obj.userData.baseScale = obj.scale.x;
         this.objects.set(e, obj);
         this.scene.add(obj);
-        const clips = this.assets.clips(r.assetId);
-        if (clips.size > 0) this.animators.set(e, new CharacterAnimator(obj, clips));
+        const borrow = world.has(e, EnemyAI);
+        const clips = this.assets.clips(r.assetId, borrow);
+        if (clips.size > 0) {
+          const animator = new CharacterAnimator(obj, clips);
+          // A18: the donor of borrowed clips is still loading; they are added when it is.
+          if (borrow && !this.assets.borrowReady(r.assetId)) animator.pendingBorrow = r.assetId;
+          this.animators.set(e, animator);
+          obj.userData.animClock = { acc: 1 } satisfies AnimClock;
+        }
         else if (!r.look && !((obj.userData.tint as TintSlot[] | undefined)?.length ?? 0) && world.hasOnly(e, Transform, Renderable, Collider)) {
           this.statics.add(e, obj, tr, r, this.propSize(r.assetId).h * (r.scale ?? 1) >= SILHOUETTE.minPropHeight);
           continue;
         }
+      }
+      // Raised minions: the same look and a crest of bone shards, once the part has loaded (D04).
+      if (obj.userData.minionDressed === undefined && world.get(e, Summon)?.kind === 'minion' && this.assets.hasModel(MINION_PART)) {
+        obj.userData.minionDressed = true;
+        applyLookMaterials((obj.userData.tint as TintSlot[] | undefined) ?? [], 'minion');
+        const crest = this.assets.create(MINION_PART);
+        crest.userData.noTint = true;
+        obj.add(crest);
       }
       // Cull far-away static props (the fog hides them anyway); characters and landmarks stay.
       const r = world.req(e, Renderable);
@@ -1281,9 +1331,34 @@ export class GameRenderer {
         else if (ai.state === 'recover') pitch = 0.22;
         lean = { pitch, roll: Math.sin(phase) * 0.06 * gait };
       }
+      // A19: a new main-hand weapon changes what the hero holds.
+      if (obj.userData.weaponBase !== undefined) {
+        const base = world.get(e, Inventory)?.equipped.mainHand?.base ?? null;
+        const user = world.get(e, SkillUser);
+        if (user && base !== obj.userData.weaponBase) this.attachWeapons(obj, user.classId, base);
+      }
       if (animator) {
-        animator.play(this.animationFor(world, e, animator));
-        animator.update(frameDt * this.animationTimeScale);
+        if (animator.pendingBorrow !== undefined && this.assets.borrowReady(animator.pendingBorrow)) {
+          animator.addClips(this.assets.clips(animator.pendingBorrow, true));
+          animator.pendingBorrow = undefined;
+        }
+        // Far mixers tick at a lower rate, off-screen ones not at all (B01); the player and bosses always run in full.
+        let interval = 0;
+        if (ai && !world.has(e, Boss)) {
+          this.lodSphere.center.set(tr.x, tr.y + 1, tr.z);
+          this.lodSphere.radius = 6;
+          interval = animInterval((tr.x - focus.x) ** 2 + (tr.z - focus.z) ** 2, this.viewFrustum.intersectsSphere(this.lodSphere));
+        }
+        const step = stepAnimClock(obj.userData.animClock as AnimClock, frameDt * this.animationTimeScale, interval);
+        if (step > 0 || (interval === 0 && this.animationTimeScale === 0)) {
+          animator.play(this.animationFor(world, e, animator));
+          animator.update(step);
+          this.lodStats.animUpdated++;
+        } else this.lodStats.animSkipped++;
+      }
+      if (ai && !world.has(e, Dead) && !world.has(e, Boss)) {
+        this.shadowIds.push(e);
+        this.shadowDist.push((tr.x - focus.x) ** 2 + (tr.z - focus.z) ** 2);
       }
 
       const dead = world.get(e, Dead);
@@ -1309,9 +1384,18 @@ export class GameRenderer {
         obj.visible = f.opacity > 0.01;
       } else if (dead) {
         // Topple over, then sink into the ash.
-        const fall = Math.min(1, dead.elapsed / 0.3);
-        obj.rotation.set(0, dead.fallDir, 0);
-        obj.rotateX((Math.PI / 2) * fall * 0.95);
+        const machine = ai !== undefined && enemyDef(ai.defId).family === 'machine';
+        if (machine) {
+          const pose = machineDeathPose(dead.elapsed);
+          obj.rotation.set(0, dead.fallDir, 0);
+          obj.rotateX(pose.pitch);
+          obj.rotateZ(pose.roll);
+          obj.position.y += pose.lift;
+        } else {
+          const fall = Math.min(1, dead.elapsed / 0.3);
+          obj.rotation.set(0, dead.fallDir, 0);
+          obj.rotateX((Math.PI / 2) * fall * 0.95);
+        }
         if (dead.elapsed > sinkAt) obj.position.y -= (dead.elapsed - sinkAt) * 0.8;
       } else {
         if (obj.rotation.x !== 0) {
@@ -1333,6 +1417,15 @@ export class GameRenderer {
       }
       this.applyTint(world, e, obj, frameDt);
       if (this.recoils.size > 0) this.applyRecoil(world, e, obj, frameDt);
+    }
+    {
+      // Shadow LOD (B02): the nearest enemies cast a real shadow, the rest a blob.
+      const near = nearestN(this.shadowIds, this.shadowDist, SHADOW_CASTERS, this.shadowSet);
+      for (const e of this.shadowIds) {
+        const o = this.objects.get(e);
+        if (o) this.setShadowLod(o, near.has(e), world.get(e, Collider)?.radius ?? 0.5);
+      }
+      this.lodStats.shadowCasters = near.size;
     }
     {
       const f = this.rig.focusPoint;
@@ -1498,6 +1591,42 @@ export class GameRenderer {
     ground.traverse((o) => (o.userData.noTint = true));
     obj.add(ground);
     obj.userData.droneMarks = { ground, beacon };
+  }
+
+  /**
+   * Shadow LOD (B02): real shadow casting on or off for one enemy; without it a soft dark disc sits under it. Meshes are
+   * listed once per object and only touched when the state changes. Hovering drones keep their own ground shadow.
+   */
+  private setShadowLod(obj: THREE.Object3D, cast: boolean, radius: number): void {
+    if (obj.userData.shadowCast === cast) return;
+    obj.userData.shadowCast = cast;
+    let meshes = obj.userData.shadowMeshes as THREE.Mesh[] | undefined;
+    if (!meshes) {
+      meshes = [];
+      obj.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh && o.castShadow) meshes!.push(o as THREE.Mesh);
+      });
+      obj.userData.shadowMeshes = meshes;
+    }
+    for (const m of meshes) m.castShadow = cast;
+    if (obj.userData.droneMarks) return;
+    let blob = obj.userData.blob as THREE.Mesh | undefined;
+    if (!blob) {
+      if (cast) return;
+      const parts = (this.blobParts ??= {
+        geo: new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2),
+        mat: new THREE.MeshBasicMaterial({ map: this.glowTexture(), color: '#000000', transparent: true, opacity: 0.5, depthWrite: false }),
+      });
+      blob = new THREE.Mesh(parts.geo, parts.mat);
+      const s = obj.scale.x || 1;
+      blob.scale.setScalar((radius * 1.7) / s);
+      blob.position.y = 0.02 / s;
+      blob.renderOrder = 2;
+      blob.userData.noTint = true;
+      obj.userData.blob = blob;
+      obj.add(blob);
+    }
+    blob.visible = !cast;
   }
 
   private droneMarkParts: { shadowGeo: THREE.BufferGeometry; ringGeo: THREE.BufferGeometry; shadowMat: THREE.Material } | null = null;
@@ -1689,6 +1818,7 @@ export class GameRenderer {
     this.moon.position.set(f.x - 12, 30, f.z + 6);
     this.moon.target.position.set(f.x, 0, f.z);
     this.ash.update(frameDt, f);
+    this.atmosphere.update(frameDt, f);
     // Belts scroll at 3.2 m/s (one chevron per 2 m); molten metal breathes.
     if (this.beltTexture) this.beltTexture.offset.y = (this.beltTexture.offset.y - frameDt * 1.6 * this.animationTimeScale) % 1;
     // Post-processing tone-maps the scene: a moderate colour stays orange instead of washing out.
@@ -1710,6 +1840,8 @@ export class GameRenderer {
   }
 
   setQuality(quality: GraphicsQuality): void {
+    this.quality = quality;
+    this.atmosphere.set(atmosphereFor(this.atmosphereZone, quality));
     this.postfx.setQuality(quality);
     this.silhouettes = silhouetteEnabled(quality);
     this.vfx.sprites.setQuality(quality);

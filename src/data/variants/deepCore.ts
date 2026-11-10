@@ -124,30 +124,6 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
 
   // ---- Deep Mines bosses ----
   {
-    // Crystal Sentinel champion: huge crystal pauldrons, a tall crown and a prism floating over its head.
-    id: 'variant.the_prism',
-    base: 'enemy.slagborn',
-    look: { tint: '#d0e4f4', emissive: '#5ac8ff', emissiveIntensity: 0.5, roughness: 0.45 },
-    parts: [
-      ...pair('part.dc_crystal_pauldron', undefined, undefined, [0.66, 2.05, 0], [0, 0, -15], 1.6),
-      { asset: 'part.dc_crystal_crown', position: [0, 2.35, 0], scale: 1.8 },
-      { asset: 'part.dc_prism', position: [0, 2.95, 0], scale: 1.4 },
-      { asset: 'part.dc_crystal_spire', position: [0.3, 1.5, -0.3], rotation: [-30, 0, -18], scale: 1.5 },
-      { asset: 'part.dc_crystal_spire', position: [-0.3, 1.5, -0.3], rotation: [-30, 0, 18], scale: 1.3 },
-    ],
-  },
-  {
-    // The First's elder cousin: an upright elder ring behind the head and glyph monoliths on the shoulders.
-    id: 'variant.elder_guardian',
-    base: 'boss.the_first',
-    look: { tint: '#b8c8e0', emissive: '#2a6a9a', emissiveIntensity: 0.4, roughness: 0.6 },
-    parts: [
-      { asset: 'part.dc_elder_ring', position: [0, 4.6, -0.8], scale: 2.2 },
-      ...pair('part.dc_elder_slab', undefined, undefined, [1.4, 4.0, 0], [0, 0, -10], 1.8),
-      { asset: 'part.dc_prism', position: [0, 5.9, 0], scale: 1.6 },
-    ],
-  },
-  {
     // The Drill Colossus drowned: cables, moss and a big drill, wet and green.
     id: 'variant.drowned_engine',
     base: 'enemy.trilobite',
@@ -256,7 +232,7 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
   {
     // The Warden's shade: vines hanging off the cab, a halo above and blades behind.
     id: 'variant.shade_warden',
-    base: 'enemy.cargo_loader',
+    base: 'boss.warden',
     parts: [
       { asset: 'part.dc_shade_halo', position: [0, 3.5, 0], scale: 3 },
       { asset: 'part.dc_vines_violet', position: [0.6, 2.9, 0.2], scale: 1.8 },
@@ -322,16 +298,7 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     ],
   },
 
-  // ---- The Core: choir and machines ----
-  {
-    // The Choir Mother: a tiara of spires and long veils.
-    id: 'variant.choir_mother',
-    base: 'enemy.choir_singer',
-    parts: [
-      { asset: 'part.dc_choir_crown', position: [0, 1.3, 0.05], scale: 1.6 },
-      { asset: 'part.dc_veil', position: [0, 1.0, -0.5], scale: 1.6 },
-    ],
-  },
+  // ---- The Core: machines ----
   {
     // The Brood Engine: hatch pods stacked on its back.
     id: 'variant.brood_engine',
@@ -339,59 +306,6 @@ export const DEEP_CORE_VARIANTS: readonly VariantDef[] = [
     parts: [
       { asset: 'part.dc_hatch_pods', position: [0, 2.45, -0.5], rotation: [-12, 0, 0], scale: 1.3 },
       { asset: 'part.dc_hatch_pods', position: [0.6, 2.4, 0.4], rotation: [0, 40, 0], scale: 0.8 },
-    ],
-  },
-  {
-    // The Hollow Engine: a heavy ring standing behind the torso.
-    id: 'variant.hollow_engine',
-    base: 'enemy.core_guardian',
-    parts: [
-      { asset: 'part.dc_hollow_ring', position: [0, 4.3, -1.2], scale: 2.4 },
-    ],
-  },
-  {
-    // The Echo Engine: broken blades of light behind the shoulders and prisms above.
-    id: 'variant.echo_engine',
-    base: 'enemy.core_guardian',
-    parts: [
-      ...pair('part.dc_glitch_fan_core', undefined, undefined, [1.0, 4.6, -0.8], [-15, 0, -40], 4),
-      { asset: 'part.dc_prism_core', position: [0, 6.6, 0], scale: 3 },
-    ],
-  },
-  {
-    // The Choir of Stone: a crown of stone spires and a ring of floating blocks.
-    id: 'variant.choir_of_stone',
-    base: 'enemy.choir_singer',
-    parts: [
-      { asset: 'part.dc_stone_crown', position: [0, 1.3, 0.05], scale: 1.8 },
-      { asset: 'part.dc_stone_orbit', position: [0, 0.2, 0], scale: 1.5 },
-    ],
-  },
-
-  // ---- World bosses ----
-  {
-    // The Ashen Colossus: smokestacks on the cab, ash piles and horns along the back.
-    id: 'variant.ashen_colossus',
-    base: 'enemy.cargo_loader',
-    look: { tint: '#a09c96', emissive: '#7a2a08', emissiveIntensity: 0.25, roughness: 0.9 },
-    parts: [
-      ...pair('part.dc_smokestack', undefined, undefined, [0.45, 2.85, -0.25], [0, 0, -8], 1.8),
-      { asset: 'part.dc_ash_pile', position: [0, 3.2, 0.3], scale: 2 },
-      ...pair('part.dc_ash_pile', undefined, undefined, [0.8, 2.3, 0], [0, 0, 0], 1.6),
-      { asset: 'part.dc_horn_row', position: [0, 3.0, 0.3], scale: 1.8 },
-    ],
-  },
-  {
-    // The Mother of Spores: a mushroom crown, shelf fungus on the shoulders and swollen sacs.
-    id: 'variant.mother_of_spores',
-    base: 'enemy.spore_carrier',
-    look: { tint: '#c0d098', emissive: '#2a3a10', emissiveIntensity: 0.3 },
-    parts: [
-      { asset: 'part.dc_mushroom_crown', bone: 'Head', position: [0, 0.1, 0], scale: 1.4 },
-      { asset: 'part.dc_bracket_fungus', bone: 'LeftShoulder', position: [0.1, 0.05, -0.05], rotation: [0, 0, -15], scale: 1.4 },
-      { asset: 'part.dc_bracket_fungus', bone: 'RightShoulder', position: [-0.1, 0.05, -0.05], rotation: [0, 180, 15], scale: 1.2 },
-      { asset: 'part.dc_spore_sac_big', bone: 'Spine02', position: [0, 0.1, -0.2], rotation: [-55, 0, 0], scale: 1.6 },
-      { asset: 'part.dc_spore_sac_big', bone: 'Spine01', position: [0, -0.06, 0.18], rotation: [70, 0, 0], scale: 1.3 },
     ],
   },
 ];

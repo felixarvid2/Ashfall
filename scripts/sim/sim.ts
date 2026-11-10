@@ -2,7 +2,7 @@
  * Headless balance simulator: a build fights a stationary training dummy with the real
  * combat systems for a fixed time, using a simple priority rotation. Reports DPS.
  */
-import { Collider, CombatStats, ForcedMove, Health, Inventory, Progression, Resource, SkillUser, Transform } from '../../src/core/components';
+import { Collider, CombatStats, Dead, ForcedMove, Health, Inventory, Invulnerable, Progression, Resource, SkillUser, StatusEffects, Transform } from '../../src/core/components';
 import type { GameContext } from '../../src/core/context';
 import { World } from '../../src/core/ecs';
 import { EventQueue } from '../../src/core/events';
@@ -19,6 +19,8 @@ import { delayedStrikeSystem, forcedMoveSystem, skillSystem } from '../../src/sy
 import { guardianSystem, sanctumSystem } from '../../src/systems/lightbearer';
 import { minionSystem, minionsOf, tetherSystem, turretSystem } from '../../src/systems/minions';
 import { deathSystem } from '../../src/systems/death';
+import { enemyAISystem } from '../../src/systems/enemyAI';
+import { navigationSystem } from '../../src/systems/navigation';
 import { kill } from '../../src/systems/combat';
 import { hazardSystem, projectileSystem, summonSystem, trapSystem } from '../../src/systems/projectiles';
 import { recomputePlayer } from '../../src/systems/stats';
@@ -58,9 +60,27 @@ export interface Build {
   corpsesPerMinute?: number;
 }
 
+/** How the character fared against dummies that hit back (round 4 B06). */
+export interface Survival {
+  /** Times the character died (it respawns after 3 s, like the playthrough bot). */
+  deaths: number;
+  /** Share of the fight spent alive below 30 % life. */
+  below30: number;
+  /** Lowest life fraction seen while alive. */
+  minLife: number;
+  /** Average life fraction while alive. */
+  avgLife: number;
+  /** Damage taken per second of the fight. */
+  takenPerSecond: number;
+  /** Stim packs drunk (at 40 % life). */
+  potions: number;
+}
+
 export interface SimResult {
   name: string;
   dps: number;
+  /** Present when the dummies fought back (`SimOptions.fightBack`). */
+  survival?: Survival;
   casts: Record<string, number>;
   /** Share of the fight spent overheating. */
   overheated: number;
@@ -113,13 +133,24 @@ export interface SimOptions {
   dummy?: string;
   /** Overrides `build.pack`. */
   pack?: number;
+  /**
+   * The dummies attack (B06): their AI runs, the character can die (no god mode) and the result carries `survival`.
+   * They are `enemy` (default `security_trooper`, the neutral human of the DPS tables), `count` of them (default 3), at the build's level
+   * with unlimited life, so DPS is still measured. Same seed, same fight.
+   */
+  fightBack?: boolean | { enemy?: string; count?: number };
 }
+
+/** The defaults of a fight-back run: the neutral human the DPS tables use, a small pack. */
+export const FIGHT_BACK = { enemy: 'security_trooper', count: 3 } as const;
 
 export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimOptions = {}): SimResult {
   const world = new World();
   const ctx = makeContext(seed);
   const classId = build.classId ?? 'bastion';
   const dist = build.distance ?? 1.9;
+  const back = options.fightBack ? { ...FIGHT_BACK, ...(typeof options.fightBack === 'object' ? options.fightBack : {}) } : null;
+  if (back) ctx.debug.godMode = false;
   const player = spawnPlayer(world, classId, 0, 0);
   const user = world.req(player, SkillUser);
   world.req(player, Progression).level = build.level;
@@ -132,6 +163,13 @@ export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimO
   const itemPower = Math.round(PROGRESSION.itemPower.base + PROGRESSION.itemPower.perLevel * build.level);
   const inv = world.req(player, Inventory);
   inv.equipped.mainHand = generateItem(rng, { itemPower, classId, uid: 'w', rarity: 'rare', type: 'weapon' });
+  if (back) {
+    // Survival depends on armour and life: dress the character in rare gear for the other slots too (the DPS rows keep a weapon only).
+    for (const [slot, baseId] of Object.entries(BASE_FOR_SLOT) as [Slot, string][]) {
+      if (slot === 'mainHand') continue;
+      inv.equipped[slot] ??= generateItem(rng, { itemPower, classId, uid: `g-${slot}`, rarity: 'rare', baseId });
+    }
+  }
   for (const id of build.uniques ?? []) {
     const def = UNIQUE_DEFS.get(id);
     if (!def) throw new Error(`Unknown unique ${id}`);
@@ -148,15 +186,15 @@ export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimO
   recomputePlayer(world, player);
   for (const id of bar) if (!user.compiled[id]) throw new Error(`${build.name}: ${id} is not learned`);
 
-  const dummyId = options.dummy ?? build.dummy ?? 'spore_carrier';
-  const packSize = Math.max(1, Math.round(options.pack ?? build.pack ?? 1));
+  const dummyId = back ? back.enemy : (options.dummy ?? build.dummy ?? 'spore_carrier');
+  const packSize = Math.max(1, Math.round(back ? back.count : (options.pack ?? build.pack ?? 1)));
   // Dummy 0 is the target the rotation aims at; the rest ring it at 2.2 m.
   const dummies: { id: number; x: number; z: number }[] = [];
   for (let k = 0; k < packSize; k++) {
     const a = ((k - 1) / Math.max(1, packSize - 1)) * Math.PI * 2;
     const x = k === 0 ? 0 : Math.sin(a) * 2.2;
     const z = dist + (k === 0 ? 0 : Math.cos(a) * 2.2);
-    const id = spawnEnemy(world, dummyId, x, z, { level: build.level });
+    const id = spawnEnemy(world, dummyId, x, z, { level: build.level, ...(back && { aggro: true }) });
     world.req(id, Health).max = world.req(id, Health).current = 1e12;
     world.req(id, Collider).mass = 1e9;
     // A neutral target: plain armor, no elemental resistances, so classes compare fairly.
@@ -170,7 +208,39 @@ export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimO
   const ticks = Math.round(seconds * 60);
   const corpseEvery = build.corpsesPerMinute ? Math.round(3600 / build.corpsesPerMinute) : 0;
   const corpseRng = new Rng(`${seed}-corpses`);
+  // Survival bookkeeping (B06).
+  const life = world.req(player, Health);
+  const systems = back ? [SYSTEMS[0]!, navigationSystem, enemyAISystem, ...SYSTEMS.slice(1)] : SYSTEMS;
+  const surv = { deaths: 0, below30Ticks: 0, aliveTicks: 0, minLife: 1, lifeSum: 0, taken: 0, potions: 0, deadFor: 0 };
   for (let i = 0; i < ticks; i++) {
+    if (back) {
+      if (world.has(player, Dead)) {
+        surv.deadFor += 1 / 60;
+        if (surv.deadFor >= 3) {
+          surv.deadFor = 0;
+          surv.deaths++;
+          world.remove(player, Dead);
+          world.remove(player, ForcedMove);
+          life.current = life.max;
+          resource.current = resource.config.start;
+          resource.atMaxFor = 0;
+          world.req(player, StatusEffects).list = [];
+          user.cast = null;
+          user.request = null;
+          world.add(player, Invulnerable, { remaining: 2 });
+        }
+      } else {
+        if (life.current < life.max * 0.4 && user.potionCharges > 0 && !user.potionRequested) {
+          user.potionRequested = true;
+          surv.potions++;
+        }
+        const f = life.current / life.max;
+        surv.aliveTicks++;
+        surv.lifeSum += f;
+        surv.minLife = Math.min(surv.minLife, f);
+        if (f < 0.3) surv.below30Ticks++;
+      }
+    }
     if (corpseEvery > 0 && i % corpseEvery === 0) {
       const a = corpseRng.range(0, Math.PI * 2);
       const c = spawnEnemy(world, 'infected_colonist', Math.sin(a) * 2, dist + Math.cos(a) * 2, { level: build.level });
@@ -187,7 +257,7 @@ export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimO
       dtr.x = d.x;
       dtr.z = d.z;
     }
-    if (!user.cast && !user.request && !world.has(player, ForcedMove)) {
+    if (!user.cast && !user.request && !world.has(player, ForcedMove) && !world.has(player, Dead)) {
       const pick = build.rotation.find((r) => {
         const c = user.compiled[r.skill];
         if (!c) return false;
@@ -203,9 +273,9 @@ export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimO
         casts[pick.skill] = (casts[pick.skill] ?? 0) + 1;
       }
     }
-    for (const s of SYSTEMS) s(world, 1 / 60, ctx);
+    for (const s of systems) s(world, 1 / 60, ctx);
     world.flushDestroyed();
-    ctx.events.drain();
+    for (const ev of ctx.events.drain()) if (back && ev.type === 'damage' && ev.toPlayer && ev.target === player) surv.taken += ev.amount;
     ctx.tick++;
     ctx.time += 1 / 60;
     if (resource.config.overheat && resource.atMaxFor >= resource.config.overheat.grace) overheatedTicks++;
@@ -217,10 +287,20 @@ export function simulate(build: Build, seconds = 60, seed = 'sim', options: SimO
     casts,
     overheated: overheatedTicks / ticks,
     avgHeat: heatSum / ticks,
+    ...(back && {
+      survival: {
+        deaths: surv.deaths,
+        below30: surv.below30Ticks / ticks,
+        minLife: surv.aliveTicks > 0 ? surv.minLife : 0,
+        avgLife: surv.aliveTicks > 0 ? surv.lifeSum / surv.aliveTicks : 0,
+        takenPerSecond: surv.taken / seconds,
+        potions: surv.potions,
+      },
+    }),
   };
 }
 
-const BASE_FOR_SLOT: Partial<Record<Slot, string>> = {
+export const BASE_FOR_SLOT: Partial<Record<Slot, string>> = {
   chest: 'plated_vest',
   boots: 'mag_boots',
   gloves: 'servo_gauntlets',

@@ -11,9 +11,10 @@
  *    two-tap `armConfirm`; "salvage all" asks first and lists what it takes;
  *  - the blacksmith is three accordion sections under a pinned item card.
  */
+import { isBroken } from '../systems/loot/durability';
 import type { Inventory } from '../core/components';
 import { t, touchText } from '../data/i18n';
-import { PERCENT_STATS, slotsFor, type Item, type StatKey } from '../data/loot/schemas';
+import { PERCENT_STATS, slotsFor, type Item, type Slot, type StatKey } from '../data/loot/schemas';
 import {
   buyPrice,
   canImprint,
@@ -36,7 +37,7 @@ import { effectiveAffixes } from '../systems/endgame/itemMods';
 import { salvagePreview } from '../systems/endgame/crafting';
 import { powerScale, roundStat, salvageValue } from '../systems/loot/generate';
 import { renderItemCell } from './inventoryPanel';
-import { FILTER_CHIPS, SORT_MODES, filterMatches, isJunk, upgradeSign, type FilterChip, type SortMode } from './inventoryLogic';
+import { FILTER_CHIPS, SORT_MODES, defaultTargetSlot, filterMatches, isJunk, textMatches, upgradeSign, type FilterChip, type SortMode } from './inventoryLogic';
 import {
   ASPECT_CATEGORIES,
   STASH_PAGE_SIZE,
@@ -48,7 +49,7 @@ import {
 } from './serviceLogic';
 import type { BuybackEntry } from '../systems/hub/services';
 import { artUrl } from './art';
-import { aspectText, formatStat, itemDisplayName, placeTooltipForPortrait, renderItemTooltip, type Comparison } from './itemTooltip';
+import { aspectText, formatStat, itemDisplayName, itemSearchText, placeTooltipForPortrait, renderItemTooltip, type CompareTarget, type Comparison } from './itemTooltip';
 import { BASE_ITEMS, rarityDef } from '../data/loot/db';
 import { armConfirm, confirmSheet } from './confirmSheet';
 import { panelStack } from './panelStack';
@@ -63,7 +64,7 @@ export interface ServiceActions {
   stock(): (Item | null)[];
   stash(): (Item | null)[];
   /** Does the item beat what is worn? Drives the upgrade arrows and the "Better" chip (B020, B022). */
-  compare(item: Item): Comparison | null;
+  compare(item: Item, slot?: Slot): Comparison | null;
   /** Items sold to the trader since the last restock, newest first (B023). */
   buyback(): readonly BuybackEntry[];
   buyBack(index: number): void;
@@ -81,6 +82,9 @@ export interface ServiceActions {
   reroll(gridIndex: number, affixIndex: number): void;
   /** Salvage the common and magic items of the backpack, except the grid indexes in `keep`. */
   salvageJunk(keep?: ReadonlySet<number>): void;
+  /** A12: gold to repair everything worn, and the repair itself. */
+  repairCost?(): number;
+  repairAll?(): void;
   extract(gridIndex: number): void;
   imprint(cacheIndex: number, gridIndex: number): void;
   toStash(gridIndex: number): void;
@@ -159,6 +163,8 @@ export class ServicePanel {
   /** Stash view state (B020, B021): page, filter chip, sort menu. */
   private stashPage = 0;
   private stashFilter: FilterChip = 'all';
+  /** The stash text filter (C03): matches name, stats and aspect over every page. */
+  private stashSearch = '';
   private stashSortMode: SortMode | null = null;
   private stashMenuOpen = false;
   /** Keeps the selected backpack cell highlighted when the backpack redraws. */
@@ -209,6 +215,7 @@ export class ServicePanel {
     this.codexCategory = null;
     this.stashPage = 0;
     this.stashFilter = 'all';
+    this.stashSearch = '';
     this.stashMenuOpen = false;
     this.root.hidden = false;
     this.root.scrollTop = 0;
@@ -489,7 +496,16 @@ export class ServicePanel {
     this.stashPage = clampPage(this.stashPage, slots.length);
     const grid = div('inv-grid service-grid stash-grid', '');
     grid.dataset.testid = 'stash-grid';
-    for (const i of pageIndexes(this.stashPage, slots.length)) {
+    const query = this.stashSearch.trim();
+    const search = query ? (it: Item) => textMatches(itemSearchText(it), query) : undefined;
+    // A search looks through every page at once and shows only the matches; without one the grid is paged.
+    const indexes = search ? slots.map((_, i) => i).filter((i) => slots[i] && search(slots[i]!)) : pageIndexes(this.stashPage, slots.length);
+    if (search && indexes.length === 0) {
+      const none = div('service-empty', t('ux.stash.noMatch'));
+      none.dataset.testid = 'stash-no-match';
+      out.push(none);
+    }
+    for (const i of indexes) {
       const item = slots[i] ?? null;
       const cell = renderItemCell(item, (id) => this.actions.iconUrl(id));
       cell.dataset.stash = String(i);
@@ -579,8 +595,32 @@ export class ServicePanel {
       group.append(menu);
     }
     top.append(group);
+    const box = document.createElement('input');
+    box.type = 'search';
+    box.className = 'inv-search-input stash-search';
+    box.placeholder = t('items.bag.searchPlaceholder');
+    box.value = this.stashSearch;
+    box.dataset.testid = 'stash-search';
+    box.dataset.escLocal = '1';
+    box.setAttribute('aria-label', t('ux.stash.search'));
+    box.addEventListener('input', () => {
+      this.stashSearch = box.value;
+      this.refresh();
+      // The panel body is rebuilt on every change: put the caret back into the new box.
+      const next = this.body.querySelector<HTMLInputElement>('.stash-search');
+      next?.focus();
+      next?.setSelectionRange(next.value.length, next.value.length);
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && box.value) {
+        e.stopPropagation();
+        box.value = '';
+        box.dispatchEvent(new Event('input'));
+      }
+    });
+    top.append(box);
     const pages = stashPageCount(slots.length);
-    if (pages > 1) {
+    if (pages > 1 && !this.stashSearch.trim()) {
       const nav = div('stash-pages', '');
       nav.setAttribute('role', 'group');
       nav.setAttribute('aria-label', t('services.stash.pages'));
@@ -694,8 +734,22 @@ export class ServicePanel {
         this.accordion('master', t('crafting.masterwork.title'), masterSummary, () => this.masterwork(inv, item)),
       );
     }
-    out.push(this.salvageAll());
+    out.push(...this.repairRow(inv), this.salvageAll());
     return out;
+  }
+
+  /** A12: one button that repairs every worn item (broken ones first) for gold. */
+  private repairRow(inv: Inventory): HTMLElement[] {
+    const cost = this.actions.repairCost?.() ?? 0;
+    if (cost <= 0) return [];
+    const broken = [...Object.values(inv.equipped), ...inv.grid].filter((i) => i && isBroken(i)).length;
+    const row = div('service-repair', '');
+    row.append(div('service-note', t(broken > 0 ? 'durability.noteBroken' : 'durability.note', { n: broken })));
+    const btn = button(t('durability.repairAll', { gold: cost.toLocaleString('en-US') }), () => this.actions.repairAll?.());
+    btn.dataset.testid = 'repair-all';
+    btn.disabled = inv.gold < cost;
+    row.append(btn);
+    return [row];
   }
 
   /** One collapsible section; opening one closes the others (P088). */
@@ -1089,10 +1143,24 @@ export class ServicePanel {
   }
 
   /** Desktop hover tooltip; touch screens use the item sheet instead (a tap also fires mouseenter). */
+  /**
+   * The comparison block of the backpack tooltip (C18): one "vs <worn item>" block per slot the item could take,
+   * with deltas. Crystals and anything the character cannot wear are shown plain.
+   */
+  compareOptions(item: Item): { targets: CompareTarget[]; defaultSlot: Slot | undefined } | Record<string, never> {
+    const base = BASE_ITEMS.get(item.base);
+    const slots = !item.crystal && base ? slotsFor(base.type) : [];
+    if (slots.length === 0) return {};
+    const equipped = this.actions.inventory().equipped;
+    const label = (slot: Slot) => (slots.length > 1 ? `${t(`items.slots.${slot}`)} ${slots.indexOf(slot) + 1}` : t(`items.slots.${slot}`));
+    const targets: CompareTarget[] = slots.map((slot) => ({ slot, label: label(slot), equipped: equipped[slot] ?? null, comparison: this.actions.compare(item, slot) }));
+    return { targets, defaultSlot: defaultTargetSlot(slots, equipped, (s) => this.actions.compare(item, s)) };
+  }
+
   private hover(cell: HTMLElement, item: Item, extra?: string): void {
     if (useSheet()) return;
     cell.addEventListener('mouseenter', () => {
-      const tip = renderItemTooltip(item, this.actions.classId());
+      const tip = renderItemTooltip(item, this.actions.classId(), { ...this.compareOptions(item), worn: Object.values(this.actions.inventory().equipped).filter((i): i is Item => !!i) });
       if (extra) tip.appendChild(div('tooltip-price', extra));
       else if (this.kind === 'vendor') tip.appendChild(div('tooltip-price', t('services.vendor.sellFor', { gold: sellPrice(item) })));
       this.tooltip.replaceChildren(tip);

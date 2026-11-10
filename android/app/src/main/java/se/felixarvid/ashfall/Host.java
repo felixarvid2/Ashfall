@@ -1,5 +1,6 @@
 package se.felixarvid.ashfall;
 
+import android.app.Activity;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebView;
@@ -26,6 +27,7 @@ final class Host {
 
     private static final Handler UI = new Handler(Looper.getMainLooper());
     private static WebView game;
+    private static Activity activity;
     private static WebView panel;
     private static volatile boolean presentationUp;
     private static volatile boolean secondaryUp;
@@ -36,6 +38,19 @@ final class Host {
 
     static void setGame(WebView w) {
         game = w;
+    }
+
+    /** The game activity, so the game can ask the app to close; cleared in onDestroy. */
+    static void setActivity(Activity a) {
+        activity = a;
+    }
+
+    /** Closes the app: the game's own second Back press (B10). Both screens go with it. */
+    static void quit() {
+        runOnUi(() -> {
+            Activity a = activity;
+            if (a != null) a.finishAffinity();
+        });
     }
 
     static void setPanel(WebView w) {

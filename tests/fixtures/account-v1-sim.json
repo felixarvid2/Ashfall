@@ -57,8 +57,8 @@
         null
       ],
       "aspect": {
-        "id": "cinder_core",
-        "value": 8
+        "id": "cleaver",
+        "value": 0.202
       }
     },
     {
@@ -77,6 +77,7 @@
       "sockets": []
     }
   ],
+  "hardcoreStash": [],
   "endgame": {
     "tierUnlocked": 1,
     "tier": 1,
@@ -84,7 +85,8 @@
     "riftBest": 0,
     "riftOpen": 0,
     "riftTime": 0,
-    "playtime": 180
+    "playtime": 180,
+    "worldBossKilled": 0
   },
   "riftRecords": {},
   "dailyRifts": {},

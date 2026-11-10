@@ -2,6 +2,94 @@
 
 Short records of important technical and design decisions, newest last.
 
+
+## Index
+
+<!-- index:start -->
+- [2026-10-02 — Player-facing language is English](#2026-10-02--player-facing-language-is-english)
+- [2026-10-02 — Project lives in `ashfall/` inside the repository](#2026-10-02--project-lives-in-ashfall-inside-the-repository)
+- [2026-10-02 — Small hand-written ECS instead of a library](#2026-10-02--small-hand-written-ecs-instead-of-a-library)
+- [2026-10-02 — Fixed 60 Hz logic tick with render interpolation](#2026-10-02--fixed-60-hz-logic-tick-with-render-interpolation)
+- [2026-10-02 — sfc32 + cyrb128 for seeded randomness](#2026-10-02--sfc32--cyrb128-for-seeded-randomness)
+- [2026-10-02 — Asset manifest is the single source of truth for 3D assets](#2026-10-02--asset-manifest-is-the-single-source-of-truth-for-3d-assets)
+- [2026-10-02 — Camera: 55° pitch, 45° yaw, 38° FOV](#2026-10-02--camera-55-pitch-45-yaw-38-fov)
+- [2026-10-02 — Collision deferred to Phase 1](#2026-10-02--collision-deferred-to-phase-1)
+- [2026-10-02 — Combat events decouple logic from presentation](#2026-10-02--combat-events-decouple-logic-from-presentation)
+- [2026-10-02 — Hit-stop freezes simulation time, not rendering](#2026-10-02--hit-stop-freezes-simulation-time-not-rendering)
+- [2026-10-02 — Enemy attacks are checked when they land, not when they start](#2026-10-02--enemy-attacks-are-checked-when-they-land-not-when-they-start)
+- [2026-10-02 — DoTs snapshot outgoing damage, mitigate per tick](#2026-10-02--dots-snapshot-outgoing-damage-mitigate-per-tick)
+- [2026-10-02 — Simple circle collision + spatial hash instead of Rapier](#2026-10-02--simple-circle-collision--spatial-hash-instead-of-rapier)
+- [2026-10-02 — Starter numbers](#2026-10-02--starter-numbers)
+- [2026-10-02 — Meshy budget prompt threshold: 800 credits](#2026-10-02--meshy-budget-prompt-threshold-800-credits)
+- [2026-10-02 — Meshy model and texture settings](#2026-10-02--meshy-model-and-texture-settings)
+- [2026-10-02 — Concept image → image-to-3D for creatures](#2026-10-02--concept-image--image-to-3d-for-creatures)
+- [2026-10-02 — WebP instead of KTX2 textures](#2026-10-02--webp-instead-of-ktx2-textures)
+- [2026-10-02 — Simplification across UV seams](#2026-10-02--simplification-across-uv-seams)
+- [2026-10-02 — LODs for static props only](#2026-10-02--lods-for-static-props-only)
+- [2026-10-02 — Raw Meshy downloads are not committed](#2026-10-02--raw-meshy-downloads-are-not-committed)
+- [2026-10-02 — Phase 3 split into 3a (loot core) and 3b (skill tree, aspects, uniques)](#2026-10-02--phase-3-split-into-3a-loot-core-and-3b-skill-tree-aspects-uniques)
+- [2026-10-02 — Diablo 4-style inventory (one cell per item)](#2026-10-02--diablo-4-style-inventory-one-cell-per-item)
+- [2026-10-02 — Separate loot RNG stream](#2026-10-02--separate-loot-rng-stream)
+- [2026-10-02 — Rewards are queued, not handled inside `kill()`](#2026-10-02--rewards-are-queued-not-handled-inside-kill)
+- [2026-10-02 — Item icons from Meshy text-to-image](#2026-10-02--item-icons-from-meshy-text-to-image)
+- [2026-10-02 — Loot sounds are synthesised (WebAudio)](#2026-10-02--loot-sounds-are-synthesised-webaudio)
+- [2026-10-02 — One effect vocabulary for tree nodes, aspects and uniques](#2026-10-02--one-effect-vocabulary-for-tree-nodes-aspects-and-uniques)
+- [2026-10-02 — Skill tree replaces the fixed action bar](#2026-10-02--skill-tree-replaces-the-fixed-action-bar)
+- [2026-10-02 — Skill icons are full-bleed painted emblems](#2026-10-02--skill-icons-are-full-bleed-painted-emblems)
+- [2026-10-02 — Balance simulator uses the real systems](#2026-10-02--balance-simulator-uses-the-real-systems)
+- [2026-10-02 — Phase 4 plan approved: 4a framework + Spectre, 4b Xenomant, 4c balance](#2026-10-02--phase-4-plan-approved-4a-framework--spectre-4b-xenomant-4c-balance)
+- [2026-10-02 — Enemies choose targets instead of always chasing the player](#2026-10-02--enemies-choose-targets-instead-of-always-chasing-the-player)
+- [2026-10-02 — Player projectiles compute damage on impact](#2026-10-02--player-projectiles-compute-damage-on-impact)
+- [2026-10-02 — Resource rules are class data](#2026-10-02--resource-rules-are-class-data)
+- [2026-10-02 — Character select shown before the game loop starts](#2026-10-02--character-select-shown-before-the-game-loop-starts)
+- [2026-10-02 — Minions are the enemies' own bodies](#2026-10-02--minions-are-the-enemies-own-bodies)
+- [2026-10-02 — Corpses linger 20 s](#2026-10-02--corpses-linger-20-s)
+- [2026-10-02 — Poison stacks to 10 and keeps the strongest stacks](#2026-10-02--poison-stacks-to-10-and-keeps-the-strongest-stacks)
+- [2026-10-02 — Lower toxic resistance on Cinder Flats enemies](#2026-10-02--lower-toxic-resistance-on-cinder-flats-enemies)
+- [2026-10-02 — One Meshy CLI run at a time](#2026-10-02--one-meshy-cli-run-at-a-time)
+- [2026-10-02 — Balance by bot playthroughs, not only DPS](#2026-10-02--balance-by-bot-playthroughs-not-only-dps)
+- [2026-10-03 — Instances live far outside the zone, not in a separate scene](#2026-10-03--instances-live-far-outside-the-zone-not-in-a-separate-scene)
+- [2026-10-03 — Cinder Flats scaled 2.2× after measuring](#2026-10-03--cinder-flats-scaled-22-after-measuring)
+- [2026-10-03 — Account-wide progress in its own store](#2026-10-03--account-wide-progress-in-its-own-store)
+- [2026-10-03 — Quests listen to signals, not to the event queue](#2026-10-03--quests-listen-to-signals-not-to-the-event-queue)
+- [2026-10-03 — Zones swap behind a fade instead of streaming](#2026-10-03--zones-swap-behind-a-fade-instead-of-streaming)
+- [2026-10-03 — Quests and NPCs carry a zone](#2026-10-03--quests-and-npcs-carry-a-zone)
+- [2026-10-03 — District ids are prefixed `rd.`](#2026-10-03--district-ids-are-prefixed-rd)
+- [2026-10-03 — Painted ground textures blended by a splat map](#2026-10-03--painted-ground-textures-blended-by-a-splat-map)
+- [2026-10-03 — Click-to-move is the default; phones get touch controls](#2026-10-03--click-to-move-is-the-default-phones-get-touch-controls)
+- [2026-10-03 — Region 3 reuses every model](#2026-10-03--region-3-reuses-every-model)
+- [2026-10-03 — The Mother Tree choice lives in the quest record](#2026-10-03--the-mother-tree-choice-lives-in-the-quest-record)
+- [2026-10-03 — Boss parts as separate targets](#2026-10-03--boss-parts-as-separate-targets)
+- [2026-10-04 — Underground zones: a walkable grid instead of hand-built corridors](#2026-10-04--underground-zones-a-walkable-grid-instead-of-hand-built-corridors)
+- [2026-10-04 — Darkness is rendering plus a light test](#2026-10-04--darkness-is-rendering-plus-a-light-test)
+- [2026-10-04 — The governor is called Kade](#2026-10-04--the-governor-is-called-kade)
+- [2026-10-04 — The region 3 follower is read from the finished-quest record](#2026-10-04--the-region-3-follower-is-read-from-the-finished-quest-record)
+- [2026-10-04 — Enemy pathfinding with a flow field around the player](#2026-10-04--enemy-pathfinding-with-a-flow-field-around-the-player)
+- [2026-10-04 — Enemy wayfinding: shared grid, fields per target, senses and tactics](#2026-10-04--enemy-wayfinding-shared-grid-fields-per-target-senses-and-tactics)
+- [2026-10-05 — Painted sprite effects generated with FLUX.2 Turbo (deviation from brief §9.5)](#2026-10-05--painted-sprite-effects-generated-with-flux2-turbo-deviation-from-brief-95)
+- [2026-10-05 — Painted art from FLUX.2 Turbo: icons, portraits, frames, decals, cards and maps](#2026-10-05--painted-art-from-flux2-turbo-icons-portraits-frames-decals-cards-and-maps)
+- [2026-10-05 — Damage over time on the player stops after 4 s; drones are marked](#2026-10-05--damage-over-time-on-the-player-stops-after-4-s-drones-are-marked)
+- [2026-10-14 — Free library assets: environment light, rock walls, road clutter, fonts, status icons](#2026-10-14--free-library-assets-environment-light-rock-walls-road-clutter-fonts-status-icons)
+- [2026-10-15 — Instance floors you can see; homing Spore Darts](#2026-10-15--instance-floors-you-can-see-homing-spore-darts)
+- [2026-10-15 — Touch works held upright](#2026-10-15--touch-works-held-upright)
+- [2026-10-18 — Audio on plain WebAudio instead of Howler.js](#2026-10-18--audio-on-plain-webaudio-instead-of-howlerjs)
+- [2026-10-18 — Free low-poly models only where a light treatment hides their style](#2026-10-18--free-low-poly-models-only-where-a-light-treatment-hides-their-style)
+- [2026-10-18 — Region 5 scope: what is cut to fit levels 40–50](#2026-10-18--region-5-scope-what-is-cut-to-fit-levels-4050)
+- [2026-10-18 — Zone gates can require a finished quest](#2026-10-18--zone-gates-can-require-a-finished-quest)
+- [2026-10-18 — Endgame: tiers, rifts, world bosses, harvest, matrix](#2026-10-18--endgame-tiers-rifts-world-bosses-harvest-matrix)
+- [2026-10-25 — A fourth class: the Lightbearer (support)](#2026-10-25--a-fourth-class-the-lightbearer-support)
+- [2026-10-25 — Refunding one skill rank (UI pass B032)](#2026-10-25--refunding-one-skill-rank-ui-pass-b032)
+- [2026-10-25 — Lightbearer balance pass (G001-G008)](#2026-10-25--lightbearer-balance-pass-g001-g008)
+- [2026-10-25 — Balance pass for Bastion, Spectre and Xenomant (G009-G017, G025)](#2026-10-25--balance-pass-for-bastion-spectre-and-xenomant-g009-g017-g025)
+- [2026-10-25 — Progression pass: death toll, XP fall-off, strongholds, elites, rifts (G018-G024, C011)](#2026-10-25--progression-pass-death-toll-xp-fall-off-strongholds-elites-rifts-g018-g024-c011)
+- [2026-10-25 — Finishing the partial balance items (G007, G009, G013, G014)](#2026-10-25--finishing-the-partial-balance-items-g007-g009-g013-g014)
+- [2026-10-25 — Round 3 gameplay (D01-D14)](#2026-10-25--round-3-gameplay-d01-d14)
+- [2026-10-27 — Runtime variants and Blender parts instead of more full GLBs](#2026-10-27--runtime-variants-and-blender-parts-instead-of-more-full-glbs)
+- [2026-10-27 — Rigging Meshy models in Blender when the credits are out](#2026-10-27--rigging-meshy-models-in-blender-when-the-credits-are-out)
+- [2026-11-08 — Round 4 tech (B01-B20)](#2026-11-08--round-4-tech-b01-b20)
+- [2026-11-08 — Round 4 group A: persistence, sealed arenas, borrowed clips, Core events](#2026-11-08--round-4-group-a-persistence-sealed-arenas-borrowed-clips-core-events)
+<!-- index:end -->
+
 ### 2026-10-02 — Player-facing language is English
 The brief (§11) asked for Swedish; the owner later asked for the game to be in **English**.
 All text lives in `src/data/lang/en.json` and goes through `t()`, so Swedish (`sv.json`) or other
@@ -668,3 +756,68 @@ in `docs/balance.md`. Real decisions:
   ceiling in `tests/assetSets.test.ts` (18 to 20 MB) were raised with the new numbers in a comment.
 - **Limits.** Only bipeds, only the donor's moves. The three world bosses (colossus, spore mother, hollow engine) stay on variants; their prompts are in
   `docs/meshy-pending.md` for when there are credits.
+
+### 2026-11-08 — Round 4 tech (B01-B20)
+- **Render LOD (B01, B02).** `src/render/lod.ts`: skinned enemies' mixers run every frame within 22 m of the camera focus, at 30 Hz to 40 m and
+  15 Hz beyond, and not at all off screen (frustum test with a 6 m sphere); the skipped time is kept (up to 1 s) and applied in one step, so a
+  clip never falls behind. Players and bosses always run in full. Only the nearest 10 enemies cast real shadows; the others get a soft blob disc
+  under them (hovering drones keep their own ground shadow). Why not instancing: still the open item in PROGRESS; this is the cheap half.
+- **Renderer tests without GL (B03, B04).** Node cannot make a WebGL context, so `tests/fakeGl.ts` stands in for `WebGLRenderer` and `PostFx` and
+  counts the geometries, materials and textures the scene draws until their `dispose` event, the same numbers as `renderer.info.memory`. The leak
+  test found a real leak at once: ambient decals (`InstancedMesh` with its own geometry and material) were never freed on a zone change.
+- **Save backups and imports (B07, B08).** `SaveStore` keeps the last 3 saves of a slot as `<slot>.bk.<time>`, at least 5 minutes apart (autosave
+  would otherwise fill all three with the same minute). Restore and import both go through the same check as loading, keep what they replace as a
+  backup first, and an import shows who/level/place/gold side by side before it replaces anything; unreadable files get one of six readable reasons.
+- **Offline web build (B09).** `tools/serviceWorkerPlugin.ts` writes `sw.js` only for the plain web build (`pwaEnabled`: not `VITE_MODEL_FORMAT=json`,
+  not `ASHFALL_TARGET`); `__PWA__` makes the registration dead code elsewhere. Cache name = build time, `skipWaiting`, `clients.claim`, the page
+  network-first, hashed scripts cache-first, models/audio/art stale-while-revalidate, the two newest caches kept (an old tab still finds its lazy chunks).
+  The page hands the worker what it fetched before the worker took control, so the first visit works offline too. Verified headless (`e2e --scenario offline`).
+- **Bundle (B14).** `npm run bundle:analyze` attributes bytes to source files through the hidden source maps. No unused export of any size exists and
+  three.js is already tree-shaken to what the renderer uses (445 kB of 2.1 MB), so nothing was dropped; the table is in `docs/improvements/round4-status-tech.md`.
+- **Prefetch, auto graphics, FPS cap (B15-B17).** The zone behind a gate is requested in idle time within 60 m of the gate (once, not while locked).
+  The first run measures 2.5 s of frame times (0.5 s warm-up skipped) and only ever steps the preset down. The cap skips display frames that come
+  sooner than the cap allows (1.5 ms jitter slack) and keeps their time, so the 60 Hz simulation is untouched.
+- **Level 10-50 bot and fighting dummies (B05, B06).** Stage runs fight each region's own pack enemies at its levels in the test arena (the bot steers
+  in straight lines; a 1500 m world would measure its pathing). Fight-back runs put three Security Troopers of the build's level next to the
+  character with unlimited life, so DPS is still measured; gear in every slot, because survival is mostly armour and life.
+
+### 2026-11-08 — Round 4 group A: persistence, sealed arenas, borrowed clips, Core events
+- **Persisting what the player leaves behind (A08-A11, A17).** A world boss kill is stored on the account (`endgame.worldBossKilled`, the index of the last
+  event), because its window is account play time: a reload inside the window keeps it dead. Escorts, world events and ground loot are remembered on the
+  runtime for 10 / 10 / 5 minutes of game time (`PROGRESS_KEEP`, `LOOT_KEEP`) and are not saved to disk (the spec is a zone round trip): leaving a zone
+  records the escort's waypoint, position and life, an active event's elapsed time and counters, and the ground items and gold; coming back inside the window
+  restores them, later starts over. The shards lost on death (A09) lie on the zone as a data pile (`zone.shardPile`) with an entity that is rebuilt on
+  every visit; walking over it returns them, five minutes later they are gone. A17 adds an optional `state` block to the save (life, resource, remaining
+  buff time, the wave encounter) with no version bump: it is optional and old saves keep loading at full life.
+- **Sealed boss arenas (A07).** The rings around The First, Vire and the Warden are wall segments shorter than their spacing, so a player could slip out
+  through the seams. While the fight runs a row of static colliders fills every seam (`src/world/sealedArena.ts`, one glowing panel per seam); the entities
+  live in the boss state's `gates` list, so they go with the gates on a win, a reset or a zone change. A flood-fill test proves it.
+- **Borrowed clips (A18).** Rigs on the shared Meshy skeleton that came with an idle clip only (the five town NPC bodies, hence the Absorbed enemies) take
+  walk/attack/hit/death from the sergeant at runtime: rotation tracks only, the hips' translation scaled by the ratio of the two hips heights, bone lengths
+  untouched. Only enemies borrow (the donor joins an enemy's asset set, NPCs stay as they were) and an animator that was built before the donor loaded
+  gets the clips when it has (`CharacterAnimator.addClips`).
+- **Elite Force Wall and Laser Grid (A05, A06)** became physical: the wall is a row of static colliders (it blocks walking, the nav grid and every
+  projectile through `Barrier`) that fades after 6 s; the grid is three beams that turn out of the elite and hurt on touch, telegraphed first. The old
+  ground-hazard versions are gone.
+- **The Core's four own events (A01-A04)** live in `src/world/coreEvents.ts` behind three hooks in `worldEvents.ts` (start, step, interact, objective), so
+  new event types from other groups do not collide. The collapsing bridge needed a time-based override on the shared cave grid (`bridge.collapse`) that the
+  Core's renderer reads for the flicker and the dark span.
+- **Hardcore (A13).** `character.hardcore`/`fallen` are optional fields (no version bump); the death is written to the save the moment it happens, so
+  reloading cannot undo it. The Hardcore stash is `account.hardcoreStash`; materials stay shared.
+- **Durability (A12).** `item.durability` (absent = 100); death wears the equipped gear 10 points; a broken item keeps only its implicits until repaired
+  (`itemStats` / `itemEffects` check it, so every consumer agrees). Repair is one "Repair all" button at the blacksmith, broken items first when gold is short.
+- **Lumen framing (A16)** pulls the camera back (up to 2.4x) and leans toward the boss until a 15 m x 4 m box fits on screen, found by projecting the box
+  through a rig-shaped camera (`screenExtent`), not by a fixed number.
+- **Rift modifiers (A20)** are rolled from the rift's own seed (so the daily rift keeps its twist all day) from level 5 on, 70 % of the time.
+- **Dungeon lengths (A14, A15).** Per `scripts/sim/regionReport.ts`: Core dungeons 11:08-11:48 (rooms cut from 14-15 to about 9), Cinder Flats dungeons +1 main
+  room and +1 branch (about 7 min), road packs 15 % fewer (26 m to 31 m spacing).
+
+### 2026-11-10 — The 18 boss models go live
+- **Decision.** Thirteen region bosses and the five world bosses use their own Meshy models (`boss.*`) directly; their variants, the `glow` that
+  flattened the textures, and the 24 Blender parts only they used are gone (`assets:check` has 0 orphans). The Warden's shade
+  (`variant.shade_warden`) now sits on `boss.warden`, so it stays the same body as its original. The Lumen repaint is dropped on every boss that had it (it flattened the gold and blue textures); the Core's regular enemies keep it.
+- **Budgets.** No change: the bosses are set-piece, instance or world-boss models, which `zoneLaterAssetIds` fetches quietly after the zone shows, not
+  at its border (zone entry budgets in `tests/zoneBudget.test.ts` do not count them).
+- **Artifact.** 18 more files would have passed the 500-file guard (506). The boss models now travel in seven packs by home region
+  (`BOSS_PACKS` in `src/render/modelPack.ts`, 5-8 MB each), each fetched only when its first boss is wanted; the build is 495 files.
+

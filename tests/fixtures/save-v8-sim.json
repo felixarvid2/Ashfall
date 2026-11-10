@@ -84,8 +84,8 @@
           null
         ],
         "aspect": {
-          "id": "cinder_core",
-          "value": 8
+          "id": "cleaver",
+          "value": 0.202
         }
       },
       {
@@ -235,7 +235,8 @@
   "quests": {
     "active": {},
     "done": {},
-    "tracked": null
+    "tracked": null,
+    "pinned": []
   },
   "endgame": {
     "matrixXp": 0,
@@ -246,5 +247,11 @@
     "ashShards": 0,
     "recipes": [],
     "materials": {}
+  },
+  "state": {
+    "health": 234,
+    "resource": 100,
+    "buffs": [],
+    "wave": null
   }
 }

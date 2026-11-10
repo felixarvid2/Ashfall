@@ -4,11 +4,11 @@
  * The build is served from resources/app/www through a privileged custom scheme, `app://ashfall/`, never file://
  * (ES modules, fetch and localStorage break there). The origin is fixed, so saves in localStorage persist.
  */
-const { app, BrowserWindow, Menu, net, protocol, shell } = require('electron');
+const { app, BrowserWindow, Menu, protocol, screen, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
-const { pathToFileURL } = require('node:url');
-const { mimeType, resolveAppPath } = require('./serve.js');
+const { fileResponse, resolveAppPath } = require('./serve.js');
+const windowState = require('./windowState.js');
 
 const ORIGIN = 'app://ashfall';
 const WWW = path.join(__dirname, 'www');
@@ -47,16 +47,13 @@ if (!app.requestSingleInstanceLock()) {
   app.on('window-all-closed', () => app.quit());
 }
 
-/** protocol.handle callback: read the file through net.fetch (keeps Range/206 for media) and fix the Content-Type. */
+/** protocol.handle callback: the file as a stream, with byte ranges answered as 206 + Content-Range (media seeking, B11). */
 async function serve(request) {
   const file = resolveAppPath(WWW, request.url);
   if (!file) return new Response('Bad request', { status: 400 });
   try {
     if (!fs.statSync(file).isFile()) return new Response('Not found', { status: 404 });
-    const upstream = await net.fetch(pathToFileURL(file).toString(), { headers: request.headers });
-    const headers = new Headers(upstream.headers);
-    headers.set('Content-Type', mimeType(file));
-    return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers });
+    return fileResponse(file, request.headers.get('range'));
   } catch {
     return new Response('Not found', { status: 404 });
   }
@@ -71,11 +68,14 @@ function openExternal(url) {
 }
 
 function createWindow() {
+  // Size, position and fullscreen come back as they were left (B12); a position on a vanished monitor is dropped.
+  const stateFile = path.join(app.getPath('userData'), 'window-state.json');
+  const saved = windowState.readState(stateFile);
+  const bounds = windowState.fitToDisplays(saved, screen.getAllDisplays().map((d) => d.workArea));
   win = new BrowserWindow({
-    width: 1600,
-    height: 900,
-    minWidth: 960,
-    minHeight: 540,
+    ...bounds,
+    minWidth: windowState.MIN_SIZE.width,
+    minHeight: windowState.MIN_SIZE.height,
     title: 'Ashfall',
     icon: path.join(__dirname, 'icon.png'),
     backgroundColor: '#0b0b0c',
@@ -84,7 +84,12 @@ function createWindow() {
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false },
   });
   win.removeMenu();
-  win.once('ready-to-show', () => win.show());
+  windowState.track(win, stateFile);
+  win.once('ready-to-show', () => {
+    if (saved?.maximized) win.maximize();
+    win.show();
+    if (saved?.fullscreen) win.setFullScreen(true);
+  });
   win.on('closed', () => {
     win = null;
   });

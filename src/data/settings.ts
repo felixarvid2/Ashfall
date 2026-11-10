@@ -30,6 +30,7 @@ export const ACTIONS = [
   'mount',
   'flare',
   'toggleMute',
+  'photoMode',
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -62,6 +63,8 @@ export const DEFAULT_KEYBINDINGS: Record<Action, string[]> = {
   flare: ['KeyF'],
   // M is the map; N toggles all sound.
   toggleMute: ['KeyN'],
+  // Photo mode (C06): hides the HUD, pauses and frees the camera.
+  photoMode: ['F8'],
 };
 
 export const MoveModeSchema = z.enum(['wasd', 'click']);
@@ -119,6 +122,18 @@ export const SettingsSchema = z.object({
   brightness: z.number().min(0.6).max(1.5).default(1),
   /** Ground loot labels shown from this rarity up; lower ones keep only their beam (B046). */
   lootLabelMin: z.enum(['all', 'magic', 'rare', 'legendary']).default('magic'),
+  /** Hide common and magic drops on the ground (model, beam and label); gold and crystals always show, Alt shows all (C01). */
+  hideLowLoot: z.boolean().default(false),
+  /** Rarity shapes (corner marks, border patterns) on frames, labels and beams in addition to colour (C04). */
+  rarityShapes: z.boolean().default(false),
+  /** Frame rate cap in frames per second; 0 draws every display frame (B17). The simulation always ticks at 60 Hz. */
+  fpsCap: z.union([z.literal(0), z.literal(30), z.literal(60), z.literal(120)]).default(0),
+  /** UI scale 0.8..1.4, separate from the text size (C05). */
+  uiScale: z.number().min(0.8).max(1.4).default(1),
+  /** Floating damage numbers: none, compact (rounded, merged, crits and big hits only) or full (C09). */
+  damageNumbers: z.enum(['off', 'compact', 'full']).default('full'),
+  /** Show NPC and boss barks as subtitles (C15). */
+  subtitles: z.boolean().default(true),
   /** Settings saved before the sound system have none: the defaults apply. */
   audio: AudioSettingsSchema.default({ master: 0.8, music: 0.5, sfx: 0.8, ui: 0.6, muted: false }),
 });
@@ -358,6 +373,12 @@ export function tabDefaults(tab: SettingsTabId, touch = false): Partial<Settings
       colorblind: d.colorblind,
       brightness: d.brightness,
       lootLabelMin: d.lootLabelMin,
+      hideLowLoot: d.hideLowLoot,
+      rarityShapes: d.rarityShapes,
+      uiScale: d.uiScale,
+      fpsCap: d.fpsCap,
+      damageNumbers: d.damageNumbers,
+      subtitles: d.subtitles,
     };
   }
   if (tab === 'controls') {
@@ -370,6 +391,9 @@ export function tabDefaults(tab: SettingsTabId, touch = false): Partial<Settings
 
 /** Brightness slider range (B045): the setting allows a little more, the slider stays in a useful span. */
 export const BRIGHTNESS_RANGE = { min: 0.8, max: 1.4, step: 0.05 } as const;
+
+/** UI scale slider range (C05): 80 to 140 percent. */
+export const UI_SCALE_RANGE = { min: 0.8, max: 1.4, step: 0.05 } as const;
 
 const SETTINGS_KEY = 'ashfall.settings';
 

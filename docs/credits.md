@@ -4,6 +4,9 @@ Most of Ashfall's art is generated for the game: 3D models and icons with Meshy,
 Turbo (see `scripts/meshy/` and `scripts/art/`). The rest comes from free libraries, fetched and
 processed by `npm run assets:third-party` (`scripts/assets/thirdParty.ts`).
 
+Own models and parts are built headless in Blender (GPL tool; its output is ours, see `docs/blender.md`). The in-game credits page
+(`src/data/credits.ts`, character select) lists the packs and tools below.
+
 | What | Source | Licence | In the game |
 |---|---|---|---|
 | Environment light: *Burnt Warehouse* HDRI | [Poly Haven](https://polyhaven.com/a/burnt_warehouse) | CC0 | `public/assets/env/burnt_warehouse.webp` |
@@ -21,7 +24,8 @@ processed by `npm run assets:third-party` (`scripts/assets/thirdParty.ts`).
 | Fonts: Rajdhani (Indian Type Foundry), Share Tech Mono (Carrois Type Design) | [Google Fonts](https://fonts.google.com) | SIL Open Font License 1.1 (`public/assets/fonts/OFL-*.txt`) | `public/assets/fonts/` |
 | Sound effects: [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds), [Impact Sounds](https://kenney.nl/assets/impact-sounds), [Interface Sounds](https://kenney.nl/assets/interface-sounds), [Digital Audio](https://kenney.nl/assets/digital-audio), [RPG Audio](https://kenney.nl/assets/rpg-audio), [UI Audio](https://kenney.nl/assets/ui-audio), [Music Jingles](https://kenney.nl/assets/music-jingles) (level-up and quest jingles) | Kenney | CC0 | `public/assets/audio/sfx.*`, `amb/` (built by `npm run audio:build`; which file is which sound is in `scripts/audio/build.ts`) |
 | Music: *Music Loop Bundle* (Dark Portents, Dust Bowl, Magnetic Tape, Primordial Soup, Pull Me Down) | [Abstraction](https://tallbeard.itch.io/music-loop-bundle) (Ben Burnes) | CC0; credit to "Abstraction" is appreciated, not required | `public/assets/audio/music/` |
-| Music: `music.the_core` and `music.boss_core` | Synthesised by `scripts/audio/synth.ts` (no third-party source; nothing to credit) | Ours | `public/assets/audio/music/the_core.*`, `boss_core.*` |
+| Music: `music.the_core` (*Heavenly Loop*, tiled twice for 67 s; round 4, D01) | [isaiah658 on OpenGameArt](https://opengameart.org/content/heavenly-loop) (listed there as CC0) | CC0; credit is not required | `public/assets/audio/music/the_core.*` (source `opengameart/Heavenly Loop.ogg` in `assets-src/third-party/audio/`) |
+| Music: `music.boss_core` | Synthesised by `scripts/audio/synth.ts` (no third-party source; nothing to credit) | Ours | `public/assets/audio/music/boss_core.*` |
 
 The Quaternius and Kenney model files are kept by hand in `assets-src/third-party/models/<pack>/` (gitignored, with
 each pack's licence file; `THIRD_PARTY_MODELS_SRC` points elsewhere). `npm run assets:third-party -- local-models`

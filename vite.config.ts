@@ -2,15 +2,16 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import { assetViewerPlugin } from './tools/assetViewerPlugin.ts';
 import { runtimeManifestPlugin } from './tools/runtimeManifestPlugin.ts';
+import { pwaEnabled, serviceWorkerPlugin } from './tools/serviceWorkerPlugin.ts';
 
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
-export default defineConfig({
-  // The version shown in the error report's "Copy details" (C13).
-  define: { __APP_VERSION__: JSON.stringify(version) },
+export default defineConfig(({ command }) => ({
+  // The version shown in the error report's "Copy details" (C13); __PWA__ is true only in the plain web build (B09).
+  define: { __APP_VERSION__: JSON.stringify(version), __PWA__: JSON.stringify(command === 'build' && pwaEnabled()) },
   // Relative base so the build can be served from any sub-path (e.g. GitHub Pages).
   base: './',
-  plugins: [assetViewerPlugin(), runtimeManifestPlugin()],
+  plugins: [assetViewerPlugin(), runtimeManifestPlugin(), serviceWorkerPlugin()],
   server: { host: true },
   build: {
     target: 'es2022',
@@ -47,4 +48,4 @@ export default defineConfig({
       reportsDirectory: 'coverage',
     },
   },
-});
+}));

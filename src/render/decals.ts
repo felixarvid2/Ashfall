@@ -125,6 +125,8 @@ export function buildDecals(root: THREE.Object3D, arena: ArenaDef): void {
     mats.forEach((m, i) => mesh.setMatrixAt(i, m));
     mesh.receiveShadow = true;
     mesh.renderOrder = 1;
+    // Its own geometry and material: the zone teardown frees them (B04 leak test).
+    mesh.userData.own = true;
     root.add(mesh);
   }
 }

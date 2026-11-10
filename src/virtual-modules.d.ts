@@ -7,3 +7,6 @@ declare module 'virtual:asset-manifest' {
 
 /** The package.json version, injected by vite.config.ts (`define`). */
 declare const __APP_VERSION__: string;
+
+/** True only in the plain web build, which ships a service worker (tools/serviceWorkerPlugin.ts, B09). */
+declare const __PWA__: boolean;

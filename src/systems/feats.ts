@@ -2,11 +2,12 @@
  * Feats (D12, D13): feeds the account's counters from the frame's game events and reports the feats that
  * just reached their goal. Pure functions on the world and the account; the game shows the toast and saves.
  */
-import { Boss, Elite, Faction, Progression, SkillUser } from '../core/components';
+import { Boss, Elite, EnemyAI, Faction, Progression, SkillUser } from '../core/components';
 import type { World, Entity } from '../core/ecs';
 import type { AccountData } from '../core/account';
 import type { GameEvent } from '../core/events';
-import { CLASSES } from '../data/db';
+import { CLASSES, enemyDef } from '../data/db';
+import { familyKillKey } from '../data/bestiary';
 import { FEATS, FEAT_DEFS, type FeatDef, type FeatStat } from '../data/feats';
 
 const bump = (stats: Record<string, number>, key: string, by = 1) => {
@@ -66,6 +67,8 @@ function count(world: World, account: AccountData, events: readonly GameEvent[])
         const elite = world.get(e, Elite);
         if (elite?.copy) break;
         bump(stats, 'kills');
+        const ai = world.get(e, EnemyAI);
+        if (ai) bump(stats, familyKillKey(enemyDef(ai.defId).family));
         if (elite) bump(stats, 'elites');
         if (world.has(e, Boss)) bump(stats, 'bosses');
         break;

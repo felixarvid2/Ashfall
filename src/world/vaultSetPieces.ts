@@ -4,6 +4,7 @@
  *   With all five gone the Gamma Bloom rises. Reclaimed, it becomes a hub with a teleporter.
  * - The Great Dome: the Warden, behind gates that close for the fight.
  */
+import { sealRing } from './sealedArena';
 import { Collider, Dead, DisplayName, EnemyAI, Faction, Health, Renderable, Targetable, Transform, makeTransform } from '../core/components';
 import type { GameContext } from '../core/context';
 import type { Entity, World } from '../core/ecs';
@@ -210,7 +211,7 @@ function warden(world: World, ctx: GameContext, zone: ZoneRuntime, sp: VaultSetP
       });
     }
     world.req(st.boss, EnemyAI).aggro = true;
-    st.gates = WARDEN_GATES.gaps.map((i) => gateAt(world, i));
+    st.gates = [...WARDEN_GATES.gaps.map((i) => gateAt(world, i)), ...sealRing(world, { x: GREAT_DOME.x, z: GREAT_DOME.z, radius: GREAT_DOME.radius, segments: WARDEN_GATES.segments }, '#7dff5a')];
     ctx.events.push({ type: 'banner', key: 'bosses.warden.intro', seconds: 3 });
     ctx.events.push({ type: 'shake', trauma: 0.6 });
   }

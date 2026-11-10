@@ -81,6 +81,19 @@ export function elementClass(damageType: string): string {
   }
 }
 
+export type DamageNumberMode = 'off' | 'compact' | 'full';
+/** Compact mode: an outgoing plain hit under this share of the target's life is not shown (crits and damage taken always are). */
+export const COMPACT_MIN_SHARE = 0.02;
+
+/** Does a damage event get a floating number in this mode (C09)? Off shows none; compact keeps crits, damage taken and big hits. */
+export function showsNumber(mode: DamageNumberMode, e: { crit?: boolean; dot?: boolean; toPlayer?: boolean }, amount: number, maxLife: number): boolean {
+  if (mode === 'off') return false;
+  if (mode === 'full') return true;
+  if (e.toPlayer || e.crit) return true;
+  if (e.dot) return maxLife <= 0 || amount >= maxLife * 0.05;
+  return maxLife <= 0 || amount >= maxLife * COMPACT_MIN_SHARE;
+}
+
 export type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
 
 export class DamageNumbers {
@@ -94,6 +107,8 @@ export class DamageNumbers {
     private readonly max = 80,
     /** Max life of an entity (0 when unknown), for the touch DoT filter. */
     private readonly maxLifeOf: (e: Entity) => number = () => 0,
+    /** The "Damage numbers" setting (C09). */
+    private readonly mode: () => DamageNumberMode = () => 'full',
   ) {
     this.layer = document.createElement('div');
     this.layer.className = 'damage-layer';
@@ -105,10 +120,14 @@ export class DamageNumbers {
   }
 
   handle(event: GameEvent): void {
+    const mode = this.mode();
+    if (mode === 'off') return;
     if (event.type === 'damage') {
       const total = event.amount + event.absorbed;
       if (total < 0.5) return;
-      const touch = this.touch;
+      if (!showsNumber(mode, event, total, this.maxLifeOf(event.target))) return;
+      // Compact merges like a phone does: one number per target and burst.
+      const touch = this.touch || mode === 'compact';
       if (touch && event.dot && !dotWorthShowing(total, this.maxLifeOf(event.target))) return;
       let cls = 'dmg';
       if (event.toPlayer) cls += ' dmg-taken';
@@ -127,6 +146,7 @@ export class DamageNumbers {
         n.sum = total;
         n.kind = cls;
       }
+      if (mode === 'compact') n.el.classList.add('dmg-compact');
       if (touch) {
         if (event.toPlayer) n.slide = -44;
       } else {
@@ -141,7 +161,7 @@ export class DamageNumbers {
       }
     } else if (event.type === 'miss') {
       // Misses are enemy evasion only; on a phone they just add noise.
-      if (!this.touch) this.spawn(event.x, event.y, event.z, 'Miss', 'dmg dmg-dot');
+      if (!this.touch && mode === 'full') this.spawn(event.x, event.y, event.z, 'Miss', 'dmg dmg-dot');
     } else if (event.type === 'heal') {
       this.spawn(event.x, event.y, event.z, `+${formatDamage(event.amount)}`, 'dmg dmg-heal');
     }

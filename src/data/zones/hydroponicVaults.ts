@@ -4,6 +4,7 @@
  * Every id is prefixed `hv.`. No new 3D models: fungal trees, roots, crystals and the Mother Tree are
  * existing models at new sizes and tints; the glass domes are drawn by the renderer.
  */
+import { round4Props } from './round4Props';
 import { Rng } from '../../core/rng';
 import { alongRoad, clearOfProps, distanceToRoad as roadDistance, line } from './layout';
 import type { GroundDef, GroundPatch } from './testArena';
@@ -366,6 +367,8 @@ function buildProps(): PropPlacement[] {
     else if (r < 0.85) props.push(tree(x, z, rng.range(2.4, 4)));
     else props.push({ asset: 'prop.spore_nest', x, z, scale: rng.range(0.7, 1.1), collider: 1 });
   }
+  // Round 4 (D16): ten Blender set-dressing props.
+  props.push(...round4Props('zone.hydroponic_vaults', HALF, (x, z) => distanceToRoad(x, z) > 6 && !nearPlace(x, z, 6) && !onEnv(x, z, 2)));
   return props;
 }
 
@@ -439,6 +442,8 @@ function buildPois(): PoiDef[] {
   scaled([
     [140, -300], [90, -250], [118, -228], [10, -150], [-80, -210], [-160, -60], [-250, 0], [-140, 120], [180, 130], [240, 180], [-200, 280], [30, 190],
   ]).forEach(([x, z], i) => pois.push({ id: `hv.lore.${i}`, kind: 'lore', x, z, data: { log: `hv.${i}` } }));
+  // Round 4 (D08): three of Okafor's logs.
+  scaled([[60, -200], [-200, 40], [200, 100]]).forEach(([x, z], i) => pois.push({ id: `hv.lore.${12 + i}`, kind: 'lore', x, z, data: { log: `hv.${12 + i}` } }));
   // One signal tower per outer subzone.
   scaled([[-30, -230], [-250, -40], [250, 80]]).forEach(([x, z], i) => pois.push({ id: `hv.tower.${i}`, kind: 'signalTower', x, z }));
   scaled([[80, -160], [-20, -60], [170, 90]]).forEach(([x, z], i) => {
@@ -475,7 +480,7 @@ function buildPois(): PoiDef[] {
   );
   for (const f of AIR_FILTERS) pois.push({ id: f.id, kind: 'feature', x: f.x, z: f.z, data: { feature: 'airFilter', radius: FILTER_RADIUS } });
   const events: [string, number, number][] = [
-    ['sporeBloom', -200, 40], ['swarmMigration', 0, -120], ['rootEruption', -140, 240], ['rescue', 230, 160], ['eliteHunt', 120, -120], ['supplyDrop', -60, 140],
+    ['sporeBloom', -200, 40], ['swarmMigration', 0, -120], ['rootEruption', -140, 240], ['rescue', 230, 160], ['eliteHunt', 120, -120], ['supplyDrop', -60, 140], ['pollenRun', -155, -65],
   ];
   events.forEach(([type, x, z]) => pois.push({ id: `hv.event.${type}`, kind: 'event', x: x * S, z: z * S, data: { event: type } }));
   return pois;

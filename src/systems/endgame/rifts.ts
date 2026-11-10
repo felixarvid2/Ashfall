@@ -19,6 +19,7 @@ import { spawnEnemy } from '../../world/spawn';
 import { grantMaterial, grantRecipe } from './crafting';
 import { upgradeGlyph, grantGlyph } from './matrix';
 import { unlockTier } from './tiers';
+import { modifierOnEnemy, modifierOnGuardian, modifierOnKill, newModifierState, tickModifier, type ModifierState, type RiftModifierId } from './riftModifiers';
 
 export type RiftPhase = 'running' | 'guardian' | 'cleared' | 'failed';
 
@@ -53,6 +54,9 @@ export interface RiftState {
   cacheOpened: boolean;
   /** D11: the date (YYYY-MM-DD) of the daily rift this run is, or null for an ordinary rift. */
   daily: string | null;
+  /** A20: this rift's twist (src/systems/endgame/riftModifiers.ts), if it rolled one, and its state. */
+  modifier: RiftModifierId | null;
+  mod: ModifierState;
 }
 
 export interface RiftResult {
@@ -180,7 +184,7 @@ export function recordDailyTime(account: AccountData, date: string, seconds: num
   return { previous, improved };
 }
 
-export function createRift(level: number, daily: string | null = null): RiftState {
+export function createRift(level: number, daily: string | null = null, modifier: RiftModifierId | null = null): RiftState {
   const lv = Math.max(1, Math.min(RIFT.maxLevel, Math.floor(level)));
   return {
     level: lv,
@@ -199,6 +203,8 @@ export function createRift(level: number, daily: string | null = null): RiftStat
     result: null,
     cacheOpened: false,
     daily,
+    modifier,
+    mod: newModifierState(),
   };
 }
 
@@ -224,12 +230,13 @@ export function riftTimeLeft(r: RiftState): number {
 const inInstance = (x: number) => x > INSTANCE_ORIGIN.x - 600;
 
 /** Scale every rift enemy that has not been yet (every spawn path: packs, minions, events, surges, guardian adds). */
-function scaleEnemies(world: World, r: RiftState): void {
+function scaleEnemies(world: World, ctx: GameContext, r: RiftState): void {
   for (const e of world.query(EnemyAI, Health, CombatStats, Transform)) {
     if (!inInstance(world.req(e, Transform).x) || world.has(e, Dead)) continue;
     const stats = world.req(e, CombatStats);
     if (stats.tags.includes('rift')) continue;
     stats.tags.push('rift');
+    modifierOnEnemy(world, ctx, r, e);
     const h = world.req(e, Health);
     h.max *= r.mul;
     h.current = h.max;
@@ -237,13 +244,14 @@ function scaleEnemies(world: World, r: RiftState): void {
   }
 }
 
-function countKills(world: World, r: RiftState): void {
+function countKills(world: World, ctx: GameContext, r: RiftState): void {
   for (const e of r.counted) if (!world.isAlive(e) || !world.has(e, Dead)) r.counted.delete(e);
   for (const e of world.query(EnemyAI, Dead, Transform)) {
     if (r.counted.has(e) || e === r.guardian || !inInstance(world.req(e, Transform).x)) continue;
     if (world.get(e, Faction)?.team !== 'enemy') continue;
     r.counted.add(e);
     if (r.phase === 'running') r.points += killWeight(world, e);
+    modifierOnKill(world, ctx, r, e);
   }
 }
 
@@ -270,6 +278,7 @@ export function spawnGuardian(world: World, ctx: GameContext, rt: RiftHost, r: R
     arena: { x: c.x, z: c.z, radius: ROOM_CELL / 2 - 1 },
   });
   world.req(boss, CombatStats).tags.push('rift', 'guardian');
+  modifierOnGuardian(world, r, boss, c, ROOM_CELL / 2 - 1);
   const look = world.get(boss, Renderable);
   if (look) look.look = 'lumen';
   world.req(boss, EnemyAI).aggro = true;
@@ -291,7 +300,7 @@ export interface RiftHost {
 
 /** One tick of a rift run: scaling, kills, the bar, the guardian, the timer. */
 export function tickRift(world: World, dt: number, ctx: GameContext, rt: RiftHost, r: RiftState, player: Entity): void {
-  scaleEnemies(world, r);
+  scaleEnemies(world, ctx, r);
   if (r.phase === 'failed') {
     r.collapse -= dt;
     if (r.collapse <= 0 && r.collapse + dt > 0) ctx.events.push({ type: 'interact', kind: 'riftExit', id: 'collapse' });
@@ -300,7 +309,8 @@ export function tickRift(world: World, dt: number, ctx: GameContext, rt: RiftHos
   if (r.phase === 'cleared') return;
 
   r.elapsed += dt;
-  countKills(world, r);
+  countKills(world, ctx, r);
+  tickModifier(world, dt, ctx, r);
 
   if (r.phase === 'running') {
     // Every room has woken and the crowd is thin: the rift sends more.
@@ -448,6 +458,6 @@ export function riftEntryProblem(ctx: GameContext, level: number): 'locked' | 'l
 }
 
 /** HUD numbers: time left, bar fill, level, and a line for the phase. */
-export function riftHud(r: RiftState): { level: number; left: number; progress: number; phase: RiftPhase } {
-  return { level: r.level, left: riftTimeLeft(r), progress: riftProgress(r), phase: r.phase };
+export function riftHud(r: RiftState): { level: number; left: number; progress: number; phase: RiftPhase; modifier: RiftModifierId | null } {
+  return { level: r.level, left: riftTimeLeft(r), progress: riftProgress(r), phase: r.phase, modifier: r.modifier };
 }

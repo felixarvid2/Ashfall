@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { GroundGold, GroundItem, PlayerControlled, Resource, Transform } from '../core/components';
 import type { Entity, World } from '../core/ecs';
 import { CRYSTAL_DEFS, rarityDef } from '../data/loot/db';
+import { hiddenByLootFilter } from '../data/loot/filter';
 import { LOOT_MODELS } from '../data/loot/lootModels';
 import type { AssetLibrary } from './assets';
 
@@ -45,6 +46,28 @@ export function beamLook(rarity: string, dataHeight: number, dist: number, inCom
   return { height, opacity: (high ? BEAM.alphaHigh : BEAM.alpha) * near };
 }
 
+/**
+ * Beam cross-section by rarity when "Rarity shapes" is on (C04): the more precious, the more sides, so a rarity
+ * reads from its outline as well as its colour (triangle, square, pentagon, hexagon, octagon). Off: the round beam.
+ */
+export function beamSegments(rarity: string, shapes: boolean): number {
+  if (!shapes) return 12;
+  switch (rarity) {
+    case 'magic':
+      return 3;
+    case 'rare':
+      return 4;
+    case 'legendary':
+      return 5;
+    case 'unique':
+      return 6;
+    case 'mythic':
+      return 8;
+    default:
+      return 12;
+  }
+}
+
 export class LootVisuals {
   readonly root = new THREE.Group();
   private readonly items = new Map<Entity, THREE.Group>();
@@ -57,6 +80,12 @@ export class LootVisuals {
   /** One cloned material per rarity colour (cache trim) and per crystal colour, shared by every drop of it. */
   private readonly retinted = new Map<string, THREE.Material>();
   private time = 0;
+  /** The "Hide low loot" setting and the show-all key (C01): common and magic drops are not drawn while hidden. */
+  hideLow = false;
+  showAll = false;
+  /** The "Rarity shapes" setting (C04): beams take a polygon outline per rarity. */
+  rarityShapes = false;
+  private readonly shapeGeo = new Map<number, THREE.BufferGeometry>();
 
   constructor(private readonly assets?: AssetLibrary) {}
 
@@ -76,6 +105,7 @@ export class LootVisuals {
         this.root.add(obj);
       }
       this.upgradeModel(obj);
+      obj.visible = !hiddenByLootFilter(g.item.rarity, !!g.item.crystal, this.hideLow, this.showAll);
       const tr = world.req(e, Transform);
       const t = Math.min(1, g.age / POP_TIME);
       const body = obj.children[0]!;
@@ -86,6 +116,11 @@ export class LootVisuals {
       obj.position.set(tr.x, 0, tr.z);
       const beam = obj.children[1];
       if (beam) {
+        const sides = beamSegments(g.item.rarity, this.rarityShapes);
+        if (beam.userData.sides !== sides) {
+          beam.userData.sides = sides;
+          (beam as THREE.Mesh).geometry = sides === 12 ? this.beamGeo : this.beamGeoFor(sides);
+        }
         const look = beamLook(g.item.rarity, beam.userData.height as number, heroPos ? Math.hypot(tr.x - heroPos.x, tr.z - heroPos.z) : Infinity, inCombat);
         // Ease the opacity so a fight starting or the hero walking by fades the beam instead of popping it.
         const mat = (beam as THREE.Mesh).material as THREE.MeshBasicMaterial;
@@ -122,6 +157,15 @@ export class LootVisuals {
       this.root.remove(mesh);
       this.gold.delete(e);
     }
+  }
+
+  private beamGeoFor(sides: number): THREE.BufferGeometry {
+    let geo = this.shapeGeo.get(sides);
+    if (!geo) {
+      geo = new THREE.CylinderGeometry(0.08, 0.22, 1, sides, 1, true).translate(0, 0.5, 0);
+      this.shapeGeo.set(sides, geo);
+    }
+    return geo;
   }
 
   /** A body that is the model when it is loaded and the old stand-in shape until then (`upgradeModel` swaps it in). */

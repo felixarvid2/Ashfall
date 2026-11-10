@@ -2,8 +2,10 @@
  * In-game HUD: life and resource orbs, action bar with cooldowns, wave tracker,
  * target frame and death screen. DOM is only touched when a value changes.
  */
+import { statusIconUrl } from './statusIcons';
 import { cssUrl } from './art';
 import { BannerQueue, type BannerItem } from './bannerQueue';
+import { LOW_LIFE_SHARE } from '../audio/heartbeat';
 import { haptic, setLowLife } from './haptics';
 import { HintFade } from './hintFade';
 import { setAffixChips } from './enemyBars';
@@ -26,6 +28,12 @@ export function bossPhaseTicks(script: string | undefined): { phases?: number[] 
   return phases.length > 0 ? { phases } : {};
 }
 
+/** The boss's current phase (0-based) and how many it has, for the "Phase 2/3" label on its bar (C10); `{}` for a one-phase script. */
+export function bossPhaseLabel(script: string | undefined, phase = 0): { phase?: { index: number; count: number } } {
+  const list = script ? (BOSS_SCRIPTS[script] ?? []) : [];
+  return list.length > 1 ? { phase: { index: Math.min(phase, list.length - 1), count: list.length } } : {};
+}
+
 /**
  * The number on a cooling-down slot: whole seconds (rounded up) from 2 s, one decimal below it so a short cooldown
  * doesn't sit on "1" for a second. Skills with a cooldown under 0.75 s show nothing (A002).
@@ -44,7 +52,7 @@ export interface SlotState {
 
 /** One status tile above the action bar. */
 /** A status effect's icon (public/assets/ui/status/, from game-icons.net). */
-export const statusIconUrl = (id: string): string => `${import.meta.env.BASE_URL}assets/ui/status/${id}.svg`;
+export { statusIconUrl };
 
 export interface HudStatus {
   id: string;
@@ -70,7 +78,7 @@ export interface HudState {
   location?: { title: string; sub: string };
   /** World Tier badge text ('WT II Veteran'), shown under the region name once a tier above I is unlocked. */
   tier?: string;
-  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; /** Affix ids, parallel to `affixes` (names): the chips pick their icons from them. */ affixIds?: string[]; /** Elite kind: the frame's border colour (A022). */ tier?: 'champion' | 'rare' | 'named'; portrait?: string; /** Life fractions where a boss changes phase (tick marks on its bar). */ phases?: number[] } | null;
+  target: { name: string; current: number; max: number; statuses: string[]; color?: string; affixes?: string[]; /** Affix ids, parallel to `affixes` (names): the chips pick their icons from them. */ affixIds?: string[]; /** Elite kind: the frame's border colour (A022). */ tier?: 'champion' | 'rare' | 'named'; portrait?: string; /** Life fractions where a boss changes phase (tick marks on its bar). */ phases?: number[]; /** The boss's current phase (0-based) and how many it has: the "Phase 2/3" label (C10). */ phase?: { index: number; count: number } } | null;
   /** World event in progress near the player. */
   event?: { title: string; text: string };
   /** Statuses on the player: pylon buffs, wards, and harm like burning or poison. */
@@ -300,6 +308,9 @@ export class Hud {
   private readonly targetSep: HTMLSpanElement;
   private readonly targetStatusText: HTMLSpanElement;
   private readonly targetPct: HTMLSpanElement;
+  /** "Phase 2/3" on a boss frame (C10), and the phase it showed last. */
+  private readonly targetPhase: HTMLSpanElement;
+  private lastPhase = -1;
   private readonly targetTrack: HTMLDivElement;
   /** Portrait: the left column under the menu (target, statuses, region label, endgame stack) flows in here. */
   readonly leftColumn: HTMLDivElement;
@@ -448,7 +459,9 @@ export class Hud {
     this.targetAffix = Object.assign(document.createElement('span'), { className: 'target-affix' });
     this.targetSep = Object.assign(document.createElement('span'), { className: 'target-sep', textContent: '  |  ' });
     this.targetStatusText = Object.assign(document.createElement('span'), { className: 'target-state' });
-    this.targetStatus.append(this.targetAffix, this.targetSep, this.targetStatusText);
+    this.targetPhase = Object.assign(document.createElement('span'), { className: 'target-phase' });
+    this.targetPhase.hidden = true;
+    this.targetStatus.append(this.targetPhase, this.targetAffix, this.targetSep, this.targetStatusText);
     this.targetPct = Object.assign(document.createElement('span'), { className: 'target-pct' });
     this.targetPortrait = Object.assign(document.createElement('img'), { className: 'target-portrait', alt: '' });
     this.targetPortrait.hidden = true;
@@ -712,6 +725,10 @@ export class Hud {
     return !this.wasDead || this.deathLock > 0;
   }
 
+  /** Called when life crosses the low-life line (C12); the game starts or stops the audible heartbeat from it. */
+  onLowLife: (low: boolean) => void = () => {};
+  private wasUrgent = false;
+
   /** Hints fade after 20 s of play or the first skill use, the title after 8 s; F1 or ? show the hints for 12 s (A019). */
   private updateHints(state: HudState): void {
     // Real elapsed time: the loop clamps its frame time to 0.25 s, so a slow renderer would run these timers far too slowly.
@@ -808,13 +825,17 @@ export class Hud {
         this.flares.classList.toggle('empty', state.flares.charges === 0);
       }
     }
-    const lowLife = state.life.current / state.life.max < 0.3;
+    const lowLife = state.life.max > 0 && state.life.current / state.life.max < LOW_LIFE_SHARE;
     this.lifeOrb.set(state.life.current, state.life.max, state.life.barrier, lowLife);
     // Low life shows on the playfield too: a red vignette, and the potion button asks to be pressed (H005).
     const urgent = lowLife && !state.dead;
     this.vignette.classList.toggle('on', urgent);
     this.potionSlot.el.classList.toggle('urgent', urgent && state.potion.charges > 0);
     setLowLife(urgent);
+    if (urgent !== this.wasUrgent) {
+      this.wasUrgent = urgent;
+      this.onLowLife(urgent);
+    }
     this.heatOrb.setKind(state.resource.kind, t(`resources.${state.resource.kind}`));
     this.heatOrb.set(state.resource.current, state.resource.max, 0, state.resource.overheating);
 
@@ -867,7 +888,7 @@ export class Hud {
     }
 
     const targetKey = state.target
-      ? `${state.target.name}|${Math.ceil(state.target.current)}|${state.target.max}|${state.target.statuses.join(',')}|${state.target.phases?.join(',') ?? ''}|${state.target.affixIds?.join(',') ?? ''}`
+      ? `${state.target.name}|${Math.ceil(state.target.current)}|${state.target.max}|${state.target.statuses.join(',')}|${state.target.phases?.join(',') ?? ''}|${state.target.phase?.index ?? ''}|${state.target.affixIds?.join(',') ?? ''}`
       : '';
     if (targetKey !== this.lastTarget) {
       this.lastTarget = targetKey;
@@ -898,9 +919,21 @@ export class Hud {
         this.targetPct.textContent = `${Math.ceil(frac * 100)}%`;
         this.targetTrack.querySelectorAll('.target-tick').forEach((tick) => tick.remove());
         for (const below of state.target.phases ?? []) {
-          this.targetTrack.append(Object.assign(document.createElement('i'), { className: 'target-tick' }));
+          this.targetTrack.append(Object.assign(document.createElement('i'), { className: `target-tick${frac <= below ? ' passed' : ''}` }));
           (this.targetTrack.lastElementChild as HTMLElement).style.left = `${below * 100}%`;
         }
+        // The phase name: "Phase 2/3", flashing for a moment when the boss enters a new one (C10).
+        const phase = state.target.phase;
+        this.targetPhase.hidden = !phase;
+        if (phase) {
+          this.targetPhase.textContent = t('ux.boss.phase', { n: phase.index + 1, max: phase.count });
+          if (this.lastPhase >= 0 && phase.index > this.lastPhase) {
+            this.targetPhase.classList.remove('entered');
+            void this.targetPhase.offsetWidth;
+            this.targetPhase.classList.add('entered');
+          }
+          this.lastPhase = phase.index;
+        } else this.lastPhase = -1;
         // Elite affixes first (in the elite's colour), then statuses; portrait puts them on their own lines.
         const ids = state.target.affixIds;
         const names = state.target.affixes ?? [];

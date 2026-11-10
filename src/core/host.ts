@@ -16,6 +16,8 @@ interface AndroidBridge {
   secondScreen?: () => boolean;
   rumble?: (strong: number, weak: number, ms: number) => void;
   panelState?: (json: string) => void;
+  /** Closes the app (B10). */
+  quit?: () => void;
 }
 
 declare global {
@@ -71,6 +73,8 @@ export type HostCommand = (typeof HOST_COMMANDS)[number];
 /** The game's side of the commands: Escape, the pad's Start button, and a tap on a bound action. */
 export interface HostCommandHandlers {
   escape: () => void;
+  /** The system Back button when the game wants more than Escape (B10: back-to-quit). Falls back to `escape`. */
+  back?: () => void;
   pause: () => void;
   press: (action: Action) => void;
 }
@@ -79,10 +83,56 @@ export interface HostCommandHandlers {
 export function runHostCommand(name: string, h: HostCommandHandlers): boolean {
   if (!(HOST_COMMANDS as readonly string[]).includes(name)) return false;
   const command = name as HostCommand;
-  if (command === 'back') h.escape();
+  if (command === 'back') (h.back ?? h.escape)();
   else if (command === 'pause') h.pause();
   else h.press(command);
   return true;
+}
+
+/** How long after the first Back with nothing open a second one still quits. */
+export const QUIT_WINDOW_MS = 2500;
+
+export interface BackDeps {
+  /** Closes the top panel; false when nothing was open. */
+  closeTop: () => boolean;
+  /** First press with nothing open: tell the player (a toast). */
+  ask: () => void;
+  /** Second press within the window: leave. */
+  quit: () => void;
+  windowMs?: number;
+  now?: () => number;
+}
+
+/**
+ * The system Back button (B10): closes the top panel; with nothing open the first press asks to quit and a second
+ * one within `QUIT_WINDOW_MS` quits. A panel opened in between starts the question over.
+ */
+export function createBackHandler(deps: BackDeps): () => void {
+  const now = deps.now ?? (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
+  let askedAt = -Infinity;
+  return () => {
+    if (deps.closeTop()) {
+      askedAt = -Infinity;
+      return;
+    }
+    const t = now();
+    if (t - askedAt <= (deps.windowMs ?? QUIT_WINDOW_MS)) {
+      askedAt = -Infinity;
+      deps.quit();
+      return;
+    }
+    askedAt = t;
+    deps.ask();
+  };
+}
+
+/** Asks the Android app to close (B10). Does nothing off the host. */
+export function hostQuit(): void {
+  try {
+    window.AshfallAndroid?.quit?.();
+  } catch {
+    // The activity is already going away.
+  }
 }
 
 /** Defines `window.__ashfallCommand`. Does nothing off the host. */

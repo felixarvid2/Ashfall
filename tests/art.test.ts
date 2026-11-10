@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
+import { ART_ALIAS } from '../src/data/artAlias';
 import { ART_FILES } from '../src/data/artFiles';
 import { ENEMIES } from '../src/data/enemies';
 import { ASPECTS } from '../src/data/loot/aspects';
+import { BASE_ART_UNIQUES } from '../src/data/loot/uniques';
 import { BASE_ITEMS, UNIQUE_DEFS } from '../src/data/loot/db';
 import { RARITIES } from '../src/data/loot/schemas';
 import { ZONES } from '../src/data/zones';
@@ -24,9 +26,9 @@ describe('painted art', () => {
       if (b.type === 'crystal') continue;
       for (const t of [1, 2, 3]) expect(ART_FILES.has(`items/${b.id}_${t}`), `${b.id}_${t}`).toBe(true);
     }
-    for (const id of UNIQUE_DEFS.keys()) expect(ART_FILES.has(`items/unique_${id}`), id).toBe(true);
+    for (const id of UNIQUE_DEFS.keys()) expect(ART_FILES.has(`items/unique_${id}`) || BASE_ART_UNIQUES.includes(id), id).toBe(true);
     for (const r of RARITIES) expect(ART_FILES.has(`frames/${r}`), r).toBe(true);
-    for (const a of ASPECTS) expect(ART_FILES.has(`aspects/${a.id}`), a.id).toBe(true);
+    for (const a of ASPECTS) expect(ART_FILES.has(`aspects/${a.id}`) || ART_FILES.has(ART_ALIAS[`aspects/${a.id}`] ?? ''), a.id).toBe(true);
     for (const e of ENEMIES) if (e.dropTable === 'dt.boss') expect(ART_FILES.has(`bosses/${e.id}`), e.id).toBe(true);
     for (const z of ZONES) {
       const slug = z.id.replace(/^zone\./, '');

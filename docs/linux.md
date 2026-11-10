@@ -17,15 +17,17 @@ as the browser version. Gamepads work through the browser Gamepad API, nothing s
 
 ## The shell (`linux/`)
 
-- `main.js` a 1600x900 resizable window titled "Ashfall", no menu bar, F11 toggles fullscreen, single instance
+- `main.js` a resizable window (1600x900 the first time; afterwards size, position, maximised and fullscreen come back as left, round 4 B12) titled "Ashfall", no menu bar, F11 toggles fullscreen, single instance
   (a second launch focuses the first), links to http(s)/mailto open in the system browser, the window never
   navigates away from the app. `contextIsolation` and `sandbox` are on, `nodeIntegration` off, no preload.
 - The game is never loaded from `file://` (ES modules, fetch and localStorage break there). `main.js` registers the
   privileged scheme `app://` (standard, secure, fetch, CORS, stream) and `protocol.handle` serves
   `resources/app/www` on `app://ashfall/`. The origin is fixed, so saves in `localStorage` persist
-  (`~/.config/Ashfall/`). Byte ranges (audio) are kept, the Content-Type comes from the extension.
-- `serve.js` holds the pure parts (URL to file with a path-traversal guard, extension to MIME type); tests/linuxHost.test.ts
-  covers them. Add an extension there when the game starts shipping a new file type.
+  (`~/.config/Ashfall/`). Files are streamed from disk by `serve.js` (`fileResponse`): `Range: bytes=` requests are answered 206 with
+  `Content-Range` (a range past the end 416), everything says `Accept-Ranges: bytes`, the Content-Type comes from the extension (B11).
+- `serve.js` holds the pure parts (URL to file with a path-traversal guard, extension to MIME type, byte ranges); `windowState.js` the
+  window state (`window-state.json` in `~/.config/Ashfall/`, written 0.5 s after a resize or move settles and at close, a position on a
+  monitor that is gone is dropped); tests/linuxHost.test.ts covers them. Add an extension there when the game starts shipping a new file type.
 - Software WebGL (SwiftShader) is allowed as a fallback, so the game also starts on machines without a GPU driver.
 
 ## Build

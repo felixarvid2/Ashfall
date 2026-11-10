@@ -25,6 +25,8 @@ import { Rng } from '../core/rng';
 import { INTERACT_RADIUS } from '../data/interactables';
 import { at } from '../data/zones/cinderFlats';
 import { monsterLevel } from '../systems/encounter';
+import { PROGRESS_KEEP } from '../systems/quests';
+import { CORE_EVENT_TUNING, coreEventInteract, coreEventObjective, isCoreEvent, startCoreEvent, stepCoreEvent, type CoreEventType } from './coreEvents';
 import { grantXp } from '../systems/loot/rewards';
 import { spawnEnemy } from './spawn';
 import { harvestEventCooldownMul } from './harvest';
@@ -50,8 +52,24 @@ export type EventType =
   | 'caveRescue'
   | 'burrowerSwarm'
   | 'lightsOut'
-  | 'securityPatrol';
+  | 'securityPatrol'
+  // Round 4 (D14): one more per region 1-4, each running on an existing event's logic with its own place and text (EVENT_BASE).
+  | 'beaconRelight'
+  | 'foundryAmbush'
+  | 'pollenRun'
+  | 'cartRescue'
+  // The Core (A01-A04, src/world/coreEvents.ts)
+  | CoreEventType;
 export type Tier = 'gold' | 'silver' | 'bronze';
+
+/** The existing event whose logic a round 4 event reuses (the strings and place are its own). */
+export const EVENT_BASE: Readonly<Partial<Record<EventType, EventType>>> = {
+  beaconRelight: 'signalJam',
+  foundryAmbush: 'smelterRaid',
+  pollenRun: 'sporeBloom',
+  cartRescue: 'caveRescue',
+};
+export const baseType = (type: EventType): EventType => EVENT_BASE[type] ?? type;
 
 export const EVENT_TUNING = {
   triggerRadius: 22,
@@ -104,6 +122,8 @@ export interface EventState {
   /** Runaway Belt: crates that reached the furnace. Slag Tide: kills whose corpses are gone. */
   missed?: number;
   banked?: number;
+  /** A10: progress left behind when the player walked out of the zone mid-event (resumed within PROGRESS_KEEP s). */
+  paused?: { at: number; elapsed: number; progress: number; missed: number; banked: number; hp: number };
 }
 
 export function createEvents(zone: ZoneRuntime): Map<string, EventState> {
@@ -115,10 +135,18 @@ export function createEvents(zone: ZoneRuntime): Map<string, EventState> {
   return out;
 }
 
-/** The player left the zone mid-event: it can be started again later (its entities are gone). */
-export function suspendEvents(zone: ZoneRuntime): void {
+/**
+ * The player left the zone mid-event: its entities are gone and it can be started again later. A10: with `time` (ctx.time)
+ * the progress is remembered, and the event picks up from there if the player is back within PROGRESS_KEEP seconds.
+ */
+export function suspendEvents(zone: ZoneRuntime, time?: number, world?: World): void {
   for (const ev of zone.events.values()) {
     if (ev.state !== 'active') continue;
+    if (time !== undefined) {
+      const first = ev.objects[0];
+      const h = world && first !== undefined && world.isAlive(first) ? world.get(first, Health) : undefined;
+      ev.paused = { at: time, elapsed: ev.elapsed, progress: ev.progress, missed: ev.missed ?? 0, banked: ev.banked ?? 0, hp: h ? h.current / h.max : 1 };
+    }
     ev.state = 'idle';
     ev.objects = [];
     ev.result = null;
@@ -203,7 +231,15 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
   ev.objects = [];
   ev.missed = 0;
   ev.banked = 0;
-  switch (ev.type) {
+  const memory = ev.paused;
+  delete ev.paused;
+  if (isCoreEvent(ev.type)) {
+    startCoreEvent(world, ctx, id, ev);
+    if (memory && ctx.time - memory.at <= PROGRESS_KEEP) resumeEvent(world, ev, memory);
+    ctx.events.push({ type: 'banner', key: `worldEvents.${ev.type}.title`, seconds: 2.4 });
+    return;
+  }
+  switch (baseType(ev.type)) {
     case 'convoy': {
       const [x, z] = T.convoy.path[0]!;
       const truck = world.create();
@@ -329,7 +365,24 @@ function start(world: World, ctx: GameContext, id: string, ev: EventState): void
       break;
     }
   }
+  if (memory && ctx.time - memory.at <= PROGRESS_KEEP) resumeEvent(world, ev, memory);
   ctx.events.push({ type: 'banner', key: `worldEvents.${ev.type}.title`, seconds: 2.4 });
+}
+
+/** A10: put a freshly started event back where the player left it. */
+function resumeEvent(world: World, ev: EventState, m: NonNullable<EventState['paused']>): void {
+  ev.elapsed = m.elapsed;
+  ev.progress = m.progress;
+  ev.missed = m.missed;
+  ev.banked = m.banked;
+  const first = ev.objects[0];
+  const h = first !== undefined ? world.get(first, Health) : undefined;
+  if (h && (ev.type === 'convoy' || baseType(ev.type) === 'signalJam')) h.current = Math.max(1, h.max * m.hp);
+  if (ev.type === 'convoy' && first !== undefined) {
+    // The truck stands at the last waypoint it passed.
+    const [x, z] = EVENT_TUNING.convoy.path[Math.max(0, Math.min(m.progress, EVENT_TUNING.convoy.path.length) - 1)]!;
+    Object.assign(world.req(first, Transform), makeTransform(x, 0, z, 0));
+  }
 }
 
 function finish(world: World, ctx: GameContext, zone: ZoneRuntime, id: string, ev: EventState, result: Tier | 'failed'): void {
@@ -371,7 +424,7 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
     const d = Math.hypot(ptr.x - ev.x, ptr.z - ev.z);
     if (ev.state === 'cooldown' && ctx.time >= ev.readyAt) ev.state = 'idle';
     if (ev.state === 'idle') {
-      if (d < T.triggerRadius && !world.has(player, Dead)) start(world, ctx, id, ev);
+      if (d < (isCoreEvent(ev.type) ? CORE_EVENT_TUNING.triggerRadius[ev.type] : T.triggerRadius) && !world.has(player, Dead)) start(world, ctx, id, ev);
       continue;
     }
     if (ev.state !== 'active') continue;
@@ -381,7 +434,11 @@ export function worldEventSystem(world: World, dt: number, ctx: GameContext): vo
       finish(world, ctx, zone, id, ev, 'failed');
       continue;
     }
-    switch (ev.type) {
+    if (isCoreEvent(ev.type)) {
+      stepCoreEvent(world, ctx, ev, dt, ptr, (result) => finish(world, ctx, zone, id, ev, result));
+      continue;
+    }
+    switch (baseType(ev.type)) {
       case 'convoy': {
         const truck = ev.objects[0];
         if (!alive(world, truck)) {
@@ -664,6 +721,7 @@ export function eventInteract(world: World, ctx: GameContext, target: Entity, it
   for (const [id, ev] of zone.events) {
     if (ev.state !== 'active' || !ev.objects.includes(target)) continue;
     const tr = world.req(target, Transform);
+    if (isCoreEvent(ev.type)) return coreEventInteract(world, ctx, ev, target, it);
     if (ev.type === 'rescue') {
       it.used = true;
       ev.progress++;
@@ -672,7 +730,7 @@ export function eventInteract(world: World, ctx: GameContext, target: Entity, it
       ctx.events.push({ type: 'banner', key: 'worldEvents.rescue.freed', params: { n: ev.progress, count: EVENT_TUNING.rescue.survivors }, seconds: 1.6 });
       return true;
     }
-    if (ev.type === 'caveRescue') {
+    if (baseType(ev.type) === 'caveRescue') {
       it.used = true;
       ev.progress++;
       world.destroyDeferred(target);
@@ -717,7 +775,14 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
   if (!best) return null;
   const T = EVENT_TUNING;
   const left = (limit: number) => Math.max(0, Math.ceil(limit - best!.elapsed));
-  switch (best.type) {
+  if (isCoreEvent(best.type)) return { type: best.type, ...coreEventObjective(best) };
+  const base = baseType(best.type);
+  const r = objective(best, base, T, left);
+  return r && base !== best.type ? { ...r, text: r.text.replace(`.${base}.`, `.${best.type}.`) } : r;
+}
+
+function objective(best: EventState, base: EventType, T: typeof EVENT_TUNING, left: (limit: number) => number): { type: EventType; text: string; params: Record<string, number> } | null {
+  switch (base) {
     case 'convoy':
       return { type: best.type, text: 'worldEvents.convoy.objective', params: { n: best.progress, count: T.convoy.path.length } };
     case 'sporeNest':
@@ -752,6 +817,8 @@ export function activeEvent(zone: ZoneRuntime | undefined, x: number, z: number)
       return { type: best.type, text: 'worldEvents.securityPatrol.objective', params: { s: left(T.securityPatrol.time) } };
     case 'rootEruption':
       return { type: best.type, text: 'worldEvents.rootEruption.objective', params: { n: best.progress, count: T.rootEruption.roots, s: left(T.rootEruption.time) } };
+    default:
+      return null;
   }
 }
 
