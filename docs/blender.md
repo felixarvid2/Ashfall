@@ -120,8 +120,8 @@ size counts, and a budget is raised in the same change (with the new number in a
 
 ## Deep Mines and Core looks (`part.dc_*`, `variants/deepCore.ts`)
 
-Every Deep Mines enemy and boss, the Core's shades, the Absorbed, Lumen, the Core bosses and the five world bosses have their own
-silhouette: 40 ids, 54 parts and two whole models (the miner, the trooper and Holm now have their own models, see "Rigging without Meshy"). Parts live in `scripts/blender/spec/deep_core.json` and are built by one generic
+Every Deep Mines enemy and boss, the Core's shades, the Absorbed, Lumen, the Core bosses and the five world bosses had their own
+silhouette (the bosses since have their own Meshy models, `boss.*` in the manifest, and no variant: 17 variants and 24 parts were removed): now 23 ids, 38 parts and two whole models (the miner, the trooper and Holm now have their own models, see "Rigging without Meshy"). Parts live in `scripts/blender/spec/deep_core.json` and are built by one generic
 builder, `deep_kit` (`builders_deep_core.py`, docstring at the top): a list of primitives (box, cylinder, cone, sphere, crystal
 shard, ring, drill, tube, with a `radial` repeat) written in the **game's axes**, so a part reads like its `position`/`rotation` in
 the variant. Parts are shared across ids with different scale and placement (one violet shade halo on seven bodies, the gold Kade

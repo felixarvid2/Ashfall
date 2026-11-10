@@ -153,12 +153,12 @@ export const WORLD_BOSSES: readonly WorldBossDef[] = [
   },
 ];
 
-/** The enemy bodies: existing large models, scaled up (the boss spawn adds another ×1.3). */
+/** The enemy bodies: their own Meshy models, scaled up (the boss spawn adds another ×1.3). */
 export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
   {
-    // enemy.cargo_loader × 3: heavy claw slams, a throw every third swing, burning ground behind it.
+    // Own Meshy model (boss.ashen_colossus): heavy claw slams, a throw every third swing, burning ground behind it.
     id: 'world_ashen_colossus',
-    assetId: 'variant.ashen_colossus',
+    assetId: 'boss.ashen_colossus',
     family: 'machine',
     behavior: 'tank',
     life: 4200,
@@ -169,16 +169,15 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
     turnRate: 2.2,
     aggroRange: 30,
     scale: 2.3,
-    glow: '#ff7a2a',
     collider: { radius: 3.2, mass: 400 },
     dropTable: WORLD_BOSS.bodyTable,
     attack: { kind: 'melee', range: 6, arcDeg: 160, windup: 1.4, recovery: 1.0, cooldown: 2.2, damageType: 'heat', knockback: 4, grabEvery: 3, throwDistance: 9 },
     trail: { every: 0.7, radius: 2.6, duration: 5, applies: [{ status: 'burning', duration: 1.5, coefficient: 0.12 }], color: '#ff6a1a' },
   },
   {
-    // enemy.spore_carrier × 3: a swollen mother that slams in a wide arc and births the brood.
+    // Own Meshy model (boss.mother_of_spores): a swollen mother that slams in a wide arc and births the brood.
     id: 'world_mother_of_spores',
-    assetId: 'variant.mother_of_spores',
+    assetId: 'boss.mother_of_spores',
     family: 'infected',
     behavior: 'tank',
     life: 4000,
@@ -189,18 +188,16 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
     turnRate: 2.4,
     aggroRange: 30,
     scale: 2.3,
-    glow: '#9ac040',
     collider: { radius: 3, mass: 300 },
     dropTable: WORLD_BOSS.bodyTable,
     attack: { kind: 'melee', range: 5.5, arcDeg: 180, windup: 1.2, recovery: 0.9, cooldown: 1.9, damageType: 'toxic', knockback: 3 },
   },
   {
-    // enemy.core_guardian × 2.5, Lumen look: slow and stately, wards the adds it brings.
+    // Own Meshy model (boss.hollow_engine), its own gold texture: slow and stately, wards the adds it brings.
     id: 'world_hollow_engine',
-    assetId: 'variant.hollow_engine',
+    assetId: 'boss.hollow_engine',
     family: 'machine',
     behavior: 'tank',
-    look: 'lumen',
     life: 5000,
     armor: 380,
     resist: { energy: 0.4, physical: 0.1 },
@@ -215,12 +212,11 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
     shieldAlly: { every: 8, radius: 14, duration: 4, count: 3 },
   },
   {
-    // enemy.choir_singer × 2.4, Lumen look: walks, keeps its distance and fires three-shot bursts.
+    // Own Meshy model (boss.choir_of_stone), its own blue texture: walks, keeps its distance and fires three-shot bursts.
     id: 'world_choir_of_stone',
-    assetId: 'variant.choir_of_stone',
+    assetId: 'boss.choir_of_stone',
     family: 'light',
     behavior: 'ranged',
-    look: 'lumen',
     life: 4600,
     armor: 220,
     resist: { energy: 0.4, toxic: 0.4 },
@@ -230,18 +226,16 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
     aggroRange: 30,
     preferredRange: [8, 16],
     scale: 2.4,
-    glow: '#8ad8ff',
     collider: { radius: 1.6, mass: 250 },
     dropTable: WORLD_BOSS.bodyTable,
     attack: { kind: 'projectile', windup: 1.0, cooldown: 2.4, speed: 10, radius: 0.45, maxRange: 22, damageType: 'energy', burst: 3, burstInterval: 0.25, spreadDeg: 14 },
   },
   {
-    // enemy.core_guardian × 1.1, Lumen look: the Hollow Engine's cousin, heavier and bluer.
+    // Own Meshy model (boss.echo_engine), its own blue texture: the Hollow Engine's cousin, heavier and bluer.
     id: 'world_echo_engine',
-    assetId: 'variant.echo_engine',
+    assetId: 'boss.echo_engine',
     family: 'machine',
     behavior: 'tank',
-    look: 'lumen',
     life: 5600,
     armor: 420,
     resist: { energy: 0.4, physical: 0.15 },
@@ -250,7 +244,6 @@ export const WORLD_BOSS_ENEMIES: EnemyInput[] = [
     turnRate: 2.2,
     aggroRange: 30,
     scale: 1.12,
-    glow: '#8ad8ff',
     collider: { radius: 3.1, mass: 420 },
     dropTable: WORLD_BOSS.bodyTable,
     attack: { kind: 'melee', range: 6, arcDeg: 220, windup: 1.3, recovery: 1.0, cooldown: 2.0, damageType: 'physical', knockback: 4 },

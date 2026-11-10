@@ -158,22 +158,6 @@
       "targetPolycount": 700
     },
     {
-      "id": "part.pauldron",
-      "builder": "pauldron",
-      "params": {
-        "ember": "#ff7a1a"
-      },
-      "prompt": "Domed spiked shoulder guard, charred metal with an ember band (Brother Ash, Pyre Warden).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.brazier",
-      "builder": "brazier",
-      "params": {},
-      "prompt": "Back-mounted pyre: stand, bowl and three tongues of fire (Pyre Warden).",
-      "targetPolycount": 700
-    },
-    {
       "id": "part.robe_flap",
       "builder": "coat_flap",
       "params": {
@@ -181,52 +165,6 @@
         "trim": "#ffb03a"
       },
       "prompt": "Long dark-red smelter robe tail with an ember hem (Brother Ash, Pyre Warden).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.frost_cluster",
-      "builder": "crystal_group",
-      "params": {
-        "count": 7,
-        "height": 0.42,
-        "radius": 0.045,
-        "spread": 0.09,
-        "seed": 3,
-        "sides": 5,
-        "tilt": 0.4
-      },
-      "prompt": "Frost: a cluster of pale blue ice crystals on a frosted base (Frozen Welder, The Keeper). Grows up.",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.frost_shard",
-      "builder": "crystal_group",
-      "params": {
-        "count": 1,
-        "height": 0.26,
-        "radius": 0.035,
-        "spread": 0.05,
-        "seed": 5,
-        "base": false
-      },
-      "prompt": "One frost crystal (Frozen Welder, The Keeper). Grows up.",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.crystal_green",
-      "builder": "crystal_group",
-      "params": {
-        "count": 5,
-        "height": 0.3,
-        "radius": 0.04,
-        "spread": 0.07,
-        "seed": 7,
-        "color": "#2a9a4a",
-        "glow": "#7dff8a",
-        "strength": 1.0,
-        "base_color": "#3b2f27"
-      },
-      "prompt": "Five green Lumen crystals on a dark base (Commandant Hale). Grows up.",
       "targetPolycount": 700
     },
     {
@@ -286,13 +224,6 @@
       "builder": "insect_wings",
       "params": {},
       "prompt": "Insect rig: two pairs of thin wings, banded abdomen and stinger behind (spore swarm).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.spike_crown",
-      "builder": "spike_crown",
-      "params": {},
-      "prompt": "Crown of bone horns on a band (brood warden).",
       "targetPolycount": 700
     },
     {
@@ -365,52 +296,6 @@
       },
       "prompt": "A short green vine with leaves, about 0.7 m (overgrown walker, vine weaver).",
       "targetPolycount": 700
-    },
-    {
-      "id": "part.root_long",
-      "builder": "tube",
-      "params": {
-        "points": [
-          [
-            0,
-            0,
-            0
-          ],
-          [
-            0.1,
-            0.35,
-            0.05
-          ],
-          [
-            0.25,
-            0.75,
-            0.0
-          ],
-          [
-            0.2,
-            1.15,
-            -0.15
-          ],
-          [
-            0.0,
-            1.4,
-            -0.2
-          ]
-        ],
-        "radius": 0.1,
-        "taper": 0.25,
-        "kind": "matte",
-        "color": "#5a4228"
-      },
-      "prompt": "A thick bark-brown root with a curl, about 1.5 m (Mother Root, Warden).",
-      "targetPolycount": 700
-    },
-    {
-      "id": "part.harvest_blade",
-      "builder": "harvest_blade",
-      "params": {},
-      "prompt": "Great curved harvesting scythe on an arm (Warden).",
-      "targetPolycount": 900
     },
     {
       "id": "part.glass_shards",

@@ -30,20 +30,6 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
       { asset: 'part.sac_cluster', bone: 'Spine01', position: [0, -0.08, 0.14], rotation: [75, 0, 0], scale: 1.0 },
     ],
   },
-  {
-    // Drainage Tunnels: a spore-mother crowned in horns, hung with egg-sacs.
-    id: 'variant.brood_mother',
-    base: 'enemy.spore_carrier',
-    look: { tint: '#c8d08a', emissive: '#3a5a10', emissiveIntensity: 0.3 },
-    parts: [
-      { asset: 'part.sac_cluster_spore', bone: 'Spine02', position: [0, 0, -0.12], rotation: [-60, 0, 0], scale: 1.6 },
-      { asset: 'part.sac_cluster_spore', bone: 'Spine01', position: [0, -0.1, 0.13], rotation: [75, 0, 0], scale: 1.5 },
-      { asset: 'part.sac_cluster_spore', bone: 'Hips', position: [0.12, 0.0, 0.1], rotation: [70, 0, -50], scale: 1.1 },
-      { asset: 'part.sac_cluster_spore', bone: 'Hips', position: [-0.12, 0.0, 0.1], rotation: [70, 0, 50], scale: 1.1 },
-      ...pair('part.sac_cluster', 'LeftShoulder', 'RightShoulder', [0.12, 0.02, 0], [0, 0, -40], 1.0),
-      { asset: 'part.spike_crown', bone: 'Head', position: [0, 0.1, 0], scale: 1.3 },
-    ],
-  },
   // ---- Region 2: Refinery District ----
   {
     id: 'variant.ash_thrower',
@@ -114,33 +100,6 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
       { asset: 'part.mitre', bone: 'Head', position: [0, 0.12, 0.03] },
       { asset: 'part.halo_ring', bone: 'Head', position: [0, 0.14, -0.15] },
       { asset: 'part.censer', bone: 'RightHand', position: [0, 0, 0.04] },
-    ],
-  },
-  {
-    id: 'variant.pyre_warden',
-    base: 'enemy.smelter',
-    look: { tint: '#b8a090', emissive: '#c05a10', emissiveIntensity: 0.25 },
-    parts: [
-      { asset: 'part.brazier', bone: 'Spine02', position: [0, 0.05, -0.04], scale: 1.5 },
-      { asset: 'part.pauldron', bone: 'LeftArm', position: [0, 0.05, 0], rotation: [0, 0, -10], scale: 1.4 },
-      ...pair('part.robe_flap', 'Hips', 'Hips', [0.09, 0.0, 0.12], [0, 0, 5], [0.75, 1, 1]),
-      { asset: 'part.robe_flap', bone: 'Hips', position: [0, 0.0, -0.14], rotation: [0, 180, 0], scale: [1, 1.2, 1] },
-      { asset: 'part.halo_ring', bone: 'Head', position: [0, 0.14, -0.15], scale: 1.2 },
-    ],
-  },
-  {
-    // The Cold Hall: a welder frozen into the cooling plant, ice bursting out of the suit.
-    id: 'variant.frozen_welder',
-    base: 'enemy.welder',
-    look: { tint: '#b8d8f0', emissive: '#2a5a8a', emissiveIntensity: 0.25, roughness: 0.5 },
-    parts: [
-      { asset: 'part.frost_cluster', bone: 'Spine02', position: [0, 0.1, -0.1], rotation: [-45, 0, 0], scale: 1.4 },
-      { asset: 'part.frost_cluster', bone: 'LeftShoulder', position: [0.12, 0.05, 0], rotation: [-10, 0, -45], scale: 0.9 },
-      { asset: 'part.frost_cluster', bone: 'RightShoulder', position: [-0.12, 0.05, 0.02], rotation: [10, 0, 45], scale: 0.8 },
-      { asset: 'part.frost_shard', bone: 'Head', position: [0.05, 0.15, 0], rotation: [-20, 0, -20], scale: 1.1 },
-      { asset: 'part.frost_shard', bone: 'Head', position: [-0.05, 0.14, -0.02], rotation: [-30, 0, 20], scale: 0.8 },
-      { asset: 'part.frost_shard', bone: 'RightForeArm', position: [-0.05, -0.04, 0], rotation: [180, 0, 0], scale: 1.2 },
-      { asset: 'part.frost_shard', bone: 'LeftForeArm', position: [0.05, -0.04, 0], rotation: [180, 0, 0], scale: 1.0 },
     ],
   },
   // ---- Region 3: Hydroponic Vaults ----
@@ -236,97 +195,6 @@ export const REGIONS123_VARIANTS: readonly VariantDef[] = [
       { asset: 'part.fungus_shelf', position: [-0.5, 2.6, -0.8], rotation: [0, 215, 0], scale: 3.4 },
       { asset: 'part.moss_clump', position: [0, 4.7, -0.3], scale: 5.0 },
       { asset: 'part.glass_shards', position: [0, 5.3, 0.1], scale: 3.5 },
-    ],
-  },
-  // ---- Region 3 bosses ----
-  {
-    // Seed Bank Depths: a Mossborn frozen into the gene vault, still tending it.
-    id: 'variant.the_keeper',
-    base: 'enemy.slagborn',
-    look: { tint: '#b0c8d8', emissive: '#4a8ab0', emissiveIntensity: 0.3, roughness: 0.55 },
-    parts: [
-      { asset: 'part.frost_cluster', position: [0.6, 2.0, -0.1], rotation: [-15, 0, -40], scale: 2.0 },
-      { asset: 'part.frost_cluster', position: [-0.6, 2.0, -0.1], rotation: [-15, 0, 40], scale: 1.7 },
-      { asset: 'part.frost_cluster', position: [0, 1.9, -0.35], rotation: [-45, 0, 0], scale: 2.4 },
-      { asset: 'part.frost_shard', position: [0, 2.55, 0.05], rotation: [-15, 0, 0], scale: 1.8 },
-      { asset: 'part.frost_shard', position: [0.15, 2.5, 0.0], rotation: [-15, 0, -30], scale: 1.4 },
-      { asset: 'part.frost_shard', position: [-0.15, 2.5, 0.0], rotation: [-15, 0, 30], scale: 1.4 },
-      { asset: 'part.moss_clump', position: [0, 1.7, 0.3], rotation: [40, 0, 0], scale: 1.8 },
-      { asset: 'part.vine_short', position: [0.78, 1.5, 0], rotation: [180, 0, 0], scale: 1.4 },
-    ],
-  },
-  {
-    // The Cocoon Chamber: the brood's oldest warden, crowned in bone, two husks on its back.
-    id: 'variant.brood_warden',
-    base: 'enemy.sergeant',
-    look: { tint: '#a8c098', emissive: '#2a7a2a', emissiveIntensity: 0.25 },
-    parts: [
-      { asset: 'part.cocoon_husk', bone: 'Spine02', position: [0.08, -0.05, -0.14], rotation: [-12, 0, 8], scale: 1.4 },
-      { asset: 'part.cocoon_husk', bone: 'Spine02', position: [-0.14, -0.05, -0.12], rotation: [-5, 0, -20], scale: 0.9 },
-      { asset: 'part.spike_crown', bone: 'Head', position: [0, 0.22, 0.02], scale: 1.4 },
-      ...pair('part.sac_cluster_spore', 'LeftArm', 'RightArm', [0.0, 0.02, 0], [0, 0, -40], 0.9),
-    ],
-  },
-  {
-    // The Irrigation System: a great knot of vines, a bloom at its crown.
-    id: 'variant.vine_matriarch',
-    base: 'enemy.lumen_tentacle',
-    look: { tint: '#6a9a60', emissive: '#2a8a3a', emissiveIntensity: 0.35 },
-    parts: [
-      { asset: 'part.vine_long', position: [0.15, 0.4, 0], rotation: [0, 0, -65], scale: 1.2 },
-      { asset: 'part.vine_long', position: [-0.15, 0.6, 0.1], rotation: [0, 150, -60], scale: 1.3 },
-      { asset: 'part.vine_long', position: [0, 1.0, -0.15], rotation: [0, -100, -60], scale: 1.2 },
-      { asset: 'part.vine_long', position: [0.1, 1.5, 0.1], rotation: [0, 60, -55], scale: 1.0 },
-      { asset: 'part.vine_long', position: [-0.1, 1.9, 0], rotation: [0, 220, -50], scale: 1.0 },
-      { asset: 'part.vine_short', position: [0.1, 2.3, 0.1], rotation: [0, 100, -50], scale: 1.1 },
-      { asset: 'part.flower_bloom', position: [0, 2.5, 0], scale: 2.2 },
-      { asset: 'part.flower_bloom', position: [0.2, 1.6, 0.2], rotation: [30, 0, -60], scale: 1.2 },
-    ],
-  },
-  {
-    // Dome Gamma: the bloom at the heart of the nest, a huge flower crowning it.
-    id: 'variant.gamma_bloom',
-    base: 'boss.the_first',
-    look: { tint: '#9ab8a0', emissive: '#3a8a4a', emissiveIntensity: 0.3 },
-    parts: [
-      { asset: 'part.flower_bloom', position: [0, 3.9, -0.1], rotation: [-10, 0, 0], scale: 9 },
-      { asset: 'part.sac_cluster_spore', position: [1.2, 4.2, -0.2], rotation: [0, 0, -40], scale: 2.2 },
-      { asset: 'part.sac_cluster_spore', position: [-1.2, 4.2, -0.2], rotation: [0, 0, 40], scale: 2.0 },
-      { asset: 'part.sac_cluster_spore', position: [0, 3.2, 0.9], rotation: [70, 0, 0], scale: 1.6 },
-      { asset: 'part.moss_clump', position: [0, 3.6, -0.7], scale: 3.5 },
-      { asset: 'part.flower_bloom', position: [1.5, 3.9, -0.3], rotation: [0, 0, -35], scale: 3.5 },
-      { asset: 'part.flower_bloom', position: [-1.5, 3.9, -0.3], rotation: [0, 0, 35], scale: 3.0 },
-    ],
-  },
-  {
-    // The Great Dome: an old harvester fused with the Mother Tree's roots, scythes out, glass dome broken.
-    id: 'variant.warden',
-    base: 'enemy.cargo_loader',
-    look: { tint: '#9aaa80', emissive: '#2a6a2a', emissiveIntensity: 0.25 },
-    parts: [
-      { asset: 'part.harvest_blade', position: [1.0, 1.9, 0.2], rotation: [-15, 0, -35], scale: 1.0 },
-      { asset: 'part.harvest_blade', position: [-1.0, 1.9, 0.2], rotation: [-15, 0, 35], scale: 1.0 },
-      { asset: 'part.root_long', position: [0.5, 0.0, 0.5], rotation: [0, 30, 10], scale: 1.4 },
-      { asset: 'part.root_long', position: [-0.5, 0.0, 0.4], rotation: [0, -30, -10], scale: 1.3 },
-      { asset: 'part.root_long', position: [0.4, 0.0, -0.5], rotation: [0, 150, 10], scale: 1.4 },
-      { asset: 'part.moss_clump', position: [0.2, 3.0, -0.2], scale: 2.5 },
-      { asset: 'part.flower_bloom', position: [-0.3, 3.0, 0], scale: 2.2 },
-      { asset: 'part.glass_shards', position: [0, 2.9, 0.1], scale: 2.0 },
-    ],
-  },
-  {
-    // The Warden's third phase: the Mother Tree's roots burst up and lash out.
-    id: 'variant.mother_root',
-    base: 'enemy.lumen_tentacle',
-    look: { tint: '#8a7050', emissive: '#2a6a2a', emissiveIntensity: 0.2 },
-    parts: [
-      { asset: 'part.root_long', position: [0.2, 0.3, 0], rotation: [0, 0, -60], scale: 1.8 },
-      { asset: 'part.root_long', position: [-0.2, 0.6, 0.1], rotation: [0, 150, -55], scale: 1.7 },
-      { asset: 'part.root_long', position: [0, 1.0, -0.15], rotation: [0, -100, -50], scale: 1.5 },
-      { asset: 'part.root_long', position: [0.1, 1.5, 0.1], rotation: [0, 60, -50], scale: 1.2 },
-      { asset: 'part.crystal_green', position: [0.1, 0.1, 0.25], rotation: [20, 0, 20], scale: 1.6 },
-      { asset: 'part.crystal_green', position: [0, 1.9, 0.35], rotation: [45, 0, 0], scale: 1.2 },
-      { asset: 'part.moss_clump', position: [0, 0.15, 0], scale: 2.0 },
     ],
   },
 ];

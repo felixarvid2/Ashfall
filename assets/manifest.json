@@ -5232,86 +5232,6 @@
       }
     },
     {
-      "id": "part.pauldron",
-      "category": "part",
-      "prompt": "Domed spiked shoulder guard, charred metal with an ember band (Brother Ash, Pyre Warden).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/pauldron.glb",
-      "stats": {
-        "triangles": 198,
-        "bytes": 4688,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.brazier",
-      "category": "part",
-      "prompt": "Back-mounted pyre: stand, bowl and three tongues of fire (Pyre Warden).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/brazier.glb",
-      "stats": {
-        "triangles": 78,
-        "bytes": 4380,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.frost_cluster",
-      "category": "part",
-      "prompt": "Frost: a cluster of pale blue ice crystals on a frosted base (Frozen Welder, The Keeper). Grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/frost_cluster.glb",
-      "stats": {
-        "triangles": 224,
-        "bytes": 7604,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.frost_shard",
-      "category": "part",
-      "prompt": "One frost crystal (Frozen Welder, The Keeper). Grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/frost_shard.glb",
-      "stats": {
-        "triangles": 28,
-        "bytes": 2712,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.crystal_green",
-      "category": "part",
-      "prompt": "Five green Lumen crystals on a dark base (Commandant Hale). Grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/crystal_green.glb",
-      "stats": {
-        "triangles": 168,
-        "bytes": 6396,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.crystal_teal",
       "category": "part",
       "prompt": "Nine tall teal Lumen crystals on a dark base (Lumen Giant). Grows up.",
@@ -5424,22 +5344,6 @@
       }
     },
     {
-      "id": "part.spike_crown",
-      "category": "part",
-      "prompt": "Crown of bone horns on a band (brood warden).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/spike_crown.glb",
-      "stats": {
-        "triangles": 92,
-        "bytes": 3280,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.vine_long",
       "category": "part",
       "prompt": "A long writhing green vine with leaves, about 1.5 m (vine weaver, vine matriarch).",
@@ -5468,38 +5372,6 @@
       "stats": {
         "triangles": 138,
         "bytes": 4076,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.root_long",
-      "category": "part",
-      "prompt": "A thick bark-brown root with a curl, about 1.5 m (Mother Root, Warden).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/root_long.glb",
-      "stats": {
-        "triangles": 86,
-        "bytes": 2480,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.harvest_blade",
-      "category": "part",
-      "prompt": "Great curved harvesting scythe on an arm (Warden).",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 900,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/harvest_blade.glb",
-      "stats": {
-        "triangles": 292,
-        "bytes": 8004,
         "textures": 0
       }
     },
@@ -5792,54 +5664,6 @@
       }
     },
     {
-      "id": "part.dc_prism",
-      "category": "part",
-      "prompt": "The Prism: a floating triangular bipyramid of white-cyan crystal with a thin ring. Origin at the bottom tip, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_prism.glb",
-      "stats": {
-        "triangles": 80,
-        "bytes": 4804,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_elder_ring",
-      "category": "part",
-      "prompt": "Elder halo: a large upright ring with eight glyph blocks, cold blue. Origin at the ring centre, the ring stands in the XY plane.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 500,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_elder_ring.glb",
-      "stats": {
-        "triangles": 224,
-        "bytes": 5704,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_elder_slab",
-      "category": "part",
-      "prompt": "Elder monolith: a tall tapering slab of pale stone with glowing glyph bars. Origin at the base, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 250,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_elder_slab.glb",
-      "stats": {
-        "triangles": 48,
-        "bytes": 3848,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.dc_cable_bundle",
       "category": "part",
       "prompt": "Drowned cables: four thick black cables drooping from the attach point, with dull glow tips. Origin at the top, hangs down (-Y).",
@@ -6128,70 +5952,6 @@
       }
     },
     {
-      "id": "part.dc_choir_crown",
-      "category": "part",
-      "prompt": "Choir crown: a pale gold band with seven tall spires round a bright pearl. Origin at the band centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 400,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_choir_crown.glb",
-      "stats": {
-        "triangles": 298,
-        "bytes": 9896,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_veil",
-      "category": "part",
-      "prompt": "Choir veil: four long pale ribbons trailing down and back from the attach point. Origin at the top, hangs down.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_veil.glb",
-      "stats": {
-        "triangles": 208,
-        "bytes": 3184,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_stone_crown",
-      "category": "part",
-      "prompt": "Stone crown: a band of rough stone with seven blunt grey spires and glowing cracks. Origin at the band centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_stone_crown.glb",
-      "stats": {
-        "triangles": 178,
-        "bytes": 7204,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_stone_orbit",
-      "category": "part",
-      "prompt": "Stone orbit: six rough rock blocks floating in a ring, each with a glowing crack. Origin at the ring centre.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_stone_orbit.glb",
-      "stats": {
-        "triangles": 408,
-        "bytes": 10612,
-        "textures": 0
-      }
-    },
-    {
       "id": "part.dc_hatch_pods",
       "category": "part",
       "prompt": "Brood pods: three upright egg pods with hatch plates and exhaust pipes, glowing gold-green. Origin at the base, grows up.",
@@ -6204,118 +5964,6 @@
       "stats": {
         "triangles": 276,
         "bytes": 6864,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_hollow_ring",
-      "category": "part",
-      "prompt": "Hollow ring: a heavy dark ring standing upright with violet glowing cracks and six blunt teeth round the hole. Origin at the ring centre, the ring stands in the XY plane.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 700,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_hollow_ring.glb",
-      "stats": {
-        "triangles": 280,
-        "bytes": 7424,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_smokestack",
-      "category": "part",
-      "prompt": "Smokestack: a fat rusted chimney with a flared glowing ember mouth. Origin at the base, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_smokestack.glb",
-      "stats": {
-        "triangles": 152,
-        "bytes": 6344,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_ash_pile",
-      "category": "part",
-      "prompt": "Ash pile: three low grey mounds with a few glowing embers. Origin at the middle, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_ash_pile.glb",
-      "stats": {
-        "triangles": 124,
-        "bytes": 6248,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_horn_row",
-      "category": "part",
-      "prompt": "A row of five blunt rusted horns along the back, getting smaller. Origin at the front of the row, runs back along -Z.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 250,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_horn_row.glb",
-      "stats": {
-        "triangles": 40,
-        "bytes": 2796,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_spore_sac_big",
-      "category": "part",
-      "prompt": "Spore sacs: three swollen green sacs with glowing spots. Origin at the base, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_spore_sac_big.glb",
-      "stats": {
-        "triangles": 130,
-        "bytes": 5356,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_bracket_fungus",
-      "category": "part",
-      "prompt": "Bracket fungus: three stacked shelf caps of pale fungus. Origin at the stalk, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 250,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_bracket_fungus.glb",
-      "stats": {
-        "triangles": 104,
-        "bytes": 5572,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_mushroom_crown",
-      "category": "part",
-      "prompt": "Mushroom crown: a cluster of three domed mushroom caps on thick stalks, glowing spots. Origin at the base, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 400,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_mushroom_crown.glb",
-      "stats": {
-        "triangles": 180,
-        "bytes": 6036,
         "textures": 0
       }
     },
@@ -7335,38 +6983,6 @@
         ],
         "emissive": "#b48cff",
         "emissiveIntensity": 0.8
-      }
-    },
-    {
-      "id": "part.dc_glitch_fan_core",
-      "category": "part",
-      "prompt": "Echo Engine blades: five flat blue blades fanned out, dimmer than the Mines ones (the Core ground is pale). Origin at the root, spreads in the XY plane.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 200,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_glitch_fan_core.glb",
-      "stats": {
-        "triangles": 60,
-        "bytes": 2808,
-        "textures": 0
-      }
-    },
-    {
-      "id": "part.dc_prism_core",
-      "category": "part",
-      "prompt": "A floating triangular bipyramid of blue crystal with a thin ring, dim enough for the pale Core ground. Origin at the bottom tip, grows up.",
-      "source": "blender",
-      "credit": "Built in Blender from scripts/blender/spec.json (npm run blender:build)",
-      "targetPolycount": 300,
-      "status": "optimized",
-      "meshy": {},
-      "file": "parts/dc_prism_core.glb",
-      "stats": {
-        "triangles": 80,
-        "bytes": 4672,
-        "textures": 0
       }
     },
     {

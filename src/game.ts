@@ -2852,6 +2852,12 @@ export class Game {
     }
   }
 
+  /** Debug / e2e: one enemy of any definition (bosses included) next to the player, awake; returns its entity. */
+  debugSpawnEnemy(enemy: string, dx = -4, dz = -4): Entity {
+    const tr = this.playerTransform;
+    return spawnEnemy(this.world, enemy, tr.x + dx, tr.z + dz, { aggro: true });
+  }
+
   /** Stress test: spawn a large crowd around the player. */
   /** A region card waiting for the new zone's first frames (building it can stall the page). */
   private pendingCard: { image: string; name: string; sub: string; frames: number } | null = null;

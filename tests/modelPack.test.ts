@@ -3,7 +3,7 @@
  * (src/render/modelPack.ts): which paths are packed, one fetch per pack, fallbacks, and the file budget guard.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { ModelPacks, packNameFor, type Pack } from '../src/render/modelPack';
+import { BOSS_PACKS, ModelPacks, packNameFor, type Pack } from '../src/render/modelPack';
 import { MAX_ARTIFACT_FILES, MAX_PACKED_BYTES, assertFileBudget, buildPacks, isPacked } from '../scripts/artifact/packs';
 
 const url = (path: string, base = './') => `${base}assets/${path}`;
@@ -18,9 +18,29 @@ describe('packNameFor', () => {
 
   it('leaves other folders and odd names alone', () => {
     expect(packNameFor('enemies/vire.glb.json')).toBeNull();
+    expect(packNameFor('enemies/constructor.glb.json')).toBeNull();
     expect(packNameFor('characters/cook.glb.json')).toBeNull();
     expect(packNameFor('toString/x.glb.json')).toBeNull();
     expect(packNameFor('parts')).toBeNull();
+  });
+});
+
+describe('boss packs', () => {
+  it('puts every boss model in a pack by region, whatever its size, and leaves the other enemies alone', () => {
+    expect(packNameFor('enemies/pyre_warden.glb.json')).toBe('bosses-refinery');
+    expect(isPacked('enemies/pyre_warden.glb.json', 'x'.repeat(MAX_PACKED_BYTES * 4))).toBe(true);
+    expect(isPacked('enemies/vire.glb.json', 'x')).toBe(false);
+    expect(Object.keys(BOSS_PACKS)).toHaveLength(18);
+    // A pack stays a few models: nothing is fetched up front and no single pack grows into the whole roster.
+    const sizes = new Map<string, number>();
+    for (const pack of Object.values(BOSS_PACKS)) sizes.set(pack, (sizes.get(pack) ?? 0) + 1);
+    expect(Math.max(...sizes.values())).toBeLessThanOrEqual(3);
+  });
+
+  it('every boss pack entry is a manifest model file', async () => {
+    const { readFileSync } = await import('node:fs');
+    const files = new Set((JSON.parse(readFileSync(new URL('../assets/manifest.json', import.meta.url), 'utf8')) as { assets: { file?: string }[] }).assets.map((a) => a.file));
+    for (const name of Object.keys(BOSS_PACKS)) expect(files.has(`enemies/${name}.glb`), name).toBe(true);
   });
 });
 

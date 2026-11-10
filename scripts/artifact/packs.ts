@@ -2,8 +2,10 @@
  * Which converted models the artifact build packs (src/render/modelPack.ts reads them back at run time).
  * Everything under parts/ and blender/ is packed (tiny files, ~160 of them); props/ and environment/ pack only models
  * up to MAX_PACKED_BYTES, so a pack stays a few MB and the big models keep their own files and load on demand.
+ * The 18 boss models (~1 MB each) are packed whatever their size, a few per home region (BOSS_PACKS in modelPack.ts), so
+ * each pack is fetched only when one of its bosses is wanted, never up front.
  */
-import { packNameFor, type Pack } from '../../src/render/modelPack';
+import { isBossPackPath, packNameFor, type Pack } from '../../src/render/modelPack';
 
 /** Largest base64 GLB (bytes) packed from a folder that is only packed by size. */
 export const MAX_PACKED_BYTES = 450_000;
@@ -15,6 +17,7 @@ export const MAX_ARTIFACT_FILES = 500;
 /** Does this model (path under assets/, base64 GLB) go into a pack? */
 export function isPacked(path: string, base64: string): boolean {
   if (!packNameFor(path)) return false;
+  if (isBossPackPath(path)) return true;
   return ALWAYS_PACKED.has(path.slice(0, path.indexOf('/'))) || base64.length <= MAX_PACKED_BYTES;
 }
 

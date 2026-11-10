@@ -811,3 +811,13 @@ in `docs/balance.md`. Real decisions:
 - **Rift modifiers (A20)** are rolled from the rift's own seed (so the daily rift keeps its twist all day) from level 5 on, 70 % of the time.
 - **Dungeon lengths (A14, A15).** Per `scripts/sim/regionReport.ts`: Core dungeons 11:08-11:48 (rooms cut from 14-15 to about 9), Cinder Flats dungeons +1 main
   room and +1 branch (about 7 min), road packs 15 % fewer (26 m to 31 m spacing).
+
+### 2026-11-10 — The 18 boss models go live
+- **Decision.** Thirteen region bosses and the five world bosses use their own Meshy models (`boss.*`) directly; their variants, the `glow` that
+  flattened the textures, and the 24 Blender parts only they used are gone (`assets:check` has 0 orphans). The Warden's shade
+  (`variant.shade_warden`) now sits on `boss.warden`, so it stays the same body as its original. The Lumen repaint is dropped on every boss that had it (it flattened the gold and blue textures); the Core's regular enemies keep it.
+- **Budgets.** No change: the bosses are set-piece, instance or world-boss models, which `zoneLaterAssetIds` fetches quietly after the zone shows, not
+  at its border (zone entry budgets in `tests/zoneBudget.test.ts` do not count them).
+- **Artifact.** 18 more files would have passed the 500-file guard (506). The boss models now travel in seven packs by home region
+  (`BOSS_PACKS` in `src/render/modelPack.ts`, 5-8 MB each), each fetched only when its first boss is wanted; the build is 495 files.
+
