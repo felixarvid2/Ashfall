@@ -8400,6 +8400,918 @@
           0.12
         ]
       }
+    },
+    {
+      "id": "boss.pyre_warden",
+      "category": "enemy",
+      "prompt": "gaunt fire-cult crypt keeper in soot-black vestments, iron cage lanterns with burning pyres on the shoulders, ember-filled iron skull mask, long chains, empty hands, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, gaunt fire-cult crypt keeper of a burnt cathedral in long soot-black ragged vestments, two iron cage lanterns with burning pyres mounted on the shoulders, an iron skull mask with embers glowing through the eye holes, heavy chains wrapped around the arms, ash falling from the robes, empty hands, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.8,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 125
+          },
+          {
+            "state": "attack2",
+            "actionId": 131
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a3-f711-7695-a526-1cac266ac677",
+        "refineTaskId": "01a1c4a5-b885-778d-a1fc-33ef7caf1138",
+        "rigTaskId": "01a1c4ad-9e64-739f-8ad4-ba79d3e1c37c",
+        "animationTaskId": "01a1c4ae-08c5-75ae-bf2f-e28d765dfb62",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/pyre_warden.glb",
+      "stats": {
+        "triangles": 15263,
+        "bytes": 1214672,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3a2a22",
+        "size": [
+          0.9,
+          1.8,
+          0.9
+        ],
+        "emissive": "#ff8a2a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.frozen_welder",
+      "category": "enemy",
+      "prompt": "industrial welder frozen into a cooling plant, heavy welding gear encased in frost and ice crust, cracked welding visor glowing cold blue, cutting torch fused to the right arm, icicles, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, industrial welder frozen solid inside a failed cooling plant, heavy leather and steel welding gear encased in thick frost and jagged ice crust, a cracked welding visor glowing cold blue, a plasma cutting torch fused to the right forearm, icicles hanging from the arms and helmet, frozen coolant hoses on the back, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.8,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a3-f6fd-73a6-a9a2-6a5f8fbca3ed",
+        "refineTaskId": "01a1c4a5-b876-770d-b522-e147236dcc41",
+        "rigTaskId": "01a1c4ad-9e43-75d0-88c2-76c12c3161df",
+        "animationTaskId": "01a1c4ae-0afa-729a-868a-71854ecfa278",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/frozen_welder.glb",
+      "stats": {
+        "triangles": 15525,
+        "bytes": 1287836,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#7a8a9a",
+        "size": [
+          0.9,
+          1.8,
+          0.9
+        ],
+        "emissive": "#7ad8ff",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.foreman_dray",
+      "category": "enemy",
+      "prompt": "grizzled mine foreman in an armoured work exo-harness, hard hat with twin lamps, heavy work coat, hydraulic rock drill on the right arm, dynamite bandolier, amber crystal growths, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, grizzled old mine foreman with a grey beard in a battered armoured work exo-harness, yellow hard hat with twin lamps, heavy padded work coat, a huge hydraulic rock drill mounted on the right arm, bandolier of dynamite sticks, glowing amber crystal growths on one shoulder, stubborn stance, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.8,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 1.8,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a3-f6fc-77b7-9879-2be4012c5fee",
+        "refineTaskId": "01a1c4a5-b855-75df-aac6-b4f1a5c65acd",
+        "rigTaskId": "01a1c4ad-9e5f-721e-83ae-78587cfe9158",
+        "animationTaskId": "01a1c4ae-1393-7414-85f4-d95e1e770e56",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/foreman_dray.glb",
+      "stats": {
+        "triangles": 15566,
+        "bytes": 1102908,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#6a5a3a",
+        "size": [
+          0.9,
+          1.8,
+          0.9
+        ],
+        "emissive": "#ffb23a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.brood_warden",
+      "category": "enemy",
+      "prompt": "tall chitin-armoured brood warden, insect mandible mask, a split cocoon husk fused to its back, spore sacs on the shoulders, long hooked claw arms, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, tall gaunt brood warden in dark green chitin armour plates, an insectoid mandible mask, a split pale cocoon husk fused to its back, clusters of glowing green spore sacs on the shoulders, long arms ending in hooked claws, fungal growth on the legs, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a3-f724-7373-bce3-4dcc17889d9e",
+        "refineTaskId": "01a1c4a5-b834-77b8-9046-b2d4ef3c3464",
+        "rigTaskId": "01a1c4ad-9e43-7516-931e-64fe6ac07cc9",
+        "animationTaskId": "01a1c4ad-f43a-72e4-9ee8-cf21c56168f7",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/brood_warden.glb",
+      "stats": {
+        "triangles": 15582,
+        "bytes": 906312,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#3b4a2a",
+        "size": [
+          0.9,
+          2,
+          0.9
+        ],
+        "emissive": "#9aff6a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.the_keeper",
+      "category": "enemy",
+      "prompt": "hulking moss-covered stone golem keeper of a seed vault, glass seed canisters embedded in its chest, roots as hair, glowing green seeds, heavy stone fists, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, hulking humanoid golem of grey stone and thick moss, keeper of a frozen seed vault, glass seed canisters glowing green embedded in its broad chest, roots hanging from its head like hair, frost on its shoulders, heavy stone fists, standing upright on two thick legs, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2.6,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 2.6,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a3-f581-777f-8819-83ce740f4d63",
+        "refineTaskId": "01a1c4a5-b6d2-778e-9a7a-1e93ecf20d7c",
+        "rigTaskId": "01a1c4ad-9cf4-778d-b88a-58eecf59afe5",
+        "animationTaskId": "01a1c4ae-07a4-7129-b829-ebe2657baa21",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/the_keeper.glb",
+      "stats": {
+        "triangles": 15492,
+        "bytes": 1188904,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4a5a40",
+        "size": [
+          0.9,
+          2.6,
+          0.9
+        ],
+        "emissive": "#7dff8a",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.elder_guardian",
+      "category": "enemy",
+      "prompt": "towering ancient stone guardian of the elder dead, hooded robe of carved stone, a featureless mask with glowing runes, a halo of floating stones, long arms, full body, T-pose",
+      "source": "image",
+      "conceptPrompt": "full body concept art, front view, T-pose with arms straight out to the sides, towering ancient guardian of the elder dead, tall and slender, a hooded robe of carved grey stone with glowing cyan runes, a featureless ceremonial mask, a halo of floating stone fragments behind its head, long thin arms with stone bracers, standing on two legs, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 6,
+      "pose": "t-pose",
+      "rig": {
+        "type": "biped",
+        "heightMeters": 6,
+        "actions": [
+          {
+            "state": "idle",
+            "actionId": 0
+          },
+          {
+            "state": "walk",
+            "actionId": 669
+          },
+          {
+            "state": "attack",
+            "actionId": 234
+          },
+          {
+            "state": "attack2",
+            "actionId": 97
+          },
+          {
+            "state": "hit",
+            "actionId": 178
+          },
+          {
+            "state": "death",
+            "actionId": 187
+          }
+        ]
+      },
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a3-f6e1-7315-b486-2b5027eeae9d",
+        "refineTaskId": "01a1c4a5-b883-74f1-ad02-eaa6be458d41",
+        "rigTaskId": "01a1c4ad-9e50-7003-a65a-b9cb5a09a863",
+        "animationTaskId": "01a1c4ae-1531-7319-9266-bd2d79fc2b46",
+        "previewApproved": true,
+        "creditsSpent": 59,
+        "clips": {
+          "idle": "idle",
+          "walk": "walk",
+          "attack": "attack",
+          "attack2": "attack2",
+          "hit": "hit",
+          "death": "death"
+        }
+      },
+      "file": "enemies/elder_guardian.glb",
+      "stats": {
+        "triangles": 15508,
+        "bytes": 971140,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#5a6a7a",
+        "size": [
+          0.9,
+          6,
+          0.9
+        ],
+        "emissive": "#6ad8ff",
+        "emissiveIntensity": 0.3
+      }
+    },
+    {
+      "id": "boss.brood_mother",
+      "category": "enemy",
+      "prompt": "swollen fungal brood mother, hunched on thick arms, back covered in pulsing spore sacs and birthing pods, small eyeless head",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, monstrous swollen fungal brood mother, a hunched bloated body propped on thick clawed arms, its back covered in pulsing translucent spore sacs and birthing pods with small creatures inside, a small eyeless head with feeler fronds, green glowing veins, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.9,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-38d6-725c-aac9-0792861e272f",
+        "refineTaskId": "01a1c4a7-550a-7478-985b-0c350fd658d7",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/brood_mother.glb",
+      "lods": [
+        "enemies/brood_mother_lod1.glb",
+        "enemies/brood_mother_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15572,
+        "bytes": 819004,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#3b4a2a",
+        "size": [
+          1.3299999999999998,
+          1.9,
+          1.3299999999999998
+        ],
+        "emissive": "#7dff6a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#7dff6a"
+      }
+    },
+    {
+      "id": "boss.vine_matriarch",
+      "category": "enemy",
+      "prompt": "massive writhing knot of thick vines and roots with a glowing bloom eye at its centre, lashing tendrils, hanging white flowers",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a massive writhing knot of thick dark green vines and roots rising out of floodwater, a single glowing pale bloom eye at its centre, many lashing tendrils with thorns, white flowers hanging from it, dripping water, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-4dc4-77e4-99b3-39a27ef75c2d",
+        "refineTaskId": "01a1c4a7-af82-7337-8ab9-841f05818835",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/vine_matriarch.glb",
+      "lods": [
+        "enemies/vine_matriarch_lod1.glb",
+        "enemies/vine_matriarch_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15192,
+        "bytes": 933860,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#2f4a2a",
+        "size": [
+          2.0999999999999996,
+          3,
+          2.0999999999999996
+        ],
+        "emissive": "#b6ff7a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#b6ff7a"
+      }
+    },
+    {
+      "id": "boss.gamma_bloom",
+      "category": "enemy",
+      "prompt": "giant carnivorous flower bulb at the heart of a nest, petals of glowing flesh, thick stem with roots, spore haze",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a giant carnivorous flower bulb at the heart of an alien nest, enormous curled petals of glowing pink and green flesh, a toothed maw at the centre, a thick veined stem rooted into the ground, drifting spore haze, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 6,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-4e31-70aa-a549-1764c5f00987",
+        "refineTaskId": "01a1c4a7-caa6-76a7-aa2d-76b8e4742ea7",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/gamma_bloom.glb",
+      "lods": [
+        "enemies/gamma_bloom_lod1.glb",
+        "enemies/gamma_bloom_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15273,
+        "bytes": 874200,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#4a3a4a",
+        "size": [
+          4.199999999999999,
+          6,
+          4.199999999999999
+        ],
+        "emissive": "#ff9ad8",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ff9ad8"
+      }
+    },
+    {
+      "id": "boss.warden",
+      "category": "enemy",
+      "prompt": "huge old agricultural harvester machine fused with glowing Lumen crystals, scythe arms, overgrown with roots, heavy treads",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a huge old agricultural harvester machine turned guardian, rusted yellow plating overgrown with roots and moss, two great scythe arms, glowing golden Lumen crystals growing from its joints and cockpit, heavy tracked legs, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3.2,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-605e-7240-bec1-dbb9665e9291",
+        "refineTaskId": "01a1c4a7-e05c-7358-beea-b6ac2d2511c6",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/warden.glb",
+      "lods": [
+        "enemies/warden_lod1.glb",
+        "enemies/warden_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 14703,
+        "bytes": 978072,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#6a5a28",
+        "size": [
+          2.2399999999999998,
+          3.2,
+          2.2399999999999998
+        ],
+        "emissive": "#ffd23a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ffd23a"
+      }
+    },
+    {
+      "id": "boss.mother_root",
+      "category": "enemy",
+      "prompt": "towering mass of gnarled glowing roots with bark armour and pulsing sap veins, lashing root tips",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a towering mass of gnarled ancient tree roots bursting up from the ground, armoured with thick bark, pulsing golden sap veins, lashing root tips like whips, small glowing seeds, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-7965-72ca-9a9e-8fe4a3d3767d",
+        "refineTaskId": "01a1c4a7-e367-74bc-9bdc-910f3d0cffb7",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/mother_root.glb",
+      "lods": [
+        "enemies/mother_root_lod1.glb",
+        "enemies/mother_root_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15411,
+        "bytes": 909376,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#4a3a28",
+        "size": [
+          2.0999999999999996,
+          3,
+          2.0999999999999996
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ffd76a"
+      }
+    },
+    {
+      "id": "boss.the_prism",
+      "category": "enemy",
+      "prompt": "huge crystal sentinel with a faceted prism shell on its back that bends light, stone legs, glowing crystal core",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a huge four-legged crystal sentinel, a massive faceted translucent prism shell on its back bending light into rainbow beams, a body of dark stone, thick stone legs, a glowing white crystal core in its chest, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2.6,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-8b1e-7013-8543-7fc2faf44d03",
+        "refineTaskId": "01a1c4a8-0263-71c4-83fb-7c18bf56c5f9",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/the_prism.glb",
+      "lods": [
+        "enemies/the_prism_lod1.glb",
+        "enemies/the_prism_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15448,
+        "bytes": 981984,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a6a7a",
+        "size": [
+          1.8199999999999998,
+          2.6,
+          1.8199999999999998
+        ],
+        "emissive": "#c8f0ff",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#c8f0ff"
+      }
+    },
+    {
+      "id": "boss.choir_mother",
+      "category": "enemy",
+      "prompt": "towering choir figure fused to a pillar of glowing coral-like roots, several singing faces, golden Lumen light",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a towering figure of a choir mother fused into a pillar of glowing coral-like golden roots, several serene singing faces around her head, flowing robes merging into the pillar, arms raised, warm golden Lumen light, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2.2,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-b3ad-70c9-950a-00b79610342e",
+        "refineTaskId": "01a1c4a9-2c43-726b-87c2-e780f7f93342",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/choir_mother.glb",
+      "lods": [
+        "enemies/choir_mother_lod1.glb",
+        "enemies/choir_mother_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15069,
+        "bytes": 1154076,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#e8dcae",
+        "size": [
+          1.54,
+          2.2,
+          1.54
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ffd76a"
+      }
+    },
+    {
+      "id": "boss.choir_of_stone",
+      "category": "enemy",
+      "prompt": "walking cluster of fused stone singing statues lit from within by golden light",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a walking cluster of three fused stone statues of singers, cracked grey stone lit from within by warm golden light, open singing mouths, robes of stone, moving on stubby stone legs, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 2.2,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-cc6d-7499-93c9-915db3ae5850",
+        "refineTaskId": "01a1c4a9-bc75-738e-89d2-62bb50b895c4",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/choir_of_stone.glb",
+      "lods": [
+        "enemies/choir_of_stone_lod1.glb",
+        "enemies/choir_of_stone_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15564,
+        "bytes": 657880,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#9a9080",
+        "size": [
+          1.54,
+          2.2,
+          1.54
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ffd76a"
+      }
+    },
+    {
+      "id": "boss.echo_engine",
+      "category": "enemy",
+      "prompt": "heavy blue-white Lumen machine golem with resonating tuning-fork arms and a glowing echo chamber head",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, a heavy blue-white machine golem of pale metal and cold Lumen light, huge tuning-fork shaped arms that resonate, a hollow glowing echo chamber for a head, thick legs, engraved plates, dark sci-fi, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3.5,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a1c4a4-e113-76a1-9d0f-baf98ef78eb1",
+        "refineTaskId": "01a1c4a9-ed2b-7780-a2ff-278530db6172",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/echo_engine.glb",
+      "lods": [
+        "enemies/echo_engine_lod1.glb",
+        "enemies/echo_engine_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15478,
+        "bytes": 1067928,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#c8d8e8",
+        "size": [
+          2.4499999999999997,
+          3.5,
+          2.4499999999999997
+        ],
+        "emissive": "#7ab8ff",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#7ab8ff"
+      }
+    },
+    {
+      "id": "boss.ashen_colossus",
+      "category": "enemy",
+      "prompt": "colossal industrial mining mech walker covered in ash and slag, two huge hydraulic claw arms, furnace glowing orange in the chest, chimney stacks on the back, heavy stomping legs",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, colossal industrial mining mech walker caked in grey ash and cooled slag, two huge hydraulic claw arms, a furnace glowing orange in its open chest, smoking chimney stacks on its back, heavy stomping legs, hazard stripes worn away, towering and menacing, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3.2,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17d48-8f54-731f-a8c8-e55f734b4c4d",
+        "refineTaskId": "01a1c4aa-22e5-7522-8a3f-a9daee87da35",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/ashen_colossus.glb",
+      "lods": [
+        "enemies/ashen_colossus_lod1.glb",
+        "enemies/ashen_colossus_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15291,
+        "bytes": 975396,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "box",
+        "color": "#5a5048",
+        "size": [
+          2.4,
+          3.2,
+          2
+        ],
+        "emissive": "#ff7a2a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ff7a2a"
+      }
+    },
+    {
+      "id": "boss.mother_of_spores",
+      "category": "enemy",
+      "prompt": "monstrous swollen fungal mother creature, bloated translucent spore sacs on the back, many thin legs, a crown of fleshy fronds, glowing green veins, small spore brood clinging to it",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, monstrous swollen fungal mother creature, a bloated body with translucent glowing green spore sacs bulging on its back, many thin spindly legs, a crown of fleshy fronds around a small eyeless head, pulsing green veins, tiny spore creatures clinging to its flanks, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 1.9,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17d48-be23-712f-a570-cae6e91d759d",
+        "refineTaskId": "01a1c4aa-4043-752d-af17-a0cba7a050f3",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/mother_of_spores.glb",
+      "lods": [
+        "enemies/mother_of_spores_lod1.glb",
+        "enemies/mother_of_spores_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15583,
+        "bytes": 854384,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "sphere",
+        "color": "#3b4a2a",
+        "size": [
+          1.6,
+          1.9,
+          1.6
+        ],
+        "emissive": "#7dff6a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#7dff6a"
+      }
+    },
+    {
+      "id": "boss.hollow_engine",
+      "category": "enemy",
+      "prompt": "giant hollow machine golem of pale gold metal and Lumen light, ring-shaped hollow torso with a floating glowing core, slow heavy limbs, ancient engraved plates, faint light leaking from seams",
+      "source": "image",
+      "conceptPrompt": "full body concept art, three-quarter front view, giant hollow machine golem of pale gold metal and warm Lumen light, a ring-shaped hollow torso with a glowing core floating in the empty centre, long heavy arms, thick legs, ancient engraved plates, faint golden light leaking from every seam, serene and enormous, dark sci-fi industrial, plain background",
+      "targetPolycount": 15000,
+      "heightMeters": 3.5,
+      "status": "optimized",
+      "meshy": {
+        "previewTaskId": "01a17d48-c991-73a6-89cf-35b0e6cff75e",
+        "refineTaskId": "01a1c4aa-c2b3-76b3-96d6-03ff584351fc",
+        "previewApproved": true,
+        "creditsSpent": 36
+      },
+      "file": "enemies/hollow_engine.glb",
+      "lods": [
+        "enemies/hollow_engine_lod1.glb",
+        "enemies/hollow_engine_lod2.glb"
+      ],
+      "stats": {
+        "triangles": 15404,
+        "bytes": 1007176,
+        "textures": 3
+      },
+      "placeholder": {
+        "shape": "capsule",
+        "color": "#e8dcae",
+        "size": [
+          2.2,
+          3.5,
+          2.2
+        ],
+        "emissive": "#ffd76a",
+        "emissiveIntensity": 0.4,
+        "showFacing": true,
+        "facingColor": "#ffd76a"
+      }
     }
   ]
 }
