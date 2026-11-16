@@ -1,0 +1,7 @@
+# Asset data and generated builds: big, not code
+assets/
+public/
+dist/
+dist-*/
+android/app/src/main/assets/www/
+tools/
