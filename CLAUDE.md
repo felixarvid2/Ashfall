@@ -13,6 +13,8 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
   (`assets/thirdParty.ts`), the artifact build (`artifact/`)
 - `assets/manifest.json` every 3D asset; `public/assets/` the optimized game files
 - `tests/` vitest; `docs/credits.md` third-party credits and licences
+- `docs/code-graph.html` an interactive map of the code (6,304 symbols, search, communities) made with graphify on
+  2026-11-17; a snapshot, open it in a browser (it loads vis-network from unpkg)
 - `android/` the AYN Thor APK: a plain-Java WebView host for the web build (`docs/android.md`); `src/core/host.ts` the game side
 - `linux/` the Ubuntu/Debian desktop app: an Electron shell (`main.js`) serving the web build on `app://ashfall/` (`docs/linux.md`)
 
