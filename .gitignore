@@ -24,3 +24,6 @@ scripts/blender/__pycache__/
 # Ubuntu/Debian package (npm run build:deb)
 dist-linux/
 linux/node_modules/
+
+# graphify knowledge graph (npm run graph rebuilds it)
+graphify-out/
