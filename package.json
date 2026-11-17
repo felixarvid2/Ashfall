@@ -38,8 +38,7 @@
     "vfx:pack": "tsx scripts/vfx/pack.ts",
     "art:generate": "NODE_USE_ENV_PROXY=1 tsx scripts/art/generate.ts",
     "art:process": "tsx scripts/art/process.ts",
-    "e2e": "node scripts/e2e/run.mjs",
-    "graph": "graphify extract . --code-only && graphify cluster-only . --no-label"
+    "e2e": "node scripts/e2e/run.mjs"
   },
   "dependencies": {
     "three": "^0.186.1",

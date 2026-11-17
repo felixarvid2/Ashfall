@@ -13,12 +13,13 @@ with `PROGRESS.md` (current phase and how to run), `docs/design-brief.md` and `d
   (`assets/thirdParty.ts`), the artifact build (`artifact/`)
 - `assets/manifest.json` every 3D asset; `public/assets/` the optimized game files
 - `tests/` vitest; `docs/credits.md` third-party credits and licences
+- `docs/code-graph.html` an interactive map of the code (6,304 symbols, search, communities) made with graphify on
+  2026-11-17; a snapshot, open it in a browser (it loads vis-network from unpkg)
 - `android/` the AYN Thor APK: a plain-Java WebView host for the web build (`docs/android.md`); `src/core/host.ts` the game side
 - `linux/` the Ubuntu/Debian desktop app: an Electron shell (`main.js`) serving the web build on `app://ashfall/` (`docs/linux.md`)
 
 ## Commands
 
-- `npm run graph` build the code knowledge graph in `graphify-out/` (see graphify below)
 - `npm run dev` play locally; `npm run build` typecheck and production build into `dist/`
 - `npx tsc --noEmit -p .` and `npx vitest run` must pass before anything is done
 - `npm run build:artifact` the self-contained build for a claude.ai artifact (`dist-artifact/`) and the page to
@@ -74,24 +75,5 @@ the reading, running and writing and return short reports.
 Project skills live in `.claude/skills/` (copies of the general ones are in felixarvid2/claude-skills):
 `ashfall-region-pipeline` (how a region or phase is built), `parallel-subagent-builds`,
 `claude-artifact-game-publish`, `playwright-webgl-testing`, `mobile-portrait-game-ui`,
-`free-game-asset-pipeline`, `cloud-session-github-ops`, `autonomous-github-release` (cutting a release) and `graphify`
-(the code knowledge graph, see above). Third-party UI skills (licences and sources in
+`free-game-asset-pipeline`, `cloud-session-github-ops` and `autonomous-github-release` (cutting a release). Third-party UI skills (licences and sources in
 their folders): `game-ui-ux` and `threejs-game-ui-designer`.
-
-## graphify (code knowledge graph)
-
-[graphify](https://github.com/Graphify-Labs/graphify) maps the code into a graph in `graphify-out/` (gitignored, about
-10 MB): `graph.json`, `GRAPH_REPORT.md` (hubs and subsystems) and `graph.html`. Code is parsed locally with
-tree-sitter; no LLM or API is used (`--code-only`, community labels taken from hub names). `.graphifyignore`
-keeps `assets/`, `public/` and builds out.
-
-- Install once per machine: `uv tool install graphifyy` (or `pipx install graphifyy`). Build the graph with
-  `npm run graph` (about 20 s); after code changes `graphify update .` refreshes it.
-- When `graphify-out/graph.json` exists, ask the graph before the first grep or source read for a codebase
-  question: `graphify query "<question>"`, `graphify explain "<symbol>"`, `graphify path "<A>" "<B>"`,
-  `graphify affected "<symbol>"` (what depends on it). Read raw files only for lines the graph has located.
-  `Explore` does this itself; put the same rule in other subagent prompts that explore code.
-- `.claude/settings.json` hooks nudge Read/Grep toward the graph (soft, a few nudges per session) and do
-  nothing when `graphify` is not installed. `/graphify` is the full skill (`.claude/skills/graphify/`).
-- Never run graphify's semantic pass over docs or images (`/graphify .` without `--code-only`, `extract`
-  with a backend, `label`): it calls an LLM. Ask the user first, as for other paid generation.
